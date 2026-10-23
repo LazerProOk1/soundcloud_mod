@@ -1,4 +1,4 @@
-!!! OUTUPDATE !!!
+!!! OUTDATE !!!
 
 <div align="center">
 
