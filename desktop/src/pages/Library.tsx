@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import React, { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -9,6 +10,7 @@ import { VirtualGrid } from '../components/ui/VirtualGrid';
 import { VirtualList } from '../components/ui/VirtualList';
 import { api } from '../lib/api';
 import { preloadTrack } from '../lib/audio';
+import { toggleDislike } from '../lib/dislikes';
 import { art, dur, fc } from '../lib/formatters';
 import {
   fetchAllLikedTracks,
@@ -38,8 +40,10 @@ import {
   X,
 } from '../lib/icons';
 import { getOfflineLikedTracks } from '../lib/offline-index';
+import { openTrackMenu } from '../lib/useTrackContextMenu';
 import { useTrackPlay } from '../lib/useTrackPlay';
 import { useAuthStore } from '../stores/auth';
+import { orderLikes, useLibraryLocalStore } from '../stores/library-local';
 import type { Track } from '../stores/player';
 import { usePlayerStore } from '../stores/player';
 
@@ -75,6 +79,7 @@ const LibraryTrackRow = React.memo(
 
     return (
       <div
+        onContextMenu={(e) => openTrackMenu(e, track)}
         className={`group flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-300 ease-[var(--ease-apple)] ${
           isThis
             ? 'bg-accent/[0.06] ring-1 ring-accent/20 shadow-[inset_0_0_20px_rgba(255,85,0,0.05)]'
@@ -467,6 +472,58 @@ const LibraryHero = React.memo(function LibraryHero({
 
 /* Each tab is its own component — only fetches its own data */
 
+const LocalTracksTab = React.memo(function LocalTracksTab({
+  kind,
+  filter,
+}: {
+  kind: 'superlikes' | 'disliked';
+  filter: string;
+}) {
+  const { t } = useTranslation();
+  const qc = useQueryClient();
+  const all = useLibraryLocalStore((s) => s[kind]);
+  const tracks = useMemo(() => {
+    if (!filter) return all;
+    const q = filter.toLowerCase();
+    return all.filter(
+      (tr) => tr.title.toLowerCase().includes(q) || tr.user?.username?.toLowerCase().includes(q),
+    );
+  }, [all, filter]);
+
+  if (tracks.length === 0) {
+    return (
+      <div className="py-20 text-center text-white/25 text-[13px]">
+        {filter
+          ? t('library.noMatches')
+          : t(kind === 'superlikes' ? 'library.noSuperlikes' : 'library.noDislikes')}
+      </div>
+    );
+  }
+  return (
+    <div className="flex flex-col gap-1 min-h-[400px]">
+      {tracks.map((track, i) => (
+        <div key={track.urn} className="flex items-center gap-2">
+          <div className="flex-1 min-w-0">
+            <LibraryTrackRow track={track} index={i} queue={kind === 'disliked' ? [] : tracks} />
+          </div>
+          <button
+            type="button"
+            title={t(kind === 'superlikes' ? 'trackMenu.unsuperlike' : 'library.undislike')}
+            onClick={() =>
+              kind === 'superlikes'
+                ? useLibraryLocalStore.getState().toggleSuperlike(track)
+                : void toggleDislike(qc, track, false)
+            }
+            className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-white/40 hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      ))}
+    </div>
+  );
+});
+
 const LikesTab = React.memo(function LikesTab({ filter }: { filter: string }) {
   const { t } = useTranslation();
   const likesQuery = useLikedTracks();
@@ -480,7 +537,16 @@ const LikesTab = React.memo(function LikesTab({ filter }: { filter: string }) {
   }, []);
 
   // Show fresh data if available; offline data as placeholder while initial load
-  const tracks = likedTracks.length > 0 ? likedTracks : isLoading ? offlineTracks : likedTracks;
+  const serverTracks =
+    likedTracks.length > 0 ? likedTracks : isLoading ? offlineTracks : likedTracks;
+  const likesTop = useLibraryLocalStore((s) => s.likesTop);
+  const likesBottom = useLibraryLocalStore((s) => s.likesBottom);
+  const resetLikesOrder = useLibraryLocalStore((s) => s.resetLikesOrder);
+  const tracks = useMemo(
+    () => orderLikes(serverTracks, likesTop, likesBottom),
+    [serverTracks, likesTop, likesBottom],
+  );
+  const customOrder = likesTop.length > 0 || likesBottom.length > 0;
 
   const sentinelRef = useInfiniteScroll(
     !!likesQuery.hasNextPage,
@@ -514,6 +580,17 @@ const LikesTab = React.memo(function LikesTab({ filter }: { filter: string }) {
 
   return (
     <div className="min-h-[400px]">
+      {customOrder && !filter && (
+        <div className="flex justify-end mb-2">
+          <button
+            type="button"
+            onClick={resetLikesOrder}
+            className="text-[12px] text-white/45 hover:text-white/80 transition-colors cursor-pointer"
+          >
+            {t('library.resetOrder')}
+          </button>
+        </div>
+      )}
       <div className="flex flex-col gap-1">
         {isLoading && tracks.length === 0 ? (
           <div className="flex justify-center py-20">
@@ -887,10 +964,12 @@ export const Library = React.memo(() => {
     | 'likes'
     | 'following'
     | 'history'
+    | 'superlikes'
+    | 'disliked'
     | null;
-  const [activeTab, setActiveTab] = useState<'playlists' | 'likes' | 'following' | 'history'>(
-    tabParam || 'likes',
-  );
+  const [activeTab, setActiveTab] = useState<
+    'playlists' | 'likes' | 'following' | 'history' | 'superlikes' | 'disliked'
+  >(tabParam || 'likes');
   const [filter, setFilter] = useState('');
 
   // Sync tab from URL param
@@ -907,7 +986,9 @@ export const Library = React.memo(() => {
     { id: 'playlists', label: t('search.playlists') },
     { id: 'likes', label: t('library.likedTracks') },
     { id: 'following', label: t('nav.following') },
+    { id: 'superlikes', label: t('library.superlikes') },
     { id: 'history', label: t('library.history') },
+    { id: 'disliked', label: t('library.dislikes') },
   ] as const;
 
   if (!user) return null;
@@ -991,6 +1072,8 @@ export const Library = React.memo(() => {
       {activeTab === 'following' && <FollowingTab filter={deferredFilter} />}
       {activeTab === 'playlists' && <PlaylistsTab filter={deferredFilter} />}
       {activeTab === 'history' && <HistoryTab />}
+      {activeTab === 'superlikes' && <LocalTracksTab kind="superlikes" filter={deferredFilter} />}
+      {activeTab === 'disliked' && <LocalTracksTab kind="disliked" filter={deferredFilter} />}
     </div>
   );
 });

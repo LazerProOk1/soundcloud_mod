@@ -460,27 +460,6 @@ export function useCurrentTrackHydration() {
   }, [currentTrack?.urn]);
 }
 
-/* ── Feed ──────────────────────────────────────────────────────── */
-
-export function useFeed() {
-  const query = usePagedQuery<FeedItem>({
-    queryKey: ['feed'],
-    url: (page, limit) => pagedUrl('/me/feed', page, limit),
-    limit: 20,
-    staleTime: SHORT_CACHE_MS,
-    maxPages: 8,
-    dedupe: (item) => item.origin?.urn ?? `${item.type}:${item.created_at}`,
-  });
-
-  return {
-    items: query.items,
-    fetchNextPage: query.fetchNextPage,
-    hasNextPage: query.hasNextPage,
-    isFetchingNextPage: query.isFetchingNextPage,
-    isLoading: query.isLoading,
-  };
-}
-
 /* ── Liked tracks ──────────────────────────────────────────────── */
 
 export function useLikedTracks(limit = 30) {

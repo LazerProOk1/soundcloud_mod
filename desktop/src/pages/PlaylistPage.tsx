@@ -53,6 +53,7 @@ import {
   Trash2,
   X,
 } from '../lib/icons';
+import { openTrackMenu } from '../lib/useTrackContextMenu';
 import { useTrackPlay } from '../lib/useTrackPlay';
 import { useAuthStore } from '../stores/auth';
 import { type Track, usePlayerStore } from '../stores/player';
@@ -183,6 +184,7 @@ const SortableTrackRow = React.memo(
 
     return (
       <div
+        onContextMenu={(e) => openTrackMenu(e, track)}
         ref={setNodeRef}
         style={{
           transform: CSS.Transform.toString(transform),
@@ -292,6 +294,7 @@ const TrackRow = React.memo(
 
     return (
       <div
+        onContextMenu={(e) => openTrackMenu(e, track)}
         style={{ contentVisibility: 'auto', containIntrinsicSize: '68px' }}
         className={`group flex items-center gap-3.5 px-4 py-3 rounded-xl transition-all duration-200 ease-[var(--ease-apple)] select-none ${
           isThis ? 'bg-accent/[0.05] ring-1 ring-accent/15' : 'hover:bg-white/[0.03]'

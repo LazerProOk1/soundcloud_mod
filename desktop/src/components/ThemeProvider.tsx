@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { applyInterfaceFont } from '../lib/interface-font';
 import { useSettingsStore } from '../stores/settings';
 
 function hexToRgb(hex: string): string {
@@ -36,6 +37,24 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     root.style.setProperty('--bg-titlebar', `rgba(${bgRgb}, 0.95)`);
     root.style.backgroundColor = bgPrimary;
   }, [bgPrimary]);
+
+  const customCss = useSettingsStore((s) => s.customCss);
+  const customCssEnabled = useSettingsStore((s) => s.customCssEnabled);
+  useEffect(() => {
+    let style = document.getElementById('user-custom-css') as HTMLStyleElement | null;
+    if (!style) {
+      style = document.createElement('style');
+      style.id = 'user-custom-css';
+      document.head.appendChild(style);
+    }
+    style.textContent = customCssEnabled ? customCss : '';
+  }, [customCss, customCssEnabled]);
+
+  const fontName = useSettingsStore((s) => s.customFontName);
+  const fontFile = useSettingsStore((s) => s.customFontFile);
+  useEffect(() => {
+    void applyInterfaceFont(fontName, fontFile);
+  }, [fontName, fontFile]);
 
   return <>{children}</>;
 }

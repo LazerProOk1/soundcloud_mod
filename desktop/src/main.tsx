@@ -7,6 +7,7 @@ import { setupCacheMaintenance } from './lib/cache';
 import { setServerPorts } from './lib/constants';
 import { trackedInvoke as invoke, setupUiWatchdog } from './lib/diagnostics';
 import { queryClient } from './lib/query-client';
+import { initUiScale } from './lib/ui-scale';
 import './index.css';
 import { useSettingsStore } from './stores/settings';
 
@@ -16,13 +17,6 @@ useSettingsStore.persist.onFinishHydration((state) => {
     void changeAppLanguage(state.language);
   }
 });
-
-if (import.meta.env.DEV) {
-  const script = document.createElement('script');
-  script.src = 'https://unpkg.com/react-scan/dist/auto.global.js';
-  script.crossOrigin = 'anonymous';
-  document.head.appendChild(script);
-}
 
 function scheduleAfterFirstPaint(task: () => void) {
   requestAnimationFrame(() => {
@@ -47,20 +41,8 @@ function startDeferredRuntime() {
   });
 }
 
-async function fixWebviewScale() {
-  try {
-    const { getCurrentWindow } = await import('@tauri-apps/api/window');
-    const { getCurrentWebview } = await import('@tauri-apps/api/webview');
-    const monitorScale = await getCurrentWindow().scaleFactor();
-    const webviewDpr = window.devicePixelRatio;
-    if (monitorScale > 1 && webviewDpr < monitorScale * 0.8) {
-      await getCurrentWebview().setZoom(monitorScale / webviewDpr);
-    }
-  } catch {}
-}
-
 async function bootstrap() {
-  await fixWebviewScale();
+  await initUiScale();
   await useSettingsStore.persist.rehydrate();
 
   const settings = useSettingsStore.getState();

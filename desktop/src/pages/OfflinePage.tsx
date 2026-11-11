@@ -21,6 +21,7 @@ import {
 } from '../lib/icons';
 import { getOfflineLikedTracks, getOfflineTracksByUrns } from '../lib/offline-index';
 import { getArtistDisplay } from '../lib/track-display';
+import { openTrackMenu } from '../lib/useTrackContextMenu';
 import { useAppStatusStore } from '../stores/app-status';
 import type { Track } from '../stores/player';
 import { usePlayerStore } from '../stores/player';
@@ -191,12 +192,18 @@ const OfflineTrackRow = React.memo(function OfflineTrackRow({
 
   return (
     <div
+      onContextMenu={(e) => openTrackMenu(e, track)}
       className={`group flex items-center gap-4 rounded-[24px] border px-4 py-3 transition-all duration-300 ease-[var(--ease-apple)] ${
         canPlay
           ? 'border-white/8 bg-white/[0.035] hover:border-white/14 hover:bg-white/[0.06] hover:shadow-[0_4px_24px_rgba(0,0,0,0.15)]'
           : 'border-white/6 bg-white/[0.02] opacity-60'
       }`}
-      style={{ contentVisibility: 'auto', containIntrinsicSize: '82px', backdropFilter: 'blur(20px) saturate(180%)', WebkitBackdropFilter: 'blur(20px) saturate(180%)' }}
+      style={{
+        contentVisibility: 'auto',
+        containIntrinsicSize: '82px',
+        backdropFilter: 'blur(20px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+      }}
     >
       <button
         type="button"

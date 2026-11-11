@@ -100,7 +100,6 @@ export const DynamicBackground = React.memo(({ blendMode = false }: DynamicBackg
           top: '-10vh',
           left: '-10vw',
           filter: 'blur(80px)',
-          willChange: 'transform',
         }}
       />
 
@@ -115,7 +114,6 @@ export const DynamicBackground = React.memo(({ blendMode = false }: DynamicBackg
           bottom: '-8vh',
           right: '-8vw',
           filter: 'blur(90px)',
-          willChange: 'transform',
         }}
       />
 
@@ -130,7 +128,6 @@ export const DynamicBackground = React.memo(({ blendMode = false }: DynamicBackg
           top: '25vh',
           left: '28vw',
           filter: 'blur(100px)',
-          willChange: 'transform',
         }}
       />
 

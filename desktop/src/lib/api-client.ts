@@ -1,12 +1,10 @@
 import { fetch } from '@tauri-apps/plugin-http';
 import { toast } from 'sonner';
 import { useAppStatusStore } from '../stores/app-status';
-import { useSettingsStore } from '../stores/settings';
 import { noteAuthGap, noteRateLimit, noteSuccess } from './auth-recovery';
-import { API_BASE, BYPASS_API_BASE } from './constants';
+import { API_BASE } from './constants';
 import { logHttpError, logHttpFailure, trackAsync } from './diagnostics';
-import { isHealthy, markHealthy, markUnhealthy } from './host-health';
-import { getIsPremium } from './premium-cache';
+import { markHealthy, markUnhealthy } from './host-health';
 
 // ─── Session ────────────────────────────────────────────────
 
@@ -43,18 +41,8 @@ function isAuthPath(path: string): boolean {
 function resolveApiBases(path: string): string[] {
   // Auth paths: always try primary API first, BYPASS as fallback.
   if (isAuthPath(path)) {
-    return isHealthy(API_BASE) ? [API_BASE, BYPASS_API_BASE] : [BYPASS_API_BASE, API_BASE];
+    return [API_BASE];
   }
-
-  const bypass = useSettingsStore.getState().bypassWhitelist;
-  const premium = getIsPremium();
-
-  // Premium + bypass: white first, regular fallback
-  if (bypass && premium) {
-    return isHealthy(BYPASS_API_BASE) ? [BYPASS_API_BASE, API_BASE] : [API_BASE];
-  }
-
-  // Default: regular only
   return [API_BASE];
 }
 
@@ -106,7 +94,8 @@ function handleApiError(err: ApiError): void {
       id: `api-server-error-${err.status}`,
       duration: 4000,
     });
-  } else if (err.status >= 400 && err.status !== 401) {
+  } else if (err.status >= 400 && err.status !== 401 && err.status !== 404) {
+    // 404 = endpoint/resource gone on the backend; not actionable, don't spam toasts.
     try {
       const parsed = JSON.parse(err.body);
       const msg: string = parsed.message || parsed.error || '';
@@ -200,7 +189,9 @@ async function _apiRequestInner<T>(
           continue;
         }
 
-        if (!silent) handleApiError(err);
+        // Background loads (GET) fail quietly — the page shows its own empty/error state.
+        // Only user actions (POST/PUT/DELETE) get a toast.
+        if (!silent && method.toUpperCase() !== 'GET') handleApiError(err);
         console.error(`HTTP ERROR: url: ${path}, `, err);
         throw err;
       }

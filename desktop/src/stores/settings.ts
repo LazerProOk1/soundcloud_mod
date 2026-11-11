@@ -53,6 +53,15 @@ export const THEME_PRESETS: Record<Exclude<ThemePreset, 'custom'>, ThemePresetDe
 };
 
 export interface SettingsState {
+  uiScale: number;
+  setUiScale: (scale: number) => void;
+  customCss: string;
+  setCustomCss: (css: string) => void;
+  customCssEnabled: boolean;
+  setCustomCssEnabled: (v: boolean) => void;
+  customFontName: string;
+  customFontFile: string;
+  setCustomFont: (name: string, file: string) => void;
   accentColor: string;
   bgPrimary: string;
   themePreset: ThemePreset;
@@ -67,9 +76,7 @@ export interface SettingsState {
   eqPreset: string;
   normalizeVolume: boolean;
   highQualityStreaming: boolean;
-  bypassWhitelist: boolean;
   sidebarCollapsed: boolean;
-  floatingComments: boolean;
   startupPage: StartupPage;
   pinnedPlaylists: SidebarPinnedPlaylist[];
   discordRpcEnabled: boolean;
@@ -100,9 +107,7 @@ export interface SettingsState {
   setEqBand: (index: number, gain: number) => void;
   setNormalizeVolume: (enabled: boolean) => void;
   setHighQualityStreaming: (enabled: boolean) => void;
-  setBypassWhitelist: (enabled: boolean) => void;
   toggleSidebar: () => void;
-  setFloatingComments: (v: boolean) => void;
   setStartupPage: (page: StartupPage) => void;
   pinPlaylist: (playlist: SidebarPinnedPlaylist) => void;
   unpinPlaylist: (urn: string) => void;
@@ -130,6 +135,11 @@ const DEFAULTS = {
   backgroundOpacity: 0.15,
   backgroundBlur: 0,
   glassBlur: 40,
+  uiScale: 100,
+  customCss: '',
+  customCssEnabled: true,
+  customFontName: '',
+  customFontFile: '',
   audioCacheLimitMB: 1024,
   language: navigator.language?.split('-')[0] || 'en',
   eqEnabled: false,
@@ -137,9 +147,7 @@ const DEFAULTS = {
   eqPreset: 'flat',
   normalizeVolume: true,
   highQualityStreaming: false,
-  bypassWhitelist: false,
   sidebarCollapsed: false,
-  floatingComments: true,
   startupPage: 'home' as StartupPage,
   pinnedPlaylists: [] as SidebarPinnedPlaylist[],
   discordRpcEnabled: true,
@@ -160,6 +168,10 @@ export const useSettingsStore = create<SettingsState>()(
     (set) => ({
       ...DEFAULTS,
       setAccentColor: (accentColor) => set({ accentColor, themePreset: 'custom' }),
+      setUiScale: (uiScale) => set({ uiScale }),
+      setCustomCss: (customCss) => set({ customCss }),
+      setCustomCssEnabled: (customCssEnabled) => set({ customCssEnabled }),
+      setCustomFont: (customFontName, customFontFile) => set({ customFontName, customFontFile }),
       setBgPrimary: (bgPrimary) => set({ bgPrimary, themePreset: 'custom' }),
       setThemePreset: (id) => {
         if (id === 'custom') {
@@ -186,9 +198,7 @@ export const useSettingsStore = create<SettingsState>()(
         }),
       setNormalizeVolume: (normalizeVolume) => set({ normalizeVolume }),
       setHighQualityStreaming: (highQualityStreaming) => set({ highQualityStreaming }),
-      setBypassWhitelist: (bypassWhitelist) => set({ bypassWhitelist }),
       toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
-      setFloatingComments: (floatingComments) => set({ floatingComments }),
       setStartupPage: (startupPage) => set({ startupPage }),
       pinPlaylist: (playlist) =>
         set((s) => ({
@@ -244,6 +254,11 @@ export const useSettingsStore = create<SettingsState>()(
         } as SettingsState;
       },
       partialize: (s) => ({
+        uiScale: s.uiScale,
+        customCss: s.customCss,
+        customCssEnabled: s.customCssEnabled,
+        customFontName: s.customFontName,
+        customFontFile: s.customFontFile,
         accentColor: s.accentColor,
         bgPrimary: s.bgPrimary,
         themePreset: s.themePreset,
@@ -258,9 +273,7 @@ export const useSettingsStore = create<SettingsState>()(
         eqPreset: s.eqPreset,
         normalizeVolume: s.normalizeVolume,
         highQualityStreaming: s.highQualityStreaming,
-        bypassWhitelist: s.bypassWhitelist,
         sidebarCollapsed: s.sidebarCollapsed,
-        floatingComments: s.floatingComments,
         startupPage: s.startupPage,
         pinnedPlaylists: s.pinnedPlaylists,
         discordRpcEnabled: s.discordRpcEnabled,

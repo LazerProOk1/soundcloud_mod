@@ -2,9 +2,8 @@
  * AmbientMeshBackground — full-screen living mesh gradient.
  *
  * Four enormous colour blobs sit at z-index -50, beneath every UI surface.
- * They breathe slowly — transform-only animations so the GPU compositor handles
- * every frame without touching the pixel pipeline. The static `filter: blur(160px)`
- * is computed once and cached; only the cheap translate/scale changes per-tick.
+ * Static on purpose: animating them forces every backdrop-filter panel above
+ * to re-blur each frame, which pegs the GPU on laptops.
  *
  * Without this layer, Liquid Glass panels have nothing to refract and just look
  * like flat dark rectangles. With it, each glass surface becomes a coloured
@@ -45,8 +44,6 @@ export const AmbientMeshBackground = React.memo(function AmbientMeshBackground()
           background:
             'radial-gradient(ellipse at center, rgba(255,100,20,0.55) 0%, rgba(255,60,0,0.28) 45%, transparent 70%)',
           filter: 'blur(120px)',
-          animation: 'mesh-drift-a 28s ease-in-out infinite',
-          willChange: 'transform',
         }}
       />
 
@@ -65,8 +62,6 @@ export const AmbientMeshBackground = React.memo(function AmbientMeshBackground()
           background:
             'radial-gradient(ellipse at center, rgba(99,102,241,0.45) 0%, rgba(79,70,229,0.22) 50%, transparent 70%)',
           filter: 'blur(140px)',
-          animation: 'mesh-drift-b 38s ease-in-out infinite',
-          willChange: 'transform',
         }}
       />
 
@@ -85,8 +80,6 @@ export const AmbientMeshBackground = React.memo(function AmbientMeshBackground()
           background:
             'radial-gradient(ellipse at center, rgba(34,211,238,0.32) 0%, rgba(6,182,212,0.16) 50%, transparent 70%)',
           filter: 'blur(160px)',
-          animation: 'mesh-drift-c 46s ease-in-out infinite',
-          willChange: 'transform',
         }}
       />
 
@@ -105,8 +98,6 @@ export const AmbientMeshBackground = React.memo(function AmbientMeshBackground()
           background:
             'radial-gradient(ellipse at center, rgba(236,72,153,0.28) 0%, rgba(168,85,247,0.14) 50%, transparent 70%)',
           filter: 'blur(150px)',
-          animation: 'mesh-drift-d 34s ease-in-out infinite',
-          willChange: 'transform',
         }}
       />
 
@@ -125,8 +116,6 @@ export const AmbientMeshBackground = React.memo(function AmbientMeshBackground()
           background:
             'radial-gradient(ellipse at center, rgba(120,80,220,0.30) 0%, rgba(80,60,180,0.14) 50%, transparent 70%)',
           filter: 'blur(140px)',
-          animation: 'mesh-drift-b 52s ease-in-out infinite reverse',
-          willChange: 'transform',
         }}
       />
 

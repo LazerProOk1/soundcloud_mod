@@ -2,7 +2,7 @@ import { fetch } from '@tauri-apps/plugin-http';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchWithAuthFallback } from './api-client';
-import { API_BASE, BYPASS_API_BASE } from './constants';
+import { API_BASE } from './constants';
 
 interface LoginResponse {
   url: string;
@@ -100,11 +100,7 @@ export function useOAuthFlow(
       let data: LoginStatusResponse | null = null;
       try {
         data = await tryPoll(API_BASE);
-      } catch {
-        try {
-          data = await tryPoll(BYPASS_API_BASE);
-        } catch {}
-      }
+      } catch {}
 
       if (!data) {
         // Backend hasn't responded at all — check if we've been waiting too long

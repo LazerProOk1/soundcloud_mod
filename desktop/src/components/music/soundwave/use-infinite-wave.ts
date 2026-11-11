@@ -41,7 +41,9 @@ export function useInfiniteWave(opts: {
     onTracksAdded,
   } = opts;
   const onTracksAddedRef = useRef(onTracksAdded);
-  useEffect(() => { onTracksAddedRef.current = onTracksAdded; }, [onTracksAdded]);
+  useEffect(() => {
+    onTracksAddedRef.current = onTracksAdded;
+  }, [onTracksAdded]);
 
   const ownedRef = useRef<Set<string>>(new Set());
   const cursorRef = useRef<string>(initialCursor ?? '');

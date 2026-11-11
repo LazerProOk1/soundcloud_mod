@@ -693,6 +693,11 @@ async fn download_api(
     } else {
         format!("HTTP {}", status)
     };
+    // 4xx (except timeout / rate limit) won't change on retry — fail fast to the next URL.
+    let code = status.as_u16();
+    if (400..500).contains(&code) && code != 408 && code != 429 {
+        return Err(DownloadError::Fatal(message));
+    }
     Err(DownloadError::Retryable(message))
 }
 

@@ -31,6 +31,7 @@ import {
   Users,
   X,
 } from '../lib/icons';
+import { openTrackMenu } from '../lib/useTrackContextMenu';
 import { useTrackPlay } from '../lib/useTrackPlay';
 import type { Track } from '../stores/player';
 import { useSearchHistoryStore } from '../stores/searchHistory';
@@ -45,6 +46,7 @@ const TrackRow = React.memo(
 
     return (
       <div
+        onContextMenu={(e) => openTrackMenu(e, track)}
         className={`group flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-300 ease-[var(--ease-apple)] ${
           isThis
             ? 'bg-accent/[0.06] ring-1 ring-accent/20 shadow-[inset_0_0_20px_rgba(255,85,0,0.05)]'

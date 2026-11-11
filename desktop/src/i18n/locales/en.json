@@ -205,7 +205,13 @@
     "noMatches": "No matches",
     "noLikedTracks": "No liked tracks yet",
     "notFollowing": "You are not following anyone",
-    "noPlaylists": "No playlists found"
+    "noPlaylists": "No playlists found",
+    "superlikes": "Superlikes",
+    "dislikes": "Dislikes",
+    "noSuperlikes": "No superlikes yet. Right-click a track to add one",
+    "noDislikes": "Tracks you dislike will show up here",
+    "undislike": "Remove dislike",
+    "resetOrder": "Reset my order"
   },
   "home": {
     "goodMorning": "Good morning",
@@ -355,8 +361,6 @@
     "startup": "Startup",
     "startupPageDesc": "Choose which page opens when the app launches",
     "playback": "Playback",
-    "floatingComments": "Floating comments",
-    "floatingCommentsDesc": "Show comments as floating pills during playback",
     "lyricsVisualizer": "Lyrics visualizer",
     "lyricsVisualizerDesc": "Real-time FFT wave behind the fullscreen lyrics. Off by default to save GPU.",
     "discordRpc": "Discord Rich Presence",
@@ -374,7 +378,25 @@
     "bypassWhitelist": "Bypass whitelists",
     "bypassWhitelistDesc": "Alternative routing for network restrictions and outages (Russia)",
     "import": "Import",
-    "importYandex": "Import from Yandex Music"
+    "importYandex": "Import from Yandex Music",
+    "interface": "Interface",
+    "uiScale": "Interface scale",
+    "uiScaleDesc": "Also Ctrl + mouse wheel and Ctrl +/−/0",
+    "uiScaleToast": "Scale {{value}}%",
+    "font": "Font",
+    "fontDesc": "An installed font name or a .ttf/.otf/.woff file",
+    "fontCurrent": "Current: {{name}}",
+    "fontPlaceholder": "e.g. Segoe UI",
+    "fontApply": "Apply",
+    "fontFromFile": "From file…",
+    "fontNotFound": "Font “{{name}}” isn't installed",
+    "fontFileFailed": "Couldn't load the font file",
+    "reset": "Reset",
+    "customCss": "Custom CSS",
+    "customCssDesc": "Styles applied on top of the app after you save",
+    "customCssApply": "Save",
+    "searchPlaceholder": "Search settings…",
+    "searchEmpty": "Nothing found"
   },
   "eq": {
     "title": "Equalizer",
@@ -437,7 +459,9 @@
     "back": "Back",
     "empty": "Nothing here yet",
     "expand": "Read more",
-    "collapse": "Collapse"
+    "collapse": "Collapse",
+    "scrollPrev": "Scroll left",
+    "scrollNext": "Scroll right"
   },
   "star": {
     "title": "Star Subscription",
@@ -595,5 +619,28 @@
     "noAlbums": "No albums",
     "noArtists": "No artists",
     "noMatches": "Nothing matches “{{query}}”"
+  },
+  "trackMenu": {
+    "menuLabel": "Track actions",
+    "playNext": "Play next",
+    "playLast": "Add to end of queue",
+    "playNextDone": "Up next: {{title}}",
+    "playLastDone": "Added to queue: {{title}}",
+    "removeFromQueue": "Remove from queue",
+    "like": "Like",
+    "unlike": "Remove from likes",
+    "addToPlaylist": "Add to playlist",
+    "download": "Download",
+    "goToTrack": "Go to track",
+    "goToArtist": "Go to artist",
+    "copyLink": "Copy link",
+    "copyLabel": "Copy “Artist — Title”",
+    "linkCopied": "Link copied",
+    "labelCopied": "Copied",
+    "copyFailed": "Couldn't copy",
+    "superlike": "Superlike",
+    "unsuperlike": "Remove superlike",
+    "likesTop": "Move to top of likes",
+    "likesBottom": "Move to bottom of likes"
   }
 }

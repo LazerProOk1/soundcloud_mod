@@ -42,6 +42,7 @@ import {
 import { optimisticToggleLike } from '../../lib/likes';
 import { getSleepTimerRemaining, useSleepTimer } from '../../lib/sleep-timer';
 import { getArtistDisplay, useArtistDisplay, useDisplayTitle } from '../../lib/track-display';
+import { useWheelSeek } from '../../lib/useWheelSeek';
 import { useLyricsStore } from '../../stores/lyrics';
 import {
   getEffectivePitchSemitones,
@@ -131,6 +132,21 @@ const DownloadProgressPanel = React.memo(() => {
 
 /* ── Progress Slider ─────────────────────────────────────────── */
 
+function paintProgress(
+  range: HTMLSpanElement | null,
+  thumb: HTMLSpanElement | null,
+  seconds: number,
+) {
+  const d = getDuration();
+  const pct = d > 0 ? (seconds / d) * 100 : 0;
+  if (range) range.style.right = `${100 - pct}%`;
+  const thumbWrapper = thumb?.parentElement;
+  if (thumbWrapper) thumbWrapper.style.left = `${pct}%`;
+}
+
+const tipClass =
+  'pointer-events-none absolute bottom-[calc(100%+7px)] z-[4] -translate-x-1/2 whitespace-nowrap rounded-md bg-black/80 px-1.5 py-0.5 text-[10px] font-medium tabular-nums text-white opacity-0 shadow-lg transition-opacity duration-100';
+
 export const ProgressSlider = React.memo(() => {
   // useEffect+useState instead of useSyncExternalStore — avoids React 19 "forceStoreRerender"
   // loop when audio:tick fires at 60 fps between render and commit phases.
@@ -145,8 +161,19 @@ export const ProgressSlider = React.memo(() => {
   const [syncedValue, setSyncedValue] = useState(0);
 
   const draggingRef = useRef(false);
+  const rootRef = useRef<HTMLSpanElement>(null);
   const rangeRef = useRef<HTMLSpanElement>(null);
   const thumbRef = useRef<HTMLSpanElement>(null);
+  const tipRef = useRef<HTMLSpanElement>(null);
+
+  // Mouse wheel over the bar seeks ±5 s (Shift: ±15 s) with a time tooltip.
+  const wheelTargetRef = useWheelSeek(rootRef, tipRef, {
+    position: getCurrentTime,
+    duration: getDuration,
+    seek,
+    preview: (seconds) => paintProgress(rangeRef.current, thumbRef.current, seconds),
+    dragging: () => draggingRef.current,
+  });
 
   // Reset slider state on track change so Radix doesn't render stale position.
   const currentUrn = usePlayerStore((s) => s.currentTrack?.urn);
@@ -164,15 +191,10 @@ export const ProgressSlider = React.memo(() => {
   // Also keeps syncedValue in sync so Radix computes correct delta on next drag start.
   useEffect(() => {
     return subscribe(() => {
-      if (draggingRef.current) return;
-      const t = getCurrentTime();
-      const d = getDuration();
-      const pct = d > 0 ? (t / d) * 100 : 0;
-      if (rangeRef.current) rangeRef.current.style.right = `${100 - pct}%`;
-      const thumbWrapper = thumbRef.current?.parentElement;
-      if (thumbWrapper) thumbWrapper.style.left = `${pct}%`;
+      if (draggingRef.current || wheelTargetRef.current !== null) return;
+      paintProgress(rangeRef.current, thumbRef.current, getCurrentTime());
     });
-  }, []);
+  }, [wheelTargetRef]);
 
   const displayValue = dragging ? dragValue : syncedValue;
 
@@ -216,6 +238,7 @@ export const ProgressSlider = React.memo(() => {
 
   return (
     <Slider.Root
+      ref={rootRef}
       className="relative flex items-center w-full h-5 cursor-pointer group select-none touch-none"
       value={[displayValue]}
       max={duration || 1}
@@ -233,6 +256,7 @@ export const ProgressSlider = React.memo(() => {
         ref={thumbRef}
         className="block w-3 h-3 rounded-full bg-accent shadow-[0_0_10px_var(--color-accent-glow)] scale-0 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-150 outline-none will-change-transform"
       />
+      <span ref={tipRef} className={tipClass} />
     </Slider.Root>
   );
 });
@@ -269,13 +293,9 @@ export const VolumeSlider = React.memo(({ className = '' }: { className?: string
         }}
       >
         <Slider.Track className="relative h-[3px] grow rounded-full bg-white/[0.08] group-hover:h-[4px] transition-all duration-150">
-          <Slider.Range
-            className="absolute h-full rounded-full bg-accent"
-          />
+          <Slider.Range className="absolute h-full rounded-full bg-accent" />
         </Slider.Track>
-        <Slider.Thumb
-          className="block w-2.5 h-2.5 rounded-full bg-accent transition-all duration-150 outline-none scale-0 opacity-0 group-hover:scale-100 group-hover:opacity-100"
-        />
+        <Slider.Thumb className="block w-2.5 h-2.5 rounded-full bg-accent transition-all duration-150 outline-none scale-0 opacity-0 group-hover:scale-100 group-hover:opacity-100" />
       </Slider.Root>
       {/* 100% tick mark (visual only, outside Slider tree) */}
       <div
@@ -1122,9 +1142,9 @@ const TrackInfoBody = React.memo(function TrackInfoBody({
     <div className="flex items-center gap-3.5 w-[340px] min-w-0 relative">
       {editOpen && <EditTrackInfoDialog track={track} onClose={() => setEditOpen(false)} />}
       <div
-        className="glass-artwork relative w-14 h-14 rounded-[18px] shrink-0 cursor-pointer transition-all duration-300 ease-[var(--ease-spring)] group/art"
+        className="glass-artwork relative w-14 h-14 rounded-[10px] shrink-0 cursor-pointer transition-all duration-300 ease-[var(--ease-spring)] group/art"
         style={{
-          ['--artwork-radius' as string]: '18px',
+          ['--artwork-radius' as string]: '10px',
           boxShadow: glass
             ? `
             0 1px 0 0 rgba(255,255,255,0.24) inset,
@@ -1256,13 +1276,7 @@ const BackgroundGlow = React.memo(() => {
 /* ── NowPlayingBar ───────────────────────────────────────────── */
 
 export const NowPlayingBar = React.memo(
-  ({
-    onQueueToggle,
-    queueOpen,
-  }: {
-    onQueueToggle: () => void;
-    queueOpen: boolean;
-  }) => {
+  ({ onQueueToggle, queueOpen }: { onQueueToggle: () => void; queueOpen: boolean }) => {
     // Hydrate currentTrack if it lacks publisher_metadata.artist (e.g. from SoundWave / playlists)
     useCurrentTrackHydration();
     const [fsOpen, setFsOpen] = useState(false);

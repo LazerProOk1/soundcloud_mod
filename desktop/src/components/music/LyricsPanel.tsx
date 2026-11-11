@@ -1606,6 +1606,8 @@ const FullscreenVisualizer = React.memo(() => {
       }
     };
 
+    // Rust only captures samples / runs FFT while a visualizer is mounted.
+    invoke('audio_set_analyser', { enabled: true }).catch(() => {});
     const unlistenPromise = listen<number[]>('audio:fft', (event) => {
       const bins = event.payload;
       if (!bins || bins.length === 0) return;
@@ -1618,6 +1620,7 @@ const FullscreenVisualizer = React.memo(() => {
     });
 
     return () => {
+      invoke('audio_set_analyser', { enabled: false }).catch(() => {});
       if (rafId) cancelAnimationFrame(rafId);
       ro.disconnect();
       unlistenPromise.then((u) => u());

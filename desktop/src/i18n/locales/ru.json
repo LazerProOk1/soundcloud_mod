@@ -206,7 +206,13 @@
     "noMatches": "Ничего не найдено",
     "noLikedTracks": "Нет любимых треков",
     "notFollowing": "Вы ни на кого не подписаны",
-    "noPlaylists": "Плейлисты не найдены"
+    "noPlaylists": "Плейлисты не найдены",
+    "superlikes": "Суперлайки",
+    "dislikes": "Дизлайки",
+    "noSuperlikes": "Суперлайков пока нет. Поставь через ПКМ по треку",
+    "noDislikes": "Здесь будут треки, которые ты дизлайкнешь",
+    "undislike": "Убрать дизлайк",
+    "resetOrder": "Сбросить свой порядок"
   },
   "home": {
     "goodMorning": "Доброе утро",
@@ -361,10 +367,8 @@
     "startup": "Запуск",
     "startupPageDesc": "Какая страница должна открываться при старте приложения",
     "playback": "Воспроизведение",
-    "floatingComments": "Плавающие комментарии",
     "lyricsVisualizer": "Визуализатор в лирике",
     "lyricsVisualizerDesc": "FFT-волна по биту трека на фоне фуллскрин лирики. По умолчанию выключено.",
-    "floatingCommentsDesc": "Показывать комментарии как всплывающие пилюли во время воспроизведения",
     "discordRpc": "Discord Rich Presence",
     "discordRpcDesc": "Показывать текущий статус прослушивания SoundCloud в Discord",
     "discordRpcMode": "Что отображать",
@@ -380,7 +384,25 @@
     "bypassWhitelist": "Обход белых списков",
     "bypassWhitelistDesc": "Альтернативная маршрутизация при блокировках и отключениях интернета",
     "import": "Импорт",
-    "importYandex": "Импорт из Yandex Music"
+    "importYandex": "Импорт из Yandex Music",
+    "interface": "Интерфейс",
+    "uiScale": "Масштаб интерфейса",
+    "uiScaleDesc": "Также Ctrl + колесо мыши и Ctrl +/−/0",
+    "uiScaleToast": "Масштаб {{value}}%",
+    "font": "Шрифт",
+    "fontDesc": "Название установленного шрифта или файл .ttf/.otf/.woff",
+    "fontCurrent": "Сейчас: {{name}}",
+    "fontPlaceholder": "Например, Segoe UI",
+    "fontApply": "Применить",
+    "fontFromFile": "Из файла…",
+    "fontNotFound": "Шрифт «{{name}}» не найден в системе",
+    "fontFileFailed": "Не удалось загрузить файл шрифта",
+    "reset": "Сбросить",
+    "customCss": "Свой CSS",
+    "customCssDesc": "Стили поверх приложения, применяются после сохранения",
+    "customCssApply": "Сохранить",
+    "searchPlaceholder": "Поиск по настройкам…",
+    "searchEmpty": "Ничего не нашлось"
   },
   "eq": {
     "title": "Эквалайзер",
@@ -443,7 +465,9 @@
     "back": "Назад",
     "empty": "Здесь пока пусто",
     "expand": "Подробнее",
-    "collapse": "Свернуть"
+    "collapse": "Свернуть",
+    "scrollPrev": "Листать влево",
+    "scrollNext": "Листать вправо"
   },
   "star": {
     "title": "Подписка Star",
@@ -609,5 +633,28 @@
     "noAlbums": "Альбомов пока нет",
     "noArtists": "Артистов пока нет",
     "noMatches": "Ничего не нашлось по «{{query}}»"
+  },
+  "trackMenu": {
+    "menuLabel": "Действия с треком",
+    "playNext": "Играть следующим",
+    "playLast": "В конец очереди",
+    "playNextDone": "Следующим: {{title}}",
+    "playLastDone": "В конце очереди: {{title}}",
+    "removeFromQueue": "Убрать из очереди",
+    "like": "Нравится",
+    "unlike": "Убрать из любимых",
+    "addToPlaylist": "Добавить в плейлист",
+    "download": "Скачать",
+    "goToTrack": "Открыть трек",
+    "goToArtist": "Перейти к артисту",
+    "copyLink": "Копировать ссылку",
+    "copyLabel": "Копировать «Артист — Название»",
+    "linkCopied": "Ссылка скопирована",
+    "labelCopied": "Скопировано",
+    "copyFailed": "Не удалось скопировать",
+    "superlike": "Суперлайк",
+    "unsuperlike": "Убрать суперлайк",
+    "likesTop": "Наверх в любимых",
+    "likesBottom": "Вниз в любимых"
   }
 }

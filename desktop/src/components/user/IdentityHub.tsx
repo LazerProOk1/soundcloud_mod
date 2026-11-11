@@ -136,19 +136,7 @@ export function IdentityHub({
 
           <div className="flex flex-wrap items-center gap-3 pt-1 justify-center lg:justify-start">
             {!isOwnProfile && <FollowBtn userUrn={user.urn} aura={aura} />}
-            {user.permalink_url && (
-              <div
-                className="h-11 px-1 inline-flex items-center rounded-full"
-                style={{
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '0.5px solid rgba(255,255,255,0.08)',
-                  backdropFilter: 'blur(20px)',
-                  WebkitBackdropFilter: 'blur(20px)',
-                }}
-              >
-                <CopyLinkButton url={user.permalink_url} />
-              </div>
-            )}
+            {user.permalink_url && <CopyLinkButton url={user.permalink_url} />}
             {hasStar && isOwnProfile && (
               <AuraPicker
                 aura={aura}

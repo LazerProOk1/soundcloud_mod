@@ -4,16 +4,16 @@ import type { StateStorage } from 'zustand/middleware';
  *
  * Primary: localStorage — synchronous, always reliable in WebView2.
  * Tauri's WebView2 persists localStorage in
- *   %LOCALAPPDATA%\com.soundcloud.desktop\EBWebView\...
+ *   %LOCALAPPDATA%\com.lazerprook1.soundcloudmod\EBWebView\...
  * so data survives between app launches automatically.
  *
  * Secondary (async, fire-and-forget): also write a JSON file to
- *   %APPDATA%\com.soundcloud.desktop\<name>.json
+ *   %APPDATA%\com.lazerprook1.soundcloudmod\<name>.json
  * for human-readable backup / cross-profile portability.        */
 
 const LS_PREFIX = '__sc_store_';
 
-/** Write a backup copy to %APPDATA%\com.soundcloud.desktop\ (best-effort). */
+/** Write a backup copy to %APPDATA%\com.lazerprook1.soundcloudmod\ (best-effort). */
 async function writeFileBackup(name: string, value: string): Promise<void> {
   try {
     const { writeTextFile, mkdir, BaseDirectory } = await import('@tauri-apps/plugin-fs');

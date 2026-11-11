@@ -149,9 +149,7 @@ const GenreDiscover = React.memo(function GenreDiscover({ likedTracks }: { liked
                 type="button"
                 onClick={() => setActiveGenre(g)}
                 className={`glass-pill px-4 py-1.5 text-[12px] font-medium capitalize ${
-                  selectedGenre === g
-                    ? 'text-white/92'
-                    : 'text-white/45 !bg-white/[0.04]'
+                  selectedGenre === g ? 'text-white/92' : 'text-white/45 !bg-white/[0.04]'
                 }`}
               >
                 {g}

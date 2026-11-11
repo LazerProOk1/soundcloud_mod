@@ -7,6 +7,7 @@ import { useShallow } from 'zustand/shallow';
 import { art, dur } from '../../lib/formatters';
 import { GripVertical, pauseTextWhite12, playIcon32, Trash2, X } from '../../lib/icons';
 import { getArtistDisplay, useArtistDisplay, useDisplayTitle } from '../../lib/track-display';
+import { openTrackMenu } from '../../lib/useTrackContextMenu';
 import { usePlayerStore } from '../../stores/player';
 import { UploadKindDot } from './UploadKindDot';
 
@@ -95,6 +96,7 @@ const QueueRow = React.memo(function QueueRow({
 
   return (
     <div
+      onContextMenu={(e) => openTrackMenu(e, track, absIdx)}
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       className={`flex items-center gap-3 px-3 py-2 group select-none ${

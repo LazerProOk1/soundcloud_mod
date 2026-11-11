@@ -38,6 +38,8 @@ pub struct AnalyserBuffer {
     samples: Mutex<VecDeque<f32>>,
     pub sample_rate: AtomicU32,
     pub running: AtomicBool,
+    /// Only true while a visualizer is on screen; otherwise no sample capture and no FFT.
+    pub enabled: AtomicBool,
 }
 
 impl AnalyserBuffer {
@@ -46,6 +48,7 @@ impl AnalyserBuffer {
             samples: Mutex::new(VecDeque::with_capacity(RING_CAPACITY)),
             sample_rate: AtomicU32::new(44_100),
             running: AtomicBool::new(true),
+            enabled: AtomicBool::new(false),
         })
     }
 }
@@ -92,6 +95,9 @@ impl<S: Source<Item = f32>> Iterator for AnalyserSource<S> {
             self.accum = 0.0;
 
             // try_lock — if FFT thread is reading, just drop this frame.
+            if !self.buffer.enabled.load(Ordering::Relaxed) {
+                return Some(sample);
+            }
             if let Ok(mut q) = self.buffer.samples.try_lock() {
                 if q.len() >= RING_CAPACITY {
                     let drop_n = q.len() - RING_CAPACITY + 1;
@@ -151,6 +157,9 @@ fn run_fft_loop(app: AppHandle, buffer: Arc<AnalyserBuffer>) {
         std::thread::sleep(Duration::from_millis(FFT_INTERVAL_MS));
         if !buffer.running.load(Ordering::Relaxed) {
             break;
+        }
+        if !buffer.enabled.load(Ordering::Relaxed) {
+            continue;
         }
 
         let snapshot: Option<Vec<f32>> = {

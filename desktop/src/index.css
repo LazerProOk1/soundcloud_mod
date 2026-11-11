@@ -1303,78 +1303,6 @@ body.mini #root::after {
    ONLY transform (translate + scale) — compositor thread, no pixel cost.
    Each blob has a unique trajectory so they never perfectly align.        */
 
-@keyframes mesh-drift-a {
-  0% {
-    transform: translate(0, 0) scale(1);
-  }
-  25% {
-    transform: translate(6%, 8%) scale(1.08);
-  }
-  50% {
-    transform: translate(12%, 4%) scale(0.94);
-  }
-  75% {
-    transform: translate(4%, -6%) scale(1.04);
-  }
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-}
-
-@keyframes mesh-drift-b {
-  0% {
-    transform: translate(0, 0) scale(1);
-  }
-  30% {
-    transform: translate(-8%, 6%) scale(1.1);
-  }
-  60% {
-    transform: translate(-4%, -8%) scale(0.92);
-  }
-  80% {
-    transform: translate(5%, -3%) scale(1.06);
-  }
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-}
-
-@keyframes mesh-drift-c {
-  0% {
-    transform: translate(0, 0) scale(1);
-  }
-  20% {
-    transform: translate(10%, -5%) scale(0.96);
-  }
-  50% {
-    transform: translate(6%, 8%) scale(1.12);
-  }
-  70% {
-    transform: translate(-4%, 4%) scale(0.98);
-  }
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-}
-
-@keyframes mesh-drift-d {
-  0% {
-    transform: translate(0, 0) scale(1);
-  }
-  35% {
-    transform: translate(-6%, -8%) scale(1.06);
-  }
-  65% {
-    transform: translate(8%, -4%) scale(0.95);
-  }
-  85% {
-    transform: translate(3%, 6%) scale(1.08);
-  }
-  100% {
-    transform: translate(0, 0) scale(1);
-  }
-}
-
 /* ── Mini-player marquee ─────────────────────────────────────── */
 @keyframes marquee {
   0% {
@@ -1494,102 +1422,10 @@ li {
    GPU texture cache is never invalidated — essentially free.
    prefers-reduced-motion: collapse to no movement.               */
 
-@keyframes db-drift-1 {
-  0% {
-    transform: translate(0, 0);
-  }
-  25% {
-    transform: translate(4%, 6%);
-  }
-  50% {
-    transform: translate(8%, 2%);
-  }
-  75% {
-    transform: translate(3%, -5%);
-  }
-  100% {
-    transform: translate(0, 0);
-  }
-}
-
-@keyframes db-drift-2 {
-  0% {
-    transform: translate(0, 0);
-  }
-  30% {
-    transform: translate(-6%, 5%);
-  }
-  60% {
-    transform: translate(-3%, -7%);
-  }
-  80% {
-    transform: translate(4%, -2%);
-  }
-  100% {
-    transform: translate(0, 0);
-  }
-}
-
-@keyframes db-drift-3 {
-  0% {
-    transform: translate(0, 0);
-  }
-  20% {
-    transform: translate(7%, -4%);
-  }
-  50% {
-    transform: translate(4%, 7%);
-  }
-  70% {
-    transform: translate(-3%, 3%);
-  }
-  100% {
-    transform: translate(0, 0);
-  }
-}
-
-.dynamic-bg-blob-1 {
-  animation: db-drift-1 22s ease-in-out infinite;
-}
-.dynamic-bg-blob-2 {
-  animation: db-drift-2 28s ease-in-out infinite;
-}
-.dynamic-bg-blob-3 {
-  animation: db-drift-3 18s ease-in-out infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .dynamic-bg-blob-1,
-  .dynamic-bg-blob-2,
-  .dynamic-bg-blob-3 {
-    animation: none !important;
-  }
-}
-
 /* ── SoundWave Panel — rotating light rays ───────────────────────
    A conic-gradient disc that rotates slowly behind the panel,
    creating Яндекс Музыка-style spotlight streaks.
    Pure transform: rotate — compositor-only, zero layout.          */
-
-@keyframes sw-rays {
-  from {
-    transform: translate(-50%, -50%) rotate(0deg);
-  }
-  to {
-    transform: translate(-50%, -50%) rotate(360deg);
-  }
-}
-
-.sw-rays-spinner {
-  animation: sw-rays 40s linear infinite;
-  will-change: transform;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .sw-rays-spinner {
-    animation: none !important;
-  }
-}
 
 /* ══════════════════════════════════════════════════════════════
    NO-GLASS MODE — html.no-glass
@@ -1694,3 +1530,28 @@ li {
 
 /* 10. Toaster (App.tsx inline style) — CSS can't reach inline,
        but the container backdrop-filter is removed by rule 1.    */
+
+/* ── Icon strokes ────────────────────────────────────────────
+   Lucide icons are several overlapping strokes. With a translucent
+   colour (text-white/40 etc.) every crossing is painted twice and
+   looks doubled. Pre-blend the colour against the app background so
+   each icon is drawn with one opaque colour — same tint, no seams. */
+svg.lucide {
+  color: rgb(
+    from currentColor calc(r * alpha + 10 * (1 - alpha)) calc(g * alpha + 10 * (1 - alpha))
+      calc(b * alpha + 13 * (1 - alpha)) / 1
+  );
+}
+
+/* ── Track context menu ─────────────────────────────────────── */
+.track-menu {
+  opacity: 0;
+  transform: scale(0.96);
+  transition:
+    opacity 0.16s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.track-menu[data-state='open'] {
+  opacity: 1;
+  transform: scale(1);
+}

@@ -7,6 +7,7 @@ import { useLiquidGlass } from '../../lib/hooks';
 import { ListMusic, ListPlus, playIcon32 } from '../../lib/icons';
 import { recordClusterFeedback, setUrnCluster, useClusterFeedback } from '../../lib/recsFeedback';
 import { useArtistDisplay, useDisplayTitle } from '../../lib/track-display';
+import { openTrackMenu } from '../../lib/useTrackContextMenu';
 import { useTrackPlay } from '../../lib/useTrackPlay';
 import type { Track } from '../../stores/player';
 import { usePlayerStore } from '../../stores/player';
@@ -72,6 +73,7 @@ export const TrackCard = React.memo(
 
     return (
       <div
+        onContextMenu={(e) => openTrackMenu(e, track)}
         ref={cardRef}
         className="group relative select-none"
         style={{

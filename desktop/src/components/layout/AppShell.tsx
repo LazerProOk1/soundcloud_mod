@@ -13,8 +13,10 @@ import { useLyricsStore } from '../../stores/lyrics';
 import { usePlayerStore } from '../../stores/player';
 import { useSettingsStore } from '../../stores/settings';
 import { DynamicBackgroundConnected } from '../DynamicBackground/DynamicBackground';
+import { TrackContextMenu } from '../music/track-menu/TrackContextMenu';
 import { AmbientMeshBackground } from '../ui/AmbientMeshBackground';
 import { NowPlayingBar } from './NowPlayingBar';
+import { ScrollReset } from './ScrollReset';
 import { Sidebar } from './Sidebar';
 import { Titlebar } from './Titlebar';
 
@@ -212,7 +214,6 @@ const AmbientGlow = React.memo(() => {
             contain: 'strict',
             transform: 'translateZ(0)',
             transition: 'background-image 2s ease-out',
-            willChange: 'filter',
           }}
         />
       )}
@@ -243,6 +244,7 @@ const isInputEl = (el: EventTarget | null) =>
 /* ── AppShell ──────────────────────────────────────────────── */
 
 export const AppShell = React.memo(() => {
+  const mainRef = useRef<HTMLElement>(null);
   useLyricsPrefetch();
 
   const location = useLocation();
@@ -400,18 +402,19 @@ export const AppShell = React.memo(() => {
       <DynamicBackgroundConnected />
       <AmbientGlow />
       <Titlebar />
+      <TrackContextMenu />
       <div className="flex flex-1 min-h-0 relative z-10" style={{ isolation: 'isolate' }}>
         <Sidebar />
-        <main className="flex-1 overflow-y-auto overflow-x-hidden min-w-0">
+        <main
+          ref={mainRef}
+          data-ui="main"
+          className="flex-1 overflow-y-auto overflow-x-hidden min-w-0"
+        >
+          <ScrollReset target={mainRef} />
           <StableOutlet />
         </main>
       </div>
-      {!isOnSoundwave && (
-        <NowPlayingBar
-          onQueueToggle={onQueueToggle}
-          queueOpen={queueOpen}
-        />
-      )}
+      {!isOnSoundwave && <NowPlayingBar onQueueToggle={onQueueToggle} queueOpen={queueOpen} />}
       {queueOpen && (
         <Suspense fallback={null}>
           <QueuePanel open={queueOpen} onClose={onQueueClose} />

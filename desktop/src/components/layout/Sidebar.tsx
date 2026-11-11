@@ -8,15 +8,12 @@ import {
   AudioLines,
   Clock,
   Compass,
-  Disc3,
   Download,
   Globe,
   Home,
   Library,
   ListMusic,
   MapPin,
-  PanelLeftClose,
-  PanelLeftOpen,
   Search,
   Settings,
 } from '../../lib/icons';
@@ -41,11 +38,10 @@ const navItems = [
 export const Sidebar = React.memo(() => {
   const { t, i18n } = useTranslation();
   const user = useAuthStore((s) => s.user);
-  const { collapsed, pinnedPlaylists, toggleSidebar } = useSettingsStore(
+  const { collapsed, pinnedPlaylists } = useSettingsStore(
     useShallow((s) => ({
       collapsed: s.sidebarCollapsed,
       pinnedPlaylists: s.pinnedPlaylists,
-      toggleSidebar: s.toggleSidebar,
     })),
   );
   const toggleLanguage = () => {
@@ -63,56 +59,7 @@ export const Sidebar = React.memo(() => {
         borderRight: '1px solid rgba(255,255,255,0.055)',
       }}
     >
-      {/* Logo / branding + collapse toggle */}
-      <div
-        className={`flex items-center shrink-0 border-b border-white/[0.04] h-10 ${collapsed ? 'justify-center px-3' : 'px-3 gap-2'}`}
-      >
-        <Disc3
-          size={14}
-          strokeWidth={2}
-          className="shrink-0"
-          style={{
-            color: 'var(--color-accent)',
-            filter:
-              'drop-shadow(0 0 5px var(--color-accent-glow)) drop-shadow(0 0 2px var(--color-accent-glow))',
-          }}
-        />
-        {!collapsed && (
-          <span
-            className="text-[12px] truncate flex-1 min-w-0"
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontWeight: 800,
-              letterSpacing: '-0.04em',
-              WebkitFontSmoothing: 'antialiased',
-              textRendering: 'optimizeLegibility',
-              fontSynthesis: 'none',
-              background:
-                'linear-gradient(90deg, var(--color-accent) 0%, rgba(255,255,255,0.78) 100%)',
-              backgroundClip: 'text',
-              WebkitBackgroundClip: 'text',
-              color: 'transparent',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
-            SoundCloud
-          </span>
-        )}
-        <button
-          type="button"
-          onClick={toggleSidebar}
-          title={t(collapsed ? 'nav.expand' : 'nav.collapse')}
-          className="shrink-0 w-6 h-6 flex items-center justify-center rounded-lg text-white/30 hover:text-white/70 hover:bg-white/[0.07] transition-all duration-200 cursor-pointer"
-        >
-          {collapsed ? (
-            <PanelLeftOpen size={14} strokeWidth={1.8} />
-          ) : (
-            <PanelLeftClose size={14} strokeWidth={1.8} />
-          )}
-        </button>
-      </div>
-
-      <nav className="flex flex-col gap-0.5 px-2 pt-1">
+      <nav className="flex flex-col gap-0.5 px-2 pt-2">
         {navItems.map((item) => (
           <NavLink
             key={item.to}
@@ -120,35 +67,26 @@ export const Sidebar = React.memo(() => {
             title={collapsed ? t(item.label) : undefined}
             style={({ isActive }) =>
               isActive
-                ? { background: 'color-mix(in srgb, var(--color-accent) 14%, transparent)' }
+                ? {
+                    background: 'rgba(255,255,255,0.075)',
+                    boxShadow:
+                      'inset 0 1px 0 rgba(255,255,255,0.12), inset 0 0 0 0.5px rgba(255,255,255,0.06)',
+                  }
                 : undefined
             }
             className={({ isActive }) =>
               `relative flex items-center gap-3 rounded-xl text-[13px] font-medium transition-all duration-200 ease-[var(--ease-apple)] ${
                 collapsed ? 'justify-center px-0 py-2' : 'px-3 py-2'
               } ${
-                isActive
-                  ? 'text-white/92'
-                  : 'text-white/38 hover:text-white/72 hover:bg-white/[0.04]'
+                isActive ? 'text-white' : 'text-white/55 hover:text-white/85 hover:bg-white/[0.05]'
               }`
             }
           >
             {({ isActive }) => (
               <>
-                {/* Left indicator — indigo UI accent (noble, not orange) */}
-                {isActive && !collapsed && (
-                  <span
-                    className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[18px] rounded-r-full"
-                    style={{
-                      background:
-                        'linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent-glow) 100%)',
-                      boxShadow: '0 0 10px var(--color-accent-glow), 0 0 3px var(--color-accent)',
-                    }}
-                  />
-                )}
                 <item.icon
                   size={18}
-                  strokeWidth={1.8}
+                  strokeWidth={2}
                   style={isActive ? { color: 'var(--color-accent)' } : undefined}
                 />
                 {!collapsed && t(item.label)}
@@ -171,31 +109,23 @@ export const Sidebar = React.memo(() => {
           title={collapsed ? t('library.history') : undefined}
           style={({ isActive }) =>
             isActive
-              ? { background: 'color-mix(in srgb, var(--color-accent) 14%, transparent)' }
+              ? {
+                  background: 'rgba(255,255,255,0.075)',
+                  boxShadow:
+                    'inset 0 1px 0 rgba(255,255,255,0.12), inset 0 0 0 0.5px rgba(255,255,255,0.06)',
+                }
               : undefined
           }
           className={({ isActive }) =>
             `relative flex items-center gap-2.5 w-full rounded-xl text-[12px] font-medium transition-all duration-200 ${
               collapsed ? 'justify-center px-0 py-2.5' : 'px-3 py-2.5'
             } ${
-              isActive
-                ? 'text-white/92 shadow-[inset_0_1px_0_rgba(255,255,255,0.18),inset_1px_0_0_rgba(255,255,255,0.09),inset_0_-1px_0_rgba(0,0,0,0.40)]'
-                : 'text-white/40 hover:text-white/70 hover:bg-white/[0.045] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]'
+              isActive ? 'text-white' : 'text-white/55 hover:text-white/85 hover:bg-white/[0.05]'
             }`
           }
         >
           {({ isActive }: { isActive: boolean }) => (
             <>
-              {isActive && !collapsed && (
-                <span
-                  className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[18px] rounded-r-full"
-                  style={{
-                    background:
-                      'linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent-glow) 100%)',
-                    boxShadow: '0 0 10px var(--color-accent-glow), 0 0 3px var(--color-accent)',
-                  }}
-                />
-              )}
               <Clock
                 size={16}
                 strokeWidth={1.8}
@@ -258,31 +188,23 @@ export const Sidebar = React.memo(() => {
           title={collapsed ? t('nav.settings') : undefined}
           style={({ isActive }) =>
             isActive
-              ? { background: 'color-mix(in srgb, var(--color-accent) 14%, transparent)' }
+              ? {
+                  background: 'rgba(255,255,255,0.075)',
+                  boxShadow:
+                    'inset 0 1px 0 rgba(255,255,255,0.12), inset 0 0 0 0.5px rgba(255,255,255,0.06)',
+                }
               : undefined
           }
           className={({ isActive }) =>
             `relative flex items-center gap-2.5 w-full px-3 py-2 rounded-xl text-[12px] font-medium transition-all duration-200 ${
               collapsed ? 'justify-center' : ''
             } ${
-              isActive
-                ? 'text-white/92 shadow-[inset_0_1px_0_rgba(255,255,255,0.18),inset_1px_0_0_rgba(255,255,255,0.09),inset_0_-1px_0_rgba(0,0,0,0.40)]'
-                : 'text-white/40 hover:text-white/70 hover:bg-white/[0.045] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.10)]'
+              isActive ? 'text-white' : 'text-white/55 hover:text-white/85 hover:bg-white/[0.05]'
             }`
           }
         >
           {({ isActive }: { isActive: boolean }) => (
             <>
-              {isActive && !collapsed && (
-                <span
-                  className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-[18px] rounded-r-full"
-                  style={{
-                    background:
-                      'linear-gradient(180deg, var(--color-accent) 0%, var(--color-accent-glow) 100%)',
-                    boxShadow: '0 0 10px var(--color-accent-glow), 0 0 3px var(--color-accent)',
-                  }}
-                />
-              )}
               <Settings
                 size={16}
                 strokeWidth={1.8}

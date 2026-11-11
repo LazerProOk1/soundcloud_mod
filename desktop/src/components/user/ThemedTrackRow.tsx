@@ -12,6 +12,7 @@ import {
   playBlack14,
   playWhite14,
 } from '../../lib/icons';
+import { openTrackMenu } from '../../lib/useTrackContextMenu';
 import { useTrackPlay } from '../../lib/useTrackPlay';
 import type { Track } from '../../stores/player';
 import { AddToPlaylistDialog } from '../music/AddToPlaylistDialog';
@@ -34,6 +35,7 @@ function ThemedTrackRowImpl({ track, index, queue, aura }: ThemedTrackRowProps) 
 
   return (
     <div
+      onContextMenu={(e) => openTrackMenu(e, track)}
       className="group flex items-center gap-4 px-4 py-2.5 rounded-2xl transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] select-none"
       style={{
         background: isThis

@@ -1,5 +1,6 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { useEffect, useSyncExternalStore } from 'react';
+import { useLibraryLocalStore } from '../stores/library-local';
 import type { Track } from '../stores/player';
 import { api } from './api';
 import { recordEvent } from './events';
@@ -96,6 +97,7 @@ export async function toggleDislike(
   nowDisliked: boolean,
 ): Promise<void> {
   setDislikedUrn(track.urn, nowDisliked);
+  useLibraryLocalStore.getState().rememberDislike(track, nowDisliked);
   if (nowDisliked) recordEvent('dislike', track.urn);
 
   try {
@@ -110,5 +112,6 @@ export async function toggleDislike(
     qc.invalidateQueries({ queryKey: ['dislikes'] });
   } catch {
     setDislikedUrn(track.urn, !nowDisliked);
+    useLibraryLocalStore.getState().rememberDislike(track, !nowDisliked);
   }
 }

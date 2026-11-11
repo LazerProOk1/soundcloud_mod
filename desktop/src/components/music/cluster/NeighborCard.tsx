@@ -8,6 +8,7 @@ import {
   useClusterFeedback,
 } from '../../../lib/recsFeedback';
 import { getArtistDisplay } from '../../../lib/track-display';
+import { openTrackMenu } from '../../../lib/useTrackContextMenu';
 import { useTrackPlay } from '../../../lib/useTrackPlay';
 import type { Track } from '../../../stores/player';
 import type { ClusterNeighborDto } from './types';
@@ -39,6 +40,7 @@ export const NeighborCard = React.memo(function NeighborCard({ neighbor, track, 
 
   return (
     <button
+      onContextMenu={(e) => openTrackMenu(e, track)}
       type="button"
       onClick={togglePlay}
       className="group relative w-full text-left rounded-[32px] overflow-hidden cursor-pointer transition-all duration-500 ease-[var(--ease-apple)] hover:scale-[1.02] active:scale-[0.99]"

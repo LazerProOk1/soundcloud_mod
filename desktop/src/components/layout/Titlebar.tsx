@@ -5,38 +5,63 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import {
   ChevronLeft,
   ChevronRight,
+  Disc3,
   Fullscreen,
   Minus,
+  PanelLeftClose,
+  PanelLeftOpen,
   PictureInPicture2,
   Square,
   X,
 } from '../../lib/icons';
 import { toggleWindowFullscreen } from '../../lib/window';
 import { useMiniPlayerStore } from '../../stores/mini-player';
+import { useSettingsStore } from '../../stores/settings';
+
+const iconBtn =
+  'w-8 h-8 rounded-lg flex items-center justify-center text-white/55 hover:text-white hover:bg-white/[0.08] transition-colors duration-150 cursor-pointer disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-default';
+
+// Windows-style caption buttons: full bar height, flat, close turns red.
+const capBtn =
+  'w-11 h-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/[0.08] transition-colors duration-150 cursor-pointer';
+
+const Brand = React.memo(() => {
+  const { t } = useTranslation();
+  const collapsed = useSettingsStore((s) => s.sidebarCollapsed);
+  const toggleSidebar = useSettingsStore((s) => s.toggleSidebar);
+  return (
+    <div className="flex items-center gap-1.5" data-tauri-drag-region>
+      <button
+        type="button"
+        onClick={toggleSidebar}
+        title={t(collapsed ? 'nav.expand' : 'nav.collapse')}
+        className={iconBtn}
+      >
+        {collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+      </button>
+      <Disc3 size={16} className="text-accent pointer-events-none" />
+      <span
+        className="text-[13px] text-white/90 pointer-events-none"
+        style={{ fontFamily: 'var(--font-display)', fontWeight: 800, letterSpacing: '-0.02em' }}
+      >
+        SoundCloud
+      </span>
+    </div>
+  );
+});
 
 const NavButtons = React.memo(() => {
   const navigate = useNavigate();
   const location = useLocation();
-
-  // track history length to enable/disable (basic heuristic)
   const canGoBack = location.key !== 'default';
 
   return (
-    <div className="flex items-center gap-0.5 ml-2">
-      <button
-        type="button"
-        disabled={!canGoBack}
-        onClick={() => navigate(-1)}
-        className="w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-150 cursor-pointer disabled:opacity-20 disabled:cursor-default text-white/30 hover:text-white/60 hover:bg-white/[0.06] active:scale-90"
-      >
-        <ChevronLeft size={14} strokeWidth={2.5} />
+    <div className="flex items-center gap-0.5 ml-3">
+      <button type="button" disabled={!canGoBack} onClick={() => navigate(-1)} className={iconBtn}>
+        <ChevronLeft size={18} />
       </button>
-      <button
-        type="button"
-        onClick={() => navigate(1)}
-        className="w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-150 cursor-pointer text-white/30 hover:text-white/60 hover:bg-white/[0.06] active:scale-90"
-      >
-        <ChevronRight size={14} strokeWidth={2.5} />
+      <button type="button" onClick={() => navigate(1)} className={iconBtn}>
+        <ChevronRight size={18} />
       </button>
     </div>
   );
@@ -44,71 +69,61 @@ const NavButtons = React.memo(() => {
 
 export const Titlebar = React.memo(() => {
   const { t } = useTranslation();
-  const minimize = () => getCurrentWindow().minimize();
-  const toggleMaximize = () => getCurrentWindow().toggleMaximize();
-  const toggleFullscreen = () => void toggleWindowFullscreen();
-  const close = () => getCurrentWindow().close();
+  const win = getCurrentWindow();
   const enterMini = useMiniPlayerStore((s) => s.enter);
 
   return (
     <div
-      className="h-10 flex items-center justify-between px-2 select-none shrink-0 relative"
-      style={{
-        borderBottom: '1px solid rgba(255,255,255,0.04)',
-      }}
+      className="h-10 flex items-center justify-between pl-2 select-none shrink-0 border-b border-white/[0.06]"
       data-tauri-drag-region
     >
-      {/* Subtle top glow line */}
-      <div
-        className="absolute bottom-0 left-0 right-0 h-px pointer-events-none"
-        style={{
-          background:
-            'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.06) 30%, rgba(255,255,255,0.06) 70%, transparent 100%)',
-        }}
-      />
       <div className="flex items-center" data-tauri-drag-region>
+        <Brand />
         <NavButtons />
       </div>
 
-      <div className="flex items-center">
+      <div className="flex items-center h-full">
         <button
           type="button"
           title={t('player.miniPlayer')}
           aria-label={t('player.miniPlayer')}
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-white/20 hover:text-white/50 hover:bg-white/[0.04] transition-all duration-150 cursor-pointer"
+          className={iconBtn}
           onClick={() => void enterMini()}
         >
-          <PictureInPicture2 size={12} />
+          <PictureInPicture2 size={15} />
         </button>
         <button
           type="button"
           title={t('kb.fullscreen')}
           aria-label={t('kb.fullscreen')}
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-white/20 hover:text-white/50 hover:bg-white/[0.04] transition-all duration-150 cursor-pointer"
-          onClick={toggleFullscreen}
+          className={`${iconBtn} mr-2`}
+          onClick={() => void toggleWindowFullscreen()}
         >
-          <Fullscreen size={12} />
+          <Fullscreen size={15} />
         </button>
         <button
           type="button"
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-white/20 hover:text-white/50 hover:bg-white/[0.04] transition-all duration-150 cursor-pointer"
-          onClick={minimize}
+          aria-label="Minimize"
+          className={capBtn}
+          onClick={() => win.minimize()}
         >
-          <Minus size={13} />
+          <Minus size={16} />
         </button>
         <button
           type="button"
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-white/20 hover:text-white/50 hover:bg-white/[0.04] transition-all duration-150 cursor-pointer"
-          onClick={toggleMaximize}
+          aria-label="Maximize"
+          className={capBtn}
+          onClick={() => win.toggleMaximize()}
         >
-          <Square size={10} />
+          <Square size={12} />
         </button>
         <button
           type="button"
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-white/20 hover:text-red-400 hover:bg-red-500/10 transition-all duration-150 cursor-pointer"
-          onClick={close}
+          aria-label="Close"
+          className={`${capBtn} hover:!bg-[#c42b1c]`}
+          onClick={() => win.close()}
         >
-          <X size={13} />
+          <X size={16} />
         </button>
       </div>
     </div>

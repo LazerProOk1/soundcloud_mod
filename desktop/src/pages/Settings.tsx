@@ -2,6 +2,7 @@ import { listen } from '@tauri-apps/api/event';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { InterfaceSection } from '../components/settings/InterfaceSection';
 import { LiquidSwitch } from '../components/ui/LiquidSwitch.tsx';
 import { Skeleton } from '../components/ui/Skeleton.tsx';
 import { changeAppLanguage } from '../i18n';
@@ -985,7 +986,6 @@ const ThemeSection = React.memo(function ThemeSection() {
           />
         </div>
       )}
-
     </section>
   );
 });
@@ -1114,16 +1114,12 @@ const StartupSection = React.memo(function StartupSection() {
 
 const PlaybackSection = React.memo(function PlaybackSection() {
   const { t } = useTranslation();
-  const floatingComments = useSettingsStore((s) => s.floatingComments);
-  const setFloatingComments = useSettingsStore((s) => s.setFloatingComments);
   const lyricsVisualizer = useSettingsStore((s) => s.lyricsVisualizer);
   const setLyricsVisualizer = useSettingsStore((s) => s.setLyricsVisualizer);
   const normalizeVolume = useSettingsStore((s) => s.normalizeVolume);
   const setNormalizeVolume = useSettingsStore((s) => s.setNormalizeVolume);
   const highQualityStreaming = useSettingsStore((s) => s.highQualityStreaming);
   const setHighQualityStreaming = useSettingsStore((s) => s.setHighQualityStreaming);
-  const bypassWhitelist = useSettingsStore((s) => s.bypassWhitelist);
-  const setBypassWhitelist = useSettingsStore((s) => s.setBypassWhitelist);
   const crossfadeDuration = useSettingsStore((s) => s.crossfadeDuration);
   const setCrossfadeDuration = useSettingsStore((s) => s.setCrossfadeDuration);
   const discordRpcEnabled = useSettingsStore((s) => s.discordRpcEnabled);
@@ -1137,15 +1133,6 @@ const PlaybackSection = React.memo(function PlaybackSection() {
       <h3 className="text-[15px] font-bold text-white/80 tracking-tight">
         {t('settings.playback')}
       </h3>
-
-      {/* Floating Comments */}
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-[13px] text-white/70 font-medium">{t('settings.floatingComments')}</p>
-          <p className="text-[11px] text-white/30 mt-0.5">{t('settings.floatingCommentsDesc')}</p>
-        </div>
-        <LiquidSwitch checked={floatingComments} onChange={setFloatingComments} />
-      </div>
 
       {/* Lyrics visualizer */}
       <div className="flex items-center justify-between">
@@ -1177,13 +1164,6 @@ const PlaybackSection = React.memo(function PlaybackSection() {
       </div>
 
       {/* Bypass Whitelists */}
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-[13px] text-white/70 font-medium">{t('settings.bypassWhitelist')}</p>
-          <p className="text-[11px] text-white/30 mt-0.5">{t('settings.bypassWhitelistDesc')}</p>
-        </div>
-        <LiquidSwitch checked={bypassWhitelist} onChange={setBypassWhitelist} />
-      </div>
 
       {/* Crossfade */}
       <div className="space-y-3">
@@ -1400,13 +1380,40 @@ const AccountSection = React.memo(function AccountSection() {
 
 export function Settings() {
   const { t } = useTranslation();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [query, setQuery] = useState('');
+  const [nothingFound, setNothingFound] = useState(false);
+
+  // Settings search: hide every section whose text doesn't contain all the typed words.
+  useEffect(() => {
+    const words = query.toLowerCase().split(/\s+/).filter(Boolean);
+    let shown = 0;
+    for (const section of rootRef.current?.querySelectorAll('section') ?? []) {
+      const text = section.textContent?.toLowerCase() ?? '';
+      const match = words.every((w) => text.includes(w));
+      section.hidden = !match;
+      if (match) shown++;
+    }
+    setNothingFound(words.length > 0 && shown === 0);
+  }, [query]);
 
   return (
-    <div className="p-6 pb-4 max-w-2xl mx-auto space-y-6">
+    <div ref={rootRef} className="p-6 pb-4 max-w-2xl mx-auto space-y-6">
       <h1 className="syne text-3xl text-white">{t('settings.title')}</h1>
+      <input
+        type="search"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder={t('settings.searchPlaceholder')}
+        className="w-full px-4 py-2.5 rounded-xl text-[13px] text-white/85 bg-white/[0.04] border border-white/[0.08] outline-none focus:border-[var(--color-accent)]"
+      />
+      {nothingFound && (
+        <p className="py-10 text-center text-[13px] text-white/30">{t('settings.searchEmpty')}</p>
+      )}
       <LanguageSection />
       <CacheSection />
       <ThemeSection />
+      <InterfaceSection />
       <StartupSection />
       <PlaybackSection />
       <AudioDeviceSection />

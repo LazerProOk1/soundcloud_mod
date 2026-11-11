@@ -14,7 +14,9 @@ import { Globe, ListMusic, ListPlus, Loader2, Lock, Plus, X } from '../../lib/ic
 
 interface AddToPlaylistDialogProps {
   trackUrns: string[];
-  children: React.ReactNode;
+  children?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 const PlaylistOption = React.memo(function PlaylistOption({
@@ -140,9 +142,16 @@ const CreatePlaylistForm = React.memo(function CreatePlaylistForm({
 export const AddToPlaylistDialog = React.memo(function AddToPlaylistDialog({
   trackUrns,
   children,
+  open: openProp,
+  onOpenChange,
 }: AddToPlaylistDialogProps) {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = openProp ?? internalOpen;
+  const setOpen = (v: boolean) => {
+    if (openProp === undefined) setInternalOpen(v);
+    onOpenChange?.(v);
+  };
   const [showCreate, setShowCreate] = useState(false);
   const { playlists, isLoading } = useMyPlaylists();
   const addToPlaylist = useAddToPlaylist();
@@ -262,7 +271,7 @@ export const AddToPlaylistDialog = React.memo(function AddToPlaylistDialog({
 
   return (
     <Dialog.Root open={open} onOpenChange={handleOpenChange}>
-      <Dialog.Trigger asChild>{children}</Dialog.Trigger>
+      {children && <Dialog.Trigger asChild>{children}</Dialog.Trigger>}
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] animate-fade-in" />
         <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[70] w-[380px] max-h-[70vh] rounded-[32px] glass border border-white/[0.08] shadow-2xl animate-fade-in-up flex flex-col">

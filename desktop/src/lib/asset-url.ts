@@ -1,7 +1,5 @@
-import { useSettingsStore } from '../stores/settings';
-import { BYPASS_IMAGES_BASE, getProxyPort, IMAGES_BASE } from './constants';
+import { getProxyPort, IMAGES_BASE } from './constants';
 import { isMac } from './platform';
-import { getIsPremium } from './premium-cache';
 
 const WHITELIST = [
   'localhost',
@@ -61,8 +59,7 @@ function buildEncodedPayload(
   bypassCache: boolean,
 ): { encoded: string; target: string } {
   const target = bypassCache ? withCacheBust(url) : url;
-  const bypass = useSettingsStore.getState().bypassWhitelist;
-  const upstreams = bypass && getIsPremium() ? [BYPASS_IMAGES_BASE, IMAGES_BASE] : [IMAGES_BASE];
+  const upstreams = [IMAGES_BASE];
   return {
     encoded: encodeURIComponent(btoa(JSON.stringify([target, ...upstreams]))),
     target,

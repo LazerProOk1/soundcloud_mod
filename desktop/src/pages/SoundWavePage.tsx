@@ -12,25 +12,34 @@
  *   – подсказка-«Вибрация» внизу
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import {
+  ControlVolumeBtn,
+  NowBarDislikeButton,
+  ProgressSlider,
+} from '../components/layout/NowPlayingBar';
+import { useClusterWave } from '../components/music/cluster';
+import { useInfiniteWave } from '../components/music/soundwave/use-infinite-wave';
 import { rgbToCss, useArtworkColor } from '../hooks/useArtworkColor';
 import { api } from '../lib/api';
 import { handlePrev } from '../lib/audio';
 import { art } from '../lib/formatters';
-import { invalidateAllLikesCache, useLikedTracks, useRecommendedTracks, useRelatedPool } from '../lib/hooks';
+import {
+  invalidateAllLikesCache,
+  useLikedTracks,
+  useRecommendedTracks,
+  useRelatedPool,
+} from '../lib/hooks';
 import { Heart, MicVocal, RefreshCw, SkipBack, SkipForward } from '../lib/icons';
 import { isUrnLiked, optimisticToggleLike } from '../lib/likes';
 import { useArtistDisplay, useDisplayTitle } from '../lib/track-display';
+import { useAuthStore } from '../stores/auth';
 import { useLyricsStore } from '../stores/lyrics';
 import { type Track, usePlayerStore } from '../stores/player';
-import { useAuthStore } from '../stores/auth';
 import { useSettingsStore } from '../stores/settings';
-import { ControlVolumeBtn, NowBarDislikeButton, ProgressSlider } from '../components/layout/NowPlayingBar';
-import { useClusterWave } from '../components/music/cluster';
-import { useInfiniteWave } from '../components/music/soundwave/use-infinite-wave';
 
 /* ── Rotating feel-good tips ──────────────────────────────────────── */
 const WAVE_TIPS = [
@@ -140,10 +149,7 @@ export function SoundWavePage() {
   const localRecs = useRecommendedTracks(relatedPool, 40);
 
   const backendWorking = rawClusters.length > 0 || rawAllTracks.length > 0;
-  const hideLikedFilter = useCallback(
-    (tr: Track) => !tr.user_favorite && !isUrnLiked(tr.urn),
-    [],
-  );
+  const hideLikedFilter = useCallback((tr: Track) => !tr.user_favorite && !isUrnLiked(tr.urn), []);
 
   const allTracks = useMemo(() => {
     const base = backendWorking ? rawAllTracks : localRecs;
@@ -322,12 +328,13 @@ export function SoundWavePage() {
       {/* ── Rotating light rays ───────────────────────────────── */}
       <div
         aria-hidden="true"
-        className="sw-rays-spinner absolute pointer-events-none"
+        className="absolute pointer-events-none"
         style={{
           width: '240%',
           height: '240%',
           top: '50%',
           left: '50%',
+          transform: 'translate(-50%, -50%)',
           background: raysGradient,
           borderRadius: '50%',
         }}
@@ -353,7 +360,6 @@ export function SoundWavePage() {
 
       {/* ═══════════════ CONTENT ═══════════════ */}
       <div className="relative z-10 flex flex-col flex-1" style={{ isolation: 'isolate' }}>
-
         {/* ── Header: title + refresh ───────────────────────── */}
         <div className="flex items-center justify-between px-8 pt-8 pb-0 shrink-0">
           <span
@@ -378,10 +384,7 @@ export function SoundWavePage() {
               boxShadow: '0 2px 12px rgba(0,0,0,0.25)',
             }}
           >
-            <RefreshCw
-              size={13}
-              className={isRefreshing || isLoading ? 'animate-spin' : ''}
-            />
+            <RefreshCw size={13} className={isRefreshing || isLoading ? 'animate-spin' : ''} />
             {t('soundwave.updateWave', 'Обновить волну')}
           </button>
         </div>
@@ -415,9 +418,7 @@ export function SoundWavePage() {
           ) : isLoading ? (
             <div className="h-16 w-56 rounded-2xl bg-white/10 animate-pulse" />
           ) : (
-            <p className="text-[18px] text-white/30 font-semibold">
-              {t('soundwave.idleTitle')}
-            </p>
+            <p className="text-[18px] text-white/30 font-semibold">{t('soundwave.idleTitle')}</p>
           )}
         </div>
 
@@ -441,7 +442,7 @@ export function SoundWavePage() {
               width: 220,
               height: 220,
               boxShadow: dom
-                ? `0 24px 72px ${rgbToCss(dom, 0.70)}, 0 6px 18px rgba(0,0,0,0.55)`
+                ? `0 24px 72px ${rgbToCss(dom, 0.7)}, 0 6px 18px rgba(0,0,0,0.55)`
                 : '0 24px 72px rgba(0,0,0,0.55)',
               transition: 'box-shadow 1.4s ease-out',
             }}
@@ -459,10 +460,7 @@ export function SoundWavePage() {
             )}
 
             {/* Permanent dark overlay for play button visibility */}
-            <div
-              className="absolute inset-0"
-              style={{ background: 'rgba(0,0,0,0.22)' }}
-            />
+            <div className="absolute inset-0" style={{ background: 'rgba(0,0,0,0.22)' }} />
 
             {/* Play / Pause button */}
             <div className="absolute inset-0 flex items-center justify-center">
@@ -470,12 +468,14 @@ export function SoundWavePage() {
                 className="w-[64px] h-[64px] rounded-full flex items-center justify-center
                   transition-transform duration-200 group-hover/art:scale-110 active:scale-90"
                 style={{
-                  background: isWaveTrack && isPlaying
-                    ? 'linear-gradient(165deg, rgba(255,255,255,0.98) 0%, rgba(218,218,230,0.93) 100%)'
-                    : 'var(--color-accent)',
-                  boxShadow: isWaveTrack && isPlaying
-                    ? '0 1px 0 rgba(255,255,255,1) inset, 0 6px 20px rgba(0,0,0,0.45)'
-                    : '0 6px 24px var(--color-accent-glow)',
+                  background:
+                    isWaveTrack && isPlaying
+                      ? 'linear-gradient(165deg, rgba(255,255,255,0.98) 0%, rgba(218,218,230,0.93) 100%)'
+                      : 'var(--color-accent)',
+                  boxShadow:
+                    isWaveTrack && isPlaying
+                      ? '0 1px 0 rgba(255,255,255,1) inset, 0 6px 20px rgba(0,0,0,0.45)'
+                      : '0 6px 24px var(--color-accent-glow)',
                   color: isWaveTrack && isPlaying ? 'black' : 'white',
                 }}
               >
@@ -484,7 +484,13 @@ export function SoundWavePage() {
                     <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
                   </svg>
                 ) : (
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" style={{ marginLeft: 3 }}>
+                  <svg
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    style={{ marginLeft: 3 }}
+                  >
                     <path d="M8 5v14l11-7z" />
                   </svg>
                 )}
@@ -517,14 +523,18 @@ export function SoundWavePage() {
                 boxShadow: '0 6px 28px var(--color-accent-glow)',
               }}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style={{ marginLeft: 1 }}>
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                style={{ marginLeft: 1 }}
+              >
                 <path d="M8 5v14l11-7z" />
               </svg>
               Запустить волну
             </button>
-            <p className="text-[11px] text-white/30 select-none">
-              сейчас: {currentTrack.title}
-            </p>
+            <p className="text-[11px] text-white/30 select-none">сейчас: {currentTrack.title}</p>
           </div>
         )}
 

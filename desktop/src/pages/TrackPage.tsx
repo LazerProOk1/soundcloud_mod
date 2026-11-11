@@ -46,6 +46,7 @@ import {
 } from '../lib/icons';
 import { optimisticToggleLike, setLikedUrn, useLiked } from '../lib/likes';
 import { getArtistDisplay, getDisplayTitle, getParticipants } from '../lib/track-display';
+import { openTrackMenu } from '../lib/useTrackContextMenu';
 import { useTrackPlay } from '../lib/useTrackPlay';
 import { useLyricsStore } from '../stores/lyrics';
 import { type Track, usePlayerStore } from '../stores/player';
@@ -373,6 +374,7 @@ const RelatedRow = React.memo(
 
     return (
       <div
+        onContextMenu={(e) => openTrackMenu(e, track)}
         className={`group flex items-center gap-3 p-2.5 rounded-xl transition-all duration-200 ease-[var(--ease-apple)] ${
           isThis ? 'bg-accent/[0.04] ring-1 ring-accent/15' : 'hover:bg-white/[0.03]'
         }`}

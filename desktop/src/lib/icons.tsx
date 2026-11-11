@@ -7,6 +7,8 @@
  */
 import {
   AlertCircle as _AlertCircle,
+  ArrowDownToLine as _ArrowDownToLine,
+  ArrowUpToLine as _ArrowUpToLine,
   AudioLines as _AudioLines,
   Calendar as _Calendar,
   Check as _Check,
@@ -31,8 +33,11 @@ import {
   Library as _Library,
   Link as _Link,
   Link2 as _Link2,
+  ListEnd as _ListEnd,
   ListMusic as _ListMusic,
   ListPlus as _ListPlus,
+  ListStart as _ListStart,
+  ListX as _ListX,
   Loader2 as _Loader2,
   Lock as _Lock,
   MapPin as _MapPin,
@@ -123,7 +128,12 @@ export const Instagram = memo(({ size, className }: { size?: number; className?:
 export const Library = memo(_Library);
 export const LinkIcon = memo(_Link);
 export const ListMusic = memo(_ListMusic);
+export const ArrowDownToLine = memo(_ArrowDownToLine);
+export const ArrowUpToLine = memo(_ArrowUpToLine);
+export const ListEnd = memo(_ListEnd);
 export const ListPlus = memo(_ListPlus);
+export const ListStart = memo(_ListStart);
+export const ListX = memo(_ListX);
 export const Loader2 = memo(_Loader2);
 export const Lock = memo(_Lock);
 export const MapPin = memo(_MapPin);
