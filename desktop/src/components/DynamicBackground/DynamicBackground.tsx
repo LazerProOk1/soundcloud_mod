@@ -55,9 +55,9 @@ export const DynamicBackground = React.memo(({ blendMode = false }: DynamicBackg
     const el = containerRef.current;
     if (!el) return;
     if (colors) {
-      el.style.setProperty('--db-color-1', rgbToCss(colors.dominant, blendMode ? 0.55 : 0.32));
-      el.style.setProperty('--db-color-2', rgbToCss(colors.secondary, blendMode ? 0.45 : 0.26));
-      el.style.setProperty('--db-color-3', rgbToCss(colors.tertiary, blendMode ? 0.4 : 0.22));
+      el.style.setProperty('--db-color-1', rgbToCss(colors.dominant, blendMode ? 0.55 : 0.45));
+      el.style.setProperty('--db-color-2', rgbToCss(colors.secondary, blendMode ? 0.45 : 0.36));
+      el.style.setProperty('--db-color-3', rgbToCss(colors.tertiary, blendMode ? 0.4 : 0.3));
     } else {
       el.style.removeProperty('--db-color-1');
       el.style.removeProperty('--db-color-2');

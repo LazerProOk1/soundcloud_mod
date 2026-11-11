@@ -669,7 +669,7 @@ body.mini #root::after {
 .liquid-panel-heavy {
   position: relative;
   isolation: isolate;
-  background: rgba(6, 6, 9, 0.76);
+  background: rgba(6, 6, 9, 0.55);
   /* Heavy chrome (sidebar, player bar): dense blur + rich saturation */
   backdrop-filter: blur(44px) saturate(190%);
   -webkit-backdrop-filter: blur(44px) saturate(190%);

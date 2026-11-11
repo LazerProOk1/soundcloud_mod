@@ -36,8 +36,8 @@ export const AmbientMeshBackground = React.memo(function AmbientMeshBackground()
       <div
         style={{
           position: 'absolute',
-          top: '-20%',
-          left: '-15%',
+          top: '-10%',
+          left: '-5%',
           width: '70%',
           height: '70%',
           borderRadius: '50%',
@@ -54,8 +54,8 @@ export const AmbientMeshBackground = React.memo(function AmbientMeshBackground()
       <div
         style={{
           position: 'absolute',
-          top: '-10%',
-          right: '-20%',
+          top: '0%',
+          right: '-8%',
           width: '65%',
           height: '65%',
           borderRadius: '50%',
@@ -72,8 +72,8 @@ export const AmbientMeshBackground = React.memo(function AmbientMeshBackground()
       <div
         style={{
           position: 'absolute',
-          bottom: '-15%',
-          left: '-10%',
+          bottom: '-5%',
+          left: '5%',
           width: '60%',
           height: '60%',
           borderRadius: '50%',
@@ -90,8 +90,8 @@ export const AmbientMeshBackground = React.memo(function AmbientMeshBackground()
       <div
         style={{
           position: 'absolute',
-          bottom: '-25%',
-          right: '-15%',
+          bottom: '-10%',
+          right: '-2%',
           width: '58%',
           height: '58%',
           borderRadius: '50%',
@@ -119,13 +119,13 @@ export const AmbientMeshBackground = React.memo(function AmbientMeshBackground()
         }}
       />
 
-      {/* Dark overlay — opacity 0.60 (was 0.70): lets enough ambient colour bleed
+      {/* Dark overlay — 0.38: blobs are static now, so they need to read clearly; lets ambient colour bleed
           through so Liquid Glass panels refract visibly across the full height. */}
       <div
         style={{
           position: 'absolute',
           inset: 0,
-          background: 'rgba(6, 6, 9, 0.60)',
+          background: 'rgba(6, 6, 9, 0.38)',
           pointerEvents: 'none',
         }}
       />

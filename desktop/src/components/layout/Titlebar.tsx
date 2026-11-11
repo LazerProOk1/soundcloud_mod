@@ -74,7 +74,7 @@ export const Titlebar = React.memo(() => {
 
   return (
     <div
-      className="h-10 flex items-center justify-between pl-2 select-none shrink-0 border-b border-white/[0.06]"
+      className="h-10 flex items-center justify-between pl-2 select-none shrink-0"
       data-tauri-drag-region
     >
       <div className="flex items-center" data-tauri-drag-region>
