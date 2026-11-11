@@ -57,6 +57,8 @@ export const Sidebar = React.memo(() => {
       style={{
         width: collapsed ? 56 : 210,
         borderRight: '1px solid rgba(255,255,255,0.055)',
+        // The heavy-glass inset highlight drew a bright line along the top edge.
+        boxShadow: 'none',
       }}
     >
       <nav className="flex flex-col gap-0.5 px-2 pt-2">
@@ -69,8 +71,6 @@ export const Sidebar = React.memo(() => {
               isActive
                 ? {
                     background: 'rgba(255,255,255,0.075)',
-                    boxShadow:
-                      'inset 0 1px 0 rgba(255,255,255,0.12), inset 0 0 0 0.5px rgba(255,255,255,0.06)',
                   }
                 : undefined
             }
@@ -111,8 +111,6 @@ export const Sidebar = React.memo(() => {
             isActive
               ? {
                   background: 'rgba(255,255,255,0.075)',
-                  boxShadow:
-                    'inset 0 1px 0 rgba(255,255,255,0.12), inset 0 0 0 0.5px rgba(255,255,255,0.06)',
                 }
               : undefined
           }
@@ -190,8 +188,6 @@ export const Sidebar = React.memo(() => {
             isActive
               ? {
                   background: 'rgba(255,255,255,0.075)',
-                  boxShadow:
-                    'inset 0 1px 0 rgba(255,255,255,0.12), inset 0 0 0 0.5px rgba(255,255,255,0.06)',
                 }
               : undefined
           }

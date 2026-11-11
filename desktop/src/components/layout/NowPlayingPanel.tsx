@@ -119,7 +119,7 @@ export const NowPlayingPanel = React.memo(function NowPlayingPanel({
     <aside
       data-ui="now-playing"
       className="liquid-panel-heavy shrink-0 w-[340px] h-full overflow-y-auto overflow-x-hidden scrollbar-hide"
-      style={{ borderLeft: '1px solid rgba(255,255,255,0.055)' }}
+      style={{ borderLeft: '1px solid rgba(255,255,255,0.055)', boxShadow: 'none' }}
     >
       <div className="p-4 space-y-4">
         <div className="flex items-center justify-between gap-2">
