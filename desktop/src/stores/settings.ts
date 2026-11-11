@@ -53,6 +53,8 @@ export const THEME_PRESETS: Record<Exclude<ThemePreset, 'custom'>, ThemePresetDe
 };
 
 export interface SettingsState {
+  nowPlayingPanel: boolean;
+  setNowPlayingPanel: (open: boolean) => void;
   uiScale: number;
   setUiScale: (scale: number) => void;
   customCss: string;
@@ -136,6 +138,7 @@ const DEFAULTS = {
   backgroundBlur: 0,
   glassBlur: 40,
   uiScale: 100,
+  nowPlayingPanel: true,
   customCss: '',
   customCssEnabled: true,
   customFontName: '',
@@ -169,6 +172,7 @@ export const useSettingsStore = create<SettingsState>()(
       ...DEFAULTS,
       setAccentColor: (accentColor) => set({ accentColor, themePreset: 'custom' }),
       setUiScale: (uiScale) => set({ uiScale }),
+      setNowPlayingPanel: (nowPlayingPanel) => set({ nowPlayingPanel }),
       setCustomCss: (customCss) => set({ customCss }),
       setCustomCssEnabled: (customCssEnabled) => set({ customCssEnabled }),
       setCustomFont: (customFontName, customFontFile) => set({ customFontName, customFontFile }),
@@ -255,6 +259,7 @@ export const useSettingsStore = create<SettingsState>()(
       },
       partialize: (s) => ({
         uiScale: s.uiScale,
+        nowPlayingPanel: s.nowPlayingPanel,
         customCss: s.customCss,
         customCssEnabled: s.customCssEnabled,
         customFontName: s.customFontName,

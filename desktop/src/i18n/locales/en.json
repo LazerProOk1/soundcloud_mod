@@ -642,5 +642,13 @@
     "unsuperlike": "Remove superlike",
     "likesTop": "Move to top of likes",
     "likesBottom": "Move to bottom of likes"
+  },
+  "nowPlaying": {
+    "title": "Now playing",
+    "hide": "Hide panel",
+    "aboutArtist": "About the artist",
+    "followers": "{{count}} followers",
+    "nextUp": "Next in queue",
+    "openQueue": "Open queue"
   }
 }

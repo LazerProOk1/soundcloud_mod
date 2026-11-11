@@ -16,6 +16,7 @@ import { DynamicBackgroundConnected } from '../DynamicBackground/DynamicBackgrou
 import { TrackContextMenu } from '../music/track-menu/TrackContextMenu';
 import { AmbientMeshBackground } from '../ui/AmbientMeshBackground';
 import { NowPlayingBar } from './NowPlayingBar';
+import { NowPlayingPanel } from './NowPlayingPanel';
 import { ScrollReset } from './ScrollReset';
 import { Sidebar } from './Sidebar';
 import { Titlebar } from './Titlebar';
@@ -260,6 +261,8 @@ export const AppShell = React.memo(() => {
   });
   const onQueueToggle = useCallback(() => setQueueOpen((v) => !v), []);
   const onQueueClose = useCallback(() => setQueueOpen(false), []);
+  const onQueueOpen = useCallback(() => setQueueOpen(true), []);
+  const nowPlayingPanel = useSettingsStore((s) => s.nowPlayingPanel);
   const navigate = useNavigate();
 
   // Keep mutable refs so the keydown handler is registered exactly once and never re-added.
@@ -413,6 +416,7 @@ export const AppShell = React.memo(() => {
           <ScrollReset target={mainRef} />
           <StableOutlet />
         </main>
+        {nowPlayingPanel && !isOnSoundwave && <NowPlayingPanel onOpenQueue={onQueueOpen} />}
       </div>
       {!isOnSoundwave && <NowPlayingBar onQueueToggle={onQueueToggle} queueOpen={queueOpen} />}
       {queueOpen && (

@@ -60,6 +60,7 @@ import { useTrackOverridesStore } from '../../stores/track-overrides';
 import { EqualizerPanel } from '../music/EqualizerPanel';
 import { FullscreenPlayer } from '../music/FullscreenPlayer';
 import { UploadKindDot } from '../music/UploadKindDot';
+import { NowPlayingPanelButton } from './NowPlayingPanel';
 
 /* ── Download Progress Panel ────────────────────────────────── */
 
@@ -1318,6 +1319,7 @@ export const NowPlayingBar = React.memo(
                 <EqBtn />
                 <LyricsBtn />
                 <QueueBtn onClick={onQueueToggle} active={queueOpen} />
+                <NowPlayingPanelButton className={(active) => btnClass(active, 'sm')} />
                 <ControlVolumeBtn size="sm" />
                 <VolumeSlider className="w-[100px]" />
                 <VolumeLabel />

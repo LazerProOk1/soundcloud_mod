@@ -656,5 +656,13 @@
     "unsuperlike": "Убрать суперлайк",
     "likesTop": "Наверх в любимых",
     "likesBottom": "Вниз в любимых"
+  },
+  "nowPlaying": {
+    "title": "Сейчас играет",
+    "hide": "Скрыть панель",
+    "aboutArtist": "Об исполнителе",
+    "followers": "{{count}} подписчиков",
+    "nextUp": "Далее в очереди",
+    "openQueue": "Открыть очередь"
   }
 }

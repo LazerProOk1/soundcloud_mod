@@ -21,6 +21,7 @@ import {
   Compass as _Compass,
   Disc3 as _Disc3,
   Download as _Download,
+  Ellipsis as _Ellipsis,
   ExternalLink as _ExternalLink,
   Eye as _Eye,
   Fullscreen as _Fullscreen,
@@ -48,6 +49,7 @@ import {
   Music as _Music,
   PanelLeftClose as _PanelLeftClose,
   PanelLeftOpen as _PanelLeftOpen,
+  PanelRight as _PanelRight,
   Pause as _Pause,
   Pencil as _Pencil,
   PictureInPicture2 as _PictureInPicture2,
@@ -130,7 +132,9 @@ export const LinkIcon = memo(_Link);
 export const ListMusic = memo(_ListMusic);
 export const ArrowDownToLine = memo(_ArrowDownToLine);
 export const ArrowUpToLine = memo(_ArrowUpToLine);
+export const Ellipsis = memo(_Ellipsis);
 export const ListEnd = memo(_ListEnd);
+export const PanelRight = memo(_PanelRight);
 export const ListPlus = memo(_ListPlus);
 export const ListStart = memo(_ListStart);
 export const ListX = memo(_ListX);
