@@ -6,7 +6,6 @@ import type { Track } from './player';
 /**
  * Library state kept on this device only (the backend has no API for it):
  * superlikes, the list of disliked tracks, and a custom order for liked tracks.
- * Idea from SoundCloud-Desktop (MIT); storage is local in this mod.
  */
 interface LibraryLocalState {
   superlikes: Track[];

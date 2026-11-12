@@ -38,7 +38,7 @@ export async function lrclibGet(
     }
     const res = await fetch(`${BASE}/get?${params}`, {
       method: 'GET',
-      headers: { 'Lrclib-Client': 'SoundCloud-Desktop/1.0' },
+      headers: { 'Lrclib-Client': 'SoundCloud-Mod/1.3' },
       connectTimeout: 5000,
     });
     if (!res.ok) return null;
@@ -61,7 +61,7 @@ export async function lrclibSearch(
     const q = `${artist} ${title}`.trim();
     const res = await fetch(`${BASE}/search?q=${encodeURIComponent(q)}`, {
       method: 'GET',
-      headers: { 'Lrclib-Client': 'SoundCloud-Desktop/1.0' },
+      headers: { 'Lrclib-Client': 'SoundCloud-Mod/1.3' },
       connectTimeout: 5000,
     });
     if (!res.ok) return null;

@@ -1,7 +1,7 @@
 import { appDataDir, join } from '@tauri-apps/api/path';
 import { mkdir, readFile, remove, writeFile } from '@tauri-apps/plugin-fs';
 
-// Adapted from SoundCloud-Desktop (MIT): custom interface font from a file or an installed font.
+// Custom interface font from a file or an installed font.
 
 export const FONT_FILE_ACCEPT = '.ttf,.otf,.woff,.woff2';
 const FONTS_DIR = 'fonts';
