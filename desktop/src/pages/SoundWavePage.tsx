@@ -487,7 +487,23 @@ export function SoundWavePage() {
               onClick={handlePlayPause}
               disabled={allTracks.length === 0 && !isWaveTrack}
               ref={coverRef}
-              style={{ transform: 'scale(calc(1 + var(--bass, 0) * 0.045))' }}
+              style={{
+                // Tilt toward the cursor (like the cards), bass pulse and a slow sway.
+                transform:
+                  'perspective(700px) rotateY(var(--tx, 0deg)) rotateX(var(--ty, 0deg)) translateY(calc(var(--sway, 0) * 1px)) scale(calc(1 + var(--bass, 0) * 0.06))',
+                transition: 'transform 0.12s linear',
+              }}
+              onPointerMove={(e) => {
+                const r = e.currentTarget.getBoundingClientRect();
+                const x = (e.clientX - r.left) / r.width - 0.5;
+                const y = (e.clientY - r.top) / r.height - 0.5;
+                e.currentTarget.style.setProperty('--tx', `${(x * 16).toFixed(2)}deg`);
+                e.currentTarget.style.setProperty('--ty', `${(-y * 16).toFixed(2)}deg`);
+              }}
+              onPointerLeave={(e) => {
+                e.currentTarget.style.setProperty('--tx', '0deg');
+                e.currentTarget.style.setProperty('--ty', '0deg');
+              }}
               className="np-cover-img relative z-10 w-[200px] h-[200px] rounded-xl overflow-hidden bg-white/[0.06] shadow-[0_16px_40px_rgba(0,0,0,0.5)] cursor-pointer disabled:cursor-default"
             >
               {artworkUrl ? (

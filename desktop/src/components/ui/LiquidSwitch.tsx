@@ -32,8 +32,8 @@ export const LiquidSwitch = React.memo(function LiquidSwitch({
       onClick={() => !disabled && onChange(!checked)}
       className="relative shrink-0 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
       style={{
-        width: 44,
-        height: 24,
+        width: 46,
+        height: 26,
         /* No SVG filter — gooey filter causes aliased "ladder" edges at pixel level */
       }}
     >
@@ -47,7 +47,7 @@ export const LiquidSwitch = React.memo(function LiquidSwitch({
           transition: 'background 0.28s var(--ease-apple), box-shadow 0.28s var(--ease-apple)',
           background: checked ? 'var(--color-accent)' : 'rgba(255,255,255,0.07)',
           boxShadow: checked
-            ? '0 1px 0 0 rgba(255,255,255,0.22) inset, 0 -1px 0 0 rgba(0,0,0,0.35) inset, 0 0 0 0.5px var(--color-accent-glow), 0 2px 10px var(--color-accent-glow)'
+            ? '0 1px 0 0 rgba(255,255,255,0.18) inset'
             : '0 1px 3px rgba(0,0,0,0.55) inset, 0 0.5px 0 rgba(255,255,255,0.10) inset, 0 0 0 0.5px rgba(255,255,255,0.05)',
         }}
       />
@@ -57,14 +57,15 @@ export const LiquidSwitch = React.memo(function LiquidSwitch({
         aria-hidden
         style={{
           position: 'absolute',
-          top: 2,
-          /* Spring-slide from 2px (off) to 22px (on) */
-          left: checked ? 22 : 2,
+          top: 3,
+          left: 3,
           width: 20,
           height: 20,
           borderRadius: 9999,
+          /* Slides by transform: whole pixels, no layout rounding, centred in both states */
+          transform: `translateX(${checked ? 20 : 0}px)`,
           transition:
-            'left 0.28s var(--ease-bounce), box-shadow 0.28s var(--ease-apple), background 0.28s var(--ease-apple)',
+            'transform 0.4s var(--spring-bouncy), box-shadow 0.28s var(--ease-apple), background 0.28s var(--ease-apple)',
           background: checked
             ? 'linear-gradient(165deg, rgba(255,255,255,0.98) 0%, rgba(210,213,255,0.95) 100%)'
             : 'linear-gradient(165deg, rgba(255,255,255,0.97) 0%, rgba(235,235,240,0.92) 100%)',
@@ -74,9 +75,8 @@ export const LiquidSwitch = React.memo(function LiquidSwitch({
             0 -1px 0 0 rgba(0,0,0,0.20) inset,
             1px 0 0 0 rgba(255,255,255,0.72) inset,
             -1px 0 0 0 rgba(0,0,0,0.08) inset,
-            /* Depth drop shadow */
-            0 2px 6px rgba(0,0,0,0.38),
-            0 1px 2px rgba(0,0,0,0.22),
+            /* Depth shadow straight down, so the thumb doesn't look shifted */
+            0 1px 3px rgba(0,0,0,0.35),
             /* Frosted halo */
             0 0 0 0.5px rgba(255,255,255,0.55)
           `,

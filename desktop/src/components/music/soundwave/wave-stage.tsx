@@ -18,6 +18,7 @@ export const WaveStage = React.memo(function WaveStage({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const energyRef = useRef(0);
   const bassRef = useRef(0);
+  const highRef = useRef(0);
   const peakRef = useRef(1e-3);
 
   // Music energy from the analyser (only while playing).
@@ -25,15 +26,19 @@ export const WaveStage = React.memo(function WaveStage({
     if (!active) return;
     return subscribeAudioFft((bins) => {
       let low = 0;
+      let high = 0;
       let all = 0;
       for (let i = 0; i < bins.length; i++) {
         all += bins[i];
         if (i < 6) low += bins[i];
+        else if (i > 24) high += bins[i];
       }
       // Self-calibrating: compare against a slowly decaying peak.
       peakRef.current = Math.max(peakRef.current * 0.995, all, 1e-3);
+      const avg = peakRef.current / bins.length;
       energyRef.current = all / peakRef.current;
-      bassRef.current = Math.min(1, low / 6 / (peakRef.current / bins.length) / 3);
+      bassRef.current = Math.min(1, low / 6 / avg / 3);
+      highRef.current = Math.min(1, (high / (bins.length - 25) / avg) * 1.5);
     });
   }, [active]);
 
@@ -46,6 +51,8 @@ export const WaveStage = React.memo(function WaveStage({
     let raf = 0;
     let amp = 0;
     let bass = 0;
+    let high = 0;
+    let kick = 0;
     let phase = 0;
     let last = performance.now();
 
@@ -65,8 +72,13 @@ export const WaveStage = React.memo(function WaveStage({
       // Smooth towards the target so it flows instead of flickering.
       const targetAmp = active ? 0.25 + energyRef.current * 0.75 : 0.12;
       amp += (targetAmp - amp) * Math.min(1, dt * 6);
-      bass += ((active ? bassRef.current : 0) - bass) * Math.min(1, dt * 12);
-      if (!reduced) phase += dt * (active ? 1.1 + amp : 0.35);
+      const nextBass = active ? bassRef.current : 0;
+      // A sudden rise in the bass is a beat: a quick swell that decays.
+      if (nextBass - bass > 0.12) kick = 1;
+      kick = Math.max(0, kick - dt * 3.5);
+      bass += (nextBass - bass) * Math.min(1, dt * 12);
+      high += ((active ? highRef.current : 0) - high) * Math.min(1, dt * 8);
+      if (!reduced) phase += dt * (active ? 1.1 + amp * 1.5 + kick : 0.35);
 
       const duration = getDuration();
       const progress = active && duration > 0 ? Math.min(1, getCurrentTime() / duration) : 0;
@@ -74,12 +86,15 @@ export const WaveStage = React.memo(function WaveStage({
       const layers = 4;
       for (let l = 0; l < layers; l++) {
         const k = l / (layers - 1);
-        const height = h * 0.32 * amp * (1 - k * 0.45);
+        // Inner lines follow the bass (and beats), outer ones the highs.
+        const drive = (1 - k) * (amp + kick * 0.5) + k * (amp * 0.6 + high * 0.8);
+        const height = h * 0.4 * drive * (1 - k * 0.3);
         ctx.beginPath();
         for (let x = 0; x <= w; x += 4) {
           const u = x / w;
-          // Taper to the edges, wider in the middle where the cover stands.
-          const envelope = Math.sin(Math.PI * u) ** 1.5;
+          // Taper to the edges; the swing is biggest beside the cover, where it's visible.
+          const envelope =
+            0.3 * Math.sin(Math.PI * u) + 0.7 * Math.abs(Math.sin(2 * Math.PI * u)) ** 1.2;
           const y =
             mid +
             envelope *
@@ -103,7 +118,12 @@ export const WaveStage = React.memo(function WaveStage({
         ctx.stroke();
       }
 
-      pulseTarget?.current?.style.setProperty('--bass', bass.toFixed(3));
+      const target = pulseTarget?.current;
+      if (target) {
+        target.style.setProperty('--bass', (bass * 0.7 + kick * 0.5).toFixed(3));
+        // Slow float with the music; the cover sways a little.
+        target.style.setProperty('--sway', (Math.sin(phase * 0.6) * (2 + amp * 6)).toFixed(2));
+      }
       if (!reduced || active) raf = requestAnimationFrame(draw);
     };
     raf = requestAnimationFrame(draw);

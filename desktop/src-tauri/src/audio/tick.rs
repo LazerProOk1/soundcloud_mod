@@ -63,10 +63,16 @@ pub fn start_tick_emitter(app: &AppHandle) {
                             let rate = *state.playback_rate.lock().unwrap() as f64;
                             let mut last = state.last_wall_pos_secs.lock().unwrap();
                             let mut song = state.song_pos_secs.lock().unwrap();
-                            // Cap delta to 0.5 s to avoid jumps after device reconnects.
-                            let delta = (wall_pos - *last).clamp(0.0, 0.5);
+                            // A jump in the player clock is a seek or a reconnect, not playback.
+                            // Right after a seek rodio can still report the old position for a
+                            // tick (it refreshes it periodically): counting that jump — even
+                            // capped — added up to 0.5 s per seek, so lyrics drifted ahead after
+                            // every click on a line. Re-anchor instead of adding.
+                            let raw = wall_pos - *last;
                             *last = wall_pos;
-                            *song = (*song + delta * rate).max(0.0);
+                            if (0.0..=0.5).contains(&raw) {
+                                *song = (*song + raw * rate).max(0.0);
+                            }
                             *song
                         };
 
