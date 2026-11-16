@@ -141,3 +141,14 @@ export const resolveAura = (
   }
   return auraById(auraId) ?? DEFAULT_AURA;
 };
+
+/** Deterministic Star aura for artist/album pages when no custom aura is stored. */
+export const artistAuraForId = (id: string | undefined): Aura => {
+  if (!id) return DEFAULT_AURA;
+  let hash = 2166136261;
+  for (let i = 0; i < id.length; i++) {
+    hash ^= id.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return AURAS[(hash >>> 0) % AURAS.length] ?? DEFAULT_AURA;
+};

@@ -9,6 +9,9 @@ const RECENTLY_PLAYED_LIMIT = 60;
 const FOLLOWING_TRACKS_LIMIT = 40;
 /** Max lyrics entries to keep (old ones are evicted by cachedAt). */
 const LYRICS_CACHE_LIMIT = 500;
+/** Max unreferenced tracks to retain in tracksByUrn (beyond liked/following/recent). */
+const EXTRA_TRACKS_LIMIT = 600;
+const PERSIST_DEBOUNCE_MS = 1500;
 
 export interface CachedLyrics {
   lines: LyricLine[] | null;
@@ -38,7 +41,31 @@ const EMPTY_INDEX: OfflineIndex = {
 let indexCache: OfflineIndex | null = null;
 let loadPromise: Promise<OfflineIndex> | null = null;
 let persistTimer: ReturnType<typeof setTimeout> | null = null;
+let persistPromise: Promise<void> = Promise.resolve();
 let dirReady: Promise<void> | null = null;
+
+function pruneTracksByUrn(index: OfflineIndex) {
+  const keys = Object.keys(index.tracksByUrn);
+  if (keys.length <= EXTRA_TRACKS_LIMIT) return;
+
+  const pinned = new Set([...index.likedUrns, ...index.followingUrns, ...index.recentlyPlayedUrns]);
+
+  let unpinnedCount = 0;
+  for (const key of keys) {
+    if (!pinned.has(key)) unpinnedCount++;
+  }
+
+  let toRemove = unpinnedCount - EXTRA_TRACKS_LIMIT;
+  if (toRemove <= 0) return;
+
+  for (const key of keys) {
+    if (toRemove <= 0) break;
+    if (!pinned.has(key)) {
+      delete index.tracksByUrn[key];
+      toRemove--;
+    }
+  }
+}
 
 function ensureDir() {
   if (!dirReady) {
@@ -105,10 +132,13 @@ function schedulePersist() {
     persistTimer = null;
     if (!indexCache) return;
 
-    void ensureDir().then(() =>
-      writeTextFile(INDEX_PATH, JSON.stringify(indexCache), { baseDir: BASE_DIR }).catch(() => {}),
-    );
-  }, 120);
+    pruneTracksByUrn(indexCache);
+    const payload = JSON.stringify(indexCache);
+    persistPromise = persistPromise
+      .then(() => ensureDir())
+      .then(() => writeTextFile(INDEX_PATH, payload, { baseDir: BASE_DIR }))
+      .catch(() => {});
+  }, PERSIST_DEBOUNCE_MS);
 }
 
 export async function rememberTracks(tracks: Track[]) {

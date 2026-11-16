@@ -2,11 +2,13 @@ import { listen } from '@tauri-apps/api/event';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { AboutSection } from '../components/settings/AboutSection';
 import { InterfaceSection } from '../components/settings/InterfaceSection';
 import { LiquidSwitch } from '../components/ui/LiquidSwitch.tsx';
 import { Skeleton } from '../components/ui/Skeleton.tsx';
 import { changeAppLanguage } from '../i18n';
 import { switchAudioDevice } from '../lib/audio';
+import { downloadProfileBackup, restoreProfileBackupFromText } from '../lib/backup';
 import {
   cacheLikedTracks,
   cancelCacheLikes,
@@ -25,7 +27,8 @@ import {
   saveWallpaperFromBuffer,
 } from '../lib/cache';
 import { trackedInvoke } from '../lib/diagnostics';
-import { Download, Globe, Link, Loader2, Pipette, Trash2, X } from '../lib/icons';
+import { Download, Globe, Link, Loader2, Pipette, Trash2, Upload, X } from '../lib/icons';
+import { PRESET_WALLPAPERS } from '../lib/wallpapers';
 import { useAuthStore } from '../stores/auth';
 import {
   type DiscordRpcMode,
@@ -191,6 +194,7 @@ const CacheSection = React.memo(function CacheSection() {
   const [clearingAudio, setClearingAudio] = useState(false);
   const [clearingImages, setClearingImages] = useState(false);
   const [clearingLiked, setClearingLiked] = useState(false);
+  const [clearingTemp, setClearingTemp] = useState(false);
   const [cachingLikes, setCachingLikes] = useState(false);
   const [progress, setProgress] = useState<{
     done: number;
@@ -295,6 +299,20 @@ const CacheSection = React.memo(function CacheSection() {
     }
   }, [t]);
 
+  const handleClearTempCache = useCallback(async () => {
+    setClearingTemp(true);
+    try {
+      await Promise.all([clearCache(), clearImageCache()]);
+      setAudioSize(0);
+      setImagesSize(0);
+      toast.success(t('settings.tempCacheCleared'));
+    } catch {
+      toast.error(t('common.error'));
+    } finally {
+      setClearingTemp(false);
+    }
+  }, [t]);
+
   const handleCacheLikes = useCallback(async () => {
     setCachingLikes(true);
     try {
@@ -348,14 +366,27 @@ const CacheSection = React.memo(function CacheSection() {
       ? Math.min(100, Math.round((progress.done / progress.total) * 100))
       : 0;
 
+  const tempSize = (audioSize ?? 0) + (imagesSize ?? 0);
+
   return (
     <section className="glass-card p-6 space-y-2">
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between gap-3 mb-2">
         <h3 className="text-[15px] font-bold text-white/80 tracking-tight">
           {t('settings.cache')}
         </h3>
 
-        <div className="min-w-[80px] flex justify-end">
+        <div className="flex items-center gap-3 min-w-[80px] justify-end">
+          {tempSize > 0 && (
+            <button
+              type="button"
+              onClick={handleClearTempCache}
+              disabled={clearingTemp || clearingAudio || clearingImages}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white/[0.05] text-white/65 hover:text-white hover:bg-white/[0.09] border border-white/[0.07] transition-all duration-200 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+            >
+              {clearingTemp ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />}
+              {t('settings.clearTempCache')}
+            </button>
+          )}
           {audioSize !== null && imagesSize !== null && likedSize !== null ? (
             <span className="text-[12px] text-white/30 tabular-nums">
               {t('settings.total')}: {formatBytes(totalSize)}
@@ -555,6 +586,32 @@ const WallpaperPicker = React.memo(function WallpaperPicker() {
           <span className="text-[10px] text-white/40 font-semibold">{t('settings.none')}</span>
         </button>
 
+        {/* Built-in Liquid Glass preset wallpapers */}
+        {PRESET_WALLPAPERS.map((preset) => {
+          const url = getWallpaperUrl(preset.id);
+          const selected = backgroundImage === preset.id;
+          return (
+            <button
+              key={preset.id}
+              type="button"
+              title={t(preset.labelKey, preset.fallbackLabel)}
+              onClick={() => handleSelect(preset.id)}
+              className={`relative group w-20 h-14 rounded-xl overflow-hidden border-2 transition-all duration-200 cursor-pointer ${
+                selected
+                  ? 'border-white/45 shadow-[0_0_12px_rgba(255,255,255,0.14)]'
+                  : 'border-white/[0.06] hover:border-white/[0.18]'
+              }`}
+            >
+              {url && <img src={url} alt="" className="w-full h-full object-cover" />}
+              {selected && (
+                <div className="absolute inset-0 bg-white/10 flex items-center justify-center">
+                  <div className="w-4 h-4 rounded-full bg-white shadow-lg" />
+                </div>
+              )}
+            </button>
+          );
+        })}
+
         {/* Saved wallpapers */}
         {wallpapers.map((name) => {
           const url = getWallpaperUrl(name);
@@ -739,7 +796,7 @@ function AccentFromWallpaperBtn({
             }
           }
 
-          const hex = '#' + best.map((c) => c.toString(16).padStart(2, '0')).join('');
+          const hex = `#${best.map((c) => c.toString(16).padStart(2, '0')).join('')}`;
           onColor(hex);
           resolve();
         };
@@ -1299,6 +1356,77 @@ const ImportSection = React.memo(function ImportSection() {
 
 const YMImportDialogLazy = React.lazy(() => import('../components/music/YMImportDialog'));
 
+/* ── Backup Section ─────────────────────────────────────── */
+
+const BackupSection = React.memo(function BackupSection() {
+  const { t } = useTranslation();
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const handleExport = useCallback(() => {
+    try {
+      downloadProfileBackup();
+      toast.success(t('settings.backupExported'));
+    } catch {
+      toast.error(t('common.error'));
+    }
+  }, [t]);
+
+  const handleFileChange = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      e.target.value = '';
+      if (!file) return;
+      try {
+        const text = await file.text();
+        if (restoreProfileBackupFromText(text)) {
+          toast.success(t('settings.backupImported'));
+        } else {
+          toast.error(t('settings.backupInvalid'));
+        }
+      } catch {
+        toast.error(t('settings.backupInvalid'));
+      }
+    },
+    [t],
+  );
+
+  return (
+    <section className="glass-card p-6 space-y-4">
+      <div>
+        <h3 className="text-[15px] font-bold text-white/80 tracking-tight">
+          {t('settings.backup')}
+        </h3>
+        <p className="text-[11px] text-white/30 mt-1">{t('settings.backupDesc')}</p>
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          onClick={handleExport}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-[12px] font-semibold bg-white/[0.06] text-white/80 hover:text-white hover:bg-white/[0.1] border border-white/[0.06] hover:border-white/[0.12] transition-all duration-200 cursor-pointer"
+        >
+          <Download size={13} />
+          {t('settings.exportBackup')}
+        </button>
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-[12px] font-semibold bg-white/[0.06] text-white/80 hover:text-white hover:bg-white/[0.1] border border-white/[0.06] hover:border-white/[0.12] transition-all duration-200 cursor-pointer"
+        >
+          <Upload size={13} />
+          {t('settings.importBackup')}
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept=".json,application/json"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+      </div>
+    </section>
+  );
+});
+
 /* ── Account Section ────────────────────────────────────── */
 
 const QrLinkSheetLazy = React.lazy(() =>
@@ -1418,7 +1546,9 @@ export function Settings() {
       <PlaybackSection />
       <AudioDeviceSection />
       <ImportSection />
+      <BackupSection />
       <AccountSection />
+      <AboutSection />
     </div>
   );
 }

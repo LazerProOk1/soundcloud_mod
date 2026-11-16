@@ -15,6 +15,7 @@ import { initSleepTimer } from './lib/sleep-timer';
 import { checkForAppUpdate, type GithubRelease } from './lib/update-check';
 import { getAppMode, useAppStatusStore } from './stores/app-status';
 import { useAuthStore } from './stores/auth';
+import { useCachedUrnsStore } from './stores/cached-urns';
 import { useMiniPlayerStore } from './stores/mini-player';
 import { useSessionExpiryStore } from './stores/session-expiry';
 import { type StartupPage, useSettingsStore } from './stores/settings';
@@ -129,6 +130,7 @@ export default function App() {
   );
 
   const isMini = useMiniPlayerStore((s) => s.isMini);
+  const liquidGlass = useSettingsStore((s) => s.liquidGlass);
   const hasLocalSession = Boolean(sessionId);
   const canUseMainShell = isAuthenticated || hasLocalSession;
   // Toggle body.mini so CSS can make #root transparent (enables real backdrop-filter glass)
@@ -137,13 +139,14 @@ export default function App() {
     document.body.classList.toggle('mini', isMini);
   }, [isMini]);
 
-  // Liquid Glass is always enabled — ensure no-glass class is never present
+  // Respect user's Liquid Glass preference (adds html.no-glass when disabled)
   useEffect(() => {
-    document.documentElement.classList.remove('no-glass');
-  }, []);
+    document.documentElement.classList.toggle('no-glass', !liquidGlass);
+  }, [liquidGlass]);
 
   useEffect(() => {
     useYmImportStore.getState().initBridge();
+    void useCachedUrnsStore.getState().hydrate();
   }, []);
 
   useEffect(() => {

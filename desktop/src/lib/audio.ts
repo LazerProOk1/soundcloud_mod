@@ -1,6 +1,7 @@
 import { listen } from '@tauri-apps/api/event';
 import { toast } from 'sonner';
 import i18n from '../i18n';
+import { useCachedUrnsStore } from '../stores/cached-urns';
 import type { Track } from '../stores/player';
 import { usePlayerStore } from '../stores/player';
 import { useSettingsStore } from '../stores/settings';
@@ -16,6 +17,8 @@ import {
   enforceAudioCacheLimit,
   ensureTrackCached,
   getCacheInfo,
+  markTrackPlayed,
+  removeCachedTrack,
   type TrackCacheInfo,
 } from './cache';
 import { trackedInvoke as invoke } from './diagnostics';
@@ -360,7 +363,7 @@ async function loadTrack(track: Track) {
   fallbackDuration = track.duration / 1000;
   cachedDuration = fallbackDuration;
   cachedTime = 0;
-  usePlayerStore.setState({ downloadProgress: null });
+  usePlayerStore.setState({ downloadProgress: null, isBuffering: true });
   usePlayerStore.getState().setPlaybackTransport(null, null);
   notify();
 
@@ -385,25 +388,33 @@ async function loadTrack(track: Track) {
   try {
     const highQualityStreaming = useSettingsStore.getState().highQualityStreaming;
 
-    // Strategy 1: Cache hit — instant
+    // Strategy 1: Cache hit — instant (evict and re-download if decode fails)
     const cached = await getCacheInfo(urn);
     if (cached?.path) {
       if (gen !== loadGen) return;
-      usePlayerStore.getState().setPlaybackTransport(cached.quality, cached.source);
-      const loadResult = await invoke<{ duration_secs: number | null }>('audio_load_file', {
-        path: cached.path,
-        cacheKey: urn,
-        startPaused: !usePlayerStore.getState().isPlaying,
-      });
-      if (gen !== loadGen) return;
-      if (loadResult?.duration_secs) {
-        fallbackDuration = loadResult.duration_secs;
-        cachedDuration = loadResult.duration_secs;
-        updateMetadata(track, loadResult.duration_secs);
-        notify();
+      useCachedUrnsStore.getState().markCached(urn);
+      try {
+        usePlayerStore.getState().setPlaybackTransport(cached.quality, cached.source);
+        const loadResult = await invoke<{ duration_secs: number | null }>('audio_load_file', {
+          path: cached.path,
+          cacheKey: urn,
+          startPaused: !usePlayerStore.getState().isPlaying,
+        });
+        if (gen !== loadGen) return;
+        void markTrackPlayed(urn).catch(() => {});
+        if (loadResult?.duration_secs) {
+          fallbackDuration = loadResult.duration_secs;
+          cachedDuration = loadResult.duration_secs;
+          updateMetadata(track, loadResult.duration_secs);
+          notify();
+        }
+        afterLoad(track, gen);
+        return;
+      } catch (cacheLoadErr) {
+        if (gen !== loadGen) return;
+        console.warn('[Audio] Cached file decode failed, evicting & re-downloading:', cacheLoadErr);
+        await removeCachedTrack(urn).catch(() => {});
       }
-      afterLoad(track, gen);
-      return;
     }
 
     // Strategy 2: Download full track to cache — Rust picks storage/API internally
@@ -413,7 +424,8 @@ async function loadTrack(track: Track) {
     try {
       cachedInfo = await ensureTrackCached(urn, highQualityStreaming);
     } catch (error) {
-      if (!highQualityStreaming) throw error;
+      // Not every track has an HQ transcoding — fall back to standard quality.
+      if (!highQualityStreaming || gen !== loadGen) throw error;
       console.warn('[Audio] HQ load failed, retrying without hq:', error);
       cachedInfo = await ensureTrackCached(urn, false);
     }
@@ -422,11 +434,17 @@ async function loadTrack(track: Track) {
     usePlayerStore.setState({ downloadProgress: null });
     usePlayerStore.getState().setPlaybackTransport(cachedInfo.quality, cachedInfo.source);
 
-    const loadResult = await invoke<{ duration_secs: number | null }>('audio_load_file', {
-      path: cachedInfo.path,
-      cacheKey: urn,
-      startPaused: !usePlayerStore.getState().isPlaying,
-    });
+    let loadResult: { duration_secs: number | null };
+    try {
+      loadResult = await invoke<{ duration_secs: number | null }>('audio_load_file', {
+        path: cachedInfo.path,
+        cacheKey: urn,
+        startPaused: !usePlayerStore.getState().isPlaying,
+      });
+    } catch (decodeErr) {
+      await removeCachedTrack(urn).catch(() => {});
+      throw decodeErr;
+    }
     if (loadResult?.duration_secs) {
       fallbackDuration = loadResult.duration_secs;
       cachedDuration = loadResult.duration_secs;
@@ -447,6 +465,10 @@ async function loadTrack(track: Track) {
       description: errorText ? `${track.title}: ${errorText}` : track.title,
     });
     usePlayerStore.getState().pause();
+  } finally {
+    if (gen === loadGen) {
+      usePlayerStore.getState().setBuffering(false);
+    }
   }
 }
 
@@ -539,6 +561,11 @@ function tauriListen<T>(event: string, handler: (e: { payload: T }) => void): vo
 }
 
 tauriListen<number>('audio:tick', (event) => {
+  // Right after a seek Rust can still emit ticks with the old position; taking them
+  // would snap the progress bar and lyrics back before they catch up again.
+  if (performance.now() < seekGuardUntilMs && Math.abs(event.payload - lastSeekPosition) > 1) {
+    return;
+  }
   cachedTime = event.payload;
   cachedTimeWallMs = performance.now();
   if (cachedDuration <= 0) cachedDuration = fallbackDuration;
@@ -792,8 +819,10 @@ async function autoplayRelated(lastTrack: Track) {
 let preloadTimer: ReturnType<typeof setTimeout> | null = null;
 
 export function preloadTrack(urn: string) {
+  if (!urn || urn === currentUrn) return;
   if (preloadTimer) clearTimeout(preloadTimer);
   preloadTimer = setTimeout(() => {
+    if (urn === currentUrn) return;
     const sessionId = getSessionId();
     invoke('track_preload', {
       entries: [
@@ -814,10 +843,11 @@ export function preloadQueue() {
   const upcomingTracks: Track[] = [];
   const sessionId = getSessionId();
 
-  for (let i = 1; i <= 5; i++) {
+  for (let i = 1; i <= 2; i++) {
     const idx = queueIndex + i;
     if (idx < queue.length) {
       const track = queue[idx];
+      if (!track?.urn || track.urn === currentUrn) continue;
       entries.push({
         urn: track.urn,
         urls: streamFallbackUrls(track.urn),
@@ -829,7 +859,15 @@ export function preloadQueue() {
   }
 
   if (entries.length > 0) {
-    invoke('track_preload', { entries }).catch(console.error);
+    invoke('track_preload', { entries })
+      .then(() => {
+        // Refresh reactive cache badge set after preloading upcoming queue entries.
+        void import('./cache')
+          .then(({ listCachedUrns }) => listCachedUrns())
+          .then((list) => useCachedUrnsStore.getState().markManyCached(list))
+          .catch(() => {});
+      })
+      .catch(console.error);
     // Fetch lyrics for upcoming tracks in background (low concurrency — audio has priority)
     void import('./lyrics-fetch').then(({ cacheLyricsForTracks }) =>
       cacheLyricsForTracks(upcomingTracks, 2),
@@ -838,7 +876,11 @@ export function preloadQueue() {
 }
 
 usePlayerStore.subscribe((state, prev) => {
-  if (state.queueIndex !== prev.queueIndex || state.queue !== prev.queue) {
+  if (
+    hasTrack &&
+    state.currentTrack?.urn === prev.currentTrack?.urn &&
+    (state.queueIndex !== prev.queueIndex || state.queue !== prev.queue)
+  ) {
     preloadQueue();
   }
 });

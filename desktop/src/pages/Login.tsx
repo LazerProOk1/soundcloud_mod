@@ -98,7 +98,7 @@ export function Login() {
               fontSynthesis: 'none',
             }}
           >
-            SoundCloud Desktop
+            SoundCloud Mod
           </h1>
           <p className="text-[13px] text-white/35 mt-2">
             {isPolling ? t('auth.signingIn') : t('auth.tagline')}

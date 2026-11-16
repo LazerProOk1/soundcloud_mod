@@ -109,15 +109,14 @@ async fn detail(
         return Err(AppError::not_found("artist not found"));
     };
 
-    let socials: Vec<SocialDto> = sqlx::query_as(
+    let socials_fut = sqlx::query_as::<_, SocialDto>(
         "SELECT kind, url, source, verified FROM artist_socials WHERE artist_id = $1
          ORDER BY kind, url",
     )
     .bind(id)
-    .fetch_all(&st.pg)
-    .await?;
+    .fetch_all(&st.pg);
 
-    let sc_accounts: Vec<ScAccountDto> = sqlx::query_as(
+    let sc_accounts_fut = sqlx::query_as::<_, ScAccountDto>(
         "SELECT sc_user_id, role, source, verified
          FROM artist_sc_accounts
          WHERE artist_id = $1 AND role IN ('main', 'demo')
@@ -130,10 +129,9 @@ async fn detail(
                   sc_user_id",
     )
     .bind(id)
-    .fetch_all(&st.pg)
-    .await?;
+    .fetch_all(&st.pg);
 
-    let track_counts: (i64, i64) = sqlx::query_as(
+    let track_counts_fut = sqlx::query_as::<_, (i64, i64)>(
         "SELECT
             (SELECT COUNT(*)::bigint FROM (
                  SELECT indexed_track_id::text AS k FROM track_artists
@@ -146,12 +144,9 @@ async fn detail(
               WHERE artist_id = $1 AND role IN ('featured', 'remixer'))",
     )
     .bind(id)
-    .fetch_one(&st.pg)
-    .await?;
-    let (track_count_primary, track_count_featured) = track_counts;
-    let track_count = track_count_primary + track_count_featured;
+    .fetch_one(&st.pg);
 
-    let album_count: (i64,) = sqlx::query_as(
+    let album_count_fut = sqlx::query_as::<_, (i64,)>(
         "SELECT COUNT(*)::bigint FROM (
              SELECT id FROM albums WHERE primary_artist_id = $1
              UNION
@@ -163,13 +158,15 @@ async fn detail(
          ) a",
     )
     .bind(id)
-    .fetch_one(&st.pg)
-    .await?;
+    .fetch_one(&st.pg);
 
-    let mut popular_tracks = fetch_artist_tracks(&st.pg, id, "any", "popular", 1, 6).await?;
-    enrich_dto::apply_to_tracks(&st.pg, &mut popular_tracks).await?;
+    let popular_tracks_fut = async {
+        let mut tracks = fetch_artist_tracks(&st.pg, id, "any", "popular", 1, 6).await?;
+        enrich_dto::apply_to_tracks(&st.pg, &mut tracks).await?;
+        Ok::<Vec<Value>, AppError>(tracks)
+    };
 
-    let related_artists: Vec<RelatedArtistDto> = sqlx::query_as(
+    let related_artists_fut = sqlx::query_as::<_, RelatedArtistDto>(
         "SELECT a.id, a.name, a.country, a.avatar_url, ac.weight
          FROM artist_coplay ac
          JOIN artists a ON a.id = CASE WHEN ac.a_id = $1 THEN ac.b_id ELSE ac.a_id END
@@ -178,8 +175,25 @@ async fn detail(
          LIMIT 12",
     )
     .bind(id)
-    .fetch_all(&st.pg)
-    .await?;
+    .fetch_all(&st.pg);
+
+    let (
+        socials,
+        sc_accounts,
+        track_counts,
+        album_count,
+        popular_tracks,
+        related_artists,
+    ) = tokio::try_join!(
+        socials_fut,
+        sc_accounts_fut,
+        track_counts_fut,
+        album_count_fut,
+        popular_tracks_fut,
+        related_artists_fut,
+    )?;
+    let (track_count_primary, track_count_featured) = track_counts;
+    let track_count = track_count_primary + track_count_featured;
 
     Ok(Json(ArtistDetailDto {
         id,

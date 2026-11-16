@@ -164,11 +164,15 @@ impl AnonClient {
     /// Returns `Ok(None)` if SC has no usable transcoding (geo-blocked,
     /// preview-only, etc.) so the caller can fall through to the next source.
     /// `Err` is reserved for network failures and feeds the circuit breaker.
-    pub async fn get_stream(&self, track_urn: &str) -> Result<Option<AnonStreamResult>, String> {
+    pub async fn get_stream(
+        &self,
+        track_urn: &str,
+        progress: &(dyn Fn(f64) + Send + Sync),
+    ) -> Result<Option<AnonStreamResult>, String> {
         if self.in_cooldown() {
             return Ok(None);
         }
-        let result = self.do_get_stream(track_urn).await;
+        let result = self.do_get_stream(track_urn, progress).await;
         match &result {
             Ok(Some(_)) => self.note_success(),
             Err(_) => self.note_failure(),
@@ -177,7 +181,11 @@ impl AnonClient {
         result
     }
 
-    async fn do_get_stream(&self, track_urn: &str) -> Result<Option<AnonStreamResult>, String> {
+    async fn do_get_stream(
+        &self,
+        track_urn: &str,
+        progress: &(dyn Fn(f64) + Send + Sync),
+    ) -> Result<Option<AnonStreamResult>, String> {
         let track_id = track_urn.rsplit(':').next().unwrap_or(track_urn);
 
         let track = match self.get_track_by_id(track_id).await {
@@ -188,12 +196,11 @@ impl AnonClient {
             }
         };
 
-        let track_auth = track.track_authorization.clone();
+        let mut track_auth = track.track_authorization.clone();
         let transcodings = track.media.as_ref().and_then(|m| m.transcodings.as_ref());
 
         // No transcodings? refresh client_id once and retry the lookup.
         let transcodings_owned;
-        let track_auth_owned;
         let transcodings: &[Transcoding] = match transcodings {
             Some(t) if !t.is_empty() => t.as_slice(),
             _ => {
@@ -201,7 +208,11 @@ impl AnonClient {
                     "INFO",
                     format!("no transcodings for {track_id}, refreshing client_id"),
                 );
-                self.invalidate_and_refresh().await?;
+                let prev_id = self.client_id.read().await.clone();
+                let new_id = self.invalidate_and_refresh(prev_id.as_deref()).await?;
+                if prev_id.as_deref() == Some(new_id.as_str()) {
+                    return Ok(None);
+                }
                 let retry_track = match self.get_track_by_id(track_id).await {
                     Ok(t) => t,
                     Err(e) => {
@@ -209,7 +220,7 @@ impl AnonClient {
                         return Err(e);
                     }
                 };
-                track_auth_owned = retry_track.track_authorization.clone();
+                track_auth = retry_track.track_authorization.clone();
                 transcodings_owned = retry_track
                     .media
                     .and_then(|m| m.transcodings)
@@ -221,17 +232,22 @@ impl AnonClient {
                     );
                     return Ok(None);
                 }
-                let _ = track_auth_owned; // used below via track_auth
                 transcodings_owned.as_slice()
             }
         };
 
-        match self.stream_from_transcodings(transcodings, track_auth.as_deref()).await {
+        match self
+            .stream_from_transcodings(transcodings, track_auth.as_deref(), progress)
+            .await
+        {
             Ok(Some(r)) => Ok(Some(r)),
             Ok(None) => Ok(None),
             Err(e) if e.starts_with("__auth_required__") => {
                 let reason = e.trim_start_matches("__auth_required__");
-                self.log("INFO", format!("track {track_id} requires auth, skipping anon: {reason}"));
+                self.log(
+                    "INFO",
+                    format!("track {track_id} requires auth, skipping anon: {reason}"),
+                );
                 Ok(None)
             }
             Err(e) => {
@@ -239,7 +255,11 @@ impl AnonClient {
                     "WARN",
                     format!("stream failed for {track_id}, refreshing client_id: {e}"),
                 );
-                self.invalidate_and_refresh().await?;
+                let prev_id = self.client_id.read().await.clone();
+                let new_id = self.invalidate_and_refresh(prev_id.as_deref()).await?;
+                if prev_id.as_deref() == Some(new_id.as_str()) {
+                    return Err(e);
+                }
                 let retry_track = match self.get_track_by_id(track_id).await {
                     Ok(t) => t,
                     Err(e2) => {
@@ -255,7 +275,14 @@ impl AnonClient {
                 if retry_transcodings.is_empty() {
                     return Ok(None);
                 }
-                match self.stream_from_transcodings(&retry_transcodings, retry_auth.as_deref()).await {
+                match self
+                    .stream_from_transcodings(
+                        &retry_transcodings,
+                        retry_auth.as_deref(),
+                        progress,
+                    )
+                    .await
+                {
                     Err(e2) if e2.starts_with("__auth_required__") => Ok(None),
                     other => other,
                 }
@@ -267,6 +294,7 @@ impl AnonClient {
         &self,
         transcodings: &[Transcoding],
         track_auth: Option<&str>,
+        progress: &(dyn Fn(f64) + Send + Sync),
     ) -> Result<Option<AnonStreamResult>, String> {
         let ranked = ranked_transcodings(transcodings);
         if ranked.is_empty() {
@@ -310,9 +338,9 @@ impl AnonClient {
             };
 
             let result = if is_progressive {
-                download_progressive(&self.client, &media_url).await
+                download_progressive(&self.client, &media_url, progress).await
             } else {
-                download_hls_full(&self.client, &media_url).await
+                download_hls_full(&self.client, &media_url, progress).await
             };
 
             match result {
@@ -353,26 +381,21 @@ impl AnonClient {
                 return Ok(id.clone());
             }
         }
-        self.coalesced_refresh().await
+        self.coalesced_refresh(None).await
     }
 
-    async fn invalidate_and_refresh(&self) -> Result<String, String> {
-        {
-            let mut cached = self.client_id.write().await;
-            *cached = None;
-        }
-        self.coalesced_refresh().await
+    async fn invalidate_and_refresh(&self, failed_id: Option<&str>) -> Result<String, String> {
+        self.coalesced_refresh(failed_id).await
     }
 
     /// Coalesces concurrent refresh calls: if a fresh scrape ran within
     /// CLIENT_ID_MIN_REFRESH, return the cached id instead of re-scraping.
-    async fn coalesced_refresh(&self) -> Result<String, String> {
+    async fn coalesced_refresh(&self, failed_id: Option<&str>) -> Result<String, String> {
         let mut gate = self.refresh_gate.lock().await;
         if let Some(last) = *gate {
-            if last.elapsed() < CLIENT_ID_MIN_REFRESH {
-                // Another caller just refreshed — reuse the cached value.
-                let cached = self.client_id.read().await;
-                if let Some(ref id) = *cached {
+            let cached = self.client_id.read().await;
+            if let Some(ref id) = *cached {
+                if last.elapsed() < CLIENT_ID_MIN_REFRESH || failed_id.is_some_and(|f| f != id) {
                     return Ok(id.clone());
                 }
             }
@@ -409,8 +432,11 @@ impl AnonClient {
 
         match self.fetch_json::<ResolvedTrack>(&target).await {
             Ok(t) => Ok(t),
-            Err(_) => {
-                let new_id = self.invalidate_and_refresh().await?;
+            Err(first_err) => {
+                let new_id = self.invalidate_and_refresh(Some(&client_id)).await?;
+                if new_id == client_id {
+                    return Err(first_err);
+                }
                 let retry = format!("{SC_API_V2}/tracks/{track_id}?client_id={new_id}");
                 self.fetch_json(&retry).await
             }
@@ -431,8 +457,11 @@ impl AnonClient {
 
         match self.fetch_json::<TranscodingResolveResponse>(&target).await {
             Ok(r) => Ok(r.url),
-            Err(_) if explicit_client_id.is_none() => {
-                let new_id = self.invalidate_and_refresh().await?;
+            Err(first_err) if explicit_client_id.is_none() => {
+                let new_id = self.invalidate_and_refresh(Some(&client_id)).await?;
+                if new_id == client_id {
+                    return Err(first_err);
+                }
                 let retry = build_transcoding_target(transcoding_url, &new_id, track_authorization);
                 self.fetch_json::<TranscodingResolveResponse>(&retry)
                     .await

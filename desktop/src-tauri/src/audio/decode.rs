@@ -23,7 +23,9 @@ pub fn is_ogg_opus(bytes: &[u8]) -> bool {
     // OpusHead appears at byte 28 in a standard OGG Opus header page
     bytes.len() >= 36
         && &bytes[0..4] == b"OggS"
-        && bytes[..bytes.len().min(64)].windows(8).any(|w| w == b"OpusHead")
+        && bytes[..bytes.len().min(64)]
+            .windows(8)
+            .any(|w| w == b"OpusHead")
 }
 
 struct OpusSource<R: std::io::Read + std::io::Seek> {
@@ -37,8 +39,8 @@ struct OpusSource<R: std::io::Read + std::io::Seek> {
     samples_skipped: usize,
 }
 
-impl OpusSource<Cursor<Vec<u8>>> {
-    fn new(data: Vec<u8>) -> Result<Self, String> {
+impl OpusSource<Cursor<Arc<[u8]>>> {
+    fn new(data: Arc<[u8]>) -> Result<Self, String> {
         Self::from_reader(Cursor::new(data))
     }
 }
@@ -181,9 +183,11 @@ impl<R: std::io::Read + std::io::Seek> Source for OpusSource<R> {
     }
 }
 
-fn normalization_cache_file(cache_dir: &Path, cache_key: &str) -> PathBuf {
+fn normalization_cache_file(cache_dir: &Path, cache_key: &str, bytes_len: usize) -> PathBuf {
     let mut hasher = Sha256::new();
     hasher.update(cache_key.as_bytes());
+    hasher.update(b":");
+    hasher.update(bytes_len.to_le_bytes());
     let hash = hex::encode(hasher.finalize());
     cache_dir.join(format!("{hash}.gain"))
 }
@@ -191,8 +195,9 @@ fn normalization_cache_file(cache_dir: &Path, cache_key: &str) -> PathBuf {
 fn read_cached_normalization_gain(
     cache_dir: Option<&Path>,
     cache_key: Option<&str>,
+    bytes_len: usize,
 ) -> Option<f32> {
-    let path = normalization_cache_file(cache_dir?, cache_key?);
+    let path = normalization_cache_file(cache_dir?, cache_key?, bytes_len);
     let raw = std::fs::read_to_string(path).ok()?;
     let (version, value) = raw.trim().split_once(':')?;
     if version != NORMALIZATION_CACHE_VERSION.to_string() {
@@ -201,7 +206,12 @@ fn read_cached_normalization_gain(
     value.parse::<f32>().ok()
 }
 
-fn write_cached_normalization_gain(cache_dir: Option<&Path>, cache_key: Option<&str>, gain: f32) {
+fn write_cached_normalization_gain(
+    cache_dir: Option<&Path>,
+    cache_key: Option<&str>,
+    bytes_len: usize,
+    gain: f32,
+) {
     let Some(cache_dir) = cache_dir else {
         return;
     };
@@ -213,7 +223,7 @@ fn write_cached_normalization_gain(cache_dir: Option<&Path>, cache_key: Option<&
         return;
     }
 
-    let path = normalization_cache_file(cache_dir, cache_key);
+    let path = normalization_cache_file(cache_dir, cache_key, bytes_len);
     let _ = std::fs::write(path, format!("{NORMALIZATION_CACHE_VERSION}:{gain:.6}"));
 }
 
@@ -279,33 +289,46 @@ where
     }
 }
 
+/// rodio 0.22's `Decoder::new` builds a non-seekable decoder without `byte_len`,
+/// so `try_seek` fails and every seek restarts the track. Give it the length.
+fn seekable_decoder(
+    bytes: &Arc<[u8]>,
+) -> Result<Decoder<Cursor<Arc<[u8]>>>, rodio::decoder::DecoderError> {
+    Decoder::builder()
+        .with_data(Cursor::new(Arc::clone(bytes)))
+        .with_byte_len(bytes.len() as u64)
+        .with_seekable(true)
+        .build()
+}
+
 pub fn resolve_normalization_gain(
-    bytes: &[u8],
+    bytes: &Arc<[u8]>,
     cache_dir: Option<&Path>,
     cache_key: Option<&str>,
 ) -> Result<f32, String> {
-    if let Some(gain) = read_cached_normalization_gain(cache_dir, cache_key) {
+    let bytes_len = bytes.len();
+    if let Some(gain) = read_cached_normalization_gain(cache_dir, cache_key, bytes_len) {
         return Ok(gain);
     }
 
     let gain = if is_ogg_opus(bytes) {
         normalization_gain_from_samples(
-            OpusSource::new(bytes.to_vec()).map_err(|e| format!("Failed to decode: {}", e))?,
+            OpusSource::new(Arc::clone(bytes)).map_err(|e| format!("Failed to decode: {}", e))?,
         )
-    } else if let Ok(source) = Decoder::new(Cursor::new(bytes.to_vec())) {
+    } else if let Ok(source) = seekable_decoder(bytes) {
         normalization_gain_from_samples(source)
     } else {
         normalization_gain_from_samples(
-            OpusSource::new(bytes.to_vec()).map_err(|e| format!("Failed to decode: {}", e))?,
+            OpusSource::new(Arc::clone(bytes)).map_err(|e| format!("Failed to decode: {}", e))?,
         )
     };
 
-    write_cached_normalization_gain(cache_dir, cache_key, gain);
+    write_cached_normalization_gain(cache_dir, cache_key, bytes_len, gain);
     Ok(gain)
 }
 
 pub fn create_player_from_bytes(
-    bytes: &[u8],
+    bytes: &Arc<[u8]>,
     mixer: &Mixer,
     volume: f32,
     normalization_gain: f32,
@@ -322,28 +345,31 @@ pub fn create_player_from_bytes(
     let duration;
     if is_ogg_opus(bytes) {
         let source =
-            OpusSource::new(bytes.to_vec()).map_err(|e| format!("Failed to decode: {}", e))?;
-        duration = source.total_duration().map(|d| d.as_secs_f64());
-        player.append(AnalyserSource::new(
-            EqSource::new(GainSource::new(source, normalization_gain), eq_params),
-            analyser_buffer,
-        ));
-    } else if Decoder::new(Cursor::new(bytes.to_vec())).is_ok() {
-        let source = Decoder::new(Cursor::new(bytes.to_vec()))
-            .map_err(|e| format!("Failed to decode: {}", e))?;
+            OpusSource::new(Arc::clone(bytes)).map_err(|e| format!("Failed to decode: {}", e))?;
         duration = source.total_duration().map(|d| d.as_secs_f64());
         player.append(AnalyserSource::new(
             EqSource::new(GainSource::new(source, normalization_gain), eq_params),
             analyser_buffer,
         ));
     } else {
-        let source =
-            OpusSource::new(bytes.to_vec()).map_err(|e| format!("Failed to decode: {}", e))?;
-        duration = source.total_duration().map(|d| d.as_secs_f64());
-        player.append(AnalyserSource::new(
-            EqSource::new(GainSource::new(source, normalization_gain), eq_params),
-            analyser_buffer,
-        ));
+        match seekable_decoder(bytes) {
+            Ok(source) => {
+                duration = source.total_duration().map(|d| d.as_secs_f64());
+                player.append(AnalyserSource::new(
+                    EqSource::new(GainSource::new(source, normalization_gain), eq_params),
+                    analyser_buffer,
+                ));
+            }
+            Err(decode_err) => {
+                let source = OpusSource::new(Arc::clone(bytes))
+                    .map_err(|opus_err| format!("Failed to decode: {decode_err}; {opus_err}"))?;
+                duration = source.total_duration().map(|d| d.as_secs_f64());
+                player.append(AnalyserSource::new(
+                    EqSource::new(GainSource::new(source, normalization_gain), eq_params),
+                    analyser_buffer,
+                ));
+            }
+        }
     }
 
     Ok((player, duration))

@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 use std::sync::atomic::Ordering;
+use std::sync::Arc;
 use std::time::Duration;
 
 use tauri::State;
@@ -28,14 +29,6 @@ fn volume_to_rodio(v: f64) -> f32 {
     (v / 100.0).clamp(0.0, 2.0) as f32
 }
 
-fn stop_current_player(state: &AudioState) {
-    suppress_ended_temporarily(state);
-    let mut player = state.player.lock().unwrap();
-    if let Some(old) = player.take() {
-        old.stop();
-    }
-}
-
 fn apply_current_rate(state: &AudioState, player: &rodio::Player) {
     let rate = *state.playback_rate.lock().unwrap();
     if (rate - 1.0).abs() > f32::EPSILON {
@@ -45,12 +38,18 @@ fn apply_current_rate(state: &AudioState, player: &rodio::Player) {
 
 fn commit_loaded_track(
     state: &AudioState,
-    bytes: Vec<u8>,
+    bytes: Arc<[u8]>,
     new_player: rodio::Player,
     normalization_gain: f32,
 ) {
     apply_current_rate(state, &new_player);
-    *state.player.lock().unwrap() = Some(new_player);
+    let mut player_guard = state.player.lock().unwrap();
+    if let Some(old) = player_guard.take() {
+        old.stop();
+    }
+    *player_guard = Some(new_player);
+    drop(player_guard);
+
     *state.source_bytes.lock().unwrap() = Some(bytes);
     *state.normalization_gain.lock().unwrap() = normalization_gain;
     // Reset song-position trackers to zero for the new track.
@@ -62,7 +61,7 @@ fn commit_loaded_track(
 }
 
 async fn build_player_from_bytes(
-    bytes: Vec<u8>,
+    bytes: Arc<[u8]>,
     mixer: rodio::mixer::Mixer,
     volume: f32,
     normalization_enabled: bool,
@@ -71,7 +70,7 @@ async fn build_player_from_bytes(
     start_paused: bool,
     eq_params: std::sync::Arc<std::sync::RwLock<crate::audio::types::EqParams>>,
     analyser_buffer: std::sync::Arc<crate::audio::analyser::AnalyserBuffer>,
-) -> Result<(Vec<u8>, rodio::Player, Option<f64>, f32), String> {
+) -> Result<(Arc<[u8]>, rodio::Player, Option<f64>, f32), String> {
     task::spawn_blocking(move || {
         let normalization_gain = if normalization_enabled {
             resolve_normalization_gain(
@@ -159,6 +158,8 @@ pub async fn load_file(
     start_paused: bool,
     state: State<'_, AudioState>,
 ) -> Result<AudioLoadResult, String> {
+    let generation = state.load_gen.fetch_add(1, Ordering::Relaxed) + 1;
+
     let bytes = task::spawn_blocking({
         let path = path.clone();
         move || std::fs::read(&path).map_err(|e| format!("Failed to read {}: {}", path, e))
@@ -166,11 +167,16 @@ pub async fn load_file(
     .await
     .map_err(|e| format!("audio file read task failed: {e}"))??;
 
-    stop_current_player(&state);
+    if state.load_gen.load(Ordering::Relaxed) != generation {
+        return Ok(AudioLoadResult {
+            duration_secs: None,
+        });
+    }
 
     let mixer = state.mixer.lock().unwrap().clone();
     let vol = *state.volume.lock().unwrap();
     let normalization_enabled = state.normalization_enabled.load(Ordering::Relaxed);
+    let bytes: Arc<[u8]> = Arc::from(bytes);
     let (bytes, new_player, duration_secs, normalization_gain) = build_player_from_bytes(
         bytes,
         mixer,
@@ -184,6 +190,14 @@ pub async fn load_file(
     )
     .await?;
 
+    if state.load_gen.load(Ordering::Relaxed) != generation {
+        new_player.stop();
+        return Ok(AudioLoadResult {
+            duration_secs: None,
+        });
+    }
+
+    suppress_ended_temporarily(&state);
     commit_loaded_track(&state, bytes, new_player, normalization_gain);
 
     Ok(AudioLoadResult { duration_secs })
@@ -198,7 +212,7 @@ pub async fn load_url(
     start_paused: bool,
     state: State<'_, AudioState>,
 ) -> Result<AudioLoadResult, String> {
-    let generation = state.load_gen.load(Ordering::Relaxed);
+    let generation = state.load_gen.fetch_add(1, Ordering::Relaxed) + 1;
 
     // Use the shared client from AudioState — preserves the connection pool and TLS sessions
     // across track loads, avoiding a new TLS handshake on every track.
@@ -209,6 +223,12 @@ pub async fn load_url(
     let mut success = false;
 
     for attempt in 0..=retry_delays.len() {
+        if state.load_gen.load(Ordering::Relaxed) != generation {
+            return Ok(AudioLoadResult {
+                duration_secs: None,
+            });
+        }
+
         let mut req = client.get(&url);
         if let Some(sid) = &session_id {
             req = req.header("x-session-id", sid);
@@ -218,11 +238,20 @@ pub async fn load_url(
             Ok(resp) => {
                 let status = resp.status();
                 if status.is_success() {
+                    let content_length = resp.content_length().unwrap_or(0) as usize;
                     match resp.bytes().await {
                         Ok(b) => {
-                            bytes = b.to_vec();
-                            success = true;
-                            break;
+                            if content_length > 0 && b.len() < content_length {
+                                last_err = format!(
+                                    "truncated response: got {} of {} bytes",
+                                    b.len(),
+                                    content_length
+                                );
+                            } else {
+                                bytes = b.to_vec();
+                                success = true;
+                                break;
+                            }
                         }
                         Err(e) => last_err = e.to_string(),
                     }
@@ -258,22 +287,10 @@ pub async fn load_url(
         return Ok(empty_result);
     }
 
-    if let Some(path) = cache_path {
-        let data = bytes.clone();
-        tokio::spawn(async move {
-            tokio::fs::write(&path, &data).await.ok();
-        });
-    }
-
-    stop_current_player(&state);
-
-    if state.load_gen.load(Ordering::Relaxed) != generation {
-        return Ok(empty_result);
-    }
-
     let mixer = state.mixer.lock().unwrap().clone();
     let vol = *state.volume.lock().unwrap();
     let normalization_enabled = state.normalization_enabled.load(Ordering::Relaxed);
+    let bytes: Arc<[u8]> = Arc::from(bytes);
     let (bytes, new_player, duration_secs, normalization_gain) = build_player_from_bytes(
         bytes,
         mixer,
@@ -287,6 +304,28 @@ pub async fn load_url(
     )
     .await?;
 
+    if state.load_gen.load(Ordering::Relaxed) != generation {
+        new_player.stop();
+        return Ok(empty_result);
+    }
+
+    if let Some(path) = cache_path {
+        if bytes.len() >= 8192 {
+            let data = Arc::clone(&bytes);
+            tokio::spawn(async move {
+                let tmp = format!("{path}.tmp-{}", std::process::id());
+                if tokio::fs::write(&tmp, &*data).await.is_ok() {
+                    if tokio::fs::rename(&tmp, &path).await.is_err() {
+                        tokio::fs::remove_file(&tmp).await.ok();
+                    }
+                } else {
+                    tokio::fs::remove_file(&tmp).await.ok();
+                }
+            });
+        }
+    }
+
+    suppress_ended_temporarily(&state);
     commit_loaded_track(&state, bytes, new_player, normalization_gain);
 
     Ok(AudioLoadResult { duration_secs })

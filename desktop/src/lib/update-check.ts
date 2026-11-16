@@ -1,4 +1,4 @@
-import { fetch } from '@tauri-apps/plugin-http';
+import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
 import i18n from '../i18n';
 import { APP_VERSION, GITHUB_OWNER, GITHUB_REPO, GITHUB_REPO_EN } from './constants';
 import { isNewerVersion } from './semver';
@@ -15,9 +15,16 @@ function stripLeadingV(version: string) {
   return version.replace(/^v/, '');
 }
 
+function safeFetch(url: string): Promise<Response> {
+  if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
+    return tauriFetch(url);
+  }
+  return globalThis.fetch(url);
+}
+
 async function fetchRelease(repo: string): Promise<GithubRelease | null> {
   const url = `https://api.github.com/repos/${GITHUB_OWNER}/${repo}/releases/latest`;
-  const response = await fetch(url);
+  const response = await safeFetch(url);
   return response.ok ? response.json() : null;
 }
 

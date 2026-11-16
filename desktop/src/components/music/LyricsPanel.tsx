@@ -1,13 +1,14 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { invoke } from '@tauri-apps/api/core';
-import { listen } from '@tauri-apps/api/event';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useShallow } from 'zustand/shallow';
+import { useArtworkColor } from '../../hooks/useArtworkColor';
 import { api } from '../../lib/api';
-import { getCurrentTime, handlePrev, seek } from '../../lib/audio';
+import { getCurrentTime, handlePrev, seek, subscribe } from '../../lib/audio';
+import { FFT_BIN_COUNT, readAccentRgb, subscribeAudioFft } from '../../lib/audio-fft';
 import { toggleDislike, useDislikeStatus } from '../../lib/dislikes';
 import { ago, art, durLong } from '../../lib/formatters';
 import {
@@ -85,55 +86,6 @@ function buildDisplayLines(lines: LyricLine[]): DisplayLine[] {
   return lines as DisplayLine[];
 }
 
-/* ── Color extraction ──────────────────────────────────────── */
-
-function extractColor(src: string): Promise<[number, number, number]> {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      try {
-        const c = document.createElement('canvas');
-        c.width = 10;
-        c.height = 10;
-        const ctx = c.getContext('2d')!;
-        ctx.drawImage(img, 0, 0, 10, 10);
-        const d = ctx.getImageData(0, 0, 10, 10).data;
-        let r = 0,
-          g = 0,
-          b = 0;
-        const n = d.length / 4;
-        for (let i = 0; i < d.length; i += 4) {
-          r += d[i];
-          g += d[i + 1];
-          b += d[i + 2];
-        }
-        resolve([Math.round(r / n), Math.round(g / n), Math.round(b / n)]);
-      } catch {
-        resolve([255, 85, 0]);
-      }
-    };
-    img.onerror = () => resolve([255, 85, 0]);
-    img.src = src;
-  });
-}
-
-function useArtworkColor(artworkUrl: string | null) {
-  const colorRef = useRef<[number, number, number]>([255, 85, 0]);
-  const prevArtRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    const src = art(artworkUrl, 't200x200');
-    if (!src || src === prevArtRef.current) return;
-    prevArtRef.current = src;
-    extractColor(src).then((c) => {
-      colorRef.current = c;
-    });
-  }, [artworkUrl]);
-
-  return colorRef;
-}
-
 /* ── Shared: dynamic background ───────────────────────────── */
 
 const FullscreenBackground = React.memo(
@@ -149,7 +101,7 @@ const FullscreenBackground = React.memo(
             <img
               src={artworkSrc}
               alt=""
-              className="w-full h-full object-cover scale-[1.2] blur-[72px] opacity-30 saturate-[1.2]"
+              className="w-full h-full object-cover scale-[1.14] blur-[32px] opacity-30 saturate-[1.25]"
               loading="eager"
               decoding="async"
             />
@@ -574,44 +526,7 @@ const LyricsSourceBadge = React.memo(
   },
 );
 
-/* ── Synced lyrics — per-character rAF live progress (rate-aware) ── */
-
-function clamp01(v: number) {
-  return v < 0 ? 0 : v > 1 ? 1 : v;
-}
-
-function isAnimatedChar(ch: string) {
-  return !/^\s$/u.test(ch);
-}
-
-interface CharCell {
-  ch: string;
-  animated: boolean;
-}
-
-function splitChars(text: string): CharCell[] {
-  // Use Array.from to handle surrogate pairs / emoji as single grapheme-ish units.
-  return Array.from(text).map((ch) => ({ ch, animated: isAnimatedChar(ch) }));
-}
-
-function splitWordsForChars(cells: CharCell[]): CharCell[][] {
-  // Group consecutive cells of same kind (animated vs whitespace) so words stay together
-  // and don't break across lines mid-word.
-  const groups: CharCell[][] = [];
-  let cur: CharCell[] = [];
-  let curKind: boolean | null = null;
-  for (const c of cells) {
-    if (c.animated !== curKind) {
-      if (cur.length) groups.push(cur);
-      cur = [c];
-      curKind = c.animated;
-    } else {
-      cur.push(c);
-    }
-  }
-  if (cur.length) groups.push(cur);
-  return groups;
-}
+/* ── Synced lyrics — line by line ── */
 
 const SyncedLyrics = React.memo(({ lines }: { lines: LyricLine[] }) => {
   const displayLines = useMemo(() => buildDisplayLines(lines), [lines]);
@@ -619,11 +534,9 @@ const SyncedLyrics = React.memo(({ lines }: { lines: LyricLine[] }) => {
   const activeRef = useRef(-1);
   const linesRef = useRef(displayLines);
   const lineElsRef = useRef<HTMLElement[]>([]);
-  const lineCharElsRef = useRef<HTMLElement[][]>([]);
 
   const manualScrollRef = useRef(false);
-  const lastScrollTsRef = useRef(0);
-  const lineProgressRef = useRef(0);
+  const syncRef = useRef<((jump?: boolean) => void) | null>(null);
   linesRef.current = displayLines;
 
   useEffect(() => {
@@ -631,11 +544,7 @@ const SyncedLyrics = React.memo(({ lines }: { lines: LyricLine[] }) => {
     if (!container) return;
 
     lineElsRef.current = Array.from(container.querySelectorAll<HTMLElement>('.lyric-line'));
-    lineCharElsRef.current = lineElsRef.current.map((el) =>
-      Array.from(el.querySelectorAll<HTMLElement>('[data-char-index]')),
-    );
     activeRef.current = -1;
-    lineProgressRef.current = 0;
     manualScrollRef.current = false;
 
     const markManual = () => {
@@ -649,65 +558,40 @@ const SyncedLyrics = React.memo(({ lines }: { lines: LyricLine[] }) => {
       lines: displayLines.map((line) => ({ timeSecs: line.time })),
     });
 
-    /** Per-char "head" sweeps left-to-right across the line.
-     *  Each char's local progress is `head - charIndex`, smoothed.
-     *  Slight forward leak (`+SOFT_LEAD`) so the leading char visibly lights up
-     *  before becoming the active char — mimics the karaoke-style sweep. */
-    const SOFT_LEAD = 0.6;
-    const SOFT_TAIL = 1.4;
-
-    const writeLineProgress = (i: number, p: number) => {
-      const el = lineElsRef.current[i];
-      if (!el) return;
-      const value = clamp01(p);
-      el.style.setProperty('--lyric-progress', `${(value * 100).toFixed(2)}%`);
-      el.style.setProperty('--lyric-progress-value', value.toFixed(4));
-
-      const chars = lineCharElsRef.current[i];
-      if (chars && chars.length > 0) {
-        const total = chars.length;
-        const head = value * total;
-        for (let c = 0; c < total; c++) {
-          const local = clamp01((head - c + SOFT_LEAD) / SOFT_TAIL);
-          // smoothstep
-          const eased = local * local * (3 - 2 * local);
-          chars[c].style.setProperty('--char-progress', eased.toFixed(4));
-        }
-      }
-    };
-
+    // Line-by-line: the active line lights up as a whole, no per-character sweep.
     const setLineState = (i: number, state: string) => {
       const el = lineElsRef.current[i];
       if (!el || el.dataset.state === state) return;
       el.dataset.state = state;
-
-      if (state === 'past' || state === 'past-near') {
-        writeLineProgress(i, 1);
-      } else if (state === 'next' || state === 'next-near') {
-        writeLineProgress(i, 0);
-      }
     };
 
-    const unlistenPromise = listen<number | null>('lyrics:active_line', (event) => {
-      const lineEls = lineElsRef.current;
-      if (!container || lineEls.length === 0) return;
-
-      const idx = typeof event.payload === 'number' ? event.payload : -1;
-      if (idx === activeRef.current) return;
-
-      const prev = activeRef.current;
-      activeRef.current = idx;
-
-      // Initialize progress from real playback position so the highlight
-      // doesn't snap back to 0 and catch up (visible jitter on line change).
-      if (idx >= 0 && idx < linesRef.current.length) {
-        const cur = linesRef.current[idx];
-        const nextLine = linesRef.current[idx + 1];
-        const dur = Math.max(0.4, (nextLine?.time ?? cur.time + 2.6) - cur.time);
-        lineProgressRef.current = clamp01((getCurrentTime() - cur.time) / dur);
-      } else {
-        lineProgressRef.current = 0;
+    // Active line is computed here from the real playback position (not only from the
+    // Rust `lyrics:active_line` event, which fires on line *changes*), so it is correct
+    // right after opening the panel mid-track and right after clicking a line.
+    const lineAt = (t: number) => {
+      const ls = linesRef.current;
+      let lo = 0;
+      let hi = ls.length - 1;
+      let found = -1;
+      while (lo <= hi) {
+        const mid = (lo + hi) >> 1;
+        if (ls[mid].time <= t + 0.05) {
+          found = mid;
+          lo = mid + 1;
+        } else {
+          hi = mid - 1;
+        }
       }
+      return found;
+    };
+
+    const sync = (jump = false) => {
+      const lineEls = lineElsRef.current;
+      if (lineEls.length === 0) return;
+      const idx = lineAt(getCurrentTime());
+      const prev = activeRef.current;
+      if (idx === prev && !jump) return;
+      activeRef.current = idx;
 
       for (let i = 0; i < lineEls.length; i++) {
         let state: string;
@@ -719,43 +603,17 @@ const SyncedLyrics = React.memo(({ lines }: { lines: LyricLine[] }) => {
         setLineState(i, state);
       }
 
-      if (idx >= 0 && idx < lineEls.length && !manualScrollRef.current) {
+      if (idx >= 0 && !manualScrollRef.current) {
         const el = lineEls[idx];
         const top = el.offsetTop - container.clientHeight / 2 + el.clientHeight / 2;
-        const now = performance.now();
-        const behavior =
-          now - lastScrollTsRef.current < 220 || prev === -1 || Math.abs(idx - prev) > 2
-            ? 'auto'
-            : 'smooth';
-        container.scrollTo({ top, behavior });
-        lastScrollTsRef.current = now;
+        // Smooth glide to the next line; instant snap when opening or jumping.
+        const smooth = !jump && prev >= 0 && Math.abs(idx - prev) <= 2;
+        container.scrollTo({ top, behavior: smooth ? 'smooth' : 'auto' });
       }
-    });
-
-    let rafId = 0;
-    let lastTickTs = 0;
-    const FRAME_BUDGET_MS = 7; // ~144fps target
-    const tick = (ts: number) => {
-      rafId = requestAnimationFrame(tick);
-      if (ts - lastTickTs < FRAME_BUDGET_MS) return;
-      lastTickTs = ts;
-      if (document.visibilityState === 'hidden') return;
-
-      const idx = activeRef.current;
-      if (idx < 0 || idx >= linesRef.current.length) return;
-      const cur = linesRef.current[idx];
-      const next = linesRef.current[idx + 1];
-      const dur = Math.max(0.4, (next?.time ?? cur.time + 2.6) - cur.time);
-      const target = clamp01((getCurrentTime() - cur.time) / dur);
-
-      const prev = lineProgressRef.current;
-      const diff = target - prev;
-      const smoothed =
-        diff < 0 ? target : prev + diff * (diff > 0.18 || target > 0.92 ? 0.7 : 0.32);
-      lineProgressRef.current = smoothed;
-      writeLineProgress(idx, smoothed);
     };
-    rafId = requestAnimationFrame(tick);
+    syncRef.current = sync;
+    sync(true);
+    const unsubTime = subscribe(() => sync());
 
     const applyPaused = (paused: boolean) => {
       container.classList.toggle('lyrics-paused', paused);
@@ -766,12 +624,12 @@ const SyncedLyrics = React.memo(({ lines }: { lines: LyricLine[] }) => {
     });
 
     return () => {
-      cancelAnimationFrame(rafId);
       container.removeEventListener('wheel', markManual);
       container.removeEventListener('touchstart', markManual);
       container.removeEventListener('pointerdown', markManual);
       void invoke('audio_clear_lyrics_timeline');
-      unlistenPromise.then((unlisten) => unlisten());
+      unsubTime();
+      syncRef.current = null;
       unsubPlayer();
     };
   }, [displayLines]);
@@ -785,45 +643,19 @@ const SyncedLyrics = React.memo(({ lines }: { lines: LyricLine[] }) => {
       }}
     >
       <div className="flex flex-col gap-2">
-        {displayLines.map((line, i) => {
-          const cells = splitChars(line.text);
-          const groups = splitWordsForChars(cells);
-          // animatedIndex must be stable across whole line (chars-only count) so
-          // CSS sweep aligns with visible glyphs only, ignoring whitespace.
-          let animatedIndex = 0;
-          return (
-            <div
-              key={`${line.time}-${i}`}
-              className="lyric-line"
-              onClick={() => {
-                manualScrollRef.current = false;
-                seek(line.time);
-              }}
-            >
-              <span className="lyric-fill">
-                {groups.map((group, gi) => {
-                  if (group.length === 0) return null;
-                  const isWhitespace = !group[0].animated;
-                  if (isWhitespace) {
-                    return <span key={gi}>{group.map((c) => c.ch).join('')}</span>;
-                  }
-                  return (
-                    <span key={gi} className="lyric-word">
-                      {group.map((c, ci) => {
-                        const idx = animatedIndex++;
-                        return (
-                          <span key={ci} className="lyric-char" data-char-index={idx}>
-                            {c.ch}
-                          </span>
-                        );
-                      })}
-                    </span>
-                  );
-                })}
-              </span>
-            </div>
-          );
-        })}
+        {displayLines.map((line, i) => (
+          <div
+            key={`${line.time}-${i}`}
+            className="lyric-line"
+            onClick={() => {
+              manualScrollRef.current = false;
+              seek(line.time);
+              syncRef.current?.(true);
+            }}
+          >
+            <span className="lyric-fill">{line.text}</span>
+          </div>
+        ))}
       </div>
       <div className="h-[40vh]" />
     </div>
@@ -1404,30 +1236,7 @@ const LyricsPane = React.memo(({ track }: { track: Track }) => {
  * We never poll: the canvas redraws ONLY when a new frame arrives + a short
  * decay tail (~250ms) so play→pause fades smoothly. No rAF when idle. */
 
-const VIS_BINS = 64;
-
-function readAccentRgb(): [number, number, number] {
-  if (typeof window === 'undefined') return [255, 85, 0];
-  const raw = getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim();
-  if (raw.startsWith('#')) {
-    const hex = raw.slice(1);
-    const v =
-      hex.length === 3
-        ? hex
-            .split('')
-            .map((c) => c + c)
-            .join('')
-        : hex;
-    return [
-      Number.parseInt(v.slice(0, 2), 16),
-      Number.parseInt(v.slice(2, 4), 16),
-      Number.parseInt(v.slice(4, 6), 16),
-    ];
-  }
-  const m = raw.match(/(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
-  if (m) return [+m[1], +m[2], +m[3]];
-  return [255, 85, 0];
-}
+const VIS_BINS = FFT_BIN_COUNT;
 
 const FullscreenVisualizer = React.memo(() => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -1606,11 +1415,8 @@ const FullscreenVisualizer = React.memo(() => {
       }
     };
 
-    // Rust only captures samples / runs FFT while a visualizer is mounted.
-    invoke('audio_set_analyser', { enabled: true }).catch(() => {});
-    const unlistenPromise = listen<number[]>('audio:fft', (event) => {
-      const bins = event.payload;
-      if (!bins || bins.length === 0) return;
+    // Shared ref-counted bridge enables Rust FFT analyser only while mounted.
+    const unsubscribeFft = subscribeAudioFft((bins) => {
       const target = targetRef.current;
       const n = Math.min(target.length, bins.length);
       for (let i = 0; i < n; i++) target[i] = bins[i];
@@ -1620,10 +1426,9 @@ const FullscreenVisualizer = React.memo(() => {
     });
 
     return () => {
-      invoke('audio_set_analyser', { enabled: false }).catch(() => {});
+      unsubscribeFft();
       if (rafId) cancelAnimationFrame(rafId);
       ro.disconnect();
-      unlistenPromise.then((u) => u());
     };
   }, []);
 
@@ -1662,7 +1467,9 @@ export const LyricsPanel = React.memo(() => {
   const setSplitRatio = useLyricsStore((s) => s.setSplitRatio);
   const track = usePlayerStore((s) => s.currentTrack);
   const { t } = useTranslation();
-  const colorRef = useArtworkColor(track?.artwork_url ?? null);
+  const artwork200 = art(track?.artwork_url, 't200x200');
+  const artworkColors = useArtworkColor(artwork200);
+  const dominantColor: [number, number, number] = artworkColors?.dominant ?? [255, 85, 0];
   const splitLayoutRef = useRef<HTMLDivElement>(null);
   const visualizerEnabled = useSettingsStore((s) => s.lyricsVisualizer);
 
@@ -1682,7 +1489,7 @@ export const LyricsPanel = React.memo(() => {
 
   return (
     <div className="fixed inset-0 z-[60] flex flex-col overflow-hidden animate-fade-in-up bg-[#08080a]">
-      <FullscreenBackground artworkSrc={artwork500} color={colorRef.current} />
+      <FullscreenBackground artworkSrc={artwork500} color={dominantColor} />
       {visualizerEnabled && <FullscreenVisualizer />}
 
       <div

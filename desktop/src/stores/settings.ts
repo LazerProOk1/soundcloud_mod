@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { tauriStorage } from '../lib/tauri-storage';
+import type { WaveVibeId } from '../lib/wave-vibes';
 
 export type ThemePreset = 'soundcloud' | 'dark' | 'neon' | 'forest' | 'crimson' | 'custom';
 export type StartupPage = 'home' | 'search' | 'library' | 'settings';
@@ -86,6 +87,7 @@ export interface SettingsState {
   discordRpcShowButton: boolean;
   soundwaveLanguages: string[];
   soundwaveMode: 'similar' | 'diverse';
+  soundwaveVibe: WaveVibeId;
   soundwaveHideLiked: boolean;
   lyricsVisualizer: boolean;
   cacheListenedTracks: boolean;
@@ -118,6 +120,7 @@ export interface SettingsState {
   setDiscordRpcShowButton: (show: boolean) => void;
   setSoundwaveLanguages: (langs: string[]) => void;
   setSoundwaveMode: (mode: 'similar' | 'diverse') => void;
+  setSoundwaveVibe: (vibe: WaveVibeId) => void;
   setSoundwaveHideLiked: (v: boolean) => void;
   setLyricsVisualizer: (v: boolean) => void;
   setCacheListenedTracks: (v: boolean) => void;
@@ -158,6 +161,7 @@ const DEFAULTS = {
   discordRpcShowButton: true,
   soundwaveLanguages: [] as string[],
   soundwaveMode: 'similar' as 'similar' | 'diverse',
+  soundwaveVibe: 'all' as WaveVibeId,
   soundwaveHideLiked: false,
   lyricsVisualizer: false,
   cacheListenedTracks: true,
@@ -220,6 +224,7 @@ export const useSettingsStore = create<SettingsState>()(
       setDiscordRpcShowButton: (discordRpcShowButton) => set({ discordRpcShowButton }),
       setSoundwaveLanguages: (soundwaveLanguages) => set({ soundwaveLanguages }),
       setSoundwaveMode: (soundwaveMode) => set({ soundwaveMode }),
+      setSoundwaveVibe: (soundwaveVibe) => set({ soundwaveVibe }),
       setSoundwaveHideLiked: (soundwaveHideLiked) => set({ soundwaveHideLiked }),
       setLyricsVisualizer: (lyricsVisualizer) => set({ lyricsVisualizer }),
       setCacheListenedTracks: (cacheListenedTracks) => set({ cacheListenedTracks }),
@@ -286,6 +291,7 @@ export const useSettingsStore = create<SettingsState>()(
         discordRpcShowButton: s.discordRpcShowButton,
         soundwaveLanguages: s.soundwaveLanguages,
         soundwaveMode: s.soundwaveMode,
+        soundwaveVibe: s.soundwaveVibe,
         soundwaveHideLiked: s.soundwaveHideLiked,
         lyricsVisualizer: s.lyricsVisualizer,
         cacheListenedTracks: s.cacheListenedTracks,

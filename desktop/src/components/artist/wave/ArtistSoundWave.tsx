@@ -154,8 +154,8 @@ export const ArtistSoundWave = React.memo(function ArtistSoundWave({
           '--color-accent-contrast': lightAura ? '#000' : '#fff',
           background: `linear-gradient(135deg, ${auraRgba(aura, 0.16)} 0%, rgba(255,255,255,0.025) 45%, ${auraRgba(aura, 0.1)} 100%)`,
           border: `0.5px solid ${auraRgba(aura, 0.26)}`,
-          backdropFilter: 'blur(40px) saturate(160%)',
-          WebkitBackdropFilter: 'blur(40px) saturate(160%)',
+          backdropFilter: 'blur(26px) saturate(165%)',
+          WebkitBackdropFilter: 'blur(26px) saturate(165%)',
           boxShadow: `0 30px 90px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.07), 0 0 80px ${auraRgba(aura, 0.22)}`,
           transition: `box-shadow 0.6s ${EASE}`,
         } as React.CSSProperties
@@ -170,21 +170,19 @@ export const ArtistSoundWave = React.memo(function ArtistSoundWave({
           background: `linear-gradient(90deg, transparent, ${auraRgba(aura, 0.55)}, transparent)`,
         }}
       />
-      {/* aura orbs (decorative, clipped by section overflow:hidden) */}
+      {/* aura orbs (decorative smooth gradients, zero offscreen blur pass) */}
       <div
-        className="absolute left-[-40px] top-1/2 w-40 h-40 rounded-full pointer-events-none opacity-50"
+        className="absolute left-[-60px] top-1/2 w-64 h-64 rounded-full pointer-events-none opacity-45"
         style={{
-          background: auraRgba(aura, 0.5),
-          filter: 'blur(60px)',
+          background: `radial-gradient(circle, ${auraRgba(aura, 0.45)} 0%, transparent 70%)`,
           contain: 'strict',
           transform: 'translateZ(0) translateY(-50%)',
         }}
       />
       <div
-        className="absolute right-[-30px] top-1/2 w-32 h-32 rounded-full pointer-events-none opacity-40"
+        className="absolute right-[-50px] top-1/2 w-56 h-56 rounded-full pointer-events-none opacity-35"
         style={{
-          background: auraRgba(aura, 0.4),
-          filter: 'blur(56px)',
+          background: `radial-gradient(circle, ${auraRgba(aura, 0.35)} 0%, transparent 70%)`,
           contain: 'strict',
           transform: 'translateZ(0) translateY(-50%)',
         }}

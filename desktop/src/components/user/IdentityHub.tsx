@@ -7,7 +7,7 @@ import { AuraPicker } from './AuraPicker';
 import { AvatarArtifact } from './AvatarArtifact';
 import { FollowBtn } from './FollowBtn';
 import { StatOrb } from './StatOrb';
-import { getWebIcon, InfoChip, ProChip, VerifiedBadge } from './UserChips';
+import { getWebIcon, InfoChip, ProChip, StarChip, VerifiedBadge } from './UserChips';
 
 function dateFormattedLong(dateStr: string | null | undefined) {
   if (!dateStr) return null;
@@ -72,6 +72,7 @@ export function IdentityHub({
         <div className="flex-1 min-w-0 flex flex-col justify-between gap-5 text-center lg:text-left">
           <div className="flex flex-wrap items-center gap-2 justify-center lg:justify-start">
             {user.verified && <VerifiedBadge title={t('user.verifiedArtist')} />}
+            {hasStar && <StarChip label={t('user.starBadge', 'Star')} accentColor={aura.orbs[0]} />}
             {user.plan && user.plan !== 'Free' && <ProChip plan={user.plan} />}
             {formattedDate && <InfoChip icon={<Calendar size={11} />}>{formattedDate}</InfoChip>}
             {country && <InfoChip icon={<Globe size={11} />}>{country}</InfoChip>}

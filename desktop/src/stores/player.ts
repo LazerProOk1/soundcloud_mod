@@ -141,6 +141,8 @@ interface PlayerState {
   repeat: RepeatMode;
   /** Download progress 0-1 when loading from API, null when not downloading */
   downloadProgress: number | null;
+  /** True while fetching/decoding audio for the active track */
+  isBuffering: boolean;
   playbackQuality: PlaybackQuality | null;
   playbackSource: PlaybackSource | null;
 
@@ -166,11 +168,13 @@ interface PlayerState {
   removeFromQueue: (index: number) => void;
   moveInQueue: (from: number, to: number) => void;
   clearQueue: () => void;
+  clearUpcoming: () => void;
   toggleShuffle: () => void;
   toggleRepeat: () => void;
   setCurrentTrackAccess: (access: Track['access']) => void;
   replaceTrackMetadata: (track: Track) => void;
   setPlaybackTransport: (quality: PlaybackQuality | null, source: PlaybackSource | null) => void;
+  setBuffering: (v: boolean) => void;
 }
 
 export const usePlayerStore = create<PlayerState>()(
@@ -186,6 +190,7 @@ export const usePlayerStore = create<PlayerState>()(
       shuffle: false,
       repeat: 'off',
       downloadProgress: null,
+      isBuffering: false,
       playbackQuality: null,
       playbackSource: null,
       playbackRate: PLAYBACK_RATE_DEFAULT,
@@ -379,6 +384,19 @@ export const usePlayerStore = create<PlayerState>()(
 
       clearQueue: () => set({ queue: [], queueIndex: -1, originalQueue: null }),
 
+      clearUpcoming: () =>
+        set((s) => {
+          if (s.queueIndex < 0 || s.queue.length === 0) {
+            return { queue: [], queueIndex: -1, originalQueue: null };
+          }
+          const kept = s.queue.slice(0, s.queueIndex + 1);
+          const keptUrns = new Set(kept.map((t) => t.urn));
+          const originalQueue = s.originalQueue
+            ? s.originalQueue.filter((t) => keptUrns.has(t.urn))
+            : null;
+          return { queue: kept, originalQueue };
+        }),
+
       toggleShuffle: () => {
         const { shuffle, queue, queueIndex, currentTrack } = get();
         if (!shuffle) {
@@ -442,6 +460,9 @@ export const usePlayerStore = create<PlayerState>()(
             ? state
             : { playbackQuality: quality, playbackSource: source },
         ),
+
+      setBuffering: (isBuffering) =>
+        set((state) => (state.isBuffering === isBuffering ? state : { isBuffering })),
     }),
     {
       name: 'sc-player',

@@ -1,8 +1,8 @@
 [package]
 name = "soundcloud-desktop"
 version = "1.3.0"
-description = "Beautiful Soundcloud Desktop app"
-authors = ["zxcloli666"]
+description = "SoundCloud Mod — native desktop SoundCloud client with Liquid Glass UI"
+authors = ["LazerProOk1"]
 edition = "2021"
 
 [lib]

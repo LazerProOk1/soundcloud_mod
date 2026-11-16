@@ -69,8 +69,12 @@ export function useSuperliked(urn: string): boolean {
 export function orderLikes(tracks: Track[], top: string[], bottom: string[]): Track[] {
   if (top.length === 0 && bottom.length === 0) return tracks;
   const rank = new Map<string, number>();
-  top.forEach((u, i) => rank.set(u, i - top.length));
-  bottom.forEach((u, i) => rank.set(u, tracks.length + i));
+  top.forEach((u, i) => {
+    rank.set(u, i - top.length);
+  });
+  bottom.forEach((u, i) => {
+    rank.set(u, tracks.length + i);
+  });
   return tracks
     .map((t, i) => ({ t, r: rank.get(t.urn) ?? i }))
     .sort((a, b) => a.r - b.r)

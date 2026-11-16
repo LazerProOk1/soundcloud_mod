@@ -1,11 +1,13 @@
 import React, { useCallback, useMemo, useState } from 'react';
 
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { useLikedTracks, useRecommendedTracks, useRelatedPool } from '../../../lib/hooks';
 import {
   AudioLines,
   Compass,
   Disc3,
+  Fullscreen,
   Headphones,
   playBlack14,
   RefreshCw,
@@ -14,6 +16,7 @@ import {
 } from '../../../lib/icons';
 import { isUrnLiked } from '../../../lib/likes';
 import { useLiquidLight } from '../../../lib/useLiquidLight';
+import { tuneWaveTracks } from '../../../lib/wave-vibes';
 import { useAuthStore } from '../../../stores/auth';
 import type { Track } from '../../../stores/player';
 import { usePlayerStore } from '../../../stores/player';
@@ -31,6 +34,7 @@ import { HideLikedToggle } from './hide-liked-toggle';
 import { LanguageFilter } from './language-filter';
 import { WaveTrackHeader } from './track-header';
 import { useInfiniteWave } from './use-infinite-wave';
+import { VibeTuner } from './vibe-tuner';
 import { LiveWaveform } from './waveform';
 
 const CLUSTER_ORDER: ClusterId[] = [
@@ -56,11 +60,16 @@ const WAVE_ICON = <AudioLines size={14} />;
 
 export const SoundWaveBlock = React.memo(function SoundWaveBlock() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const selectedLanguages = useSettingsStore((s) => s.soundwaveLanguages);
   const setSelectedLanguages = useSettingsStore((s) => s.setSoundwaveLanguages);
   const hideLiked = useSettingsStore((s) => s.soundwaveHideLiked);
   const setHideLiked = useSettingsStore((s) => s.setSoundwaveHideLiked);
+  const waveVibe = useSettingsStore((s) => s.soundwaveVibe);
+  const setWaveVibe = useSettingsStore((s) => s.setSoundwaveVibe);
+  const waveMode = useSettingsStore((s) => s.soundwaveMode);
+  const setWaveMode = useSettingsStore((s) => s.setSoundwaveMode);
 
   const currentTrack = usePlayerStore((s) => s.currentTrack);
 
@@ -110,9 +119,9 @@ export const SoundWaveBlock = React.memo(function SoundWaveBlock() {
   const hideLikedFilter = useCallback((tr: Track) => !tr.user_favorite && !isUrnLiked(tr.urn), []);
 
   const filteredAllTracks = useMemo(() => {
-    if (!hideLiked) return immediateBase;
-    return immediateBase.filter(hideLikedFilter);
-  }, [immediateBase, hideLiked, hideLikedFilter]);
+    const base = hideLiked ? immediateBase.filter(hideLikedFilter) : immediateBase;
+    return tuneWaveTracks(base, waveVibe, waveMode);
+  }, [immediateBase, hideLiked, hideLikedFilter, waveVibe, waveMode]);
 
   const filteredClusters = useMemo(() => {
     if (!hideLiked) return rawClusters;
@@ -221,6 +230,15 @@ export const SoundWaveBlock = React.memo(function SoundWaveBlock() {
             <LanguageFilter selected={selectedLanguages} onChange={setSelectedLanguages} />
             <button
               type="button"
+              onClick={() => navigate('/soundwave')}
+              className="flex items-center gap-1.5 h-8 px-3 rounded-full bg-white/[0.06] border border-white/[0.08] hover:bg-white/[0.11] hover:border-white/[0.16] transition-colors duration-200 text-[11.5px] font-medium text-white/75 hover:text-white cursor-pointer"
+              title={t('soundwave.openFullscreen', 'Open full wave')}
+            >
+              <Fullscreen size={13} />
+              <span className="hidden sm:inline">{t('soundwave.fullscreen', 'Поток')}</span>
+            </button>
+            <button
+              type="button"
               onClick={handleRefresh}
               disabled={spinning}
               className="flex items-center justify-center w-8 h-8 rounded-full bg-white/[0.06] border border-white/[0.08] hover:bg-white/[0.1] hover:border-white/[0.14] transition-colors duration-200 text-white/70 hover:text-white/95 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
@@ -244,6 +262,14 @@ export const SoundWaveBlock = React.memo(function SoundWaveBlock() {
             </button>
           </div>
         </div>
+
+        <VibeTuner
+          vibe={waveVibe}
+          mode={waveMode}
+          onVibeChange={setWaveVibe}
+          onModeChange={setWaveMode}
+          compact
+        />
 
         <div className="flex flex-col gap-3">
           {waveTrack ? (

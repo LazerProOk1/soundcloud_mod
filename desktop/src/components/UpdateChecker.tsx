@@ -10,6 +10,14 @@ function stripLeadingV(version: string) {
   return version.replace(/^v/, '');
 }
 
+function openExternalUrl(url: string) {
+  if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
+    void openUrl(url).catch(() => window.open(url, '_blank', 'noopener,noreferrer'));
+    return;
+  }
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
+
 function renderInlineMarkdown(text: string, keyPrefix: string) {
   const parts: React.ReactNode[] = [];
   const pattern = /!\[([^\]]*)\]\(([^)]+)\)|\[([^\]]+)\]\(([^)]+)\)/g;
@@ -39,7 +47,7 @@ function renderInlineMarkdown(text: string, keyPrefix: string) {
         <button
           key={`${keyPrefix}-link-${matchIndex}`}
           type="button"
-          onClick={() => openUrl(linkUrl)}
+          onClick={() => openExternalUrl(linkUrl)}
           className="inline text-accent hover:underline cursor-pointer"
         >
           {linkLabel}
@@ -213,7 +221,7 @@ export function UpdateChecker({
           </button>
           <button
             type="button"
-            onClick={() => openUrl(release.html_url)}
+            onClick={() => openExternalUrl(release.html_url)}
             className="flex-1 py-2.5 rounded-xl bg-accent hover:bg-accent-hover text-[13px] text-accent-contrast font-semibold transition-colors cursor-pointer flex items-center justify-center gap-1.5 shadow-[0_0_20px_var(--color-accent-glow)]"
           >
             {t('update.download')}

@@ -3,7 +3,7 @@ import React, { useMemo } from 'react';
 interface Props {
   /** Number of drifting accent particles. Fewer on smaller blocks. */
   particleCount?: number;
-  /** Max blur radius for aurora orbs. Lower = cheaper GPU paint. */
+  /** Retained for API compatibility; smooth multi-stop gradients need no offscreen blur. */
   blur?: number;
   /** Primary aurora opacity. */
   intensity?: number;
@@ -12,17 +12,11 @@ interface Props {
 /**
  * Decorative aurora + particle layer for SoundWave blocks.
  *
- * Performance-safe design:
- *  - NO `filter: url(#liquid-gooey)` wrapper — SVG filters on animated subtrees
- *    force full CPU rasterization every frame and kill FPS.
- *  - Blur is applied per-orb as a STATIC CSS `filter: blur()` — GPU caches the
- *    result and only re-applies cheap translate/scale compositing each frame.
- *  - `contain: strict` isolates repaints to this subtree.
- *  - `will-change: transform` promotes orbs to their own GPU layer.
+ * Uses smooth multi-stop radial gradients (no `filter: blur()` or SVG filter wrappers)
+ * so drifting aurora orbs stay purely on the GPU compositor with zero blur readbacks.
  */
 export const AmbientLayer = React.memo(function AmbientLayer({
   particleCount = 8,
-  blur = 40,
   intensity = 0.55,
 }: Props) {
   const particles = useMemo(
@@ -36,14 +30,12 @@ export const AmbientLayer = React.memo(function AmbientLayer({
       aria-hidden
       style={{ contain: 'strict', transform: 'translateZ(0)' }}
     >
-      {/* Orbs: each blurred independently — no SVG filter wrapper (perf-critical) */}
-
       {/* Primary accent orb — top-left */}
       <div
-        className="absolute -top-1/3 -left-1/4 w-[55%] h-[170%] rounded-full"
+        className="absolute -top-1/3 -left-1/4 w-[64%] h-[180%] rounded-full"
         style={{
-          background: 'radial-gradient(closest-side, var(--color-accent-glow), transparent 70%)',
-          filter: `blur(${blur}px)`,
+          background:
+            'radial-gradient(closest-side, var(--color-accent-glow) 0%, color-mix(in srgb, var(--color-accent-glow) 35%, transparent) 42%, transparent 74%)',
           opacity: intensity,
           animation: 'sw-aurora 32s linear infinite',
           willChange: 'transform',
@@ -51,10 +43,10 @@ export const AmbientLayer = React.memo(function AmbientLayer({
       />
       {/* White shimmer orb — bottom-right */}
       <div
-        className="absolute -bottom-1/2 right-[-12%] w-[50%] h-[160%] rounded-full"
+        className="absolute -bottom-1/2 right-[-12%] w-[58%] h-[170%] rounded-full"
         style={{
-          background: 'radial-gradient(closest-side, rgba(255,255,255,0.07), transparent 70%)',
-          filter: `blur(${blur + 8}px)`,
+          background:
+            'radial-gradient(closest-side, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.03) 42%, transparent 74%)',
           opacity: intensity * 0.8,
           animation: 'sw-aurora 44s linear reverse infinite',
           willChange: 'transform',
@@ -62,11 +54,11 @@ export const AmbientLayer = React.memo(function AmbientLayer({
       />
       {/* Secondary indigo orb — center-right */}
       <div
-        className="absolute top-[10%] right-[-8%] w-[40%] h-[130%] rounded-full"
+        className="absolute top-[10%] right-[-8%] w-[48%] h-[140%] rounded-full"
         style={{
-          background: 'radial-gradient(closest-side, rgba(99,102,241,0.14), transparent 70%)',
-          filter: `blur(${blur + 14}px)`,
-          opacity: intensity * 0.6,
+          background:
+            'radial-gradient(closest-side, rgba(99,102,241,0.16) 0%, rgba(99,102,241,0.05) 42%, transparent 74%)',
+          opacity: intensity * 0.65,
           animation: 'sw-aurora 58s linear infinite',
           animationDelay: '-18s',
           willChange: 'transform',

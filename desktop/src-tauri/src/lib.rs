@@ -108,7 +108,11 @@ pub fn run() {
             let images_dir = data_dir.join("images");
             std::fs::create_dir_all(&images_dir).ok();
 
-            let http_client = reqwest::Client::new();
+            let http_client = reqwest::Client::builder()
+                .connect_timeout(std::time::Duration::from_secs(5))
+                .timeout(std::time::Duration::from_secs(20))
+                .build()
+                .unwrap_or_else(|_| reqwest::Client::new());
             let rt = tokio::runtime::Runtime::new().expect("failed to create tokio runtime");
 
             network::proxy::STATE
@@ -120,10 +124,7 @@ pub fn run() {
                 .ok();
 
             network::image_cache::STATE
-                .set(network::image_cache::ImageCache {
-                    dir: images_dir,
-                    http_client,
-                })
+                .set(network::image_cache::ImageCache::new(images_dir, http_client))
                 .ok();
 
             let (static_port, proxy_port) = rt.block_on(network::server::start_all(wallpapers_dir));
@@ -213,6 +214,8 @@ pub fn run() {
             track_cache::track_clear_cache,
             track_cache::track_clear_liked_cache,
             track_cache::track_list_cached,
+            track_cache::track_remove_cached,
+            track_cache::track_mark_played,
             track_cache::track_enforce_cache_limit,
             track_cache::track_cache_likes,
             track_cache::track_cache_likes_running,

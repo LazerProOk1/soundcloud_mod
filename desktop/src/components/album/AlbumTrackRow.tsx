@@ -83,10 +83,8 @@ function AlbumTrackRowImpl({ track, position, queue, aura }: AlbumTrackRowProps)
               <div
                 className="w-9 h-9 rounded-full flex items-center justify-center"
                 style={{
-                  background: lightAura ? auraRgba(aura, 0.85) : 'rgba(255,255,255,0.12)',
-                  boxShadow: `inset 0 0 0 1px ${auraRgba(aura, 0.3)}`,
-                  backdropFilter: 'blur(16px)',
-                  WebkitBackdropFilter: 'blur(16px)',
+                  background: lightAura ? auraRgba(aura, 0.85) : 'rgba(20,20,26,0.75)',
+                  boxShadow: `inset 0 0 0 1px ${auraRgba(aura, 0.35)}`,
                 }}
               >
                 {playIcon}

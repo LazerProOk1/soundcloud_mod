@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AddToPlaylistDialog } from '../components/music/AddToPlaylistDialog';
 import { LikeButton } from '../components/music/LikeButton';
 import { PlaylistCard } from '../components/music/PlaylistCard';
@@ -436,12 +436,31 @@ const SearchEmpty = React.memo(function SearchEmpty() {
 
 export const Search = React.memo(() => {
   const { t } = useTranslation();
-  const [inputValue, setInputValue] = useState('');
-  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [searchParams] = useSearchParams();
+  const urlQuery = searchParams.get('q')?.trim() ?? '';
+  const [inputValue, setInputValue] = useState(urlQuery);
+  const [debouncedQuery, setDebouncedQuery] = useState(() =>
+    urlQuery && !isSoundCloudUrl(urlQuery) ? urlQuery : '',
+  );
   const [activeTab, setActiveTab] = useState<'tracks' | 'playlists' | 'users'>('tracks');
-  const [resolveUrl, setResolveUrl] = useState<string | null>(null);
+  const [resolveUrl, setResolveUrl] = useState<string | null>(() =>
+    urlQuery && isSoundCloudUrl(urlQuery) ? urlQuery : null,
+  );
 
   const addQuery = useSearchHistoryStore((s) => s.addQuery);
+
+  useEffect(() => {
+    if (!urlQuery) return;
+    setInputValue(urlQuery);
+    if (isSoundCloudUrl(urlQuery)) {
+      setDebouncedQuery('');
+      setResolveUrl(urlQuery);
+    } else {
+      setResolveUrl(null);
+      setDebouncedQuery(urlQuery);
+      addQuery(urlQuery);
+    }
+  }, [urlQuery, addQuery]);
 
   const isUrl = isSoundCloudUrl(inputValue);
 
@@ -563,7 +582,7 @@ export const Search = React.memo(() => {
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
+                onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-300 ease-[var(--ease-apple)] ${
                   isActive
                     ? 'bg-white/[0.12] text-white shadow-md border border-white/[0.05]'

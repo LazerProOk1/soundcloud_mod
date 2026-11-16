@@ -14,4 +14,3 @@ export function openTrackMenu(e: React.MouseEvent<HTMLElement>, track: Track, qu
     y: fromKeyboard ? rect.top + rect.height / 2 : e.clientY,
   });
 }
-

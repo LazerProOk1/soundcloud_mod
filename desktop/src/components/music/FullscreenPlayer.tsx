@@ -8,67 +8,21 @@
  * Dynamic background derives from useArtworkColor (same blobs as DynamicBackground).
  */
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { rgbToCss, useArtworkColor } from '../../hooks/useArtworkColor';
-import { api } from '../../lib/api';
 import { handlePrev } from '../../lib/audio';
 import { art, dur } from '../../lib/formatters';
-import { invalidateAllLikesCache, useLiquidGlass } from '../../lib/hooks';
-import { Heart, SkipBack, SkipForward, X } from '../../lib/icons';
-import { optimisticToggleLike } from '../../lib/likes';
+import { useLiquidGlass } from '../../lib/hooks';
+import { SkipBack, SkipForward, X } from '../../lib/icons';
 import { useArtistDisplay, useDisplayTitle } from '../../lib/track-display';
 import { useLyricsStore } from '../../stores/lyrics';
 import { type Track, usePlayerStore } from '../../stores/player';
 import { ProgressSlider } from '../layout/NowPlayingBar';
-
-/* ── Like button ────────────────────────────────────────────── */
-
-function FsLikeButton({ track }: { track: Track }) {
-  const { t } = useTranslation();
-  const qc = useQueryClient();
-  const { data: trackData } = useQuery({
-    queryKey: ['track', track.urn],
-    queryFn: () => api<Track>(`/tracks/${encodeURIComponent(track.urn)}`),
-    enabled: !!track.urn,
-    staleTime: 30_000,
-    initialData: track,
-  });
-
-  const [liked, setLiked] = useState<boolean | null>(null);
-  const isLiked = liked ?? trackData?.user_favorite ?? false;
-
-  const toggle = async () => {
-    const next = !isLiked;
-    setLiked(next);
-    if (trackData) optimisticToggleLike(qc, trackData, next);
-    invalidateAllLikesCache();
-    try {
-      await api(`/likes/tracks/${encodeURIComponent(track.urn)}`, {
-        method: next ? 'POST' : 'DELETE',
-      });
-    } catch {
-      setLiked(!next);
-      if (trackData) optimisticToggleLike(qc, trackData, !next);
-    }
-  };
-
-  return (
-    <button
-      type="button"
-      onClick={toggle}
-      title={t('track.likes')}
-      className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer hover:bg-white/[0.06] active:scale-95 ${
-        isLiked ? 'text-accent' : 'text-white/40 hover:text-white/70'
-      }`}
-    >
-      <Heart size={22} fill={isLiked ? 'currentColor' : 'none'} />
-    </button>
-  );
-}
+import { LikeButton } from './LikeButton';
+import { LiveSpectrumCanvas } from './LiveSpectrumCanvas';
 
 /* ── Inner content (track guaranteed non-null) ──────────────── */
 
@@ -125,9 +79,9 @@ const FsContent = React.memo(({ track, visible, onClose }: FsContentProps) => {
               backgroundImage: `url(${artworkLg})`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
-              filter: 'blur(80px) saturate(1.6)',
-              transform: 'scale(1.15) translateZ(0)',
-              opacity: 0.3,
+              filter: 'blur(32px) saturate(1.5)',
+              transform: 'scale(1.12) translateZ(0)',
+              opacity: 0.28,
             }}
           />
           {colors && (
@@ -136,26 +90,24 @@ const FsContent = React.memo(({ track, visible, onClose }: FsContentProps) => {
                 aria-hidden="true"
                 className="absolute pointer-events-none"
                 style={{
-                  width: '60vw',
-                  height: '60vh',
-                  top: '-10vh',
-                  left: '-10vw',
+                  width: '68vw',
+                  height: '68vh',
+                  top: '-14vh',
+                  left: '-12vw',
                   borderRadius: '50%',
-                  background: `radial-gradient(ellipse at center, ${rgbToCss(colors.dominant, 0.35)} 0%, transparent 70%)`,
-                  filter: 'blur(80px)',
+                  background: `radial-gradient(ellipse at center, ${rgbToCss(colors.dominant, 0.34)} 0%, ${rgbToCss(colors.dominant, 0.12)} 42%, transparent 72%)`,
                 }}
               />
               <div
                 aria-hidden="true"
                 className="absolute pointer-events-none"
                 style={{
-                  width: '50vw',
-                  height: '50vh',
-                  bottom: '-5vh',
-                  right: '-5vw',
+                  width: '58vw',
+                  height: '58vh',
+                  bottom: '-10vh',
+                  right: '-10vw',
                   borderRadius: '50%',
-                  background: `radial-gradient(ellipse at center, ${rgbToCss(colors.secondary, 0.28)} 0%, transparent 70%)`,
-                  filter: 'blur(90px)',
+                  background: `radial-gradient(ellipse at center, ${rgbToCss(colors.secondary, 0.28)} 0%, ${rgbToCss(colors.secondary, 0.1)} 42%, transparent 72%)`,
                 }}
               />
             </>
@@ -227,10 +179,22 @@ const FsContent = React.memo(({ track, visible, onClose }: FsContentProps) => {
         </div>
 
         {/* Like */}
-        <FsLikeButton track={track} />
+        <LikeButton
+          track={track}
+          variant="always"
+          size={22}
+          className="w-12 h-12"
+          title={t('track.likes')}
+        />
 
         {/* Progress slider */}
-        <div className="w-full">
+        <div className="w-full space-y-2">
+          <LiveSpectrumCanvas
+            active={isPlaying}
+            bars={36}
+            height={20}
+            className="max-w-[260px] mx-auto opacity-80"
+          />
           <ProgressSlider />
           <div className="flex justify-end mt-1">
             <span className="text-[10px] text-white/20 tabular-nums">{dur(track.duration)}</span>
