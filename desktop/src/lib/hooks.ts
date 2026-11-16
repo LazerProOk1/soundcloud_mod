@@ -14,6 +14,7 @@ import { usePlayerStore } from '../stores/player';
 import { api } from './api';
 import { initLikedUrns } from './likes';
 import { rememberFollowingTracks, rememberLikedTracks, rememberTracks } from './offline-index';
+import { useSettingsStore } from '../stores/settings';
 
 /* ── Types ─────────────────────────────────────────────────────── */
 
@@ -1092,8 +1093,9 @@ export function useDiscoverData(pool: RelatedPool | undefined, likedTracks: Trac
 /* ── Infinite scroll ───────────────────────────────────────────── */
 
 /** Always returns true — liquid glass toggle has been removed from Settings */
+/** Liquid Glass styling on/off (Settings → Interface). Off = classic flat look. */
 export function useLiquidGlass() {
-  return true;
+  return useSettingsStore((s) => s.liquidGlass);
 }
 
 export function useInfiniteScroll(

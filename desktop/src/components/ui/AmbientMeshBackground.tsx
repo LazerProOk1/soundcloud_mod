@@ -10,6 +10,7 @@ export const AmbientMeshBackground = React.memo(function AmbientMeshBackground()
   return (
     <div
       aria-hidden="true"
+      className="ambient-mesh"
       style={{
         position: 'absolute',
         inset: 0,

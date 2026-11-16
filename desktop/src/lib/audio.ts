@@ -421,20 +421,26 @@ async function loadTrack(track: Track) {
     usePlayerStore.setState({ downloadProgress: 0 });
 
     // Order: SoundCloud directly → Zaycev.net → YouTube → legacy streaming server.
-    const download: Promise<TrackCacheInfo> = ensureTrackCached(urn, highQualityStreaming, true)
+    // Zaycev.net / YouTube by artist + title; cached under this URN, so likes and
+    // playlists keep working.
+    const fromFallback = () =>
+      invoke<TrackCacheInfo>('track_cache_from_fallback', {
+        urn,
+        artist: getArtistDisplay(track).primary,
+        title: getDisplayTitle(track),
+        durationMs: track.duration || null,
+      });
+    const fromSoundCloud = () => ensureTrackCached(urn, highQualityStreaming, true);
+    const zaycevFirst = useSettingsStore.getState().primarySource === 'zaycev';
+    const [first, second] = zaycevFirst
+      ? [fromFallback, fromSoundCloud]
+      : [fromSoundCloud, fromFallback];
+
+    const download: Promise<TrackCacheInfo> = first()
       .catch((error) => {
-        // SoundCloud won't serve it (DRM, removed, region-locked): find the same song on
-        // Zaycev.net, then YouTube. Cached under this URN, so likes and playlists keep working.
         if (gen !== loadGen) throw error;
-        const artist = getArtistDisplay(track).primary;
-        const title = getDisplayTitle(track);
-        console.warn('[Audio] SoundCloud failed, trying fallback sources:', artist, title, error);
-        return invoke<TrackCacheInfo>('track_cache_from_fallback', {
-          urn,
-          artist,
-          title,
-          durationMs: track.duration || null,
-        });
+        console.warn('[Audio] Primary source failed, trying the next one:', error);
+        return second();
       })
       .catch((error) => {
         // Last resort: the legacy server still has some tracks found nowhere else.

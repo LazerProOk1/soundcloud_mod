@@ -464,7 +464,9 @@
       "Global Command Palette (Ctrl+K / ⌘K) for instant search, EQ presets, and themes",
       "SoundWave fullscreen discovery mode & local offline cache badges",
       "JSON backup & restore for settings, equalizer, and local library"
-    ]
+    ],
+    "primarySource": "Primary music source",
+    "primarySourceDesc": "Where tracks load from first. If missing, the others are tried (SoundCloud, Zaycev.net, YouTube)."
   },
   "eq": {
     "title": "Equalizer",
@@ -746,5 +748,15 @@
     "discover": "Discover",
     "search": "What do you want to play?",
     "settings": "Settings"
+  },
+  "trackList": {
+    "meta": "{{count}} tracks, {{duration}}",
+    "shuffle": "Shuffle",
+    "searchHere": "Search in this list",
+    "title": "Title",
+    "album": "Album",
+    "empty": "Nothing here yet",
+    "download": "Download for offline",
+    "downloadStarted": "Downloading {{count}} tracks — see Offline for progress"
   }
 }

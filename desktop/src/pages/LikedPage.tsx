@@ -1,0 +1,54 @@
+import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
+import { TrackListPage } from '../components/music/TrackListPage';
+import { downloadAllLikes } from '../lib/cache';
+import { useInfiniteScroll, useLikedTracks } from '../lib/hooks';
+import { Heart, Loader2 } from '../lib/icons';
+import { useAuthStore } from '../stores/auth';
+import { orderLikes, useLibraryLocalStore } from '../stores/library-local';
+
+export function LikedPage() {
+  const { t } = useTranslation();
+  const total = useAuthStore((s) => s.user?.public_favorites_count);
+  const likes = useLikedTracks(50);
+  const likesTop = useLibraryLocalStore((s) => s.likesTop);
+  const likesBottom = useLibraryLocalStore((s) => s.likesBottom);
+  const tracks = useMemo(
+    () => orderLikes(likes.tracks, likesTop, likesBottom),
+    [likes.tracks, likesTop, likesBottom],
+  );
+  const sentinelRef = useInfiniteScroll(
+    !!likes.hasNextPage,
+    !!likes.isFetchingNextPage,
+    likes.fetchNextPage,
+  );
+
+  return (
+    <TrackListPage
+      kind={t('sidebar.playlist')}
+      title={t('library.likedTracks')}
+      tile={
+        <div
+          className="w-full h-full flex items-center justify-center text-white"
+          style={{ background: 'linear-gradient(135deg, #4f46e5, #a5b4fc)' }}
+        >
+          <Heart size={72} fill="currentColor" />
+        </div>
+      }
+      tracks={tracks}
+      totalCount={total}
+      isLoading={likes.isLoading}
+      onDownload={() => {
+        downloadAllLikes()
+          .then((n) => toast.success(t('trackList.downloadStarted', { count: n })))
+          .catch((e) => toast.error(String(e)));
+      }}
+      footer={
+        <div ref={sentinelRef} className="h-12 flex items-center justify-center">
+          {likes.isFetchingNextPage && <Loader2 size={20} className="text-white/30 animate-spin" />}
+        </div>
+      }
+    />
+  );
+}

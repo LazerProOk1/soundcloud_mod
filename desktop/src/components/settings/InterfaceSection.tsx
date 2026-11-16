@@ -186,6 +186,41 @@ const CssRow = React.memo(function CssRow() {
   );
 });
 
+const SourceRow = React.memo(function SourceRow() {
+  const { t } = useTranslation();
+  const source = useSettingsStore((s) => s.primarySource);
+  const setSource = useSettingsStore((s) => s.setPrimarySource);
+  const options = [
+    { id: 'soundcloud', label: 'SoundCloud', dot: '#ff5500' },
+    { id: 'zaycev', label: 'Зайцев.нет', dot: '#3b82f6' },
+  ] as const;
+  return (
+    <div className="space-y-3">
+      <div>
+        <p className="text-[13px] text-white/70 font-medium">{t('settings.primarySource')}</p>
+        <p className="text-[11px] text-white/30 mt-0.5">{t('settings.primarySourceDesc')}</p>
+      </div>
+      <div className="flex flex-wrap gap-2">
+        {options.map((o) => (
+          <button
+            key={o.id}
+            type="button"
+            onClick={() => setSource(o.id)}
+            className={`flex items-center gap-2 h-9 px-4 rounded-full text-[13px] font-semibold transition-colors cursor-pointer ${
+              source === o.id
+                ? 'bg-white text-black'
+                : 'bg-white/[0.07] text-white/80 hover:bg-white/[0.12]'
+            }`}
+          >
+            <span className="w-2 h-2 rounded-full" style={{ background: o.dot }} />
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+});
+
 export const InterfaceSection = React.memo(function InterfaceSection() {
   const { t } = useTranslation();
   return (
@@ -194,6 +229,7 @@ export const InterfaceSection = React.memo(function InterfaceSection() {
         {t('settings.interface')}
       </h3>
       <LiquidGlassRow />
+      <SourceRow />
       <ScaleRow />
       <FontRow />
       <CssRow />

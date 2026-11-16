@@ -48,7 +48,7 @@ export const LikeButton = React.memo(function LikeButton({
   useEffect(() => {
     if (liked && !prevLikedRef.current) {
       setPopping(true);
-      const timer = setTimeout(() => setPopping(false), 380);
+      const timer = setTimeout(() => setPopping(false), 600);
       prevLikedRef.current = liked;
       return () => clearTimeout(timer);
     }
@@ -96,7 +96,7 @@ export const LikeButton = React.memo(function LikeButton({
         <Heart
           size={size ?? 14}
           fill={liked ? 'currentColor' : 'none'}
-          className={popping ? 'animate-like-pop' : undefined}
+          className={popping ? 'heart-pop' : undefined}
         />
       </button>
     );
@@ -118,7 +118,7 @@ export const LikeButton = React.memo(function LikeButton({
         <Heart
           size={size ?? 16}
           fill={liked ? 'currentColor' : 'none'}
-          className={popping ? 'animate-like-pop' : undefined}
+          className={popping ? 'heart-pop' : undefined}
         />
       </button>
     );
@@ -139,7 +139,7 @@ export const LikeButton = React.memo(function LikeButton({
       <Heart
         size={size ?? 14}
         fill={liked ? 'currentColor' : 'none'}
-        className={popping ? 'animate-like-pop' : undefined}
+        className={popping ? 'heart-pop' : undefined}
       />
     </button>
   );

@@ -92,7 +92,7 @@ export const Sidebar = React.memo(() => {
           tile={gradientTile('#ff5500', '#a21caf', <AudioLines size={20} />)}
         />
         <Row
-          to="/library?tab=likes"
+          to="/liked"
           title={t('library.likedTracks')}
           subtitle={t('sidebar.playlist')}
           collapsed={collapsed}

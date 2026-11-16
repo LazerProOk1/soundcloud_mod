@@ -108,6 +108,7 @@ export const NowPlayingPanel = React.memo(function NowPlayingPanel({
   const navigate = useNavigate();
   const track = usePlayerStore((s) => s.currentTrack);
   const close = useSettingsStore((s) => s.setNowPlayingPanel);
+  const isPlaying = usePlayerStore((s) => s.isPlaying);
   const title = useDisplayTitle(track ?? ({ title: '' } as Track));
   const artist = useArtistDisplay(track ?? ({} as Track));
 
@@ -145,15 +146,16 @@ export const NowPlayingPanel = React.memo(function NowPlayingPanel({
         </div>
 
         <div
-          className="group/cover aspect-square rounded-2xl overflow-hidden bg-white/[0.04] shadow-[0_20px_50px_rgba(0,0,0,0.45)] ring-1 ring-white/[0.06] cursor-pointer"
+          className={`np-cover group/cover aspect-square rounded-2xl overflow-hidden bg-white/[0.04] shadow-[0_20px_50px_rgba(0,0,0,0.45)] ring-1 ring-white/[0.06] cursor-pointer ${isPlaying ? '' : 'is-paused'}`}
           onClick={() => navigate(`/track/${encodeURIComponent(track.urn)}`)}
           onContextMenu={(e) => openTrackMenu(e, track)}
         >
           {cover ? (
             <img
+              key={track.urn}
               src={cover}
               alt=""
-              className="w-full h-full object-cover transition-transform duration-500 ease-[var(--ease-spring)] group-hover/cover:scale-[1.03]"
+              className="np-cover-img w-full h-full object-cover"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-white/20">

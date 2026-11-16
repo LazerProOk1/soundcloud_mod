@@ -110,6 +110,25 @@ export function cacheLikedTracks(entries: LikeCacheEntry[]): Promise<void> {
   return invoke('track_cache_likes', { entries });
 }
 
+/** Download every liked track (+ lyrics) for offline. Returns how many were queued. */
+export async function downloadAllLikes(): Promise<number> {
+  const [{ fetchAllLikedTracks }, { buildStorageUrls, streamFallbackUrls, getSessionId }, lyrics] =
+    await Promise.all([import('./hooks'), import('./api'), import('./lyrics-fetch')]);
+  const hq = useSettingsStore.getState().highQualityStreaming;
+  const sessionId = getSessionId();
+  const tracks = await fetchAllLikedTracks(200);
+  const entries: LikeCacheEntry[] = tracks.map((track) => ({
+    urn: track.urn,
+    urls: streamFallbackUrls(track.urn, hq),
+    storageUrls: buildStorageUrls(track.urn),
+    sessionId,
+  }));
+  if (entries.length === 0) return 0;
+  void lyrics.cacheLyricsForTracks(tracks, 3);
+  void cacheLikedTracks(entries);
+  return entries.length;
+}
+
 export function isCacheLikesRunning(): Promise<boolean> {
   return invoke<boolean>('track_cache_likes_running');
 }

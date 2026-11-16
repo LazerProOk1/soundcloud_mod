@@ -200,13 +200,12 @@ export function SoundWavePage() {
     [isWaveTrack, queue, allTracks],
   );
 
+  // The big button controls whatever is playing (shown in the centre); with nothing
+  // playing it starts the wave.
   const handlePlayPause = useCallback(() => {
-    if (isWaveTrack) {
-      togglePlay();
-    } else if (allTracks.length > 0) {
-      handleStartWave();
-    }
-  }, [isWaveTrack, allTracks.length, togglePlay, handleStartWave]);
+    if (currentTrack) togglePlay();
+    else if (allTracks.length > 0) handleStartWave();
+  }, [currentTrack, allTracks.length, togglePlay, handleStartWave]);
 
   const handleRefresh = useCallback(() => {
     setIsRefreshing(true);
@@ -324,7 +323,7 @@ export function SoundWavePage() {
                 >
                   <span
                     className={`w-1.5 h-1.5 rounded-full ${
-                      isWaveTrack && isPlaying ? 'animate-pulse' : ''
+                      isPlaying && !!currentTrack ? 'animate-pulse' : ''
                     }`}
                     style={{
                       background: isWaveTrack ? 'var(--color-accent)' : 'rgba(255,255,255,0.35)',
@@ -482,19 +481,19 @@ export function SoundWavePage() {
                   className="w-[62px] h-[62px] rounded-full flex items-center justify-center transition-transform duration-200 group-hover/art:scale-110 active:scale-90"
                   style={{
                     background:
-                      isWaveTrack && isPlaying
+                      isPlaying && !!currentTrack
                         ? 'linear-gradient(165deg, rgba(255,255,255,0.98) 0%, rgba(218,218,230,0.92) 100%)'
                         : 'var(--color-accent)',
                     boxShadow:
-                      isWaveTrack && isPlaying
+                      isPlaying && !!currentTrack
                         ? '0 1px 0 rgba(255,255,255,1) inset, 0 8px 24px rgba(0,0,0,0.45)'
                         : '0 8px 26px var(--color-accent-glow)',
-                    color: isWaveTrack && isPlaying ? '#0b0b0f' : 'var(--color-accent-contrast)',
+                    color: isPlaying && !!currentTrack ? '#0b0b0f' : 'var(--color-accent-contrast)',
                   }}
                 >
-                  {isWaveTrack && isBuffering ? (
+                  {isBuffering && !!currentTrack ? (
                     <Loader2 size={22} className="animate-spin" />
-                  ) : isWaveTrack && isPlaying ? (
+                  ) : isPlaying && !!currentTrack ? (
                     <Pause size={22} fill="currentColor" strokeWidth={0} />
                   ) : (
                     <Play size={22} fill="currentColor" strokeWidth={0} className="ml-0.5" />

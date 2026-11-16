@@ -1473,123 +1473,73 @@ body,
 }
 
 /* ══════════════════════════════════════════════════════════════
-   NO-GLASS MODE — html.no-glass
-   Strips all backdrop-filter blur / frosted-glass effects and
-   replaces them with solid dark surfaces. Toggled via the
-   "Liquid Glass" switch in Settings → Appearance.
+   CLASSIC STYLE — html.no-glass (default; "Liquid Glass" switch off)
+   Flat, calm surfaces: no blur, no specular edges, no glow. Panels stay
+   slightly translucent so the wallpaper / cover colour still shows through.
    ══════════════════════════════════════════════════════════════ */
-
-/* 1. Nuclear: kill ALL backdrop-filter globally ─────────────── */
+.no-glass {
+  --classic-panel: rgba(18, 18, 18, 0.84);
+  --classic-elev: rgba(255, 255, 255, 0.06);
+  --classic-elev-2: rgba(255, 255, 255, 0.1);
+  --classic-line: rgba(255, 255, 255, 0.07);
+}
+.no-glass body {
+  background: #000;
+}
 .no-glass *,
 .no-glass *::before,
 .no-glass *::after {
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }
-
-/* 2. Main panel surfaces ─────────────────────────────────────── */
-.no-glass .liquid-panel {
-  background: rgba(16, 16, 20, 0.98);
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.06),
-    0 4px 16px rgba(0, 0, 0, 0.22);
+.no-glass .liquid-panel,
+.no-glass .liquid-panel-heavy,
+.no-glass [data-ui='sidebar'],
+.no-glass [data-ui='main'],
+.no-glass [data-ui='now-playing'] {
+  background: var(--classic-panel) !important;
+  box-shadow: none !important;
+  border-color: transparent !important;
 }
-
-.no-glass .liquid-panel-heavy {
-  background: rgba(9, 9, 12, 0.99);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05);
-}
-
-/* 3. Content card surfaces ───────────────────────────────────── */
-.no-glass .glass-card {
-  background: rgba(20, 20, 26, 0.97);
-  backdrop-filter: none !important;
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.06),
-    0 4px 16px rgba(0, 0, 0, 0.18);
-}
-
-.no-glass .glass-featured {
-  background: rgba(18, 18, 24, 0.98);
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.07),
-    0 8px 24px rgba(0, 0, 0, 0.26);
-}
-
+.no-glass .glass-card,
+.no-glass .glass-featured,
+.no-glass .glass,
 .no-glass .glass-flat {
-  background: rgba(255, 255, 255, 0.025);
+  background: var(--classic-elev) !important;
+  box-shadow: none !important;
+  border-color: var(--classic-line) !important;
 }
-
-.no-glass .glass {
-  background: rgba(255, 255, 255, 0.025);
-}
-
-/* 4. Interactive surfaces ────────────────────────────────────── */
 .no-glass .glass-pill {
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow:
-    0 0 0 1px rgba(255, 255, 255, 0.08),
-    0 2px 8px rgba(0, 0, 0, 0.18);
+  background: var(--classic-elev-2) !important;
+  box-shadow: none !important;
 }
-
 .no-glass .liquid-interactive:hover {
-  background: rgba(255, 255, 255, 0.06);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+  background: var(--classic-elev-2);
+  box-shadow: none;
 }
-
-.no-glass .liquid-interactive:active {
-  background: rgba(255, 255, 255, 0.04);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05);
-  transform: scale(0.982);
-}
-
-/* 5. Artwork container — keep clip-path, drop specular pseudo ── */
 .no-glass .glass-artwork::before,
-.no-glass .glass-artwork::after {
-  display: none;
-}
-
-/* 6. Grain textures — hidden, no visual purpose without blur ─── */
-.no-glass .glass-card::before {
-  display: none;
-}
-
-@media (prefers-reduced-transparency: reduce) {
-  *,
-  *::before,
-  *::after {
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-  }
-  .liquid-panel,
-  .liquid-panel-heavy,
-  .glass-card,
-  .glass-featured,
-  .miniplayer-root {
-    background: rgba(14, 14, 18, 0.98) !important;
-  }
-}
-
-.no-glass .dynamic-bg-blob-1,
-.no-glass .dynamic-bg-blob-2,
-.no-glass .dynamic-bg-blob-3 {
-  animation: none !important;
-}
-
-/* 7. Cursor spotlight (::after) — meaningless without blur ───── */
+.no-glass .glass-artwork::after,
+.no-glass .glass-card::before,
+.no-glass .liquid-panel::before,
 .no-glass .liquid-panel::after,
+.no-glass .liquid-panel-heavy::before,
+.no-glass .liquid-panel-heavy::after,
 .no-glass .glass-featured::after {
+  display: none !important;
+}
+/* No colour blobs behind the UI in classic mode — only the subtle cover tint. */
+.no-glass .ambient-mesh {
   display: none;
 }
-
-/* 8. MiniPlayer solid root ───────────────────────────────────── */
 .no-glass .miniplayer-root {
-  background: rgba(10, 10, 14, 0.99);
+  background: rgba(18, 18, 18, 0.96);
 }
-
-/* 9. Popover panels (sleep timer, tuning, etc.) ──────────────── */
-.no-glass [class*="bg-[#101012]"] {
-  background: rgba(14, 14, 18, 0.99) !important;
+.no-glass [class*='bg-[#101012]'] {
+  background: rgba(18, 18, 18, 0.96) !important;
+}
+/* Glows → none. */
+.no-glass [class*='shadow-[0_0_'] {
+  box-shadow: none !important;
 }
 
 /* 10. Toaster (App.tsx inline style) — CSS can't reach inline,
@@ -1648,6 +1598,183 @@ a:focus-visible,
 }
 @media (prefers-reduced-motion: reduce) {
   .track-swap-in {
+    animation: none;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   MOTION — spring curves (damped oscillation, sampled for linear()).
+   bouncy ≈ slight overshoot, soft ≈ barely any, smooth ≈ critically damped.
+   ══════════════════════════════════════════════════════════════ */
+:root {
+  --spring-bouncy: linear(0, 0.026, 0.094, 0.191, 0.306, 0.428, 0.551, 0.668, 0.774, 0.867, 0.945, 1.008, 1.056, 1.09, 1.112, 1.124, 1.126, 1.122, 1.113, 1.1, 1.085, 1.07, 1.054, 1.04, 1.027, 1.015, 1.006, 0.998, 0.992, 0.988, 0.985, 0.984, 0.984, 0.985, 0.986, 0.988, 0.99, 0.992, 0.993, 0.995, 1);
+  --spring-soft: linear(0, 0.018, 0.065, 0.131, 0.209, 0.294, 0.38, 0.464, 0.544, 0.618, 0.685, 0.745, 0.798, 0.844, 0.882, 0.915, 0.941, 0.963, 0.98, 0.993, 1.003, 1.01, 1.015, 1.018, 1.019, 1.02, 1.02, 1.019, 1.017, 1.016, 1.014, 1.013, 1.011, 1.009, 1.008, 1.006, 1.005, 1.004, 1.003, 1.002, 1);
+  --spring-smooth: linear(0, 0.022, 0.075, 0.147, 0.228, 0.31, 0.391, 0.467, 0.537, 0.601, 0.657, 0.708, 0.751, 0.789, 0.822, 0.85, 0.874, 0.895, 0.912, 0.927, 0.939, 0.949, 0.958, 0.965, 0.971, 0.976, 0.98, 0.984, 0.987, 0.989, 0.991, 0.993, 0.994, 0.995, 0.996, 0.997, 0.997, 0.998, 0.998, 0.998, 1);
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* Press feedback everywhere: squeeze instantly, spring back. */
+  button:not(:disabled),
+  [data-ui='sidebar'] a {
+    transition:
+      scale 0.5s var(--spring-bouncy),
+      background-color 0.15s,
+      color 0.15s,
+      opacity 0.15s,
+      box-shadow 0.15s,
+      border-color 0.15s;
+  }
+  button:not(:disabled):active {
+    scale: 0.93;
+    transition-duration: 0.08s, 0.15s, 0.15s, 0.15s, 0.15s, 0.15s;
+  }
+  [data-ui='sidebar'] a:active {
+    scale: 0.97;
+    transition-duration: 0.08s, 0.15s, 0.15s, 0.15s, 0.15s, 0.15s;
+  }
+
+  /* Page change: content rises in. */
+  .page-enter {
+    animation: view-fwd 0.5s var(--ease-out-soft) backwards;
+  }
+
+  /* Sliders: the knob grows with a spring under the cursor. */
+  [role='slider'] {
+    transition:
+      scale 0.45s var(--spring-bouncy),
+      opacity 0.15s !important;
+  }
+
+  /* Dialogs, popovers, toasts spring in. */
+  [role='dialog'] {
+    animation: modal-spring-in 0.6s var(--spring-soft);
+  }
+  [data-radix-popper-content-wrapper] > * {
+    animation: menu-spring-in 0.3s var(--ease-out-soft);
+  }
+  [data-sonner-toast] {
+    animation: toast-spring-in 0.7s var(--spring-bouncy);
+  }
+}
+@keyframes view-fwd {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+}
+@keyframes modal-spring-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.94);
+  }
+}
+@keyframes menu-spring-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.96);
+  }
+}
+@keyframes toast-spring-in {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.92);
+  }
+}
+
+/* Track switch in the player bar: cover pops in, text rises out of a blur. */
+.track-swap-art {
+  animation: track-art-in 0.78s var(--spring-bouncy) backwards;
+}
+.track-swap-text > * {
+  animation: track-text-in 0.55s var(--ease-out-soft) backwards;
+}
+.track-swap-text > :nth-child(2) {
+  animation-delay: 0.06s;
+}
+@keyframes track-art-in {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+}
+@keyframes track-text-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+    filter: blur(6px);
+  }
+}
+
+/* Like: the heart pops with a ring. */
+.heart-pop {
+  position: relative;
+  animation: heart-pop 0.6s ease-out;
+}
+.heart-pop::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--color-accent);
+  opacity: 0;
+  pointer-events: none;
+  animation: heart-ring 0.55s var(--ease-out-soft);
+}
+@keyframes heart-pop {
+  0% {
+    transform: scale(0.4);
+  }
+  40% {
+    transform: scale(1.28);
+  }
+  65% {
+    transform: scale(0.92);
+  }
+  85% {
+    transform: scale(1.04);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+@keyframes heart-ring {
+  0% {
+    opacity: 0.9;
+    transform: scale(0.3);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+}
+
+/* Now-playing cover breathes with playback: shrinks a little on pause. */
+.np-cover {
+  transition:
+    transform 0.8s var(--spring-bouncy),
+    box-shadow 0.6s var(--ease-out-soft);
+}
+.np-cover.is-paused {
+  transform: scale(0.88);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+.np-cover-img {
+  animation: np-in 0.7s var(--ease-out-soft) backwards;
+}
+@keyframes np-in {
+  from {
+    opacity: 0;
+    transform: scale(1.08);
+    filter: blur(12px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .track-swap-art,
+  .track-swap-text > *,
+  .heart-pop,
+  .np-cover-img {
     animation: none;
   }
 }

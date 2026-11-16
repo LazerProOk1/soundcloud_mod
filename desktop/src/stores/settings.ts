@@ -54,6 +54,9 @@ export const THEME_PRESETS: Record<Exclude<ThemePreset, 'custom'>, ThemePresetDe
 };
 
 export interface SettingsState {
+  /** Where tracks are fetched first; the other sources stay as fallbacks. */
+  primarySource: 'soundcloud' | 'zaycev';
+  setPrimarySource: (s: 'soundcloud' | 'zaycev') => void;
   nowPlayingPanel: boolean;
   setNowPlayingPanel: (open: boolean) => void;
   uiScale: number;
@@ -141,6 +144,7 @@ const DEFAULTS = {
   backgroundBlur: 0,
   glassBlur: 40,
   uiScale: 100,
+  primarySource: 'soundcloud' as 'soundcloud' | 'zaycev',
   nowPlayingPanel: true,
   customCss: '',
   customCssEnabled: true,
@@ -162,12 +166,14 @@ const DEFAULTS = {
   soundwaveLanguages: [] as string[],
   soundwaveMode: 'similar' as 'similar' | 'diverse',
   soundwaveVibe: 'all' as WaveVibeId,
-  soundwaveHideLiked: false,
+  // Liked tracks don't belong in a discovery wave.
+  soundwaveHideLiked: true,
   lyricsVisualizer: false,
   cacheListenedTracks: true,
   crossfadeDuration: 0,
   artistWaveCollapsed: false,
-  liquidGlass: true,
+  // Classic (flat, calm) look by default; Liquid Glass is opt-in.
+  liquidGlass: false,
 };
 
 export const useSettingsStore = create<SettingsState>()(
@@ -176,6 +182,7 @@ export const useSettingsStore = create<SettingsState>()(
       ...DEFAULTS,
       setAccentColor: (accentColor) => set({ accentColor, themePreset: 'custom' }),
       setUiScale: (uiScale) => set({ uiScale }),
+      setPrimarySource: (primarySource) => set({ primarySource }),
       setNowPlayingPanel: (nowPlayingPanel) => set({ nowPlayingPanel }),
       setCustomCss: (customCss) => set({ customCss }),
       setCustomCssEnabled: (customCssEnabled) => set({ customCssEnabled }),
@@ -264,6 +271,7 @@ export const useSettingsStore = create<SettingsState>()(
       },
       partialize: (s) => ({
         uiScale: s.uiScale,
+        primarySource: s.primarySource,
         nowPlayingPanel: s.nowPlayingPanel,
         customCss: s.customCss,
         customCssEnabled: s.customCssEnabled,

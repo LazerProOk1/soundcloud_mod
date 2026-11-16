@@ -523,6 +523,7 @@ const btnClass = (active: boolean, size: 'default' | 'sm') =>
 
 const PlayPauseBtn = React.memo(() => {
   const isPlaying = usePlayerStore((s) => s.isPlaying);
+  const isBuffering = usePlayerStore((s) => s.isBuffering);
   const togglePlay = usePlayerStore((s) => s.togglePlay);
   // Both icons stay mounted and cross-fade with a little rotate/scale — a morph instead of a swap.
   const icon = (show: boolean) =>
@@ -536,8 +537,12 @@ const PlayPauseBtn = React.memo(() => {
       aria-label={isPlaying ? 'Pause' : 'Play'}
       className="relative w-10 h-10 rounded-full bg-white text-black flex items-center justify-center hover:scale-[1.06] active:scale-[0.92] transition-transform duration-200 ease-[var(--ease-spring)] cursor-pointer mx-1.5 shadow-[0_4px_14px_rgba(0,0,0,0.35)]"
     >
-      <span className={icon(isPlaying)}>{pauseBlack20}</span>
-      <span className={icon(!isPlaying)}>{playBlack20}</span>
+      <span className={icon(isPlaying && !isBuffering)}>{pauseBlack20}</span>
+      <span className={icon(!isPlaying && !isBuffering)}>{playBlack20}</span>
+      {/* Loading: the icon springs away and a spinner takes its place. */}
+      <span className={icon(isBuffering)}>
+        <span className="w-4 h-4 rounded-full border-2 border-black/20 border-t-black animate-spin" />
+      </span>
     </button>
   );
 });
@@ -1171,7 +1176,7 @@ const TrackInfoBody = React.memo(function TrackInfoBody({
             key={track.urn}
             src={artworkSmall}
             alt=""
-            className="w-full h-full object-cover track-swap-in"
+            className="w-full h-full object-cover track-swap-art"
           />
         ) : (
           <div className="w-full h-full bg-white/[0.04]" />
@@ -1191,7 +1196,7 @@ const TrackInfoBody = React.memo(function TrackInfoBody({
           </svg>
         </div>
       </div>
-      <div key={track.urn} className="min-w-0 flex-1 track-swap-in">
+      <div key={track.urn} className="min-w-0 flex-1 track-swap-text">
         <div className="flex items-center gap-1.5 min-w-0 group/title">
           <p
             className="text-[13px] text-white/90 truncate font-medium cursor-pointer hover:text-white leading-tight transition-colors"

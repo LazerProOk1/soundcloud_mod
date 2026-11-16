@@ -83,6 +83,9 @@ const AlbumPage = lazy(() =>
 const Discover = lazy(() =>
   import('./pages/Discover').then((module) => ({ default: module.Discover })),
 );
+const LikedPage = lazy(() =>
+  import('./pages/LikedPage').then((module) => ({ default: module.LikedPage })),
+);
 const SoundWavePage = lazy(() =>
   import('./pages/SoundWavePage').then((module) => ({ default: module.SoundWavePage })),
 );
@@ -342,6 +345,14 @@ export default function App() {
                   element={
                     <RouteLoader>
                       <Search />
+                    </RouteLoader>
+                  }
+                />
+                <Route
+                  path="liked"
+                  element={
+                    <RouteLoader>
+                      <LikedPage />
                     </RouteLoader>
                   }
                 />

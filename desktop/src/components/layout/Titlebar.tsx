@@ -7,20 +7,16 @@ import {
   ChevronRight,
   Compass,
   Disc3,
-  Fullscreen,
   Home,
   Minus,
   PanelLeftClose,
   PanelLeftOpen,
-  PictureInPicture2,
   Search,
   Settings,
   Square,
   X,
 } from '../../lib/icons';
 import { isMac } from '../../lib/platform';
-import { toggleWindowFullscreen } from '../../lib/window';
-import { useMiniPlayerStore } from '../../stores/mini-player';
 import { usePlayerStore } from '../../stores/player';
 import { useSettingsStore } from '../../stores/settings';
 
@@ -167,13 +163,11 @@ const SettingsButton = React.memo(() => {
 });
 
 export const Titlebar = React.memo(() => {
-  const { t } = useTranslation();
   const win = getSafeWindow();
-  const enterMini = useMiniPlayerStore((s) => s.enter);
 
   return (
     <div
-      className="h-14 relative z-20 flex items-center justify-between gap-3 pl-2 select-none shrink-0"
+      className="h-12 relative z-20 flex items-center justify-between gap-3 pl-2 select-none shrink-0"
       data-tauri-drag-region
     >
       <div className="flex items-center shrink-0" data-tauri-drag-region>
@@ -187,24 +181,6 @@ export const Titlebar = React.memo(() => {
 
       <div className="flex items-center h-full shrink-0">
         <SettingsButton />
-        <button
-          type="button"
-          title={t('player.miniPlayer')}
-          aria-label={t('player.miniPlayer')}
-          className={iconBtn}
-          onClick={() => void enterMini()}
-        >
-          <PictureInPicture2 size={15} />
-        </button>
-        <button
-          type="button"
-          title={t('kb.fullscreen')}
-          aria-label={t('kb.fullscreen')}
-          className={`${iconBtn} mr-2`}
-          onClick={() => void toggleWindowFullscreen()}
-        >
-          <Fullscreen size={15} />
-        </button>
         {win && (
           <>
             <button
