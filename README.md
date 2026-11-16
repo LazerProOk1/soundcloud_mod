@@ -6,8 +6,8 @@
 <br/>
 
 [![Release](https://img.shields.io/github/v/release/LazerProOk1/soundcloud_mod?style=for-the-badge&color=ff5500&label=Release)](https://github.com/LazerProOk1/soundcloud_mod/releases/latest)
-[![Windows](https://img.shields.io/badge/Windows-NSIS%20%2B%20Portable-0078D4?style=for-the-badge&logo=windows)](https://github.com/LazerProOk1/soundcloud_mod/releases/latest)
-[![Ubuntu](https://img.shields.io/badge/Ubuntu-DEB%20%2F%20AppImage%20%2F%20Flatpak-E95420?style=for-the-badge&logo=ubuntu&logoColor=white)](https://github.com/LazerProOk1/soundcloud_mod/releases/latest)
+[![Windows](https://img.shields.io/badge/Windows-NSIS%20%2F%20MSI%20%2F%20Portable-0078D4?style=for-the-badge&logo=windows)](https://github.com/LazerProOk1/soundcloud_mod/releases/latest)
+[![Linux](https://img.shields.io/badge/Linux-DEB%20%2F%20AppImage%20%2F%20RPM-E95420?style=for-the-badge&logo=ubuntu&logoColor=white)](https://github.com/LazerProOk1/soundcloud_mod/releases/latest)
 [![Tauri](https://img.shields.io/badge/Tauri-2.0-FFC131?style=for-the-badge&logo=tauri&logoColor=111)](https://tauri.app)
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=111)](https://react.dev)
 [![Rust](https://img.shields.io/badge/Rust-Audio%20Engine-EA580C?style=for-the-badge&logo=rust)](https://www.rust-lang.org)
@@ -53,7 +53,7 @@
 
 ### SoundWave, лирика и интеграции
 - **SoundWave** — бесконечная персональная волна рекомендаций от трека или исполнителя с фильтром языков
-- Синхронизированный текст с посимвольной караоке-подсветкой (**LRCLib** + **SoundCloud**) и FFT-визуализатором
+- Синхронизированный текст с построчной анимацией и переходом по клику на строку (**LRCLib** + **SoundCloud**), FFT-визуализатор
 - **Discord Rich Presence** с обложкой, таймером и названием трека
 - Авторизация через аккаунт SoundCloud или **QR-код** с другого устройства
 
@@ -80,10 +80,11 @@
 
 ### Windows (10 / 11 x64)
 - **Установщик (NSIS):** скачайте `*_x64-setup.exe` со страницы [Releases](https://github.com/LazerProOk1/soundcloud_mod/releases/latest) и запустите установку. Если Windows SmartScreen покажет предупреждение о неизвестном издателе — нажмите **«Подробнее» → «Выполнить в любом случае»**.
+- **MSI:** альтернативный установщик `*_x64_*.msi` для развёртывания через групповые политики.
 - **Portable:** скачайте `*-windows-x64-portable.zip`, распакуйте в любую папку и запускайте `SoundCloud Mod.exe` без установки.
 
-### Linux (Ubuntu / Debian / Flatpak)
-- **Ubuntu / Debian:** скачайте `.deb` (`sudo apt install ./SoundCloud*.deb`) или универсальный `.AppImage` (`chmod +x SoundCloud*.AppImage && ./SoundCloud*.AppImage`). Также доступны `.rpm` и [Flatpak-манифест](.github/flatpak/io.github.LazerProOk1.soundcloudmod.yml).
+### Linux (Ubuntu / Debian / Fedora)
+- **Ubuntu / Debian:** скачайте `.deb` (`sudo apt install ./SoundCloud*.deb`) или универсальный `.AppImage` (`chmod +x SoundCloud*.AppImage && ./SoundCloud*.AppImage`). Для Fedora / openSUSE — `.rpm` (`sudo dnf install ./SoundCloud*.rpm`). [Flatpak-манифест](.github/flatpak/io.github.LazerProOk1.soundcloudmod.yml) есть в репозитории для самостоятельной сборки.
 
 > Приложение устанавливается с отдельным идентификатором (`com.lazerprook1.soundcloudmod`) и хранит настройки и кэш независимо от других клиентов.
 
