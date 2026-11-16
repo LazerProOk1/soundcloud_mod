@@ -538,8 +538,10 @@ pub fn seek(position: f64, state: State<'_, AudioState>) -> Result<(), String> {
         .map(|player| player.is_paused())
         .unwrap_or(false);
 
-    // For position 0, always recreate the player to avoid decoder state issues
-    if position > 0.0 {
+    // For position 0, recreate the player to avoid decoder state issues — unless the track
+    // is still streaming (no complete bytes to rebuild from): then seek in place.
+    let streaming = state.stream_final_path.lock().unwrap().is_some();
+    if position > 0.0 || streaming {
         let player = state.player.lock().unwrap();
         if let Some(ref player) = *player {
             if player.try_seek(target).is_ok() {
@@ -595,6 +597,11 @@ pub fn seek(position: f64, state: State<'_, AudioState>) -> Result<(), String> {
 pub fn set_volume(volume: f64, state: State<'_, AudioState>) {
     let vol = volume_to_rodio(volume);
     *state.volume.lock().unwrap() = vol;
+    // A crossfade is armed: the playing track belongs to the fade-out now; the value
+    // is for the incoming track, which picks it up from `state.volume` when it's built.
+    if state.handoff_fade_ms.load(Ordering::Relaxed) > 0 {
+        return;
+    }
     if let Some(ref player) = *state.player.lock().unwrap() {
         player.set_volume(vol);
     }

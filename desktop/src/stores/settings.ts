@@ -106,6 +106,9 @@ export interface SettingsState {
   soundwaveMode: 'similar' | 'diverse';
   soundwaveVibe: WaveVibeId;
   soundwaveHideLiked: boolean;
+  /** Drop slowed / sped up / remix / nightcore fan versions from the wave. */
+  soundwaveHideVariants: boolean;
+  setSoundwaveHideVariants: (v: boolean) => void;
   lyricsVisualizer: boolean;
   /** Synced lyrics light up word by word (karaoke) instead of whole lines. */
   lyricsWordMode: boolean;
@@ -194,6 +197,7 @@ const DEFAULTS = {
   soundwaveVibe: 'all' as WaveVibeId,
   // Liked tracks don't belong in a discovery wave.
   soundwaveHideLiked: true,
+  soundwaveHideVariants: true,
   lyricsVisualizer: false,
   lyricsWordMode: true,
   cacheListenedTracks: true,
@@ -263,6 +267,7 @@ export const useSettingsStore = create<SettingsState>()(
       setSoundwaveMode: (soundwaveMode) => set({ soundwaveMode }),
       setSoundwaveVibe: (soundwaveVibe) => set({ soundwaveVibe }),
       setSoundwaveHideLiked: (soundwaveHideLiked) => set({ soundwaveHideLiked }),
+      setSoundwaveHideVariants: (soundwaveHideVariants) => set({ soundwaveHideVariants }),
       setLyricsVisualizer: (lyricsVisualizer) => set({ lyricsVisualizer }),
       setLyricsWordMode: (lyricsWordMode) => set({ lyricsWordMode }),
       setCrossfadeCurve: (crossfadeCurve) => set({ crossfadeCurve }),
@@ -347,6 +352,7 @@ export const useSettingsStore = create<SettingsState>()(
         soundwaveMode: s.soundwaveMode,
         soundwaveVibe: s.soundwaveVibe,
         soundwaveHideLiked: s.soundwaveHideLiked,
+        soundwaveHideVariants: s.soundwaveHideVariants,
         lyricsVisualizer: s.lyricsVisualizer,
         lyricsWordMode: s.lyricsWordMode,
         cacheListenedTracks: s.cacheListenedTracks,

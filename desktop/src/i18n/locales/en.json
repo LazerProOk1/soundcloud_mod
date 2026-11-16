@@ -606,6 +606,8 @@
     },
     "reset": "Reset",
     "listen": "Listen to the wave",
+    "noVariants": "No fan versions",
+    "noVariantsDesc": "Hide slowed, sped up, remixes, nightcore, covers and reuploads of the same song",
     "reasonLiked": "From your favourites",
     "reasonNew": "Picked for you"
   },

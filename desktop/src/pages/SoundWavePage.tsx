@@ -36,6 +36,7 @@ import {
 import { isUrnLiked } from '../lib/likes';
 import { useArtistDisplay, useDisplayTitle } from '../lib/track-display';
 import { matchesLanguages } from '../lib/track-language';
+import { dedupeSongs, isVariant } from '../lib/track-variants';
 import { tuneWaveTracks } from '../lib/wave-vibes';
 import { useAuthStore } from '../stores/auth';
 import { type Track, usePlayerStore } from '../stores/player';
@@ -60,6 +61,8 @@ export function SoundWavePage() {
   const setSelectedLanguages = useSettingsStore((s) => s.setSoundwaveLanguages);
   const hideLiked = useSettingsStore((s) => s.soundwaveHideLiked);
   const setHideLiked = useSettingsStore((s) => s.setSoundwaveHideLiked);
+  const hideVariants = useSettingsStore((s) => s.soundwaveHideVariants);
+  const setHideVariants = useSettingsStore((s) => s.setSoundwaveHideVariants);
   const waveVibe = useSettingsStore((s) => s.soundwaveVibe);
   const setWaveVibe = useSettingsStore((s) => s.setSoundwaveVibe);
   const waveMode = useSettingsStore((s) => s.soundwaveMode);
@@ -109,13 +112,15 @@ export function SoundWavePage() {
   const waveFilter = useCallback(
     (tr: Track) =>
       (!hideLiked || (!tr.user_favorite && !isUrnLiked(tr.urn))) &&
+      (!hideVariants || !isVariant(tr)) &&
       matchesLanguages(tr, stableLanguages),
-    [hideLiked, stableLanguages],
+    [hideLiked, hideVariants, stableLanguages],
   );
 
   const allTracks = useMemo(() => {
     const base = backendWorking ? rawAllTracks : localRecs;
-    return tuneWaveTracks(base.filter(waveFilter), waveVibe, waveMode);
+    // One upload per song: reuploads of the same track collapse to the most played one.
+    return tuneWaveTracks(dedupeSongs(base.filter(waveFilter)), waveVibe, waveMode);
   }, [backendWorking, rawAllTracks, localRecs, waveFilter, waveVibe, waveMode]);
 
   const waveCluster = useMemo(
@@ -188,7 +193,7 @@ export function SoundWavePage() {
 
   // Changing language / vibe / mode while the wave plays restarts it with the new mix
   // (once the re-filtered pool is ready), instead of finishing the old queue.
-  const filterKey = `${stableLanguages.join(',')}|${waveVibe}|${waveMode}|${hideLiked}`;
+  const filterKey = `${stableLanguages.join(',')}|${waveVibe}|${waveMode}|${hideLiked}|${hideVariants}`;
   const prevFilterKey = useRef(filterKey);
   const restartPending = useRef(false);
   useEffect(() => {
@@ -543,6 +548,8 @@ export function SoundWavePage() {
         onOpenChange={setTuneOpen}
         mode={waveMode}
         hideLiked={hideLiked}
+        hideVariants={hideVariants}
+        onHideVariantsChange={setHideVariants}
         vibe={waveVibe}
         languages={selectedLanguages}
         onModeChange={setWaveMode}

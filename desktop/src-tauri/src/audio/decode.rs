@@ -362,8 +362,11 @@ where
         if byte_len > 0 {
             builder = builder.with_byte_len(byte_len);
         }
-        let source = builder
-            .build()
+        // rodio panics ("Seek errors should not occur during initialization") when the
+        // growing stream file fails mid-probe, e.g. the download dropped. Turn that into
+        // a normal error so the caller falls back to the full download.
+        let source = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| builder.build()))
+            .map_err(|_| "Failed to decode: stream ended during probe".to_string())?
             .map_err(|e| format!("Failed to decode: {e}"))?;
         duration = source.total_duration().map(|d| d.as_secs_f64());
         player.append(AnalyserSource::new(

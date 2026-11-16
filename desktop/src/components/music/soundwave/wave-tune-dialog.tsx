@@ -3,6 +3,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Activity, Compass, Headphones, Moon, Play, Sparkles, X, Zap } from '../../../lib/icons';
 import { WAVE_VIBES, type WaveMode, type WaveVibeId } from '../../../lib/wave-vibes';
+import { LiquidSwitch } from '../../ui/LiquidSwitch';
 
 const VIBE_ICON: Record<WaveVibeId, React.ReactNode> = {
   all: <Sparkles size={16} />,
@@ -66,6 +67,8 @@ export const WaveTuneDialog = React.memo(function WaveTuneDialog({
   onOpenChange,
   mode,
   hideLiked,
+  hideVariants,
+  onHideVariantsChange,
   vibe,
   languages,
   onModeChange,
@@ -78,6 +81,8 @@ export const WaveTuneDialog = React.memo(function WaveTuneDialog({
   onOpenChange: (v: boolean) => void;
   mode: WaveMode;
   hideLiked: boolean;
+  hideVariants: boolean;
+  onHideVariantsChange: (v: boolean) => void;
   vibe: WaveVibeId;
   languages: string[];
   onModeChange: (m: WaveMode) => void;
@@ -134,6 +139,14 @@ export const WaveTuneDialog = React.memo(function WaveTuneDialog({
               ))}
             </Group>
 
+            <div className="flex items-center justify-between gap-6">
+              <div>
+                <p className="text-[15px] font-semibold text-white">{t('waveTune.noVariants')}</p>
+                <p className="text-[13px] text-white/50 mt-0.5">{t('waveTune.noVariantsDesc')}</p>
+              </div>
+              <LiquidSwitch checked={hideVariants} onChange={onHideVariantsChange} />
+            </div>
+
             <Group title={t('waveTune.language')}>
               {(['any', 'ru', 'foreign'] as const).map((c) => (
                 <Chip key={c} active={lang === c} onClick={() => setLang(c)}>
@@ -148,6 +161,7 @@ export const WaveTuneDialog = React.memo(function WaveTuneDialog({
               type="button"
               onClick={() => {
                 setCharacter('unfamiliar');
+                onHideVariantsChange(true);
                 onVibeChange('all');
                 onLanguagesChange([]);
               }}

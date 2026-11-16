@@ -69,6 +69,16 @@ let handoffMs = 0;
 /** Set when we jump to the next track before the current one ends (overlap crossfade):
  *  the old track's own `audio:ended` must not advance the queue a second time. */
 let handoffPending = false;
+/** Set by armHandoff: the next loadTrack must not stop the playing track (Rust fades it out). */
+let handoffArmed = false;
+
+/* ── Seek while streaming ─────────────────────────────────────── */
+/** The current track plays from a file that is still downloading. */
+let streamingPartial = false;
+/** Download progress of the current track, 0..1. */
+let streamProgress = 0;
+/** A seek past the downloaded part waits here until the bytes arrive. */
+let pendingSeek: number | null = null;
 
 const CURVE_ID: Record<CrossfadeCurve, number> = { equal: 0, linear: 1, scurve: 2 };
 
@@ -83,7 +93,14 @@ export function fadeInGain(t: number, curve: CrossfadeCurve): number {
 /** Arms Rust to keep the current track playing and fade it out once the next one starts. */
 function armHandoff(ms: number) {
   const curve = useSettingsStore.getState().crossfadeCurve;
+  handoffArmed = true;
+  handoffPending = true;
   invoke('audio_set_handoff_fade', { ms: Math.round(ms), curve: CURVE_ID[curve] }).catch(() => {});
+  // Safety net: if the next track never loads (end of queue, error), stop the old one.
+  setTimeout(() => {
+    if (handoffPending && !hasTrack) invoke('audio_stop').catch(() => {});
+    handoffPending = false;
+  }, ms + 20000);
 }
 
 function sameAlbum(a: Track | undefined | null, b: Track | undefined | null) {
@@ -157,13 +174,35 @@ export function getAudioSecond(): number {
   return Math.floor(cachedTime);
 }
 
+/** Can the decoder reach `pos` right now? While streaming, only the downloaded part is safe:
+ *  seeking further would block the audio thread waiting for bytes. */
+function canSeekTo(pos: number) {
+  if (!streamingPartial || cachedDuration <= 0) return true;
+  return pos / cachedDuration <= streamProgress - 0.03;
+}
+
 export function seek(seconds: number) {
   if (!hasTrack) return;
 
   // Clamp: never seek past the end — rodio fires audio:ended immediately if position ≥ duration,
   // which would spuriously advance to the next track.
-  const clamped =
-    cachedDuration > 0.2 ? Math.min(seconds, cachedDuration - 0.15) : Math.max(0, seconds);
+  const clamped = Math.max(
+    0,
+    cachedDuration > 0.2 ? Math.min(seconds, cachedDuration - 0.15) : seconds,
+  );
+
+  if (!canSeekTo(clamped)) {
+    // Not downloaded yet: show the target and wait for the bytes instead of hanging.
+    pendingSeek = clamped;
+    cachedTime = clamped;
+    cachedTimeWallMs = performance.now();
+    seekGuardUntilMs = performance.now() + 60_000;
+    lastSeekPosition = clamped;
+    usePlayerStore.setState({ isBuffering: true });
+    notify();
+    return;
+  }
+  pendingSeek = null;
 
   // Reset any in-progress crossfade so volume is restored after manual seek.
   if (crossfading || fadeInRafId !== null) {
@@ -182,7 +221,9 @@ export function seek(seconds: number) {
   lastSeekWallMs = performance.now();
   lastSeekPosition = clamped;
 
-  invoke('audio_seek', { position: clamped }).catch(console.error);
+  invoke('audio_seek', { position: clamped })
+    .catch(console.error)
+    .finally(() => usePlayerStore.setState({ isBuffering: false }));
   cachedTime = clamped;
   cachedTimeWallMs = performance.now();
   notify();
@@ -383,7 +424,18 @@ async function resolveTrackMetadata(track: Track): Promise<Track> {
 
 async function loadTrack(track: Track) {
   const gen = ++loadGen;
-  stopTrack();
+  if (handoffArmed) {
+    // Overlapping crossfade: the old track keeps playing until the new one starts,
+    // then Rust fades it out. Just forget it on our side.
+    handoffArmed = false;
+    hasTrack = false;
+    cachedTime = 0;
+  } else {
+    stopTrack();
+  }
+  streamingPartial = false;
+  streamProgress = 0;
+  pendingSeek = null;
   currentUrn = track.urn;
   const urn = track.urn;
 
@@ -507,6 +559,13 @@ async function loadTrack(track: Track) {
     if (gen !== loadGen) return;
     if (streamed?.streaming) {
       usePlayerStore.setState({ downloadProgress: null });
+      streamingPartial = true;
+      const finishStream = () => {
+        if (gen !== loadGen) return;
+        streamingPartial = false;
+        if (pendingSeek != null) seek(pendingSeek);
+      };
+      download.then(finishStream, finishStream);
       if (streamed.duration_secs) {
         fallbackDuration = streamed.duration_secs;
         cachedDuration = streamed.duration_secs;
@@ -668,6 +727,8 @@ function tauriListen<T>(event: string, handler: (e: { payload: T }) => void): vo
 }
 
 tauriListen<number>('audio:tick', (event) => {
+  // During an overlapping crossfade the ticks still come from the outgoing track.
+  if (handoffPending && !hasTrack) return;
   // Right after a seek Rust can still emit ticks with the old position; taking them
   // would snap the progress bar and lyrics back before they catch up again.
   if (performance.now() < seekGuardUntilMs && Math.abs(event.payload - lastSeekPosition) > 1) {
@@ -695,13 +756,8 @@ tauriListen<number>('audio:tick', (event) => {
     const keepGapless = crossfadeKeepAlbums && sameAlbum(player.currentTrack, nextTrack);
     if (remaining > 0.3 && remaining <= crossfadeSecs && !keepGapless) {
       crossfading = true;
-      handoffPending = true;
       handoffMs = remaining * 1000;
       armHandoff(handoffMs);
-      // Safety net: if nothing gets loaded (end of queue, error), stop waiting.
-      setTimeout(() => {
-        handoffPending = false;
-      }, handoffMs + 20000);
       recordFullPlay();
       handleTrackEnd();
     }
@@ -712,6 +768,8 @@ tauriListen<{ urn: string; progress: number }>('track:download-progress', (event
   const { urn, progress } = event.payload;
   if (urn === currentUrn) {
     usePlayerStore.setState({ downloadProgress: progress });
+    streamProgress = Math.max(streamProgress, progress);
+    if (pendingSeek != null && canSeekTo(pendingSeek)) seek(pendingSeek);
   }
 });
 
