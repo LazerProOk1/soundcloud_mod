@@ -28,7 +28,7 @@ pub fn is_ogg_opus(bytes: &[u8]) -> bool {
             .any(|w| w == b"OpusHead")
 }
 
-struct OpusSource<R: std::io::Read + std::io::Seek> {
+pub(crate) struct OpusSource<R: std::io::Read + std::io::Seek> {
     reader: ogg::reading::PacketReader<R>,
     decoder: audiopus::coder::Decoder,
     channels: ChannelCount,
@@ -40,7 +40,7 @@ struct OpusSource<R: std::io::Read + std::io::Seek> {
 }
 
 impl OpusSource<Cursor<Arc<[u8]>>> {
-    fn new(data: Arc<[u8]>) -> Result<Self, String> {
+    pub(crate) fn new(data: Arc<[u8]>) -> Result<Self, String> {
         Self::from_reader(Cursor::new(data))
     }
 }
@@ -291,7 +291,7 @@ where
 
 /// rodio 0.22's `Decoder::new` builds a non-seekable decoder without `byte_len`,
 /// so `try_seek` fails and every seek restarts the track. Give it the length.
-fn seekable_decoder(
+pub(crate) fn seekable_decoder(
     bytes: &Arc<[u8]>,
 ) -> Result<Decoder<Cursor<Arc<[u8]>>>, rodio::decoder::DecoderError> {
     Decoder::builder()

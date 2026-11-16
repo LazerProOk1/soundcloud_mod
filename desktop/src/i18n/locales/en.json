@@ -580,6 +580,8 @@
     "scurve": "S-curve",
     "keepAlbums": "Don't blend tracks of one album",
     "keepAlbumsDesc": "Albums made without pauses sound the way the artist intended.",
+    "trimSilence": "Trim silence",
+    "trimSilenceDesc": "Skip silence at the start and end of tracks: playback starts with the first note, the transition begins where the music ends.",
     "onSkip": "Smooth when switching",
     "onSkipDesc": "When you switch the track yourself, the previous one doesn't cut off but quickly fades out."
   },

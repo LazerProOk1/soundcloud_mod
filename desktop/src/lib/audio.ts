@@ -80,6 +80,50 @@ let streamProgress = 0;
 /** A seek past the downloaded part waits here until the bytes arrive. */
 let pendingSeek: number | null = null;
 
+/* ── Track analysis (silence at the edges, ending fade-out) ───── */
+interface TrackAnalysis {
+  durationSecs: number;
+  musicStartSecs: number;
+  musicEndSecs: number;
+  fadeOutStartSecs: number;
+  bodyDb: number;
+}
+/** Analysis of the playing track; null until known. */
+let currentAnalysis: TrackAnalysis | null = null;
+/** The upcoming track's analysis was already requested for this current track. */
+let upcomingAnalyzedFor: string | null = null;
+
+async function analyzeTrack(urn: string, path: string, cachedOnly: boolean) {
+  try {
+    return await invoke<TrackAnalysis | null>('audio_analyze_track', {
+      path,
+      cacheKey: urn,
+      cachedOnly,
+    });
+  } catch {
+    return null;
+  }
+}
+
+/** Uses a cached analysis right away, otherwise computes it in the background. */
+async function loadAnalysis(urn: string, path: string, gen: number) {
+  const quick = await analyzeTrack(urn, path, true);
+  if (quick) {
+    currentAnalysis = quick;
+    return;
+  }
+  void analyzeTrack(urn, path, false).then((a) => {
+    if (a && gen === loadGen && currentUrn === urn) currentAnalysis = a;
+  });
+}
+
+/** Where the music ends when trimming silence (else the real end). */
+function musicEnd() {
+  const a = currentAnalysis;
+  if (!useSettingsStore.getState().trimSilence || !a) return cachedDuration;
+  return a.musicEndSecs > 1 && a.musicEndSecs < cachedDuration ? a.musicEndSecs : cachedDuration;
+}
+
 const CURVE_ID: Record<CrossfadeCurve, number> = { equal: 0, linear: 1, scurve: 2 };
 
 /** Fade-in shape for t in 0..1, mirroring Rust's fade-out of the previous track. */
@@ -436,6 +480,8 @@ async function loadTrack(track: Track) {
   streamingPartial = false;
   streamProgress = 0;
   pendingSeek = null;
+  currentAnalysis = null;
+  upcomingAnalyzedFor = null;
   currentUrn = track.urn;
   const urn = track.urn;
 
@@ -494,6 +540,8 @@ async function loadTrack(track: Track) {
           updateMetadata(track, loadResult.duration_secs);
           notify();
         }
+        await loadAnalysis(urn, cached.path, gen);
+        if (gen !== loadGen) return;
         afterLoad(track, gen);
         return;
       } catch (cacheLoadErr) {
@@ -566,6 +614,11 @@ async function loadTrack(track: Track) {
         if (pendingSeek != null) seek(pendingSeek);
       };
       download.then(finishStream, finishStream);
+      download
+        .then((info) => {
+          if (gen === loadGen && info?.path) void loadAnalysis(urn, info.path, gen);
+        })
+        .catch(() => {});
       if (streamed.duration_secs) {
         fallbackDuration = streamed.duration_secs;
         cachedDuration = streamed.duration_secs;
@@ -608,6 +661,8 @@ async function loadTrack(track: Track) {
     }
     void enforceAudioCacheLimit().catch(console.error);
 
+    if (gen !== loadGen) return;
+    await loadAnalysis(urn, cachedInfo.path, gen);
     if (gen !== loadGen) return;
     afterLoad(track, gen);
   } catch (e) {
@@ -665,6 +720,11 @@ function afterLoad(track: Track, gen: number) {
   // audio buffer fires at user volume before the IPC set-volume arrives.
   const crossfadeSecs = useSettingsStore.getState().crossfadeDuration;
   handoffPending = false;
+  // Trim silence: start from the first note.
+  const startAt = currentAnalysis?.musicStartSecs ?? 0;
+  if (useSettingsStore.getState().trimSilence && startAt >= 0.3 && cachedTime < startAt) {
+    seek(startAt);
+  }
   if (crossfading && crossfadeSecs > 0 && isPlaying) {
     const userVolume = usePlayerStore.getState().volume;
     const curve = useSettingsStore.getState().crossfadeCurve;
@@ -751,15 +811,53 @@ tauriListen<number>('audio:tick', (event) => {
     player.repeat !== 'one' &&
     cachedDuration > crossfadeSecs * 2
   ) {
-    const remaining = cachedDuration - cachedTime;
+    const end = musicEnd();
+    const remaining = end - cachedTime;
     const nextTrack = player.queue[player.queueIndex + 1];
     const keepGapless = crossfadeKeepAlbums && sameAlbum(player.currentTrack, nextTrack);
-    if (remaining > 0.3 && remaining <= crossfadeSecs && !keepGapless) {
+    // The track fades out by itself: start the transition together with that fade
+    // (if it's not much longer than the chosen length), not N seconds before the end.
+    const a = currentAnalysis;
+    const naturalFade = a ? a.musicEndSecs - a.fadeOutStartSecs : 0;
+    const followFade =
+      !!a &&
+      naturalFade >= crossfadeSecs &&
+      naturalFade <= crossfadeSecs * 2.5 &&
+      cachedTime >= a.fadeOutStartSecs;
+    if (remaining > 0.3 && (remaining <= crossfadeSecs || followFade) && !keepGapless) {
       crossfading = true;
       handoffMs = remaining * 1000;
       armHandoff(handoffMs);
       recordFullPlay();
       handleTrackEnd();
+    }
+  }
+
+  // Trim silence without crossfade: move on as soon as the music ends.
+  const end = musicEnd();
+  if (
+    crossfadeSecs === 0 &&
+    !handoffPending &&
+    player.isPlaying &&
+    end < cachedDuration - 0.5 &&
+    cachedTime >= end
+  ) {
+    handoffPending = true;
+    setTimeout(() => {
+      handoffPending = false;
+    }, 15000);
+    recordFullPlay();
+    handleTrackEnd();
+  }
+
+  // Analyse the next track ahead of time, so its silence is trimmed as soon as it starts.
+  if (currentUrn && upcomingAnalyzedFor !== currentUrn && end - cachedTime < 45) {
+    upcomingAnalyzedFor = currentUrn;
+    const next = player.queue[player.queueIndex + 1];
+    if (next?.urn) {
+      void getCacheInfo(next.urn).then((info) => {
+        if (info?.path) void analyzeTrack(next.urn, info.path, false);
+      });
     }
   }
 });

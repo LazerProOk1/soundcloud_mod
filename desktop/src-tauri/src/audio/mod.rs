@@ -1,4 +1,5 @@
 pub mod analyser;
+mod analysis;
 pub mod commands;
 mod decode;
 mod device;

@@ -29,6 +29,33 @@ pub async fn audio_load_file(
     .await
 }
 
+/// Silence at the edges and the ending fade-out of an audio file (cached per file).
+/// `cached_only`: return only an existing result, never decode (safe right before playback).
+#[tauri::command]
+pub async fn audio_analyze_track(
+    path: String,
+    cache_key: String,
+    cached_only: Option<bool>,
+    app: AppHandle,
+) -> Result<Option<crate::audio::analysis::TrackAnalysis>, String> {
+    let dir = app
+        .path()
+        .app_cache_dir()
+        .map_err(|e| e.to_string())?
+        .join("audio-analysis");
+    let cached_only = cached_only.unwrap_or(false);
+    tauri::async_runtime::spawn_blocking(move || {
+        crate::audio::analysis::analyze_file(
+            std::path::Path::new(&path),
+            &cache_key,
+            &dir,
+            cached_only,
+        )
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
 #[tauri::command]
 pub async fn audio_load_stream(
     urn: String,
