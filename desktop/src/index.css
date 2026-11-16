@@ -708,51 +708,73 @@ body,
   font-size: 28px;
   font-weight: 700;
   letter-spacing: -0.02em;
-  color: rgba(255, 255, 255, 0.26);
-  opacity: 0.4;
+  color: rgba(255, 255, 255, 0.3);
   transform-origin: left center;
-  transform: scale(0.972) translate3d(0, 0, 0);
-  will-change: transform, opacity, color;
+  transform: scale(0.96);
+  filter: blur(1.2px);
+  /* Line-level animation only: scale + colour + focus, no sideways slide. */
   transition:
-    color 0.45s var(--ease-apple),
-    opacity 0.45s var(--ease-apple),
-    transform 0.45s var(--ease-apple),
-    filter 0.45s var(--ease-apple);
+    transform 0.6s cubic-bezier(0.22, 1.2, 0.36, 1),
+    color 0.45s ease,
+    filter 0.45s ease,
+    text-shadow 0.6s ease;
   -webkit-font-smoothing: antialiased;
-  filter: drop-shadow(0 0 0 transparent);
   user-select: none;
   -webkit-user-select: none;
 }
 
-.lyric-line[data-state="active"] {
-  color: #fff;
-  opacity: 1;
-  transform: scale(1.02) translate3d(0, 0, 0);
-  filter: drop-shadow(0 0 18px rgba(255, 255, 255, 0.38));
+.lyric-line:hover {
+  color: rgba(255, 255, 255, 0.7);
+  filter: none;
 }
 
-.lyric-line[data-state="past-near"] {
-  color: rgba(255, 255, 255, 0.78);
-  opacity: 0.78;
-  transform: scale(0.992) translate3d(-4px, 0, 0);
+.lyric-line[data-state="active"] {
+  color: #fff;
+  transform: scale(1.04);
+  filter: none;
+  text-shadow:
+    0 0 22px rgba(255, 255, 255, 0.35),
+    0 0 48px color-mix(in srgb, var(--color-accent) 35%, transparent);
+  animation: lyric-in 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.lyric-line[data-state="past-near"],
+.lyric-line[data-state="next-near"] {
+  color: rgba(255, 255, 255, 0.5);
+  transform: scale(0.98);
+  filter: blur(0.4px);
 }
 
 .lyric-line[data-state="past"] {
-  color: rgba(255, 255, 255, 0.42);
-  opacity: 0.48;
-  transform: scale(0.98) translate3d(-8px, 0, 0);
-}
-
-.lyric-line[data-state="next-near"] {
-  color: rgba(255, 255, 255, 0.55);
-  opacity: 0.66;
-  transform: scale(0.988) translate3d(6px, 0, 0);
+  color: rgba(255, 255, 255, 0.34);
 }
 
 .lyric-line[data-state="next"] {
-  color: rgba(255, 255, 255, 0.32);
-  opacity: 0.28;
-  transform: scale(0.968) translate3d(12px, 0, 0);
+  color: rgba(255, 255, 255, 0.28);
+}
+
+@keyframes lyric-in {
+  from {
+    text-shadow: 0 0 0 transparent;
+    opacity: 0.6;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.lyrics-paused .lyric-line[data-state="active"] {
+  color: rgba(255, 255, 255, 0.82);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lyric-line,
+  .lyric-line[data-state="active"] {
+    transition: color 0.2s ease;
+    transform: none;
+    filter: none;
+    animation: none;
+  }
 }
 
 /* ── Lyrics pause marker (♪♪♪) ─────────────────────────── */
@@ -848,7 +870,7 @@ body,
   max-width: 100%;
   white-space: pre-wrap;
   vertical-align: top;
-  color: rgba(255, 255, 255, 0.32);
+  color: inherit;
 }
 
 /* A "word" wrapper just keeps characters from breaking mid-word. */

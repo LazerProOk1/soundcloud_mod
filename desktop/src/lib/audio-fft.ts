@@ -36,21 +36,32 @@ export function readAccentRgb(): [number, number, number] {
   return [255, 85, 0];
 }
 
+// Bumped on every stop so a start that is still awaiting can tell it was cancelled.
+let bridgeGen = 0;
+
 async function startBridge() {
   if (!isTauriRuntime()) return;
+  const gen = bridgeGen;
   try {
-    await invoke('audio_set_analyser', { enabled: true });
-    unlisten = await listen<number[]>('audio:fft', (event) => {
+    const off = await listen<number[]>('audio:fft', (event) => {
       const bins = event.payload;
       if (!bins || bins.length === 0) return;
       for (const fn of listeners) fn(bins);
     });
+    if (gen !== bridgeGen) {
+      // Last subscriber left while we were registering — don't leak the listener.
+      off();
+      return;
+    }
+    unlisten = off;
+    await invoke('audio_set_analyser', { enabled: true });
   } catch {
     // Web preview or audio bridge unavailable — silent no-op
   }
 }
 
 function stopBridge() {
+  bridgeGen++;
   if (unlisten) {
     unlisten();
     unlisten = null;

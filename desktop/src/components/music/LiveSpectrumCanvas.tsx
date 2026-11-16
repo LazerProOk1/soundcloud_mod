@@ -37,6 +37,12 @@ export const LiveSpectrumCanvas = React.memo(function LiveSpectrumCanvas({
       typeof window !== 'undefined' &&
       window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
+    // In the desktop app only real FFT frames drive the bars; the synthetic pulse is
+    // a web-preview fallback and must never fake audio activity in Tauri.
+    const isTauri = '__TAURI_INTERNALS__' in window;
+    let accent = readAccentRgb();
+    let accentReadAt = performance.now();
+
     const target = new Float32Array(bars);
     const display = new Float32Array(bars);
 
@@ -68,7 +74,13 @@ export const LiveSpectrumCanvas = React.memo(function LiveSpectrumCanvas({
       if (document.visibilityState === 'hidden') return;
       ctx.clearRect(0, 0, cssW, cssH);
 
-      const [r, g, b] = readAccentRgb();
+      // getComputedStyle forces a style recalc — refresh the accent at most once a second.
+      const nowMs = performance.now();
+      if (nowMs - accentReadAt > 1000) {
+        accent = readAccentRgb();
+        accentReadAt = nowMs;
+      }
+      const [r, g, b] = accent;
       const gap = 3;
       const barW = Math.max(2, (cssW - gap * (bars - 1)) / bars);
       const radius = Math.min(barW / 2, 2.5);
@@ -96,7 +108,7 @@ export const LiveSpectrumCanvas = React.memo(function LiveSpectrumCanvas({
       const isActive = activeRef.current;
       const fftFresh = hasRealFft && now - lastFftAt < 400;
 
-      if (!isActive) {
+      if (!isActive || (isTauri && !fftFresh)) {
         target.fill(0);
       } else if (!fftFresh && !reducedMotion) {
         // Gentle harmonic ambient pulse when running in web preview without Rust FFT
@@ -132,7 +144,8 @@ export const LiveSpectrumCanvas = React.memo(function LiveSpectrumCanvas({
 
       draw();
 
-      if (isActive || anyEnergy) {
+      // Park when idle: in Tauri new FFT frames wake the loop via ensureLoop().
+      if (anyEnergy || (isActive && !isTauri)) {
         rafId = requestAnimationFrame(tick);
       } else {
         rafId = 0;

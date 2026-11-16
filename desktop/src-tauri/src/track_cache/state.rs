@@ -344,6 +344,28 @@ fn is_valid_cached_file(path: &Path) -> bool {
     is_valid_audio(&sniff[..n], meta.len())
 }
 
+/// True only when the file could be read and is definitely not valid audio.
+/// Transient open errors (antivirus/indexer locks) must not count as corruption.
+fn is_corrupt_cached_file(path: &Path) -> bool {
+    let Ok(mut file) = std::fs::File::open(path) else {
+        return false;
+    };
+    let Ok(meta) = file.metadata() else {
+        return false;
+    };
+    if !meta.is_file() {
+        return false;
+    }
+    if meta.len() < MIN_AUDIO_SIZE {
+        return true;
+    }
+    let mut sniff = [0u8; AUDIO_SNIFF_LEN];
+    match file.read(&mut sniff) {
+        Ok(n) => !is_valid_audio(&sniff[..n], meta.len()),
+        Err(_) => false,
+    }
+}
+
 fn mark_used(path: &Path) {
     let Ok(file) = OpenOptions::new().write(true).open(path) else {
         return;
@@ -375,7 +397,10 @@ fn sweep_temp_files(dir: &Path) {
         }
     }
     if removed > 0 {
-        println!("[TrackCache] swept {removed} leftover temp files in {}", dir.display());
+        println!(
+            "[TrackCache] swept {removed} leftover temp files in {}",
+            dir.display()
+        );
     }
 }
 
@@ -602,7 +627,10 @@ async fn write_response_to_cache(
         return Err(DownloadError::Fatal("Invalid audio data".into()));
     }
 
-    let cache_meta = TrackCacheMetadata { quality, source: Some(source) };
+    let cache_meta = TrackCacheMetadata {
+        quality,
+        source: Some(source),
+    };
 
     if is_valid_cached_file(&final_path) {
         cleanup_temp_file(&temp_path).await;
@@ -678,7 +706,10 @@ async fn write_bytes_to_cache(
     }
     drop(writer);
 
-    let cache_meta = TrackCacheMetadata { quality, source: Some(source) };
+    let cache_meta = TrackCacheMetadata {
+        quality,
+        source: Some(source),
+    };
 
     if is_valid_cached_file(&final_path) {
         cleanup_temp_file(&temp_path).await;
@@ -731,7 +762,12 @@ async fn download_api(
     if status.is_success() {
         let quality = quality_from_url(url);
         return write_response_to_cache(
-            target_dir, urn, response, quality, DownloadSource::Api, app_handle,
+            target_dir,
+            urn,
+            response,
+            quality,
+            DownloadSource::Api,
+            app_handle,
         )
         .await;
     }
@@ -791,16 +827,20 @@ impl TrackCacheState {
             if is_valid_cached_file(&liked) {
                 return Some(liked);
             }
-            std::fs::remove_file(&liked).ok();
-            remove_cache_metadata(&liked);
+            if is_corrupt_cached_file(&liked) {
+                std::fs::remove_file(&liked).ok();
+                remove_cache_metadata(&liked);
+            }
         }
         let audio = self.file_path(urn);
         if audio.exists() {
             if is_valid_cached_file(&audio) {
                 return Some(audio);
             }
-            std::fs::remove_file(&audio).ok();
-            remove_cache_metadata(&audio);
+            if is_corrupt_cached_file(&audio) {
+                std::fs::remove_file(&audio).ok();
+                remove_cache_metadata(&audio);
+            }
         }
         None
     }
@@ -888,7 +928,11 @@ impl TrackCacheState {
             ));
         }
 
-        let target_dir = if liked { &self.liked_dir } else { &self.audio_dir };
+        let target_dir = if liked {
+            &self.liked_dir
+        } else {
+            &self.audio_dir
+        };
 
         // Coalesce concurrent requests for the same URN
         let mut active = self.active.lock().await;
@@ -962,7 +1006,11 @@ impl TrackCacheState {
             let healthy = host_of(url)
                 .map(|h| self.storage_host_available(&h))
                 .unwrap_or(true);
-            if healthy { 0 } else { 1 }
+            if healthy {
+                0
+            } else {
+                1
+            }
         });
 
         // 1. Try storage `/redirect/...` URLs — fast presign + direct S3 download.
@@ -1085,9 +1133,8 @@ impl TrackCacheState {
                             .map(|m| m.len() / 1024)
                             .unwrap_or(0);
                         let ms = start.elapsed().as_millis();
-                        let line = format!(
-                            "[TrackCache] downloaded {urn} via anon — {kb} KB in {ms}ms"
-                        );
+                        let line =
+                            format!("[TrackCache] downloaded {urn} via anon — {kb} KB in {ms}ms");
                         println!("{line}");
                         self.diag("INFO", line);
                         return Ok(res.path);
@@ -1175,7 +1222,10 @@ impl TrackCacheState {
                     self.mark_storage_host_ok(&host);
                 }
                 Ok(Ok(resp)) => {
-                    eprintln!("[TrackCache] storage HTTP {} for {urn} ({host})", resp.status());
+                    eprintln!(
+                        "[TrackCache] storage HTTP {} for {urn} ({host})",
+                        resp.status()
+                    );
                     self.mark_storage_host_failed(&host);
                 }
                 Ok(Err(err)) => {
@@ -1207,7 +1257,10 @@ impl TrackCacheState {
                 }
                 Err(err) => {
                     if i + 1 < urls.len() {
-                        eprintln!("[TrackCache] {urn} URL #{} failed, trying next: {err}", i + 1);
+                        eprintln!(
+                            "[TrackCache] {urn} URL #{} failed, trying next: {err}",
+                            i + 1
+                        );
                     }
                     last_err = err;
                 }
@@ -1407,18 +1460,20 @@ impl TrackCacheState {
 
             let handle = tokio::spawn(async move {
                 let _permit = permit;
-                if state.likes_cancel.load(std::sync::atomic::Ordering::Relaxed) {
+                if state
+                    .likes_cancel
+                    .load(std::sync::atomic::Ordering::Relaxed)
+                {
                     return;
                 }
-                let LikeCacheEntry { urn, urls, storage_urls, session_id } = entry;
+                let LikeCacheEntry {
+                    urn,
+                    urls,
+                    storage_urls,
+                    session_id,
+                } = entry;
                 let result = state
-                    .ensure_cached(
-                        &urn,
-                        &urls,
-                        &storage_urls,
-                        session_id.as_deref(),
-                        true,
-                    )
+                    .ensure_cached(&urn, &urls, &storage_urls, session_id.as_deref(), true)
                     .await;
                 if result.is_err() {
                     failed.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
@@ -1542,7 +1597,9 @@ impl TrackCacheState {
                 // Clean up abandoned temp files older than 30 minutes
                 if is_temp_cache_file(&path) {
                     if let Ok(mod_time) = meta.modified() {
-                        if now.duration_since(mod_time).unwrap_or_default() > Duration::from_secs(1800) {
+                        if now.duration_since(mod_time).unwrap_or_default()
+                            > Duration::from_secs(1800)
+                        {
                             std::fs::remove_file(&path).ok();
                         }
                     }
@@ -1694,7 +1751,10 @@ mod tests {
 
         state.enforce_limit(1, &[protected_urn.to_string()]);
 
-        assert!(protected_path.exists(), "protected track must remain cached");
+        assert!(
+            protected_path.exists(),
+            "protected track must remain cached"
+        );
         assert!(!evict_path.exists(), "unprotected track must be evicted");
         assert!(
             !cache_metadata_path(&evict_path).exists(),
@@ -1707,12 +1767,12 @@ mod tests {
     fn like_cache_entry_accepts_camel_and_snake_case() {
         let camel = r#"{"urn":"soundcloud:tracks:1","urls":["https://a"],"storageUrls":["https://b"],"sessionId":"sid"}"#;
         let parsed_camel: LikeCacheEntry = serde_json::from_str(camel).unwrap();
-        assert_eq!(parsed_camel.storage_urls.as_deref(), Some(&["https://b".to_string()][..]));
+        assert_eq!(parsed_camel.storage_urls, vec!["https://b".to_string()]);
         assert_eq!(parsed_camel.session_id.as_deref(), Some("sid"));
 
         let snake = r#"{"urn":"soundcloud:tracks:2","urls":["https://a"],"storage_urls":["https://c"],"session_id":"sid2"}"#;
         let parsed_snake: LikeCacheEntry = serde_json::from_str(snake).unwrap();
-        assert_eq!(parsed_snake.storage_urls.as_deref(), Some(&["https://c".to_string()][..]));
+        assert_eq!(parsed_snake.storage_urls, vec!["https://c".to_string()]);
         assert_eq!(parsed_snake.session_id.as_deref(), Some("sid2"));
     }
 }

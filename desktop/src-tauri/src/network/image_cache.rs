@@ -7,13 +7,13 @@ use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 use sha2::{Digest, Sha256};
 use tokio::fs::{self, File};
 use tokio::io::AsyncWriteExt;
-use tokio::sync::{Mutex, Notify};
+use tokio::sync::Notify;
 
 use crate::shared::constants::is_domain_whitelisted;
 
 struct InflightImage {
-    notify: Arc<Notify>,
-    result: Arc<Mutex<Option<ImageResult>>>,
+    notify: Notify,
+    result: std::sync::Mutex<Option<ImageResult>>,
 }
 
 static TMP_COUNTER: AtomicU64 = AtomicU64::new(0);
@@ -27,7 +27,7 @@ static TMP_COUNTER: AtomicU64 = AtomicU64::new(0);
 pub struct ImageCache {
     pub dir: PathBuf,
     pub http_client: reqwest::Client,
-    inflight: Mutex<HashMap<String, Arc<InflightImage>>>,
+    inflight: std::sync::Mutex<HashMap<String, Arc<InflightImage>>>,
 }
 
 impl ImageCache {
@@ -35,7 +35,7 @@ impl ImageCache {
         Self {
             dir,
             http_client,
-            inflight: Mutex::new(HashMap::new()),
+            inflight: std::sync::Mutex::new(HashMap::new()),
         }
     }
 }
@@ -181,29 +181,56 @@ pub async fn handle(encoded: &str) -> ImageResult {
         let _ = fs::remove_file(&path).await;
     }
 
-    // Coalesce concurrent fetches for the same target_url
-    let inflight_entry = {
-        let mut map = state.inflight.lock().await;
-        if let Some(existing) = map.get(&key) {
-            let notify = existing.notify.clone();
-            let result = existing.result.clone();
-            drop(map);
-            notify.notified().await;
-            if let Some(res) = result.lock().await.clone() {
-                return res;
+    // Coalesce concurrent fetches for the same target_url.
+    // Waiters register `notified()` while the map lock is held, so a leader that
+    // finishes in between cannot be missed; the guard removes the entry and wakes
+    // waiters even if the leader's request is cancelled mid-fetch.
+    let existing = {
+        let mut map = state.inflight.lock().unwrap_or_else(|e| e.into_inner());
+        match map.get(&key) {
+            Some(existing) => Some(existing.clone()),
+            None => {
+                map.insert(
+                    key.clone(),
+                    Arc::new(InflightImage {
+                        notify: Notify::new(),
+                        result: std::sync::Mutex::new(None),
+                    }),
+                );
+                None
             }
-            return ImageResult {
-                status: 502,
-                content_type: "text/plain".into(),
-                data: b"coalesced image fetch failed".to_vec(),
-            };
         }
-        let entry = Arc::new(InflightImage {
-            notify: Arc::new(Notify::new()),
-            result: Arc::new(Mutex::new(None)),
-        });
-        map.insert(key.clone(), entry.clone());
-        entry
+    };
+    if let Some(existing) = existing {
+        let notified = existing.notify.notified();
+        tokio::pin!(notified);
+        notified.as_mut().enable();
+        let ready = existing
+            .result
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .clone();
+        if let Some(res) = ready {
+            return res;
+        }
+        let _ = tokio::time::timeout(std::time::Duration::from_secs(30), notified).await;
+        if let Some(res) = existing
+            .result
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .clone()
+        {
+            return res;
+        }
+        return ImageResult {
+            status: 502,
+            content_type: "text/plain".into(),
+            data: b"coalesced image fetch failed".to_vec(),
+        };
+    }
+    let inflight_guard = InflightGuard {
+        state,
+        key: key.clone(),
     };
 
     #[cfg(debug_assertions)]
@@ -273,11 +300,43 @@ pub async fn handle(encoded: &str) -> ImageResult {
         data,
     };
 
-    *inflight_entry.result.lock().await = Some(res.clone());
-    inflight_entry.notify.notify_waiters();
-    state.inflight.lock().await.remove(&key);
-
+    inflight_guard.finish(res.clone());
     res
+}
+
+/// Removes the in-flight entry and wakes waiters on completion *and* on cancellation.
+struct InflightGuard<'a> {
+    state: &'a ImageCache,
+    key: String,
+}
+
+impl InflightGuard<'_> {
+    fn finish(self, res: ImageResult) {
+        let map = self
+            .state
+            .inflight
+            .lock()
+            .unwrap_or_else(|e| e.into_inner());
+        if let Some(entry) = map.get(&self.key) {
+            *entry.result.lock().unwrap_or_else(|e| e.into_inner()) = Some(res);
+        }
+        drop(map);
+        // Drop runs next: removes the entry and notifies.
+    }
+}
+
+impl Drop for InflightGuard<'_> {
+    fn drop(&mut self) {
+        let removed = self
+            .state
+            .inflight
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .remove(&self.key);
+        if let Some(entry) = removed {
+            entry.notify.notify_waiters();
+        }
+    }
 }
 
 /* ── Maintenance commands (size / clear) ─────────────────── */
@@ -291,7 +350,9 @@ async fn dir_size(path: &Path) -> u64 {
             Err(_) => continue,
         };
         while let Ok(Some(entry)) = entries.next_entry().await {
-            let Ok(ft) = entry.file_type().await else { continue };
+            let Ok(ft) = entry.file_type().await else {
+                continue;
+            };
             if ft.is_dir() {
                 stack.push(entry.path());
             } else if ft.is_file() {

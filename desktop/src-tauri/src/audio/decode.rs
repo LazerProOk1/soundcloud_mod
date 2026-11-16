@@ -23,7 +23,9 @@ pub fn is_ogg_opus(bytes: &[u8]) -> bool {
     // OpusHead appears at byte 28 in a standard OGG Opus header page
     bytes.len() >= 36
         && &bytes[0..4] == b"OggS"
-        && bytes[..bytes.len().min(64)].windows(8).any(|w| w == b"OpusHead")
+        && bytes[..bytes.len().min(64)]
+            .windows(8)
+            .any(|w| w == b"OpusHead")
 }
 
 struct OpusSource<R: std::io::Read + std::io::Seek> {
@@ -287,6 +289,18 @@ where
     }
 }
 
+/// rodio 0.22's `Decoder::new` builds a non-seekable decoder without `byte_len`,
+/// so `try_seek` fails and every seek restarts the track. Give it the length.
+fn seekable_decoder(
+    bytes: &Arc<[u8]>,
+) -> Result<Decoder<Cursor<Arc<[u8]>>>, rodio::decoder::DecoderError> {
+    Decoder::builder()
+        .with_data(Cursor::new(Arc::clone(bytes)))
+        .with_byte_len(bytes.len() as u64)
+        .with_seekable(true)
+        .build()
+}
+
 pub fn resolve_normalization_gain(
     bytes: &Arc<[u8]>,
     cache_dir: Option<&Path>,
@@ -301,7 +315,7 @@ pub fn resolve_normalization_gain(
         normalization_gain_from_samples(
             OpusSource::new(Arc::clone(bytes)).map_err(|e| format!("Failed to decode: {}", e))?,
         )
-    } else if let Ok(source) = Decoder::new(Cursor::new(Arc::clone(bytes))) {
+    } else if let Ok(source) = seekable_decoder(bytes) {
         normalization_gain_from_samples(source)
     } else {
         normalization_gain_from_samples(
@@ -338,7 +352,7 @@ pub fn create_player_from_bytes(
             analyser_buffer,
         ));
     } else {
-        match Decoder::new(Cursor::new(Arc::clone(bytes))) {
+        match seekable_decoder(bytes) {
             Ok(source) => {
                 duration = source.total_duration().map(|d| d.as_secs_f64());
                 player.append(AnalyserSource::new(

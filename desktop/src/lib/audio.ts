@@ -420,7 +420,15 @@ async function loadTrack(track: Track) {
     // Strategy 2: Download full track to cache — Rust picks storage/API internally
     usePlayerStore.setState({ downloadProgress: 0 });
 
-    const cachedInfo: TrackCacheInfo = await ensureTrackCached(urn, highQualityStreaming);
+    let cachedInfo: TrackCacheInfo;
+    try {
+      cachedInfo = await ensureTrackCached(urn, highQualityStreaming);
+    } catch (error) {
+      // Not every track has an HQ transcoding — fall back to standard quality.
+      if (!highQualityStreaming || gen !== loadGen) throw error;
+      console.warn('[Audio] HQ load failed, retrying without hq:', error);
+      cachedInfo = await ensureTrackCached(urn, false);
+    }
 
     if (gen !== loadGen) return;
     usePlayerStore.setState({ downloadProgress: null });

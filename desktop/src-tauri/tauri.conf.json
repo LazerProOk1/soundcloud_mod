@@ -30,7 +30,7 @@
     "targets": "all",
     "publisher": "LazerProOk1",
     "copyright": "© 2026 LazerProOk1",
-    "category": "AudioVideo",
+    "category": "Music",
     "shortDescription": "Native Liquid Glass SoundCloud client with Rust audio engine",
     "longDescription": "SoundCloud Mod is a native desktop client for SoundCloud featuring a custom Rust audio engine, 10-band EQ, local track caching, synchronized lyrics, SoundWave discovery, free Star auras, and Discord Rich Presence.",
     "linux": {

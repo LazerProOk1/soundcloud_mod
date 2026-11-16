@@ -44,7 +44,8 @@ export function downloadProfileBackup(): void {
   document.body.appendChild(a);
   a.click();
   a.remove();
-  URL.revokeObjectURL(url);
+  // Revoking synchronously can cancel the download before WebView2 reads the blob.
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
 export function restoreProfileBackupFromText(jsonText: string): boolean {
