@@ -1162,18 +1162,28 @@ async function autoplayRelated(lastTrack: Track) {
   autoplayLoading = true;
 
   try {
-    const { queue } = usePlayerStore.getState();
+    const { queue, queueIndex } = usePlayerStore.getState();
     const existingUrns = new Set(queue.map((t) => t.urn));
-    const res = await api<{ collection: Track[] }>(
-      `/tracks/${encodeURIComponent(lastTrack.urn)}/related?limit=20`,
-    );
     const hideVariants = useSettingsStore.getState().soundwaveHideVariants;
-    const fresh = rankWave(
-      dedupeSongs(
-        res.collection.filter((t) => !existingUrns.has(t.urn) && (!hideVariants || !isVariant(t))),
-      ),
-      useWaveTasteStore.getState(),
-    );
+    // Related tracks of the last one; if they're all filtered out or already played,
+    // try the few before it — the music shouldn't just stop.
+    const seeds = [lastTrack, ...queue.slice(Math.max(0, queueIndex - 3), queueIndex).reverse()];
+    let fresh: Track[] = [];
+    for (const seed of seeds) {
+      const res = await api<{ collection: Track[] }>(
+        `/tracks/${encodeURIComponent(seed.urn)}/related?limit=30`,
+        { silent: true },
+      ).catch(() => ({ collection: [] as Track[] }));
+      fresh = rankWave(
+        dedupeSongs(
+          res.collection.filter(
+            (t) => !existingUrns.has(t.urn) && (!hideVariants || !isVariant(t)),
+          ),
+        ),
+        useWaveTasteStore.getState(),
+      );
+      if (fresh.length > 0) break;
+    }
     if (fresh.length === 0) {
       usePlayerStore.getState().pause();
       return;

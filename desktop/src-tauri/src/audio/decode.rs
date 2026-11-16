@@ -37,6 +37,10 @@ pub(crate) struct OpusSource<R: std::io::Read + std::io::Seek> {
     serial: u32,
     pre_skip: usize,
     samples_skipped: usize,
+    /// Opus pre-skip from the header, in frames (granule positions include it).
+    head_pre_skip: usize,
+    /// Packets already read while locating a seek, decoded before reading further.
+    queued: std::collections::VecDeque<Vec<u8>>,
 }
 
 impl OpusSource<Cursor<Arc<[u8]>>> {
@@ -86,19 +90,28 @@ impl<R: std::io::Read + std::io::Seek> OpusSource<R> {
             serial,
             pre_skip: pre_skip * channel_count as usize,
             samples_skipped: 0,
+            head_pre_skip: pre_skip,
+            queued: std::collections::VecDeque::new(),
         })
     }
 
     fn decode_next_packet(&mut self) -> bool {
         loop {
-            match self.reader.read_packet() {
-                Ok(Some(pkt)) => {
-                    if pkt.data.is_empty() {
+            let data = match self.queued.pop_front() {
+                Some(data) => data,
+                None => match self.reader.read_packet() {
+                    Ok(Some(pkt)) => pkt.data,
+                    _ => return false,
+                },
+            };
+            {
+                {
+                    if data.is_empty() {
                         continue;
                     }
                     let channels = self.channels.get() as usize;
                     let mut buf = vec![0f32; 5760 * channels];
-                    match self.decoder.decode_float(Some(&pkt.data), &mut buf, false) {
+                    match self.decoder.decode_float(Some(&data), &mut buf, false) {
                         Ok(samples_per_ch) => {
                             let total = samples_per_ch * channels;
                             buf.truncate(total);
@@ -119,7 +132,6 @@ impl<R: std::io::Read + std::io::Seek> OpusSource<R> {
                         Err(_) => continue,
                     }
                 }
-                _ => return false,
             }
         }
     }
@@ -160,6 +172,38 @@ impl<R: std::io::Read + std::io::Seek> Source for OpusSource<R> {
 
         match self.reader.seek_absgp(Some(self.serial), target_gp) {
             Ok(_) => {
+                // The seek lands at the start of the Ogg page that contains the target, which
+                // can be a second or more before it: audio then ran behind the reported
+                // position (and the lyrics). Read that page, work out where it starts from
+                // its end granule minus its packets' length, and skip up to the exact spot.
+                self.queued.clear();
+                let mut samples = 0u64;
+                let mut end_gp = None;
+                while let Ok(Some(pkt)) = self.reader.read_packet() {
+                    if !pkt.data.is_empty() {
+                        samples += audiopus::packet::nb_samples(
+                            pkt.data.as_slice(),
+                            audiopus::SampleRate::Hz48000,
+                        )
+                        .unwrap_or(960) as u64;
+                    }
+                    let last = pkt.last_in_page();
+                    let gp = pkt.absgp_page();
+                    self.queued.push_back(pkt.data);
+                    if last {
+                        end_gp = Some(gp);
+                        break;
+                    }
+                    if self.queued.len() > 512 {
+                        break;
+                    }
+                }
+                let skip_frames = end_gp
+                    .map(|end| {
+                        let page_start = end.saturating_sub(samples);
+                        (target_gp + self.head_pre_skip as u64).saturating_sub(page_start)
+                    })
+                    .unwrap_or(0);
                 let opus_ch = if self.channels.get() == 1 {
                     audiopus::Channels::Mono
                 } else {
@@ -173,7 +217,8 @@ impl<R: std::io::Read + std::io::Seek> Source for OpusSource<R> {
                     )?;
                 self.buffer.clear();
                 self.buf_pos = 0;
-                self.samples_skipped = self.pre_skip;
+                self.pre_skip = skip_frames as usize * self.channels.get() as usize;
+                self.samples_skipped = 0;
                 Ok(())
             }
             Err(_) => Err(SeekError::NotSupported {

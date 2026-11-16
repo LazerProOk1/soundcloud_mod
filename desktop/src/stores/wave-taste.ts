@@ -29,6 +29,7 @@ const taste = (s: WaveTasteState): Taste => ({
   artists: s.artists,
   banned: s.banned,
   recent: s.recent,
+  skippedSongs: s.skippedSongs,
 });
 
 /** What the wave learned about the listener. Persisted between sessions. */
@@ -56,6 +57,7 @@ export const useWaveTasteStore = create<WaveTasteState>()(
         artists: s.artists,
         banned: s.banned,
         recent: s.recent,
+        skippedSongs: s.skippedSongs,
         // Only what's needed to fetch related tracks for the seeds.
         seeds: s.seeds.map((t) => ({ urn: t.urn, title: t.title, user: t.user }) as Track),
       }),

@@ -16,9 +16,12 @@ export interface Taste {
   banned: string[];
   /** Recently played, newest first: they rest for a while. */
   recent: string[];
+  /** Skipped early: that song isn't wanted now (the artist is only nudged down). */
+  skippedSongs?: string[];
 }
 
-export const EMPTY_TASTE: Taste = { artists: {}, banned: [], recent: [] };
+export const EMPTY_TASTE: Taste = { artists: {}, banned: [], recent: [], skippedSongs: [] };
+const MAX_SKIPPED = 500;
 
 const MAX_BANNED = 1000;
 const MAX_RECENT = 300;
@@ -38,11 +41,18 @@ function bump(taste: Taste, track: RankableTrack, delta: number): Taste {
   return { ...taste, artists: { ...taste.artists, [key]: Math.round(next * 100) / 100 } };
 }
 
-/** Skipped after `playedSecs`: the earlier the skip, the stronger the signal. */
+/**
+ * Skipped after `playedSecs`. A skip is mostly about this song ("not now"), so the song
+ * goes away for a long while and the artist only gets a small nudge down — it takes many
+ * skips of the same artist before the artist itself drops out.
+ */
 export function onSkip(taste: Taste, track: RankableTrack, playedSecs: number): Taste {
-  if (playedSecs < 10) return bump(taste, track, -1);
-  if (playedSecs < 30) return bump(taste, track, -0.4);
-  return taste;
+  if (playedSecs >= 30) return taste;
+  const skipped = [track.urn, ...(taste.skippedSongs ?? []).filter((u) => u !== track.urn)].slice(
+    0,
+    MAX_SKIPPED,
+  );
+  return bump({ ...taste, skippedSongs: skipped }, track, playedSecs < 10 ? -0.3 : -0.1);
 }
 
 export function onFinished(taste: Taste, track: RankableTrack): Taste {
@@ -73,8 +83,9 @@ export function rankWave<T extends RankableTrack>(tracks: readonly T[], taste: T
   const score = (t: T) => taste.artists[artistKey(t)] ?? 0;
   let pool = tracks.filter((t) => !banned.has(t.urn) && score(t) > ARTIST_BLOCK_SCORE);
 
-  const recent = new Set(taste.recent.slice(0, 120));
-  const fresh = pool.filter((t) => !recent.has(t.urn));
+  // Recently played and skipped songs rest, unless that would leave too little.
+  const resting = new Set([...taste.recent.slice(0, 120), ...(taste.skippedSongs ?? [])]);
+  const fresh = pool.filter((t) => !resting.has(t.urn));
   if (fresh.length >= 12) pool = fresh;
 
   // Stable: original order (vibe / source) stays the base, taste shifts tracks by a few places.

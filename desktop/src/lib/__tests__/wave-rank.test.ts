@@ -13,15 +13,18 @@ import {
 
 const t = (urn: string, artist: string) => ({ urn, user: { urn: artist, username: artist } });
 
-test('skips push an artist down, finishing pulls it up', () => {
+test('a skip hides the song but only nudges the artist', () => {
   let taste = onSkip(EMPTY_TASTE, t('1', 'a'), 3);
-  assert.equal(taste.artists.a, -1);
-  taste = onSkip(taste, t('1', 'a'), 20);
-  assert.equal(taste.artists.a, -1.4);
-  taste = onSkip(taste, t('1', 'a'), 90);
-  assert.equal(taste.artists.a, -1.4);
-  taste = onFinished(taste, t('1', 'a'));
-  assert.equal(taste.artists.a, -0.9);
+  assert.equal(taste.artists.a, -0.3);
+  assert.deepEqual(taste.skippedSongs, ['1']);
+  taste = onSkip(taste, t('2', 'a'), 20);
+  assert.equal(taste.artists.a, -0.4);
+  taste = onSkip(taste, t('3', 'a'), 90);
+  assert.equal(taste.artists.a, -0.4);
+  taste = onFinished(taste, t('4', 'a'));
+  assert.equal(taste.artists.a, 0.1);
+  const big = Array.from({ length: 20 }, (_, i) => t(String(i), `art${i}`));
+  assert.ok(!rankWave(big, taste).some((x) => x.urn === '1'));
 });
 
 test('"Not this" bans the track; blocked artists disappear', () => {

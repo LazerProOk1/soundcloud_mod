@@ -27,6 +27,12 @@ export function useInfiniteWave(opts: {
   batchLimit?: number;
   /** Called whenever new tracks are appended to the queue (refill batches). */
   onTracksAdded?: (tracks: Track[]) => void;
+  /** Is this queue ours? (The wave mixes in liked / "more like this" tracks too.) */
+  ownsTrack?: (urn: string) => boolean;
+  /** Order a refill batch (dedupe, taste). */
+  rank?: (tracks: Track[]) => Track[];
+  /** Local tracks to fall back on when the server has nothing new. */
+  fallback?: () => Track[];
 }) {
   const {
     enabled,
@@ -36,10 +42,16 @@ export function useInfiniteWave(opts: {
     initialCursor,
     languages,
     filterTrack,
-    minTail = 5,
+    minTail = 8,
     batchLimit = 20,
     onTracksAdded,
   } = opts;
+  const ownsRef = useRef(opts.ownsTrack);
+  const rankRef = useRef(opts.rank);
+  const fallbackRef = useRef(opts.fallback);
+  ownsRef.current = opts.ownsTrack;
+  rankRef.current = opts.rank;
+  fallbackRef.current = opts.fallback;
   const onTracksAddedRef = useRef(onTracksAdded);
   useEffect(() => {
     onTracksAddedRef.current = onTracksAdded;
@@ -74,7 +86,7 @@ export function useInfiniteWave(opts: {
     return usePlayerStore.subscribe((state) => {
       const { queue, queueIndex, currentTrack, isPlaying } = state;
       if (!currentTrack) return;
-      if (!ownedRef.current.has(currentTrack.urn)) return;
+      if (!ownedRef.current.has(currentTrack.urn) && !ownsRef.current?.(currentTrack.urn)) return;
 
       const remaining = queue.length - queueIndex - 1;
       if (remaining > minTail) return;
@@ -104,9 +116,13 @@ export function useInfiniteWave(opts: {
           if (batch.cursor) cursorRef.current = batch.cursor;
           const filterFn = filterRef.current;
           const existing = new Set(usePlayerStore.getState().queue.map((t) => t.urn));
-          const fresh = batch.tracks.filter(
-            (t) => !existing.has(t.urn) && (!filterFn || filterFn(t)),
-          );
+          const pick = (list: Track[]) =>
+            list.filter((t) => !existing.has(t.urn) && (!filterFn || filterFn(t)));
+          let fresh = pick(batch.tracks);
+          // Server has nothing new (or all of it was filtered out): keep the wave going
+          // from the local pool instead of letting it run dry.
+          if (fresh.length === 0) fresh = pick(fallbackRef.current?.() ?? []).slice(0, batchLimit);
+          fresh = rankRef.current ? rankRef.current(fresh) : fresh;
           if (fresh.length > 0) {
             usePlayerStore.getState().addToQueue(fresh);
             for (const t of fresh) ownedRef.current.add(t.urn);

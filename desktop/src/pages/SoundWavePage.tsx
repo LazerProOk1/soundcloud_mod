@@ -92,6 +92,7 @@ export function SoundWavePage() {
   const queryClient = useQueryClient();
   const [tuneOpen, setTuneOpen] = useState(false);
   const coverRef = useRef<HTMLButtonElement>(null);
+  const allTracksRef = useRef<Track[]>([]);
 
   const [refreshSeed, setRefreshSeed] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -135,7 +136,12 @@ export function SoundWavePage() {
 
   /* Taste: skips, finished tracks, "Not this", "More like this" (persisted). */
   const taste = useWaveTasteStore(
-    useShallow((s) => ({ artists: s.artists, banned: s.banned, recent: s.recent })),
+    useShallow((s) => ({
+      artists: s.artists,
+      banned: s.banned,
+      recent: s.recent,
+      skippedSongs: s.skippedSongs,
+    })),
   );
   const seeds = useWaveTasteStore((s) => s.seeds);
   // "More like this": related tracks of the latest seeds lead the wave.
@@ -198,6 +204,8 @@ export function SoundWavePage() {
     refreshSeed,
   ]);
 
+  allTracksRef.current = allTracks;
+
   const waveCluster = useMemo(
     () => rawClusters.find((c) => c.id === 'wave') ?? null,
     [rawClusters],
@@ -207,6 +215,13 @@ export function SoundWavePage() {
     _registerWave(tracks.map((tr) => tr.urn));
   }, []);
 
+  const isWaveUrn = useCallback((urn: string) => _waveUrns.has(urn), []);
+  const rankBatch = useCallback(
+    (tracks: Track[]) => rankWave(dedupeSongs(tracks), useWaveTasteStore.getState()),
+    [],
+  );
+  const waveFallback = useCallback(() => allTracksRef.current, []);
+
   useInfiniteWave({
     enabled: isAuthenticated,
     seedKind: 'user',
@@ -215,6 +230,9 @@ export function SoundWavePage() {
     languages: stableLanguages,
     filterTrack: waveFilter,
     onTracksAdded: onWaveTracksAdded,
+    ownsTrack: isWaveUrn,
+    rank: rankBatch,
+    fallback: waveFallback,
   });
 
   const isWaveTrack = currentTrack ? _waveUrns.has(currentTrack.urn) : false;

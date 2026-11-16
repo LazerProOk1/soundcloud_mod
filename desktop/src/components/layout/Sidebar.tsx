@@ -3,7 +3,16 @@ import { useTranslation } from 'react-i18next';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { art } from '../../lib/formatters';
 import { useMyPlaylists, usePlaylistCover } from '../../lib/hooks';
-import { AudioLines, Clock, Download, Heart, Library, ListMusic } from '../../lib/icons';
+import {
+  AudioLines,
+  Clock,
+  Download,
+  Heart,
+  Library,
+  ListMusic,
+  PanelLeftClose,
+  PanelLeftOpen,
+} from '../../lib/icons';
 import { useAuthStore } from '../../stores/auth';
 import { useCachedUrnsStore } from '../../stores/cached-urns';
 import { useSettingsStore } from '../../stores/settings';
@@ -66,6 +75,7 @@ export const Sidebar = React.memo(() => {
   const user = useAuthStore((s) => s.user);
   const cachedCount = useCachedUrnsStore((s) => s.urns.size);
   const collapsed = useSettingsStore((s) => s.sidebarCollapsed);
+  const toggleSidebar = useSettingsStore((s) => s.toggleSidebar);
   const { playlists } = useMyPlaylists(50);
 
   return (
@@ -75,12 +85,34 @@ export const Sidebar = React.memo(() => {
       // Full height minus the 8px margins: `h-full` + margin pushed the profile row off the bottom.
       style={{ width: collapsed ? 72 : 280, height: 'calc(100% - 16px)', boxShadow: 'none' }}
     >
-      <div
-        className={`flex items-center gap-2.5 px-4 pt-4 pb-3 text-white ${collapsed ? 'justify-center px-0' : ''}`}
+      {/* "My library" header doubles as the collapse toggle (like Spotify). */}
+      <button
+        type="button"
+        onClick={toggleSidebar}
+        title={t(collapsed ? 'nav.expand' : 'nav.collapse')}
+        className={`group flex items-center gap-2.5 mx-2 mt-2 mb-1 px-2 h-11 rounded-lg text-white/85 hover:text-white hover:bg-white/[0.06] cursor-pointer ${
+          collapsed ? 'justify-center' : ''
+        }`}
       >
-        <Library size={20} />
+        <span className="relative w-5 h-5 shrink-0">
+          <Library
+            size={20}
+            className="absolute inset-0 transition-opacity group-hover:opacity-0"
+          />
+          {collapsed ? (
+            <PanelLeftOpen
+              size={20}
+              className="absolute inset-0 opacity-0 transition-opacity group-hover:opacity-100"
+            />
+          ) : (
+            <PanelLeftClose
+              size={20}
+              className="absolute inset-0 opacity-0 transition-opacity group-hover:opacity-100"
+            />
+          )}
+        </span>
         {!collapsed && <span className="text-[15px] font-bold">{t('sidebar.myLibrary')}</span>}
-      </div>
+      </button>
 
       <div className="flex-1 overflow-y-auto scrollbar-hide px-2 pb-2 flex flex-col gap-0.5">
         <Row

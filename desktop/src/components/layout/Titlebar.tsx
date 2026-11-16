@@ -10,8 +10,6 @@ import {
   Home,
   Import,
   Minus,
-  PanelLeftClose,
-  PanelLeftOpen,
   Search,
   Settings,
   Square,
@@ -19,7 +17,6 @@ import {
 } from '../../lib/icons';
 import { isMac } from '../../lib/platform';
 import { usePlayerStore } from '../../stores/player';
-import { useSettingsStore } from '../../stores/settings';
 
 const iconBtn =
   'w-8 h-8 rounded-full flex items-center justify-center text-white/80 hover:text-white hover:bg-white/[0.08] transition-colors duration-150 cursor-pointer disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-default';
@@ -38,20 +35,9 @@ function getSafeWindow() {
 }
 
 const Brand = React.memo(() => {
-  const { t } = useTranslation();
-  const collapsed = useSettingsStore((s) => s.sidebarCollapsed);
-  const toggleSidebar = useSettingsStore((s) => s.toggleSidebar);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   return (
-    <div className="flex items-center gap-1.5" data-tauri-drag-region>
-      <button
-        type="button"
-        onClick={toggleSidebar}
-        title={t(collapsed ? 'nav.expand' : 'nav.collapse')}
-        className={iconBtn}
-      >
-        {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
-      </button>
+    <div className="flex items-center gap-1.5 pl-2" data-tauri-drag-region>
       <Disc3
         size={18}
         className={`text-accent pointer-events-none ${isPlaying ? 'animate-spin-slow' : ''}`}
