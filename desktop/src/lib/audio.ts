@@ -561,6 +561,11 @@ function tauriListen<T>(event: string, handler: (e: { payload: T }) => void): vo
 }
 
 tauriListen<number>('audio:tick', (event) => {
+  // Right after a seek Rust can still emit ticks with the old position; taking them
+  // would snap the progress bar and lyrics back before they catch up again.
+  if (performance.now() < seekGuardUntilMs && Math.abs(event.payload - lastSeekPosition) > 1) {
+    return;
+  }
   cachedTime = event.payload;
   cachedTimeWallMs = performance.now();
   if (cachedDuration <= 0) cachedDuration = fallbackDuration;
