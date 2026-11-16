@@ -104,6 +104,17 @@ pub fn audio_set_volume(volume: f64, state: State<'_, AudioState>) {
     engine::set_volume(volume, state);
 }
 
+/// Arms an overlapping crossfade for the next track load (one-shot).
+#[tauri::command]
+pub fn audio_set_handoff_fade(ms: u64, curve: u8, state: State<'_, AudioState>) {
+    state
+        .handoff_fade_ms
+        .store(ms.min(20_000), std::sync::atomic::Ordering::Relaxed);
+    state
+        .handoff_curve
+        .store(curve, std::sync::atomic::Ordering::Relaxed);
+}
+
 #[tauri::command]
 pub fn audio_set_analyser(enabled: bool, state: State<'_, AudioState>) {
     state

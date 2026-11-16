@@ -8,42 +8,36 @@
  *   – Лента «Далее в волне» с быстрым переходом к любому следующему треку
  */
 
+import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import {
-  ControlVolumeBtn,
-  NowBarDislikeButton,
-  ProgressSlider,
-} from '../components/layout/NowPlayingBar';
+import { toast } from 'sonner';
 import { useClusterWave } from '../components/music/cluster';
-import { LikeButton } from '../components/music/LikeButton';
-import { LiveSpectrumCanvas } from '../components/music/LiveSpectrumCanvas';
-import { HideLikedToggle } from '../components/music/soundwave/hide-liked-toggle';
-import { LanguageFilter } from '../components/music/soundwave/language-filter';
 import { useInfiniteWave } from '../components/music/soundwave/use-infinite-wave';
 import { VibeTuner } from '../components/music/soundwave/vibe-tuner';
+import { WaveTuneDialog } from '../components/music/soundwave/wave-tune-dialog';
 import { rgbToCss, useArtworkColor } from '../hooks/useArtworkColor';
-import { handlePrev } from '../lib/audio';
-import { art, dur } from '../lib/formatters';
+import { toggleDislike } from '../lib/dislikes';
+import { recordEvent } from '../lib/events';
+import { art } from '../lib/formatters';
 import { useLikedTracks, useRecommendedTracks, useRelatedPool } from '../lib/hooks';
 import {
   AudioLines,
   Loader2,
-  MessageCircle,
-  MicVocal,
   Pause,
   Play,
   RefreshCw,
-  SkipBack,
-  SkipForward,
+  SlidersHorizontal,
+  Sparkles,
+  ThumbsDown,
+  ThumbsUp,
 } from '../lib/icons';
 import { isUrnLiked } from '../lib/likes';
 import { useArtistDisplay, useDisplayTitle } from '../lib/track-display';
 import { matchesLanguages } from '../lib/track-language';
 import { tuneWaveTracks } from '../lib/wave-vibes';
 import { useAuthStore } from '../stores/auth';
-import { useLyricsStore } from '../stores/lyrics';
 import { type Track, usePlayerStore } from '../stores/player';
 import { useSettingsStore } from '../stores/settings';
 
@@ -77,6 +71,8 @@ export function SoundWavePage() {
   const queue = usePlayerStore((s) => s.queue);
   const togglePlay = usePlayerStore((s) => s.togglePlay);
   const playerNext = usePlayerStore((s) => s.next);
+  const queryClient = useQueryClient();
+  const [tuneOpen, setTuneOpen] = useState(false);
 
   const [refreshSeed, setRefreshSeed] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -170,7 +166,18 @@ export function SoundWavePage() {
 
   const artistDisplay = useArtistDisplay(displayTrack ?? ({} as Track));
   const displayTitle = useDisplayTitle(displayTrack ?? ({} as Track));
-  const openLyricsPanel = useLyricsStore((s) => s.openPanel);
+  /** "Not this": remember the dislike and move on. */
+  const handleNotThis = () => {
+    if (!displayTrack) return;
+    void toggleDislike(queryClient, displayTrack, true);
+    playerNext();
+  };
+  /** "More like this": a positive signal for recommendations (doesn't touch your likes). */
+  const handleMoreLikeThis = () => {
+    if (!displayTrack) return;
+    recordEvent('like', displayTrack.urn);
+    toast.success(t('soundwave.moreLikeThisDone'));
+  };
 
   const handleStartWave = useCallback(() => {
     if (allTracks.length === 0) return;
@@ -338,8 +345,14 @@ export function SoundWavePage() {
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            <HideLikedToggle value={hideLiked} onChange={setHideLiked} />
-            <LanguageFilter selected={selectedLanguages} onChange={setSelectedLanguages} />
+            <button
+              type="button"
+              onClick={() => setTuneOpen(true)}
+              className="flex items-center gap-2 h-8 px-3.5 rounded-full text-[12px] font-semibold text-white/85 hover:text-white bg-white/[0.08] hover:bg-white/[0.14] border border-white/[0.1] cursor-pointer"
+            >
+              <SlidersHorizontal size={13} />
+              {t('waveTune.open')}
+            </button>
             <button
               type="button"
               onClick={handleRefresh}
@@ -365,40 +378,55 @@ export function SoundWavePage() {
 
         {/* ── Central Liquid Glass Stage ────────────────────────── */}
         <section className="relative p-2 md:p-4 flex flex-col items-center gap-6 my-auto">
-          {/* Artist & Track Title */}
-          <div className="text-center max-w-2xl w-full">
+          {/* Cover */}
+          <button
+            type="button"
+            key={displayTrack?.urn ?? 'none'}
+            onClick={handlePlayPause}
+            disabled={allTracks.length === 0 && !isWaveTrack}
+            className="np-cover-img w-[200px] h-[200px] rounded-xl overflow-hidden bg-white/[0.06] shadow-[0_16px_40px_rgba(0,0,0,0.5)] cursor-pointer disabled:cursor-default"
+          >
+            {artworkUrl ? (
+              <img
+                src={artworkUrl}
+                alt={displayTitle}
+                className="w-full h-full object-cover"
+                decoding="async"
+              />
+            ) : (
+              <span className="w-full h-full flex items-center justify-center">
+                <AudioLines size={40} className="text-white/25" />
+              </span>
+            )}
+          </button>
+
+          {/* Title · artist · why it's here */}
+          <div className="text-center max-w-3xl w-full">
             {displayTrack ? (
-              <>
+              <div key={displayTrack.urn} className="track-swap-text">
+                <button
+                  type="button"
+                  onClick={() => navigate(`/track/${encodeURIComponent(displayTrack.urn)}`)}
+                  className="block mx-auto max-w-full truncate text-white leading-[1.05] tracking-tight font-extrabold hover:opacity-85 cursor-pointer"
+                  style={{ fontSize: 'clamp(30px, 4.6vw, 54px)' }}
+                >
+                  {displayTitle}
+                </button>
                 <button
                   type="button"
                   onClick={artistTarget ? () => navigate(artistTarget) : undefined}
                   disabled={!artistTarget}
-                  className={`text-white/95 leading-[1.02] tracking-tight font-extrabold transition-opacity ${
-                    artistTarget ? 'hover:opacity-80 cursor-pointer' : 'cursor-default'
-                  }`}
-                  style={{
-                    fontSize: 'clamp(28px, 5vw, 56px)',
-                    fontFamily: 'var(--font-display)',
-                    textShadow: '0 2px 12px rgba(0,0,0,0.35)',
-                  }}
+                  className="mt-2 text-[17px] font-semibold text-white/70 hover:text-white hover:underline cursor-pointer disabled:cursor-default disabled:no-underline"
                 >
                   {artistDisplay.primary}
                 </button>
-                <div className="mt-2 flex items-center justify-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/track/${encodeURIComponent(displayTrack.urn)}`)}
-                    className="text-[15px] md:text-[17px] font-semibold text-white/75 hover:text-white truncate max-w-xl transition-colors cursor-pointer"
-                  >
-                    {displayTitle}
-                  </button>
-                  {displayTrack.duration > 0 && (
-                    <span className="text-[12px] text-white/35 font-mono shrink-0">
-                      · {dur(displayTrack.duration)}
-                    </span>
-                  )}
-                </div>
-              </>
+                <p className="mt-2 flex items-center justify-center gap-1.5 text-[14px] text-white/50">
+                  <Sparkles size={14} />
+                  {isUrnLiked(displayTrack.urn) || displayTrack.user_favorite
+                    ? t('waveTune.reasonLiked')
+                    : t('waveTune.reasonNew')}
+                </p>
+              </div>
             ) : isLoading ? (
               <div className="flex flex-col items-center gap-3 py-2">
                 <div className="h-12 w-64 rounded-2xl bg-white/10 animate-pulse" />
@@ -414,75 +442,40 @@ export function SoundWavePage() {
             )}
           </div>
 
-          {/* Transport: Prev · Artwork + Play/Pause · Next */}
-          <div className="flex items-center justify-center gap-6 md:gap-10">
+          {/* Not this · Play/Pause · More like this */}
+          <div className="flex items-center justify-center gap-4">
             <button
               type="button"
-              onClick={handlePrev}
-              disabled={!isWaveTrack && !currentTrack}
-              aria-label={t('kb.prevTrack')}
-              className="w-12 h-12 rounded-full flex items-center justify-center text-white/65 hover:text-white bg-white/[0.05] hover:bg-white/[0.12] border border-white/[0.08] transition-all duration-200 cursor-pointer active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
+              onClick={handleNotThis}
+              disabled={!displayTrack || !isWaveTrack}
+              className="flex items-center gap-2 h-11 px-5 rounded-full bg-white/[0.08] hover:bg-white/[0.14] border border-white/[0.08] text-[14px] font-semibold text-white cursor-pointer disabled:opacity-40 disabled:cursor-default"
             >
-              <SkipBack size={22} strokeWidth={1.8} />
+              <ThumbsDown size={17} />
+              {t('soundwave.notThis')}
             </button>
-
             <button
               type="button"
               onClick={handlePlayPause}
               disabled={allTracks.length === 0 && !isWaveTrack}
-              className="relative rounded-3xl overflow-hidden cursor-pointer group/art shrink-0 ring-1 ring-white/20 disabled:opacity-40 disabled:cursor-not-allowed"
-              style={{
-                width: 216,
-                height: 216,
-                boxShadow: '0 16px 40px rgba(0,0,0,0.5)',
-              }}
+              aria-label={isPlaying ? 'Pause' : 'Play'}
+              className="play-fab relative w-16 h-16 rounded-full bg-white text-black flex items-center justify-center shadow-[0_8px_24px_rgba(0,0,0,0.4)] cursor-pointer disabled:opacity-40"
             >
-              {artworkUrl ? (
-                <img
-                  src={artworkUrl}
-                  alt={displayTitle}
-                  className="w-full h-full object-cover transition-transform duration-700 group-hover/art:scale-[1.05]"
-                  decoding="async"
-                />
+              {isBuffering && !!currentTrack ? (
+                <Loader2 size={24} className="animate-spin" />
+              ) : isPlaying && !!currentTrack ? (
+                <Pause size={24} fill="currentColor" strokeWidth={0} />
               ) : (
-                <div className="w-full h-full bg-white/[0.06] flex items-center justify-center">
-                  <AudioLines size={40} className="text-white/25" />
-                </div>
+                <Play size={24} fill="currentColor" strokeWidth={0} className="ml-0.5" />
               )}
-
-              <div
-                className="absolute inset-0 transition-opacity duration-300 group-hover/art:opacity-90"
-                style={{ background: 'rgba(0,0,0,0.22)' }}
-              />
-
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div
-                  className="w-[62px] h-[62px] rounded-full flex items-center justify-center transition-transform duration-200 group-hover/art:scale-110 active:scale-90"
-                  style={{
-                    background: '#fff',
-                    boxShadow: '0 8px 24px rgba(0,0,0,0.45)',
-                    color: '#0b0b0f',
-                  }}
-                >
-                  {isBuffering && !!currentTrack ? (
-                    <Loader2 size={22} className="animate-spin" />
-                  ) : isPlaying && !!currentTrack ? (
-                    <Pause size={22} fill="currentColor" strokeWidth={0} />
-                  ) : (
-                    <Play size={22} fill="currentColor" strokeWidth={0} className="ml-0.5" />
-                  )}
-                </div>
-              </div>
             </button>
-
             <button
               type="button"
-              onClick={playerNext}
-              disabled={!isWaveTrack && !currentTrack}
-              aria-label={t('kb.nextTrack')}
-              className="w-12 h-12 rounded-full flex items-center justify-center text-white/65 hover:text-white bg-white/[0.05] hover:bg-white/[0.12] border border-white/[0.08] transition-all duration-200 cursor-pointer active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
+              onClick={handleMoreLikeThis}
+              disabled={!displayTrack || !isWaveTrack}
+              className="flex items-center gap-2 h-11 px-5 rounded-full bg-white/[0.08] hover:bg-white/[0.14] border border-white/[0.08] text-[14px] font-semibold text-white cursor-pointer disabled:opacity-40 disabled:cursor-default"
             >
-              <SkipForward size={22} strokeWidth={1.8} />
+              <ThumbsUp size={17} />
+              {t('soundwave.moreLikeThis')}
             </button>
           </div>
 
@@ -504,52 +497,6 @@ export function SoundWavePage() {
                   title: currentTrack.title,
                 })}
               </p>
-            </div>
-          )}
-
-          {/* Live Progress + Controls */}
-          {isWaveTrack && displayTrack && (
-            <div className="w-full max-w-xl flex flex-col gap-3">
-              <LiveSpectrumCanvas
-                active={isPlaying}
-                bars={40}
-                height={24}
-                className="max-w-xs mx-auto opacity-85"
-              />
-              <ProgressSlider />
-              <div className="flex items-center justify-between gap-3 pt-1">
-                <div className="flex items-center gap-2">
-                  <ControlVolumeBtn size="sm" />
-                  <NowBarDislikeButton trackUrn={displayTrack.urn} />
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => openLyricsPanel({ tab: 'lyrics', rightPanelOpen: true })}
-                    title={t('kb.lyrics')}
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/[0.1] transition-all cursor-pointer"
-                  >
-                    <MicVocal size={17} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => openLyricsPanel({ tab: 'comments', rightPanelOpen: true })}
-                    title={t('track.comments', 'Comments')}
-                    className="w-10 h-10 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/[0.1] transition-all cursor-pointer"
-                  >
-                    <MessageCircle size={17} />
-                  </button>
-                  <LikeButton
-                    key={displayTrack.urn}
-                    track={displayTrack}
-                    variant="always"
-                    size={18}
-                    className="w-10 h-10"
-                    title={t('track.likes')}
-                  />
-                </div>
-              </div>
             </div>
           )}
         </section>
@@ -591,6 +538,21 @@ export function SoundWavePage() {
           </footer>
         )}
       </div>
+      <WaveTuneDialog
+        open={tuneOpen}
+        onOpenChange={setTuneOpen}
+        mode={waveMode}
+        hideLiked={hideLiked}
+        vibe={waveVibe}
+        languages={selectedLanguages}
+        onModeChange={setWaveMode}
+        onHideLikedChange={setHideLiked}
+        onVibeChange={setWaveVibe}
+        onLanguagesChange={setSelectedLanguages}
+        onListen={() => {
+          if (!isWaveTrack || !isPlaying) handleStartWave();
+        }}
+      />
     </div>
   );
 }

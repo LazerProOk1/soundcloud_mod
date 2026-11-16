@@ -53,6 +53,7 @@ export const THEME_PRESETS: Record<Exclude<ThemePreset, 'custom'>, ThemePresetDe
   },
 };
 
+export type CrossfadeCurve = 'equal' | 'linear' | 'scurve';
 export type MusicSourceId = 'soundcloud' | 'zaycev' | 'youtube' | 'audius';
 export interface MusicSource {
   id: MusicSourceId;
@@ -111,6 +112,15 @@ export interface SettingsState {
   cacheListenedTracks: boolean;
   /** Crossfade duration in seconds. 0 = disabled. */
   crossfadeDuration: number;
+  /** Crossfade volume shape: equal power (no dip), linear, or S-curve. */
+  crossfadeCurve: CrossfadeCurve;
+  /** Manual skip: the previous track quickly fades out instead of cutting off. */
+  crossfadeOnSkip: boolean;
+  /** Tracks of the same album play back to back, without a crossfade. */
+  crossfadeKeepAlbums: boolean;
+  setCrossfadeCurve: (v: CrossfadeCurve) => void;
+  setCrossfadeOnSkip: (v: boolean) => void;
+  setCrossfadeKeepAlbums: (v: boolean) => void;
   artistWaveCollapsed: boolean;
   /** Liquid Glass (frosted-glass / backdrop-filter) UI effects */
   liquidGlass: boolean;
@@ -188,6 +198,9 @@ const DEFAULTS = {
   lyricsWordMode: true,
   cacheListenedTracks: true,
   crossfadeDuration: 0,
+  crossfadeCurve: 'equal' as CrossfadeCurve,
+  crossfadeOnSkip: true,
+  crossfadeKeepAlbums: true,
   artistWaveCollapsed: false,
   // Classic (flat, calm) look by default; Liquid Glass is opt-in.
   liquidGlass: false,
@@ -252,6 +265,9 @@ export const useSettingsStore = create<SettingsState>()(
       setSoundwaveHideLiked: (soundwaveHideLiked) => set({ soundwaveHideLiked }),
       setLyricsVisualizer: (lyricsVisualizer) => set({ lyricsVisualizer }),
       setLyricsWordMode: (lyricsWordMode) => set({ lyricsWordMode }),
+      setCrossfadeCurve: (crossfadeCurve) => set({ crossfadeCurve }),
+      setCrossfadeOnSkip: (crossfadeOnSkip) => set({ crossfadeOnSkip }),
+      setCrossfadeKeepAlbums: (crossfadeKeepAlbums) => set({ crossfadeKeepAlbums }),
       setCacheListenedTracks: (cacheListenedTracks) => set({ cacheListenedTracks }),
       setCrossfadeDuration: (crossfadeDuration) => set({ crossfadeDuration }),
       setArtistWaveCollapsed: (artistWaveCollapsed) => set({ artistWaveCollapsed }),
@@ -335,6 +351,9 @@ export const useSettingsStore = create<SettingsState>()(
         lyricsWordMode: s.lyricsWordMode,
         cacheListenedTracks: s.cacheListenedTracks,
         crossfadeDuration: s.crossfadeDuration,
+        crossfadeCurve: s.crossfadeCurve,
+        crossfadeOnSkip: s.crossfadeOnSkip,
+        crossfadeKeepAlbums: s.crossfadeKeepAlbums,
         artistWaveCollapsed: s.artistWaveCollapsed,
         liquidGlass: s.liquidGlass,
       }),

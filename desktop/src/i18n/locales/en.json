@@ -563,6 +563,52 @@
     "nothingFound": "Nothing was found on SoundCloud",
     "button": "Import"
   },
+  "transitions": {
+    "title": "Transitions between tracks",
+    "off": "Off",
+    "smooth": "Smooth",
+    "offDesc": "Tracks play one after another without overlap.",
+    "smoothDesc": "The next track starts while the current one is still playing: one fades out, the other fades in.",
+    "current": "Current track",
+    "next": "Next track",
+    "duration": "Transition length",
+    "durationDesc": "How long both tracks play together.",
+    "shape": "Volume shape",
+    "shapeDesc": "Equal power keeps the overall level without a dip in the middle.",
+    "equal": "Equal power",
+    "linear": "Linear",
+    "scurve": "S-curve",
+    "keepAlbums": "Don't blend tracks of one album",
+    "keepAlbumsDesc": "Albums made without pauses sound the way the artist intended.",
+    "onSkip": "Smooth when switching",
+    "onSkipDesc": "When you switch the track yourself, the previous one doesn't cut off but quickly fades out."
+  },
+  "waveTune": {
+    "open": "Tune",
+    "title": "Tune My Wave",
+    "character": "Character",
+    "mood": "Mood",
+    "language": "Language",
+    "char": {
+      "familiar": "Familiar",
+      "unfamiliar": "Unfamiliar",
+      "diverse": "Diverse"
+    },
+    "charDesc": {
+      "familiar": "Your favourites mixed with similar tracks",
+      "unfamiliar": "New tracks similar to yours",
+      "diverse": "Wider picks, more surprises"
+    },
+    "lang": {
+      "any": "Any",
+      "ru": "Russian",
+      "foreign": "Foreign"
+    },
+    "reset": "Reset",
+    "listen": "Listen to the wave",
+    "reasonLiked": "From your favourites",
+    "reasonNew": "Picked for you"
+  },
   "update": {
     "available": "Update available",
     "later": "Later",

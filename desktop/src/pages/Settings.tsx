@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { AboutSection } from '../components/settings/AboutSection';
 import { InterfaceSection } from '../components/settings/InterfaceSection';
+import { TransitionsSection } from '../components/settings/TransitionsSection';
 import { LiquidSwitch } from '../components/ui/LiquidSwitch.tsx';
 import { Skeleton } from '../components/ui/Skeleton.tsx';
 import { changeAppLanguage } from '../i18n';
@@ -1171,8 +1172,6 @@ const PlaybackSection = React.memo(function PlaybackSection() {
   const setNormalizeVolume = useSettingsStore((s) => s.setNormalizeVolume);
   const highQualityStreaming = useSettingsStore((s) => s.highQualityStreaming);
   const setHighQualityStreaming = useSettingsStore((s) => s.setHighQualityStreaming);
-  const crossfadeDuration = useSettingsStore((s) => s.crossfadeDuration);
-  const setCrossfadeDuration = useSettingsStore((s) => s.setCrossfadeDuration);
   const discordRpcEnabled = useSettingsStore((s) => s.discordRpcEnabled);
   const setDiscordRpcEnabled = useSettingsStore((s) => s.setDiscordRpcEnabled);
   const discordRpcMode = useSettingsStore((s) => s.discordRpcMode);
@@ -1214,37 +1213,10 @@ const PlaybackSection = React.memo(function PlaybackSection() {
 
       {/* Bypass Whitelists */}
 
-      {/* Crossfade */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-[13px] text-white/70 font-medium">
-              {t('settings.crossfade', 'Кроссфейд')}
-            </p>
-            <p className="text-[11px] text-white/30 mt-0.5">
-              {t('settings.crossfadeDesc', 'Плавный переход между треками')}
-            </p>
-          </div>
-          <span className="text-[12px] text-white/30 tabular-nums shrink-0">
-            {crossfadeDuration === 0
-              ? t('settings.crossfadeOff', 'Выкл')
-              : `${crossfadeDuration} ${t('common.sec', 'сек')}`}
-          </span>
-        </div>
-        <input
-          type="range"
-          min={0}
-          max={8}
-          step={1}
-          value={crossfadeDuration}
-          onChange={(e) => setCrossfadeDuration(Number(e.target.value))}
-          className="liquid-slider"
-        />
-        <div className="flex justify-between text-[10px] text-white/20 select-none">
-          {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((v) => (
-            <span key={v}>{v === 0 ? t('settings.crossfadeOff', 'Выкл') : `${v}с`}</span>
-          ))}
-        </div>
+      {/* Track transitions */}
+      <div className="space-y-3 pt-2">
+        <p className="text-[17px] text-white font-bold">{t('transitions.title')}</p>
+        <TransitionsSection />
       </div>
 
       <div className="border-t border-white/[0.04]" />

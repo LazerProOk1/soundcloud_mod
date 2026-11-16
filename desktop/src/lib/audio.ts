@@ -4,7 +4,7 @@ import i18n from '../i18n';
 import { useCachedUrnsStore } from '../stores/cached-urns';
 import type { Track } from '../stores/player';
 import { usePlayerStore } from '../stores/player';
-import { useSettingsStore } from '../stores/settings';
+import { type CrossfadeCurve, useSettingsStore } from '../stores/settings';
 import {
   api,
   buildStorageUrls,
@@ -62,15 +62,49 @@ let seekPositionTimer: ReturnType<typeof setTimeout> | null = null;
 
 /** When crossfade fade-in is active, this is the rAF id. */
 let fadeInRafId: number | null = null;
-/** True while a crossfade fade-out is in progress (prevents volume conflicts). */
+/** True while a crossfade is in progress (prevents volume conflicts). */
 let crossfading = false;
+/** Overlap length of the current automatic crossfade, ms. */
+let handoffMs = 0;
+/** Set when we jump to the next track before the current one ends (overlap crossfade):
+ *  the old track's own `audio:ended` must not advance the queue a second time. */
+let handoffPending = false;
+
+const CURVE_ID: Record<CrossfadeCurve, number> = { equal: 0, linear: 1, scurve: 2 };
+
+/** Fade-in shape for t in 0..1, mirroring Rust's fade-out of the previous track. */
+export function fadeInGain(t: number, curve: CrossfadeCurve): number {
+  const x = Math.min(1, Math.max(0, t));
+  if (curve === 'linear') return x;
+  if (curve === 'scurve') return 0.5 * (1 - Math.cos(Math.PI * x));
+  return Math.sin((x * Math.PI) / 2);
+}
+
+/** Arms Rust to keep the current track playing and fade it out once the next one starts. */
+function armHandoff(ms: number) {
+  const curve = useSettingsStore.getState().crossfadeCurve;
+  invoke('audio_set_handoff_fade', { ms: Math.round(ms), curve: CURVE_ID[curve] }).catch(() => {});
+}
+
+function sameAlbum(a: Track | undefined | null, b: Track | undefined | null) {
+  const album = (t: Track | undefined | null) =>
+    t?.enrichment?.album?.title ?? t?.publisher_metadata?.album_title ?? '';
+  const x = album(a);
+  return !!x && x === album(b) && a?.user?.urn === b?.user?.urn;
+}
 
 function applyVolume(targetVolume: number) {
   invoke('audio_set_volume', { volume: targetVolume }).catch(() => {});
 }
 
 /** Animate volume from `from` → `to` over `durationMs` ms, then call `onDone`. */
-function animateVolume(from: number, to: number, durationMs: number, onDone?: () => void) {
+function animateVolume(
+  from: number,
+  to: number,
+  durationMs: number,
+  onDone?: () => void,
+  shape: (t: number) => number = (t) => t,
+) {
   const startMs = performance.now();
   const diff = to - from;
 
@@ -82,7 +116,7 @@ function animateVolume(from: number, to: number, durationMs: number, onDone?: ()
   const step = () => {
     const elapsed = performance.now() - startMs;
     const t = Math.min(1, elapsed / durationMs);
-    applyVolume(from + diff * t);
+    applyVolume(from + diff * shape(t));
     if (t < 1) {
       fadeInRafId = requestAnimationFrame(step);
     } else {
@@ -571,15 +605,23 @@ function afterLoad(track: Track, gen: number) {
   // applyVolume(0) MUST be called before audio_play, otherwise the first
   // audio buffer fires at user volume before the IPC set-volume arrives.
   const crossfadeSecs = useSettingsStore.getState().crossfadeDuration;
+  handoffPending = false;
   if (crossfading && crossfadeSecs > 0 && isPlaying) {
     const userVolume = usePlayerStore.getState().volume;
+    const curve = useSettingsStore.getState().crossfadeCurve;
     applyVolume(0);
     invoke('audio_play').catch(console.error);
-    animateVolume(0, userVolume, crossfadeSecs * 1000, () => {
-      crossfading = false;
-      // Restore exact user volume in case float drift occurred
-      applyVolume(usePlayerStore.getState().volume);
-    });
+    animateVolume(
+      0,
+      userVolume,
+      handoffMs || crossfadeSecs * 1000,
+      () => {
+        crossfading = false;
+        // Restore exact user volume in case float drift occurred
+        applyVolume(usePlayerStore.getState().volume);
+      },
+      (t) => fadeInGain(t, curve),
+    );
   } else {
     crossfading = false;
     invoke(isPlaying ? 'audio_play' : 'audio_pause').catch(console.error);
@@ -636,15 +678,32 @@ tauriListen<number>('audio:tick', (event) => {
   if (cachedDuration <= 0) cachedDuration = fallbackDuration;
   notify();
 
-  // ── Crossfade fade-out near track end ──────────────────────
-  const crossfadeSecs = useSettingsStore.getState().crossfadeDuration;
-  if (crossfadeSecs > 0 && !crossfading && cachedDuration > 0) {
+  // ── Crossfade: start the next track while this one is still playing ──
+  // Rust keeps the old track on the mixer and fades it out; the new one fades in.
+  const { crossfadeDuration: crossfadeSecs, crossfadeKeepAlbums } = useSettingsStore.getState();
+  const player = usePlayerStore.getState();
+  if (
+    crossfadeSecs > 0 &&
+    !crossfading &&
+    !handoffPending &&
+    player.isPlaying &&
+    player.repeat !== 'one' &&
+    cachedDuration > crossfadeSecs * 2
+  ) {
     const remaining = cachedDuration - cachedTime;
-    if (remaining > 0 && remaining <= crossfadeSecs) {
+    const nextTrack = player.queue[player.queueIndex + 1];
+    const keepGapless = crossfadeKeepAlbums && sameAlbum(player.currentTrack, nextTrack);
+    if (remaining > 0.3 && remaining <= crossfadeSecs && !keepGapless) {
       crossfading = true;
-      const userVolume = usePlayerStore.getState().volume;
-      const fadeDurationMs = remaining * 1000;
-      animateVolume(userVolume, 0, fadeDurationMs);
+      handoffPending = true;
+      handoffMs = remaining * 1000;
+      armHandoff(handoffMs);
+      // Safety net: if nothing gets loaded (end of queue, error), stop waiting.
+      setTimeout(() => {
+        handoffPending = false;
+      }, handoffMs + 20000);
+      recordFullPlay();
+      handleTrackEnd();
     }
   }
 });
@@ -657,6 +716,8 @@ tauriListen<{ urn: string; progress: number }>('track:download-progress', (event
 });
 
 tauriListen<void>('audio:ended', () => {
+  // The queue already moved on for an overlapping crossfade.
+  if (handoffPending) return;
   // Suppress spurious ended events fired by Rodio during/immediately after a seek
   if (performance.now() < seekGuardUntilMs) return;
 
@@ -670,24 +731,27 @@ tauriListen<void>('audio:ended', () => {
     if (elapsedSinceSeekMs < expectedRemainingMs - 1500) return;
   }
 
-  if (currentUrn) {
-    // Засчитываем full_play только если трек реально игрался: либо ≥30s,
-    // либо проиграно ≥50% длительности (для коротких треков). Иначе это
-    // зависшая загрузка / зеро-длительность баг — не отправляем.
-    const playedEnough =
-      cachedTime >= SKIP_THRESHOLD_SEC ||
-      (cachedDuration > 0 && cachedTime >= cachedDuration * FULL_PLAY_RATIO);
-    if (playedEnough) {
-      const positionPct = cachedDuration > 0 ? Math.min(1, cachedTime / cachedDuration) : undefined;
-      recordEvent('full_play', currentUrn, positionPct);
-      const cluster = getUrnCluster(currentUrn);
-      if (cluster) recordClusterFeedback(cluster, 'complete');
-    }
-    lastEndedUrn = currentUrn;
-  }
+  recordFullPlay();
   hasTrack = false;
   handleTrackEnd();
 });
+
+function recordFullPlay() {
+  if (!currentUrn) return;
+  // Засчитываем full_play только если трек реально игрался: либо ≥30s,
+  // либо проиграно ≥50% длительности (для коротких треков). Иначе это
+  // зависшая загрузка / зеро-длительность баг — не отправляем.
+  const playedEnough =
+    cachedTime >= SKIP_THRESHOLD_SEC ||
+    (cachedDuration > 0 && cachedTime >= cachedDuration * FULL_PLAY_RATIO);
+  if (playedEnough) {
+    const positionPct = cachedDuration > 0 ? Math.min(1, cachedTime / cachedDuration) : undefined;
+    recordEvent('full_play', currentUrn, positionPct);
+    const cluster = getUrnCluster(currentUrn);
+    if (cluster) recordClusterFeedback(cluster, 'complete');
+  }
+  lastEndedUrn = currentUrn;
+}
 
 /* ── Store subscriber ────────────────────────────────────────── */
 
@@ -725,6 +789,15 @@ usePlayerStore.subscribe((state, prev) => {
         notify();
         usePlayerStore.getState().next();
         return;
+      }
+      // Manual skip while playing: let the previous track fade out quickly instead of cutting.
+      if (
+        !crossfading &&
+        previousHadTrack &&
+        prev.isPlaying &&
+        useSettingsStore.getState().crossfadeOnSkip
+      ) {
+        armHandoff(700);
       }
       updateMetadata(state.currentTrack);
       void loadTrack(state.currentTrack);

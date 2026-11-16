@@ -197,6 +197,7 @@ pub fn run() {
             audio::audio_stop,
             audio::audio_seek,
             audio::audio_set_volume,
+            audio::audio_set_handoff_fade,
             audio::audio_set_analyser,
             audio::audio_set_playback_rate,
             audio::audio_get_position,

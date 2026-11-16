@@ -42,6 +42,11 @@ pub struct AudioState {
     pub device_error: Arc<AtomicBool>,
     pub device_reconnected: Arc<AtomicBool>,
     pub load_gen: AtomicU64,
+    /// One-shot: when the next track is committed, fade the previous one out over this
+    /// many ms (overlapping crossfade) instead of cutting it. 0 = cut.
+    pub handoff_fade_ms: AtomicU64,
+    /// Fade-out shape for the handoff: 0 equal-power, 1 linear, 2 S-curve.
+    pub handoff_curve: std::sync::atomic::AtomicU8,
     pub media_tx: Mutex<Option<std::sync::mpsc::Sender<MediaCmd>>>,
     pub audio_tx: std::sync::mpsc::Sender<AudioThreadCmd>,
     pub source_bytes: Mutex<Option<Arc<[u8]>>>,
@@ -149,6 +154,8 @@ pub fn init() -> AudioState {
         device_error: device_error_flag,
         device_reconnected: reconnected_flag,
         load_gen: AtomicU64::new(0),
+        handoff_fade_ms: AtomicU64::new(0),
+        handoff_curve: std::sync::atomic::AtomicU8::new(0),
         media_tx: Mutex::new(None),
         audio_tx: cmd_tx,
         source_bytes: Mutex::new(None),

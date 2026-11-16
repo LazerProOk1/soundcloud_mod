@@ -49,7 +49,12 @@ fn commit_loaded_track(
     apply_current_rate(state, &new_player);
     let mut player_guard = state.player.lock().unwrap();
     if let Some(old) = player_guard.take() {
-        old.stop();
+        let fade_ms = state.handoff_fade_ms.swap(0, Ordering::Relaxed);
+        if fade_ms > 0 && !old.is_paused() && !old.empty() {
+            fade_out_and_stop(old, fade_ms, state.handoff_curve.load(Ordering::Relaxed));
+        } else {
+            old.stop();
+        }
     }
     *player_guard = Some(new_player);
     drop(player_guard);
@@ -66,6 +71,37 @@ fn commit_loaded_track(
     state.has_track.store(true, Ordering::Relaxed);
     state.ended_notified.store(false, Ordering::Relaxed);
     state.device_error.store(false, Ordering::Relaxed);
+}
+
+/// Fade-out gain for t in 0..=1 (1 → 0). The new track fades in with the mirrored curve.
+pub fn fade_out_gain(t: f32, curve: u8) -> f32 {
+    let t = t.clamp(0.0, 1.0);
+    match curve {
+        1 => 1.0 - t,
+        2 => 0.5 * (1.0 + (std::f32::consts::PI * t).cos()),
+        // Equal power: the sum of both tracks' power stays constant, no dip in the middle.
+        _ => (t * std::f32::consts::FRAC_PI_2).cos(),
+    }
+}
+
+/// Keeps the previous track playing on the mixer while it fades out, then stops it.
+/// This is what makes the crossfade an actual overlap rather than fade-out → fade-in.
+fn fade_out_and_stop(old: rodio::Player, fade_ms: u64, curve: u8) {
+    std::thread::spawn(move || {
+        let start_vol = old.volume();
+        let started = std::time::Instant::now();
+        let total = std::time::Duration::from_millis(fade_ms);
+        loop {
+            let elapsed = started.elapsed();
+            if elapsed >= total || old.empty() {
+                break;
+            }
+            let t = elapsed.as_secs_f32() / total.as_secs_f32();
+            old.set_volume(start_vol * fade_out_gain(t, curve));
+            std::thread::sleep(std::time::Duration::from_millis(15));
+        }
+        old.stop();
+    });
 }
 
 async fn build_player_from_bytes(
