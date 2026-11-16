@@ -28,6 +28,7 @@ import { recordEvent } from './events';
 import { art } from './formatters';
 import { rememberRecentlyPlayed, rememberTracks } from './offline-index';
 import { getUrnCluster, recordClusterFeedback } from './recsFeedback';
+import { isRefusal, isRefusedDirect, rememberRefusedDirect } from './refused-tracks';
 import { getArtistDisplay, getDisplayTitle } from './track-display';
 import { dedupeSongs, isVariant } from './track-variants';
 import { rankWave } from './wave-rank';
@@ -607,7 +608,16 @@ async function loadTrack(track: Track) {
     const steps = enabled.flatMap((id) =>
       id === 'soundcloud'
         ? [
-            () => ensureTrackCached(urn, highQualityStreaming, true),
+            // Skip the direct attempt for tracks SoundCloud already refused recently.
+            ...(isRefusedDirect(urn)
+              ? []
+              : [
+                  () =>
+                    ensureTrackCached(urn, highQualityStreaming, true).catch((e) => {
+                      if (isRefusal(e)) rememberRefusedDirect(urn);
+                      throw e;
+                    }),
+                ]),
             () => ensureTrackCached(urn, highQualityStreaming),
           ]
         : [fromFallback(id)],

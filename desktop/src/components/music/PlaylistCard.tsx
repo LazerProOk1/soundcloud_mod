@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { art, fc } from '../../lib/formatters';
-import type { Playlist } from '../../lib/hooks';
+import { type Playlist, usePlaylistCover } from '../../lib/hooks';
 import { Heart, ListMusic, Play, pauseBlack22 } from '../../lib/icons';
 import type { Track } from '../../stores/player';
 import { usePlayerStore } from '../../stores/player';
@@ -15,8 +15,10 @@ interface PlaylistCardProps {
 export const PlaylistCard = React.memo(
   function PlaylistCard({ playlist, showPlayback }: PlaylistCardProps) {
     const navigate = useNavigate();
-    const cover =
-      art(playlist.artwork_url, 't300x300') ?? art(playlist.tracks?.[0]?.artwork_url, 't300x300');
+    const cover = art(
+      usePlaylistCover(playlist.urn, playlist.artwork_url ?? playlist.tracks?.[0]?.artwork_url),
+      't300x300',
+    );
 
     const trackUrns = React.useMemo(
       () => new Set((playlist.tracks ?? []).map((t: Track) => t.urn)),
@@ -61,7 +63,7 @@ export const PlaylistCard = React.memo(
         style={{ contain: 'content' }}
         onClick={() => navigate(`/playlist/${encodeURIComponent(playlist.urn)}`)}
       >
-        <div className="relative aspect-square rounded-[32px] overflow-hidden bg-white/[0.02] ring-1 ring-white/[0.06] shadow-lg group-hover:shadow-2xl group-hover:ring-white/[0.15] transition-all duration-500 ease-[var(--ease-apple)]">
+        <div className="relative aspect-square rounded-md overflow-hidden bg-white/[0.06] shadow-[0_8px_24px_rgba(0,0,0,0.35)]">
           {cover ? (
             <img
               src={cover}
@@ -71,8 +73,8 @@ export const PlaylistCard = React.memo(
               decoding="async"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-white/[0.04] to-transparent">
-              <ListMusic size={32} className="text-white/10" />
+            <div className="w-full h-full flex items-center justify-center">
+              <ListMusic size={36} className="text-white/30" />
             </div>
           )}
 

@@ -2,7 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { art } from '../../lib/formatters';
-import { useMyPlaylists, usePlaylist } from '../../lib/hooks';
+import { useMyPlaylists, usePlaylistCover } from '../../lib/hooks';
 import { AudioLines, Clock, Download, Heart, Library, ListMusic } from '../../lib/icons';
 import { useAuthStore } from '../../stores/auth';
 import { useCachedUrnsStore } from '../../stores/cached-urns';
@@ -71,16 +71,15 @@ export const Sidebar = React.memo(() => {
   return (
     <aside
       data-ui="sidebar"
-      className="liquid-panel-heavy shrink-0 flex flex-col h-full m-2 mr-0 rounded-xl overflow-hidden transition-[width] duration-300 ease-[var(--ease-spring)]"
-      style={{ width: collapsed ? 72 : 280, boxShadow: 'none' }}
+      className="liquid-panel-heavy shrink-0 flex flex-col m-2 mr-0 rounded-xl overflow-hidden transition-[width] duration-300 ease-[var(--ease-spring)]"
+      // Full height minus the 8px margins: `h-full` + margin pushed the profile row off the bottom.
+      style={{ width: collapsed ? 72 : 280, height: 'calc(100% - 16px)', boxShadow: 'none' }}
     >
       <div
-        className={`flex items-center gap-2.5 px-4 pt-4 pb-3 text-white/70 ${collapsed ? 'justify-center px-0' : ''}`}
+        className={`flex items-center gap-2.5 px-4 pt-4 pb-3 text-white ${collapsed ? 'justify-center px-0' : ''}`}
       >
-        <Library size={22} />
-        {!collapsed && (
-          <span className="text-[15px] font-bold text-white/90">{t('sidebar.myLibrary')}</span>
-        )}
+        <Library size={20} />
+        {!collapsed && <span className="text-[15px] font-bold">{t('sidebar.myLibrary')}</span>}
       </div>
 
       <div className="flex-1 overflow-y-auto scrollbar-hide px-2 pb-2 flex flex-col gap-0.5">
@@ -153,9 +152,7 @@ export const Sidebar = React.memo(() => {
 
 /** Playlist artwork; playlists without their own cover use the first track's art. */
 function PlaylistTile({ urn, artwork }: { urn: string; artwork?: string | null }) {
-  // Only fetched when the list item has no artwork (one small request, cached).
-  const { data } = usePlaylist(artwork ? undefined : urn);
-  const cover = art(artwork ?? data?.artwork_url ?? data?.tracks?.[0]?.artwork_url, 't200x200');
+  const cover = art(usePlaylistCover(urn, artwork), 't200x200');
   return cover ? (
     <img src={cover} alt="" className="w-full h-full object-cover" loading="lazy" />
   ) : (

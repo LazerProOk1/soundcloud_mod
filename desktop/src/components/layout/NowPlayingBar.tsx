@@ -117,8 +117,7 @@ const DownloadProgressPanel = React.memo(() => {
             className="absolute inset-y-0 left-0 rounded-full transition-[width] duration-150 ease-out"
             style={{
               width: `${progressPercent}%`,
-              background:
-                'linear-gradient(90deg, var(--color-accent) 0%, var(--color-accent-hover) 100%)',
+              background: 'var(--color-accent)',
               boxShadow: '0 0 12px var(--color-accent-glow)',
             }}
           />

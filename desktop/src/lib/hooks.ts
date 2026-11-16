@@ -11,10 +11,10 @@ import {
 import { useEffect, useMemo, useRef } from 'react';
 import type { Track } from '../stores/player';
 import { usePlayerStore } from '../stores/player';
+import { useSettingsStore } from '../stores/settings';
 import { api } from './api';
 import { initLikedUrns } from './likes';
 import { rememberFollowingTracks, rememberLikedTracks, rememberTracks } from './offline-index';
-import { useSettingsStore } from '../stores/settings';
 
 /* ── Types ─────────────────────────────────────────────────────── */
 
@@ -639,6 +639,30 @@ export function usePlaylist(playlistUrn: string | undefined) {
 }
 
 /* ── Playlist Tracks ──────────────────────────────────────────── */
+
+/**
+ * Cover for a playlist: its own artwork, else the first track's. Playlist lists don't
+ * include tracks, so the first one is fetched with one tiny request (cached for long).
+ */
+export function usePlaylistCover(
+  playlistUrn: string | undefined,
+  artwork: string | null | undefined,
+): string | null {
+  const { data } = useQuery({
+    queryKey: ['playlist-cover', playlistUrn],
+    enabled: !artwork && !!playlistUrn,
+    staleTime: 30 * 60_000,
+    gcTime: INFINITE_GC_MS,
+    queryFn: async () => {
+      const res = await api<PagedResponse<Track>>(
+        pagedUrl(`/playlists/${encodeURIComponent(playlistUrn!)}/tracks`, 0, 1),
+        { silent: true },
+      );
+      return res.collection?.[0]?.artwork_url ?? null;
+    },
+  });
+  return artwork ?? data ?? null;
+}
 
 export function usePlaylistTracks(playlistUrn: string | undefined) {
   const query = usePagedQuery<Track>({

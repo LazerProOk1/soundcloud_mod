@@ -22,7 +22,7 @@ import { usePlayerStore } from '../../stores/player';
 import { useSettingsStore } from '../../stores/settings';
 
 const iconBtn =
-  'w-8 h-8 rounded-lg flex items-center justify-center text-white/55 hover:text-white hover:bg-white/[0.08] transition-colors duration-150 cursor-pointer disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-default';
+  'w-8 h-8 rounded-full flex items-center justify-center text-white/80 hover:text-white hover:bg-white/[0.08] transition-colors duration-150 cursor-pointer disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-default';
 
 // Windows/Linux-style caption buttons: full bar height, flat, close turns red.
 const capBtn =
@@ -103,9 +103,7 @@ const CenterNav = React.memo(() => {
   const shortcutLabel = isMac() ? '⌘ K' : 'Ctrl K';
   const round = (active: boolean) =>
     `w-10 h-10 shrink-0 rounded-full flex items-center justify-center transition-colors duration-150 cursor-pointer ${
-      active
-        ? 'bg-white/[0.14] text-white'
-        : 'bg-white/[0.07] text-white/70 hover:text-white hover:bg-white/[0.12]'
+      active ? 'bar-control is-active text-white' : 'bar-control text-white/85 hover:text-white'
     }`;
 
   return (
@@ -121,7 +119,7 @@ const CenterNav = React.memo(() => {
       <button
         type="button"
         onClick={() => navigate('/search')}
-        className="flex-1 min-w-0 flex items-center gap-2.5 h-10 px-4 rounded-full bg-white/[0.07] hover:bg-white/[0.11] border border-transparent hover:border-white/[0.1] text-white/50 hover:text-white/80 transition-colors cursor-pointer"
+        className="bar-control flex-1 min-w-0 flex items-center gap-2.5 h-10 px-4 rounded-full text-white/65 hover:text-white transition-colors cursor-pointer"
       >
         <Search size={17} className="shrink-0" />
         <span className="truncate flex-1 text-left text-[14px]">{t('titlebar.search')}</span>
@@ -130,7 +128,7 @@ const CenterNav = React.memo(() => {
             e.stopPropagation();
             window.dispatchEvent(new CustomEvent('sc:open-command-palette'));
           }}
-          className="hidden md:inline text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/[0.07] text-white/40 shrink-0"
+          className="hidden md:inline text-[11px] font-semibold px-2 py-0.5 rounded-md bg-white/[0.08] text-white/55 shrink-0"
         >
           {shortcutLabel}
         </kbd>
