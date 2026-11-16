@@ -85,7 +85,7 @@ export const Sidebar = React.memo(() => {
 
       <div className="flex-1 overflow-y-auto scrollbar-hide px-2 pb-2 flex flex-col gap-0.5">
         <Row
-          to="/soundwave"
+          to="/home"
           title={t('nav.soundwave')}
           subtitle={t('sidebar.waveSubtitle')}
           collapsed={collapsed}

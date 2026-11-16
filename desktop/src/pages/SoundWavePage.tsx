@@ -17,6 +17,7 @@ import { useShallow } from 'zustand/shallow';
 import { useClusterWave } from '../components/music/cluster';
 import { useInfiniteWave } from '../components/music/soundwave/use-infinite-wave';
 import { VibeTuner } from '../components/music/soundwave/vibe-tuner';
+import { WaveStage } from '../components/music/soundwave/wave-stage';
 import { WaveTuneDialog } from '../components/music/soundwave/wave-tune-dialog';
 import { rgbToCss, useArtworkColor } from '../hooks/useArtworkColor';
 import { api } from '../lib/api';
@@ -90,6 +91,7 @@ export function SoundWavePage() {
   const playerNext = usePlayerStore((s) => s.next);
   const queryClient = useQueryClient();
   const [tuneOpen, setTuneOpen] = useState(false);
+  const coverRef = useRef<HTMLButtonElement>(null);
 
   const [refreshSeed, setRefreshSeed] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -290,7 +292,11 @@ export function SoundWavePage() {
     if (!reshapeAfterSeed.current || seedRelated.length === 0 || !isWaveTrack) return;
     reshapeAfterSeed.current = false;
     const { currentTrack: cur } = usePlayerStore.getState();
-    const upcoming = allTracks.filter((tr) => tr.urn !== cur?.urn).slice(0, 60);
+    const { queue: q, queueIndex: qi } = usePlayerStore.getState();
+    const played = new Set(q.slice(0, qi + 1).map((tr) => tr.urn));
+    const upcoming = allTracks
+      .filter((tr) => tr.urn !== cur?.urn && !played.has(tr.urn))
+      .slice(0, 60);
     _registerWave(upcoming.map((tr) => tr.urn));
     usePlayerStore.getState().clearUpcoming();
     usePlayerStore.getState().addToQueue(upcoming);
@@ -472,27 +478,32 @@ export function SoundWavePage() {
 
         {/* ── Central Liquid Glass Stage ────────────────────────── */}
         <section className="relative p-2 md:p-4 flex flex-col items-center gap-6 my-auto">
-          {/* Cover */}
-          <button
-            type="button"
-            key={displayTrack?.urn ?? 'none'}
-            onClick={handlePlayPause}
-            disabled={allTracks.length === 0 && !isWaveTrack}
-            className="np-cover-img w-[200px] h-[200px] rounded-xl overflow-hidden bg-white/[0.06] shadow-[0_16px_40px_rgba(0,0,0,0.5)] cursor-pointer disabled:cursor-default"
-          >
-            {artworkUrl ? (
-              <img
-                src={artworkUrl}
-                alt={displayTitle}
-                className="w-full h-full object-cover"
-                decoding="async"
-              />
-            ) : (
-              <span className="w-full h-full flex items-center justify-center">
-                <AudioLines size={40} className="text-white/25" />
-              </span>
-            )}
-          </button>
+          {/* Cover on a living wave horizon */}
+          <div className="relative w-full flex justify-center">
+            <WaveStage active={isPlaying && !!currentTrack} pulseTarget={coverRef} />
+            <button
+              type="button"
+              key={displayTrack?.urn ?? 'none'}
+              onClick={handlePlayPause}
+              disabled={allTracks.length === 0 && !isWaveTrack}
+              ref={coverRef}
+              style={{ transform: 'scale(calc(1 + var(--bass, 0) * 0.045))' }}
+              className="np-cover-img relative z-10 w-[200px] h-[200px] rounded-xl overflow-hidden bg-white/[0.06] shadow-[0_16px_40px_rgba(0,0,0,0.5)] cursor-pointer disabled:cursor-default"
+            >
+              {artworkUrl ? (
+                <img
+                  src={artworkUrl}
+                  alt={displayTitle}
+                  className="w-full h-full object-cover"
+                  decoding="async"
+                />
+              ) : (
+                <span className="w-full h-full flex items-center justify-center">
+                  <AudioLines size={40} className="text-white/25" />
+                </span>
+              )}
+            </button>
+          </div>
 
           {/* Title · artist · why it's here */}
           <div className="text-center max-w-3xl w-full">
@@ -623,7 +634,7 @@ export function SoundWavePage() {
               const thumb = art(tr.artwork_url, 't67x67');
               return (
                 <button
-                  key={tr.urn}
+                  key={`${tr.urn}-${i}`}
                   type="button"
                   onClick={() => handlePlayFromWave(tr)}
                   title={`${tr.user?.username ?? ''} — ${tr.title}`}

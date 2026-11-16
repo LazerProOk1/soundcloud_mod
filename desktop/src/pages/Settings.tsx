@@ -1274,52 +1274,6 @@ const PlaybackSection = React.memo(function PlaybackSection() {
   );
 });
 
-/* ── Import Section ──────────────────────────────────────── */
-
-const ImportSection = React.memo(function ImportSection() {
-  const { t } = useTranslation();
-  const [ymOpen, setYmOpen] = useState(false);
-
-  return (
-    <section className="settings-section">
-      <h3 className="text-[22px] font-bold text-white tracking-tight mb-4">
-        {t('settings.import')}
-      </h3>
-      <button
-        onClick={() => setYmOpen(true)}
-        className="flex items-center gap-2 px-5 py-2.5 rounded-[18px] text-[13px] font-semibold text-white/80 hover:text-white transition-all duration-200 cursor-pointer"
-        style={{
-          background: 'rgba(255,255,255,0.06)',
-          backdropFilter: 'blur(16px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(16px) saturate(180%)',
-          boxShadow: `
-            0 1px 0 0 rgba(255,255,255,0.20) inset,
-            1px 0 0 0 rgba(255,255,255,0.10) inset,
-            0 -1px 0 0 rgba(0,0,0,0.28) inset,
-            0 0 0 0.5px rgba(255,255,255,0.08),
-            0 4px 16px rgba(0,0,0,0.18)
-          `,
-        }}
-        onMouseEnter={(e) => {
-          (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.10)';
-        }}
-        onMouseLeave={(e) => {
-          (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.06)';
-        }}
-      >
-        {t('settings.importYandex')}
-      </button>
-      {ymOpen && (
-        <React.Suspense fallback={null}>
-          <YMImportDialogLazy open={ymOpen} onOpenChange={setYmOpen} />
-        </React.Suspense>
-      )}
-    </section>
-  );
-});
-
-const YMImportDialogLazy = React.lazy(() => import('../components/music/YMImportDialog'));
-
 /* ── Backup Section ─────────────────────────────────────── */
 
 const BackupSection = React.memo(function BackupSection() {
@@ -1471,7 +1425,6 @@ export function Settings() {
       <StartupSection />
       <PlaybackSection />
       <AudioDeviceSection />
-      <ImportSection />
       <BackupSection />
       <AccountSection />
       <AboutSection />

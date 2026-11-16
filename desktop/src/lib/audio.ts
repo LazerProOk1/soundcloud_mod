@@ -82,6 +82,10 @@ let streamingPartial = false;
 let streamProgress = 0;
 /** A seek past the downloaded part waits here until the bytes arrive. */
 let pendingSeek: number | null = null;
+/** Audio was paused while waiting for a pending seek; play again after it. */
+let resumeAfterPendingSeek = false;
+/** The stream decoder refused a seek: wait for the complete file for the next ones. */
+let seekNeedsFullFile = false;
 
 /* ── Track analysis (silence at the edges, ending fade-out) ───── */
 interface TrackAnalysis {
@@ -224,8 +228,27 @@ export function getAudioSecond(): number {
 /** Can the decoder reach `pos` right now? While streaming, only the downloaded part is safe:
  *  seeking further would block the audio thread waiting for bytes. */
 function canSeekTo(pos: number) {
-  if (!streamingPartial || cachedDuration <= 0) return true;
+  if (!streamingPartial) return true;
+  if (seekNeedsFullFile || cachedDuration <= 0) return false;
   return pos / cachedDuration <= streamProgress - 0.03;
+}
+
+/** Waits with a seek until the stream has the bytes for it (see `canSeekTo`). */
+function holdSeek(clamped: number) {
+  // Not downloaded yet: show the target and wait for the bytes instead of hanging.
+  // Hold the audio meanwhile — otherwise it keeps playing the old spot while the UI
+  // (lyrics, progress) already shows the new one, and they drift apart.
+  if (pendingSeek == null && usePlayerStore.getState().isPlaying) {
+    resumeAfterPendingSeek = true;
+    invoke('audio_pause').catch(() => {});
+  }
+  pendingSeek = clamped;
+  cachedTime = clamped;
+  cachedTimeWallMs = performance.now();
+  seekGuardUntilMs = performance.now() + 60_000;
+  lastSeekPosition = clamped;
+  usePlayerStore.setState({ isBuffering: true });
+  notify();
 }
 
 export function seek(seconds: number) {
@@ -239,17 +262,12 @@ export function seek(seconds: number) {
   );
 
   if (!canSeekTo(clamped)) {
-    // Not downloaded yet: show the target and wait for the bytes instead of hanging.
-    pendingSeek = clamped;
-    cachedTime = clamped;
-    cachedTimeWallMs = performance.now();
-    seekGuardUntilMs = performance.now() + 60_000;
-    lastSeekPosition = clamped;
-    usePlayerStore.setState({ isBuffering: true });
-    notify();
+    holdSeek(clamped);
     return;
   }
   pendingSeek = null;
+  const resume = resumeAfterPendingSeek;
+  resumeAfterPendingSeek = false;
 
   // Reset any in-progress crossfade so volume is restored after manual seek.
   if (crossfading || fadeInRafId !== null) {
@@ -269,8 +287,18 @@ export function seek(seconds: number) {
   lastSeekPosition = clamped;
 
   invoke('audio_seek', { position: clamped })
-    .catch(console.error)
-    .finally(() => usePlayerStore.setState({ isBuffering: false }));
+    .catch((e) => {
+      // Still streaming and the decoder can't jump there yet: wait for the download
+      // instead of leaving the UI on the new spot while the audio stays on the old one.
+      if (streamingPartial) {
+        seekNeedsFullFile = true;
+        holdSeek(clamped);
+      } else console.error(e);
+    })
+    .finally(() => {
+      usePlayerStore.setState({ isBuffering: false });
+      if (resume && usePlayerStore.getState().isPlaying) invoke('audio_play').catch(() => {});
+    });
   cachedTime = clamped;
   cachedTimeWallMs = performance.now();
   notify();
@@ -483,6 +511,8 @@ async function loadTrack(track: Track) {
   streamingPartial = false;
   streamProgress = 0;
   pendingSeek = null;
+  resumeAfterPendingSeek = false;
+  seekNeedsFullFile = false;
   currentAnalysis = null;
   upcomingAnalyzedFor = null;
   currentUrn = track.urn;
@@ -571,14 +601,17 @@ async function loadTrack(track: Track) {
       .getState()
       .musicSources.filter((s) => s.enabled)
       .map((s) => s.id);
-    const steps = enabled.map((id) =>
+    // "SoundCloud" = direct first, then our mirror right away: the mirror answers in a few
+    // seconds for tracks SoundCloud won't give anonymously, while YouTube needs yt-dlp
+    // (~7 s just to find the track), so it's tried only after both.
+    const steps = enabled.flatMap((id) =>
       id === 'soundcloud'
-        ? () => ensureTrackCached(urn, highQualityStreaming, true)
-        : fromFallback(id),
+        ? [
+            () => ensureTrackCached(urn, highQualityStreaming, true),
+            () => ensureTrackCached(urn, highQualityStreaming),
+          ]
+        : [fromFallback(id)],
     );
-    // Last resort: the legacy server still has some tracks found nowhere else.
-    if (enabled.includes('soundcloud'))
-      steps.push(() => ensureTrackCached(urn, highQualityStreaming));
     if (steps.length === 0) steps.push(() => ensureTrackCached(urn, highQualityStreaming, true));
 
     let download: Promise<TrackCacheInfo> = steps[0]();
@@ -875,11 +908,31 @@ tauriListen<{ urn: string; progress: number }>('track:download-progress', (event
   }
 });
 
+/** An `ended` that came during the seek guard may be real (seek right to the end):
+ *  check again once the guard is over instead of dropping it and stalling. */
+let endedRecheck: ReturnType<typeof setTimeout> | null = null;
+function recheckEndedLater() {
+  const urn = currentUrn;
+  if (endedRecheck) clearTimeout(endedRecheck);
+  endedRecheck = setTimeout(() => {
+    endedRecheck = null;
+    if (!urn || currentUrn !== urn || !hasTrack || handoffPending) return;
+    if (cachedDuration > 0 && cachedDuration - cachedTime < 1.5) {
+      recordFullPlay();
+      hasTrack = false;
+      handleTrackEnd();
+    }
+  }, 1300);
+}
+
 tauriListen<void>('audio:ended', () => {
   // The queue already moved on for an overlapping crossfade.
   if (handoffPending) return;
   // Suppress spurious ended events fired by Rodio during/immediately after a seek
-  if (performance.now() < seekGuardUntilMs) return;
+  if (performance.now() < seekGuardUntilMs) {
+    recheckEndedLater();
+    return;
+  }
 
   // Extended seek guard: block audio:ended if it fires significantly earlier than
   // the expected remaining playtime. E.g. seeking to 5s before end → guard 4s.
@@ -888,7 +941,10 @@ tauriListen<void>('audio:ended', () => {
     const expectedRemainingMs = (cachedDuration - lastSeekPosition) * 1000;
     const elapsedSinceSeekMs = performance.now() - lastSeekWallMs;
     // If ended fires >1.5s before the expected end, it's a spurious Rodio event
-    if (elapsedSinceSeekMs < expectedRemainingMs - 1500) return;
+    if (elapsedSinceSeekMs < expectedRemainingMs - 1500) {
+      recheckEndedLater();
+      return;
+    }
   }
 
   recordFullPlay();
