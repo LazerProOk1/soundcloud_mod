@@ -1,253 +1,157 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { NavLink } from 'react-router-dom';
-import { useShallow } from 'zustand/shallow';
-import { changeAppLanguage } from '../../i18n';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import { art } from '../../lib/formatters';
-import {
-  AudioLines,
-  Clock,
-  Compass,
-  Download,
-  Globe,
-  Home,
-  Library,
-  ListMusic,
-  MapPin,
-  Search,
-  Settings,
-} from '../../lib/icons';
+import { useMyPlaylists } from '../../lib/hooks';
+import { AudioLines, Clock, Download, Heart, Library, ListMusic } from '../../lib/icons';
 import { useAuthStore } from '../../stores/auth';
 import { useCachedUrnsStore } from '../../stores/cached-urns';
 import { useSettingsStore } from '../../stores/settings';
 import { Avatar } from '../ui/Avatar';
 
-const languages = [
-  { code: 'en', label: 'English' },
-  { code: 'ru', label: 'Русский' },
-] as const;
+/**
+ * "My library" sidebar (Spotify / Justify style): top-level navigation lives in the
+ * titlebar, the sidebar only lists the user's music — wave, likes, history, offline
+ * and playlists — as big rows with artwork.
+ */
 
-const navItems = [
-  { to: '/home', icon: Home, label: 'nav.home' },
-  { to: '/search', icon: Search, label: 'nav.search' },
-  { to: '/soundwave', icon: AudioLines, label: 'nav.soundwave' },
-  { to: '/discover', icon: Compass, label: 'nav.discover' },
-  { to: '/library', icon: Library, label: 'nav.library' },
-  { to: '/offline', icon: Download, label: 'nav.offline' },
-];
+interface RowProps {
+  to: string;
+  title: string;
+  subtitle?: string;
+  collapsed: boolean;
+  tile: React.ReactNode;
+}
+
+const Row = React.memo(function Row({ to, title, subtitle, collapsed, tile }: RowProps) {
+  const location = useLocation();
+  // Match path *and* query (?tab=likes vs ?tab=history both live on /library).
+  const [path, query = ''] = to.split('?');
+  const isActive =
+    location.pathname === path && (!query || location.search.replace(/^\?/, '').includes(query));
+  return (
+    <Link
+      to={to}
+      title={collapsed ? title : undefined}
+      className={`group flex items-center gap-3 rounded-lg p-1.5 transition-colors duration-150 ${
+        collapsed ? 'justify-center' : ''
+      } ${isActive ? 'bg-white/[0.08]' : 'hover:bg-white/[0.05]'}`}
+    >
+      <div className="w-11 h-11 rounded-md overflow-hidden shrink-0 bg-white/[0.06]">{tile}</div>
+      {!collapsed && (
+        <div className="min-w-0 flex-1">
+          <p
+            className={`truncate text-[14px] font-semibold ${isActive ? 'text-accent' : 'text-white/90'}`}
+          >
+            {title}
+          </p>
+          {subtitle && <p className="truncate text-[12px] text-white/45">{subtitle}</p>}
+        </div>
+      )}
+    </Link>
+  );
+});
+
+const gradientTile = (from: string, to: string, icon: React.ReactNode) => (
+  <div
+    className="w-full h-full flex items-center justify-center text-white"
+    style={{ background: `linear-gradient(135deg, ${from}, ${to})` }}
+  >
+    {icon}
+  </div>
+);
 
 export const Sidebar = React.memo(() => {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const cachedCount = useCachedUrnsStore((s) => s.urns.size);
-  const { collapsed, pinnedPlaylists } = useSettingsStore(
-    useShallow((s) => ({
-      collapsed: s.sidebarCollapsed,
-      pinnedPlaylists: s.pinnedPlaylists,
-    })),
-  );
-  const toggleLanguage = () => {
-    const next = i18n.language === 'ru' ? 'en' : 'ru';
-    void changeAppLanguage(next);
-  };
-
-  const currentLang = languages.find((l) => l.code === i18n.language) ?? languages[0];
+  const collapsed = useSettingsStore((s) => s.sidebarCollapsed);
+  const { playlists } = useMyPlaylists(50);
 
   return (
     <aside
-      className="liquid-panel-heavy shrink-0 flex flex-col h-full transition-[width] duration-300 ease-[var(--ease-spring)]"
-      style={{
-        width: collapsed ? 56 : 210,
-        borderRight: '1px solid rgba(255,255,255,0.055)',
-        // The heavy-glass inset highlight drew a bright line along the top edge.
-        boxShadow: 'none',
-      }}
+      data-ui="sidebar"
+      className="liquid-panel-heavy shrink-0 flex flex-col h-full m-2 mr-0 rounded-xl overflow-hidden transition-[width] duration-300 ease-[var(--ease-spring)]"
+      style={{ width: collapsed ? 72 : 280, boxShadow: 'none' }}
     >
-      <nav className="flex flex-col gap-0.5 px-2 pt-2">
-        {navItems.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            title={collapsed ? t(item.label) : undefined}
-            style={({ isActive }) =>
-              isActive
-                ? {
-                    background: 'rgba(255,255,255,0.075)',
-                  }
-                : undefined
-            }
-            className={({ isActive }) =>
-              `relative flex items-center gap-3 rounded-xl text-[13px] font-medium transition-all duration-200 ease-[var(--ease-apple)] ${
-                collapsed ? 'justify-center px-0 py-2' : 'px-3 py-2'
-              } ${
-                isActive ? 'text-white' : 'text-white/55 hover:text-white/85 hover:bg-white/[0.05]'
-              }`
-            }
-          >
-            {({ isActive }) => (
-              <>
-                {isActive && !collapsed && (
-                  <span
-                    aria-hidden="true"
-                    className="absolute left-1 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-full bg-accent shadow-[0_0_8px_var(--color-accent-glow)]"
-                  />
-                )}
-                <item.icon
-                  size={18}
-                  strokeWidth={2}
-                  style={isActive ? { color: 'var(--color-accent)' } : undefined}
-                />
-                {!collapsed && <span className="flex-1 truncate">{t(item.label)}</span>}
-                {!collapsed && item.to === '/offline' && cachedCount > 0 && (
-                  <span className="text-[10px] font-semibold tabular-nums px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300/90 border border-emerald-400/20">
-                    {cachedCount}
-                  </span>
-                )}
-              </>
-            )}
-          </NavLink>
-        ))}
-      </nav>
-
-      <div className="px-2 pt-4 space-y-1">
+      <div
+        className={`flex items-center gap-2.5 px-4 pt-4 pb-3 text-white/70 ${collapsed ? 'justify-center px-0' : ''}`}
+      >
+        <Library size={20} />
         {!collapsed && (
-          <div className="px-3 pb-1 flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] text-white/20 font-semibold">
-            <MapPin size={11} strokeWidth={1.8} />
-            {t('sidebar.quickAccess')}
-          </div>
+          <span className="text-[15px] font-bold text-white/90">{t('sidebar.myLibrary')}</span>
         )}
+      </div>
 
-        <NavLink
+      <div className="flex-1 overflow-y-auto scrollbar-hide px-2 pb-2 flex flex-col gap-0.5">
+        <Row
+          to="/soundwave"
+          title={t('nav.soundwave')}
+          subtitle={t('sidebar.waveSubtitle')}
+          collapsed={collapsed}
+          tile={gradientTile('#ff5500', '#a21caf', <AudioLines size={20} />)}
+        />
+        <Row
+          to="/library?tab=likes"
+          title={t('library.likedTracks')}
+          subtitle={t('sidebar.playlist')}
+          collapsed={collapsed}
+          tile={gradientTile('#4f46e5', '#a5b4fc', <Heart size={18} fill="currentColor" />)}
+        />
+        <Row
           to="/library?tab=history"
-          title={collapsed ? t('library.history') : undefined}
-          style={({ isActive }) =>
-            isActive
-              ? {
-                  background: 'rgba(255,255,255,0.075)',
-                }
-              : undefined
-          }
-          className={({ isActive }) =>
-            `relative flex items-center gap-2.5 w-full rounded-xl text-[12px] font-medium transition-all duration-200 ${
-              collapsed ? 'justify-center px-0 py-2.5' : 'px-3 py-2.5'
-            } ${
-              isActive ? 'text-white' : 'text-white/55 hover:text-white/85 hover:bg-white/[0.05]'
-            }`
-          }
-        >
-          {({ isActive }: { isActive: boolean }) => (
-            <>
-              <Clock
-                size={16}
-                strokeWidth={1.8}
-                style={isActive ? { color: 'var(--color-accent)' } : undefined}
-              />
-              {!collapsed && <span className="truncate">{t('library.history')}</span>}
-            </>
-          )}
-        </NavLink>
+          title={t('library.history')}
+          collapsed={collapsed}
+          tile={gradientTile('#0f766e', '#5eead4', <Clock size={18} />)}
+        />
+        <Row
+          to="/offline"
+          title={t('nav.offline')}
+          subtitle={cachedCount > 0 ? t('sidebar.cachedCount', { count: cachedCount }) : undefined}
+          collapsed={collapsed}
+          tile={gradientTile('#15803d', '#86efac', <Download size={18} />)}
+        />
 
-        {pinnedPlaylists.map((playlist) => {
-          const artwork = art(playlist.artworkUrl, 'small');
-
+        {playlists.length > 0 && !collapsed && <div className="h-px bg-white/[0.06] my-2 mx-2" />}
+        {playlists.map((p) => {
+          const cover = art(p.artwork_url ?? p.tracks?.[0]?.artwork_url, 't200x200');
           return (
-            <NavLink
-              key={playlist.urn}
-              to={`/playlist/${encodeURIComponent(playlist.urn)}`}
-              title={collapsed ? playlist.title : undefined}
-              className={({ isActive }) =>
-                `flex items-center gap-2.5 w-full rounded-xl text-[12px] font-medium transition-all duration-200 ${
-                  collapsed ? 'justify-center px-0 py-2.5' : 'px-3 py-2.5'
-                } ${
-                  isActive
-                    ? 'text-white bg-white/[0.08] shadow-[inset_0_1px_0_rgba(255,255,255,0.14),inset_0_-1px_0_rgba(0,0,0,0.35)]'
-                    : 'text-white/40 hover:text-white/70 hover:bg-white/[0.05] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]'
-                }`
+            <Row
+              key={p.urn}
+              to={`/playlist/${encodeURIComponent(p.urn)}`}
+              title={p.title}
+              subtitle={t('sidebar.playlistTracks', { count: p.track_count ?? 0 })}
+              collapsed={collapsed}
+              tile={
+                cover ? (
+                  <img src={cover} alt="" className="w-full h-full object-cover" loading="lazy" />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-white/40">
+                    <ListMusic size={18} />
+                  </div>
+                )
               }
-            >
-              {artwork ? (
-                <img
-                  src={artwork}
-                  alt=""
-                  className="w-4 h-4 rounded-[4px] object-cover shrink-0 ring-1 ring-white/[0.08]"
-                  decoding="async"
-                  loading="lazy"
-                />
-              ) : (
-                <ListMusic size={16} strokeWidth={1.8} />
-              )}
-              {!collapsed && <span className="truncate">{playlist.title}</span>}
-            </NavLink>
+            />
           );
         })}
       </div>
 
-      <div className="flex-1" />
-
-      <div className="px-2 pb-1 flex flex-col gap-0.5">
-        <button
-          type="button"
-          onClick={toggleLanguage}
-          title={collapsed ? currentLang.label : undefined}
-          className={`flex items-center gap-2.5 w-full px-3 py-2 rounded-xl text-[12px] font-medium text-white/40 hover:text-white/70 hover:bg-white/[0.045] hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] transition-all duration-200 cursor-pointer ${collapsed ? 'justify-center' : ''}`}
-        >
-          <Globe size={16} strokeWidth={1.8} />
-          {!collapsed && <span className="truncate">{currentLang.label}</span>}
-        </button>
-        <NavLink
-          to="/settings"
-          title={collapsed ? t('nav.settings') : undefined}
-          style={({ isActive }) =>
-            isActive
-              ? {
-                  background: 'rgba(255,255,255,0.075)',
-                }
-              : undefined
-          }
-          className={({ isActive }) =>
-            `relative flex items-center gap-2.5 w-full px-3 py-2 rounded-xl text-[12px] font-medium transition-all duration-200 ${
-              collapsed ? 'justify-center' : ''
-            } ${
-              isActive ? 'text-white' : 'text-white/55 hover:text-white/85 hover:bg-white/[0.05]'
-            }`
-          }
-        >
-          {({ isActive }: { isActive: boolean }) => (
-            <>
-              <Settings
-                size={16}
-                strokeWidth={1.8}
-                style={isActive ? { color: 'var(--color-accent)' } : undefined}
-              />
-              {!collapsed && <span className="truncate">{t('nav.settings')}</span>}
-            </>
-          )}
-        </NavLink>
-      </div>
-
       {user && (
-        <div className="px-2 pb-3">
-          <div className="h-px bg-white/[0.04] mb-2 mx-1" />
+        <div className="px-2 pb-2 pt-1 border-t border-white/[0.05]">
           <NavLink
             to={`/user/${encodeURIComponent(user.urn)}`}
             title={collapsed ? user.username : undefined}
             className={({ isActive }) =>
-              `flex items-center gap-2.5 px-2 py-2 rounded-xl transition-all duration-200 cursor-pointer ${
+              `flex items-center gap-2.5 p-1.5 rounded-lg transition-colors ${
                 collapsed ? 'justify-center' : ''
-              } ${isActive ? 'bg-white/[0.07] ring-1 ring-white/[0.06]' : 'hover:bg-white/[0.04]'}`
+              } ${isActive ? 'bg-white/[0.08]' : 'hover:bg-white/[0.05]'}`
             }
           >
-            <Avatar src={user.avatar_url} alt={user.username} size={26} />
+            <Avatar src={user.avatar_url} alt={user.username} size={28} />
             {!collapsed && (
-              <div className="min-w-0 flex-1">
-                <span className="text-[12px] text-white/75 truncate font-medium block">
-                  {user.username}
-                </span>
-                <span className="text-[10px] text-purple-300/65 truncate flex items-center gap-1">
-                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-purple-400 shadow-[0_0_6px_#a855f7]" />
-                  {t('user.starProfile', 'Star · Профиль')}
-                </span>
-              </div>
+              <span className="text-[13px] text-white/80 truncate font-medium">
+                {user.username}
+              </span>
             )}
           </NavLink>
         </div>

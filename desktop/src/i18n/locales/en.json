@@ -16,7 +16,12 @@
     "pinPlaylist": "Pin playlist",
     "unpinPlaylist": "Unpin playlist",
     "pinned": "Pinned to sidebar",
-    "unpinned": "Removed from sidebar"
+    "unpinned": "Removed from sidebar",
+    "myLibrary": "My library",
+    "waveSubtitle": "Endless mix for you",
+    "playlist": "Playlist",
+    "playlistTracks": "Playlist · {{count}} tracks",
+    "cachedCount": "{{count}} tracks on disk"
   },
   "player": {
     "queue": "Queue",
@@ -322,7 +327,11 @@
         "fans_also": "Listeners also play",
         "fans_alsoDesc": "What fans of this track also listen to."
       }
-    }
+    },
+    "settings": "Tune",
+    "notThis": "Not this",
+    "moreLikeThis": "More like this",
+    "moreLikeThisDone": "Got it — more like this"
   },
   "offline": {
     "offlineBadge": "No network",
@@ -731,5 +740,11 @@
     "followers": "{{count}} followers",
     "nextUp": "Next in queue",
     "openQueue": "Open queue"
+  },
+  "titlebar": {
+    "home": "Home",
+    "discover": "Discover",
+    "search": "What do you want to play?",
+    "settings": "Settings"
   }
 }

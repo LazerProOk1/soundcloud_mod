@@ -420,16 +420,67 @@ async function loadTrack(track: Track) {
     // Strategy 2: Download full track to cache — Rust picks storage/API internally
     usePlayerStore.setState({ downloadProgress: 0 });
 
-    let cachedInfo: TrackCacheInfo;
-    try {
-      cachedInfo = await ensureTrackCached(urn, highQualityStreaming);
-    } catch (error) {
-      // Not every track has an HQ transcoding — fall back to standard quality.
-      if (!highQualityStreaming || gen !== loadGen) throw error;
-      console.warn('[Audio] HQ load failed, retrying without hq:', error);
-      cachedInfo = await ensureTrackCached(urn, false);
+    const download: Promise<TrackCacheInfo> = ensureTrackCached(urn, highQualityStreaming)
+      .catch((error) => {
+        // Not every track has an HQ transcoding — fall back to standard quality.
+        if (!highQualityStreaming || gen !== loadGen) throw error;
+        console.warn('[Audio] HQ load failed, retrying without hq:', error);
+        return ensureTrackCached(urn, false);
+      })
+      .catch((error) => {
+        // SoundCloud won't serve it (DRM, removed, region-locked): find the same song on
+        // Zaycev.net, then YouTube. Cached under this URN, so likes and playlists keep working.
+        if (gen !== loadGen) throw error;
+        const artist = getArtistDisplay(track).primary;
+        const title = getDisplayTitle(track);
+        console.warn('[Audio] SoundCloud failed, trying fallback sources:', artist, title, error);
+        return invoke<TrackCacheInfo>('track_cache_from_fallback', {
+          urn,
+          artist,
+          title,
+          durationMs: track.duration || null,
+        });
+      });
+    // Don't leave an unhandled rejection if streaming wins and the download later fails.
+    download.catch(() => {});
+
+    // Play while downloading: Rust starts from the growing cache file as soon as the first
+    // ~160 KB arrive. Falls back to the full-file path when the source can't be streamed.
+    // Whichever is ready first wins: the stream, or the full file (non-streamable sources).
+    // If the file wins, audio_load_file bumps Rust's load generation and cancels the stream wait.
+    const streamed = await Promise.race([
+      invoke<{ streaming: boolean; duration_secs: number | null }>('audio_load_stream', {
+        urn,
+        startPaused: !usePlayerStore.getState().isPlaying,
+        waitMs: 15000,
+      }).catch(() => null),
+      download.then(
+        () => null,
+        () => null,
+      ),
+    ]);
+    if (gen !== loadGen) return;
+    if (streamed?.streaming) {
+      usePlayerStore.setState({ downloadProgress: null });
+      if (streamed.duration_secs) {
+        fallbackDuration = streamed.duration_secs;
+        cachedDuration = streamed.duration_secs;
+        updateMetadata(track, streamed.duration_secs);
+        notify();
+      }
+      download
+        .then((info) => {
+          if (gen === loadGen) {
+            usePlayerStore.getState().setPlaybackTransport(info.quality, info.source);
+          }
+          void enforceAudioCacheLimit().catch(console.error);
+        })
+        .catch((e) => console.warn('[Audio] Background download failed after stream start:', e));
+      afterLoad(track, gen);
+      return;
     }
 
+    const cachedInfo = await download;
     if (gen !== loadGen) return;
     usePlayerStore.setState({ downloadProgress: null });
     usePlayerStore.getState().setPlaybackTransport(cachedInfo.quality, cachedInfo.source);
@@ -464,7 +515,10 @@ async function loadTrack(track: Track) {
     toast.error(i18n.t('track.loadError'), {
       description: errorText ? `${track.title}: ${errorText}` : track.title,
     });
-    usePlayerStore.getState().pause();
+    // Skip unavailable tracks instead of stopping the music.
+    const { queue, queueIndex, repeat, next, pause } = usePlayerStore.getState();
+    if (queueIndex < queue.length - 1 || repeat === 'all') next();
+    else pause();
   } finally {
     if (gen === loadGen) {
       usePlayerStore.getState().setBuffering(false);

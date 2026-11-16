@@ -18,7 +18,7 @@ tauri-plugin-opener = "2"
 tauri-plugin-fs = "2.5.0"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "io-util"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "net", "io-util", "process"] }
 warp = "0.3"
 discord-rich-presence = "1"
 tauri-plugin-http = "2.5.7"

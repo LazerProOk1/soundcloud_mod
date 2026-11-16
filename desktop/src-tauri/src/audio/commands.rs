@@ -4,7 +4,7 @@ use crate::audio::device;
 use crate::audio::engine;
 use crate::audio::state::AudioState;
 use crate::audio::timing;
-use crate::audio::types::{AudioLoadResult, AudioSink};
+use crate::audio::types::{AudioLoadResult, AudioSink, StreamLoadResult};
 
 #[tauri::command]
 pub async fn audio_load_file(
@@ -24,6 +24,29 @@ pub async fn audio_load_file(
         normalization_cache_dir,
         cache_key,
         start_paused,
+        state,
+    )
+    .await
+}
+
+#[tauri::command]
+pub async fn audio_load_stream(
+    urn: String,
+    start_paused: bool,
+    wait_ms: Option<u64>,
+    app: AppHandle,
+    state: State<'_, AudioState>,
+) -> Result<StreamLoadResult, String> {
+    let normalization_cache_dir = app
+        .path()
+        .app_cache_dir()
+        .ok()
+        .map(|dir| dir.join("audio-normalization"));
+    engine::load_stream(
+        urn,
+        normalization_cache_dir,
+        start_paused,
+        wait_ms.unwrap_or(15_000),
         state,
     )
     .await

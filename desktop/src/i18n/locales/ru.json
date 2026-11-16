@@ -16,7 +16,12 @@
     "pinPlaylist": "Закрепить плейлист",
     "unpinPlaylist": "Открепить плейлист",
     "pinned": "Плейлист закреплён в сайдбаре",
-    "unpinned": "Плейлист убран из сайдбара"
+    "unpinned": "Плейлист убран из сайдбара",
+    "myLibrary": "Моя медиатека",
+    "waveSubtitle": "Поток под ваш вкус",
+    "playlist": "Плейлист",
+    "playlistTracks": "Плейлист · {{count}} треков",
+    "cachedCount": "{{count}} треков на диске"
   },
   "player": {
     "queue": "Очередь",
@@ -324,7 +329,11 @@
         "fans_also": "Те же слушатели",
         "fans_alsoDesc": "Что ещё слушают фанаты этого трека."
       }
-    }
+    },
+    "settings": "Настроить",
+    "notThis": "Не то",
+    "moreLikeThis": "Ещё такого",
+    "moreLikeThisDone": "Учтём — будет больше такого"
   },
   "offline": {
     "offlineBadge": "Нет сети",
@@ -745,5 +754,11 @@
     "followers": "{{count}} подписчиков",
     "nextUp": "Далее в очереди",
     "openQueue": "Открыть очередь"
+  },
+  "titlebar": {
+    "home": "Главная",
+    "discover": "Каталог",
+    "search": "Что хочешь послушать?",
+    "settings": "Настройки"
   }
 }

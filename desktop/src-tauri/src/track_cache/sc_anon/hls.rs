@@ -11,23 +11,35 @@ use futures_util::StreamExt;
 use reqwest::Client;
 use url::Url;
 
-const HLS_PREFETCH_SEGMENTS: usize = 3;
+const HLS_PREFETCH_SEGMENTS: usize = 8;
+
+/// Receives download progress and, in playback order, the audio bytes as they arrive
+/// (so playback can start before the download finishes).
+pub trait Sink: Send + Sync {
+    fn progress(&self, _frac: f64) {}
+    /// A new attempt is starting: drop anything pushed so far.
+    fn reset(&self) {}
+    fn push(&self, _bytes: &[u8]) {}
+}
 const SEGMENT_RETRY_DELAY_MS: u64 = 200;
 
 /// Fetch a single-file (progressive) audio stream.
 pub async fn download_progressive(
     client: &Client,
     url: &str,
-    progress: &(dyn Fn(f64) + Send + Sync),
+    sink: &dyn Sink,
 ) -> Result<Bytes, String> {
     let resp = send_ok(client, url).await?;
+    sink.reset();
     let total = resp.content_length().unwrap_or(0);
     let mut buf = BytesMut::with_capacity(total as usize);
     let mut body = resp.bytes_stream();
     while let Some(chunk) = body.next().await {
-        buf.extend_from_slice(&chunk.map_err(|e| format!("body: {e}"))?);
+        let chunk = chunk.map_err(|e| format!("body: {e}"))?;
+        sink.push(&chunk);
+        buf.extend_from_slice(&chunk);
         if total > 0 {
-            progress(buf.len() as f64 / total as f64);
+            sink.progress(buf.len() as f64 / total as f64);
         }
     }
     if buf.is_empty() {
@@ -46,7 +58,7 @@ pub async fn download_progressive(
 pub async fn download_hls_full(
     client: &Client,
     m3u8_url: &str,
-    progress: &(dyn Fn(f64) + Send + Sync),
+    sink: &dyn Sink,
 ) -> Result<Bytes, String> {
     let m3u8_text = fetch_bytes_with_retry(client, m3u8_url).await?;
     let m3u8_content = String::from_utf8_lossy(&m3u8_text);
@@ -57,12 +69,14 @@ pub async fn download_hls_full(
     }
 
     let mut buf = BytesMut::new();
+    sink.reset();
 
     if let Some(ref init) = init_url {
         let data = fetch_bytes_with_retry(client, init).await?;
         if data.windows(4).any(|w| w == b"enca") {
             return Err("Stream is CENC encrypted".into());
         }
+        sink.push(&data);
         buf.extend_from_slice(&data);
     }
 
@@ -76,9 +90,9 @@ pub async fn download_hls_full(
         while *next_idx < urls.len() && inflight.len() < HLS_PREFETCH_SEGMENTS {
             let c = client.clone();
             let u = urls[*next_idx].clone();
-            inflight.push(tokio::spawn(async move {
-                fetch_bytes_with_retry(&c, &u).await
-            }));
+            inflight.push(tokio::spawn(
+                async move { fetch_bytes_with_retry(&c, &u).await },
+            ));
             *next_idx += 1;
         }
     };
@@ -90,9 +104,10 @@ pub async fn download_hls_full(
         let handle = inflight.remove(0);
         match handle.await {
             Ok(Ok(chunk)) => {
+                sink.push(&chunk);
                 buf.extend_from_slice(&chunk);
                 fetched += 1;
-                progress(fetched as f64 / segment_urls.len() as f64);
+                sink.progress(fetched as f64 / segment_urls.len() as f64);
             }
             Ok(Err(e)) => {
                 for pending in inflight {
@@ -129,12 +144,7 @@ async fn fetch_bytes_with_retry(client: &Client, url: &str) -> Result<Bytes, Str
 
 fn is_non_retryable_http(err: &str) -> bool {
     if let Some(rest) = err.strip_prefix("HTTP ") {
-        if let Ok(code) = rest
-            .split_whitespace()
-            .next()
-            .unwrap_or("")
-            .parse::<u16>()
-        {
+        if let Ok(code) = rest.split_whitespace().next().unwrap_or("").parse::<u16>() {
             return (400..500).contains(&code) && code != 408 && code != 429;
         }
     }

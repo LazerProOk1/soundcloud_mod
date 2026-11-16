@@ -740,17 +740,19 @@ body,
 
 .lyric-line[data-state="past-near"],
 .lyric-line[data-state="next-near"] {
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.62);
   transform: scale(0.98);
-  filter: blur(0.4px);
+  filter: blur(0.8px);
 }
 
 .lyric-line[data-state="past"] {
-  color: rgba(255, 255, 255, 0.34);
+  color: rgba(255, 255, 255, 0.4);
+  filter: blur(2.2px);
 }
 
 .lyric-line[data-state="next"] {
-  color: rgba(255, 255, 255, 0.28);
+  color: rgba(255, 255, 255, 0.4);
+  filter: blur(2.2px);
 }
 
 @keyframes lyric-in {

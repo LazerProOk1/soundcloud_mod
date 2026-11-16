@@ -41,6 +41,19 @@ pub async fn track_ensure_cached(
 }
 
 #[tauri::command]
+pub async fn track_cache_from_fallback(
+    urn: String,
+    artist: String,
+    title: String,
+    duration_ms: Option<u64>,
+    state: State<'_, TrackCacheState>,
+) -> Result<TrackCacheEntry, String> {
+    state
+        .cache_from_fallback(&urn, &artist, &title, duration_ms)
+        .await
+}
+
+#[tauri::command]
 pub fn track_is_cached(urn: String, state: State<'_, TrackCacheState>) -> bool {
     state.is_cached(&urn)
 }
@@ -184,12 +197,18 @@ mod tests {
     fn preload_entry_accepts_camel_and_snake_case() {
         let camel = r#"{"urn":"soundcloud:tracks:10","urls":["https://api"],"storageUrls":["https://s3"],"sessionId":"s1"}"#;
         let p1: PreloadEntry = serde_json::from_str(camel).unwrap();
-        assert_eq!(p1.storage_urls.as_deref(), Some(&["https://s3".to_string()][..]));
+        assert_eq!(
+            p1.storage_urls.as_deref(),
+            Some(&["https://s3".to_string()][..])
+        );
         assert_eq!(p1.session_id.as_deref(), Some("s1"));
 
         let snake = r#"{"urn":"soundcloud:tracks:11","url":"https://api","storage_urls":["https://s3b"],"session_id":"s2"}"#;
         let p2: PreloadEntry = serde_json::from_str(snake).unwrap();
-        assert_eq!(p2.storage_urls.as_deref(), Some(&["https://s3b".to_string()][..]));
+        assert_eq!(
+            p2.storage_urls.as_deref(),
+            Some(&["https://s3b".to_string()][..])
+        );
         assert_eq!(p2.session_id.as_deref(), Some("s2"));
     }
 }

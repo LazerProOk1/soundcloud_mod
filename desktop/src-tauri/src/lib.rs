@@ -29,13 +29,21 @@ fn set_window_corner_preference(window: tauri::WebviewWindow, round: bool) {
     {
         use raw_window_handle::{HasWindowHandle, RawWindowHandle};
         const DWMWA_WINDOW_CORNER_PREFERENCE: u32 = 33;
-        const DWMWCP_DEFAULT: u32 = 0;    // системные (Win11 = ~8px)
+        const DWMWCP_DEFAULT: u32 = 0; // системные (Win11 = ~8px)
         const DWMWCP_ROUNDSMALL: u32 = 3; // небольшое скругление
 
-        let Ok(handle) = window.window_handle() else { return };
-        let RawWindowHandle::Win32(h) = handle.as_raw() else { return };
+        let Ok(handle) = window.window_handle() else {
+            return;
+        };
+        let RawWindowHandle::Win32(h) = handle.as_raw() else {
+            return;
+        };
         let hwnd = h.hwnd.get() as *mut std::ffi::c_void;
-        let pref: u32 = if round { DWMWCP_DEFAULT } else { DWMWCP_ROUNDSMALL };
+        let pref: u32 = if round {
+            DWMWCP_DEFAULT
+        } else {
+            DWMWCP_ROUNDSMALL
+        };
         unsafe {
             DwmSetWindowAttribute(
                 hwnd,
@@ -124,7 +132,10 @@ pub fn run() {
                 .ok();
 
             network::image_cache::STATE
-                .set(network::image_cache::ImageCache::new(images_dir, http_client))
+                .set(network::image_cache::ImageCache::new(
+                    images_dir,
+                    http_client,
+                ))
                 .ok();
 
             let (static_port, proxy_port) = rt.block_on(network::server::start_all(wallpapers_dir));
@@ -180,6 +191,7 @@ pub fn run() {
             discord::discord_clear_activity,
             audio::audio_load_file,
             audio::audio_load_url,
+            audio::audio_load_stream,
             audio::audio_play,
             audio::audio_pause,
             audio::audio_stop,
@@ -215,6 +227,7 @@ pub fn run() {
             track_cache::track_clear_liked_cache,
             track_cache::track_list_cached,
             track_cache::track_remove_cached,
+            track_cache::track_cache_from_fallback,
             track_cache::track_mark_played,
             track_cache::track_enforce_cache_limit,
             track_cache::track_cache_likes,

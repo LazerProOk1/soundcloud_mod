@@ -223,12 +223,60 @@ struct ActiveDownload {
     result: Arc<Mutex<Option<Result<PathBuf, String>>>>,
 }
 
+/// Mirrors anon download bytes into a live `.part` file and reports progress.
+struct AnonSink<'a> {
+    urn: &'a str,
+    app: Option<&'a tauri::AppHandle>,
+    last_pct: std::sync::atomic::AtomicU64,
+    file: StdMutex<Option<std::fs::File>>,
+    live: Arc<super::live::LiveDownload>,
+}
+
+impl super::sc_anon::Sink for AnonSink<'_> {
+    fn progress(&self, frac: f64) {
+        let Some(app) = self.app else { return };
+        let clamped = (0.05 + frac.clamp(0.0, 1.0) * 0.9).min(0.95);
+        let pct = (clamped * 100.0) as u64;
+        let prev = self.last_pct.load(std::sync::atomic::Ordering::Relaxed);
+        if pct >= prev + 2 {
+            self.last_pct.store(pct, std::sync::atomic::Ordering::Relaxed);
+            let _ = app.emit(
+                "track:download-progress",
+                serde_json::json!({
+                    "urn": self.urn, "downloaded": pct, "total": 100,
+                    "progress": clamped, "source": "anon",
+                }),
+            );
+        }
+    }
+    fn reset(&self) {
+        use std::io::Seek;
+        if let Ok(mut guard) = self.file.lock() {
+            if let Some(f) = guard.as_mut() {
+                let _ = f.set_len(0);
+                let _ = f.seek(std::io::SeekFrom::Start(0));
+            }
+        }
+        self.live.reset();
+    }
+    fn push(&self, bytes: &[u8]) {
+        use std::io::Write;
+        let Ok(mut guard) = self.file.lock() else { return };
+        let Some(f) = guard.as_mut() else { return };
+        if f.write_all(bytes).is_ok() && f.flush().is_ok() {
+            self.live.add(bytes.len() as u64);
+        }
+    }
+}
+
 #[derive(Clone, Copy, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum DownloadSource {
     Storage,
     Anon,
     Api,
+    Youtube,
+    Zaycev,
 }
 
 impl DownloadSource {
@@ -237,6 +285,8 @@ impl DownloadSource {
             Self::Storage => "storage",
             Self::Anon => "anon",
             Self::Api => "api",
+            Self::Youtube => "youtube",
+            Self::Zaycev => "zaycev",
         }
     }
 }
@@ -564,6 +614,8 @@ async fn write_response_to_cache(
         .map_err(|err| DownloadError::Fatal(format!("Cache create failed: {err}")))?;
     let mut writer = BufWriter::with_capacity(STREAM_WRITE_BUFFER_SIZE, file);
     let content_length = response.content_length().unwrap_or(0);
+    // Lets the audio engine start playing from the .part file while it's still downloading.
+    let live = super::live::register(urn, temp_path.clone(), content_length);
     let mut stream = response.bytes_stream();
     let mut total_size = 0u64;
     let mut sniff = Vec::with_capacity(AUDIO_SNIFF_LEN);
@@ -588,6 +640,12 @@ async fn write_response_to_cache(
             cleanup_temp_file(&temp_path).await;
             return Err(DownloadError::Fatal(format!("Cache write failed: {err}")));
         }
+        // Flush so a streaming reader can see these bytes right away.
+        if let Err(err) = writer.flush().await {
+            cleanup_temp_file(&temp_path).await;
+            return Err(DownloadError::Fatal(format!("Cache flush failed: {err}")));
+        }
+        live.live.add(chunk.len() as u64);
 
         if let Some(app) = app_handle {
             if content_length > 0 {
@@ -626,6 +684,8 @@ async fn write_response_to_cache(
         cleanup_temp_file(&temp_path).await;
         return Err(DownloadError::Fatal("Invalid audio data".into()));
     }
+    // All bytes are on disk: streaming readers may now hit EOF normally.
+    live.complete();
 
     let cache_meta = TrackCacheMetadata {
         quality,
@@ -988,6 +1048,70 @@ impl TrackCacheState {
         })
     }
 
+    /// For tracks SoundCloud won't serve: find the same song on Zaycev.net (fast, direct
+    /// MP3), then YouTube (yt-dlp), and cache it under the same URN so likes, playlists and
+    /// offline keep working. Streams like any other download via `live`.
+    pub async fn cache_from_fallback(
+        &self,
+        urn: &str,
+        artist: &str,
+        title: &str,
+        duration_ms: Option<u64>,
+    ) -> Result<TrackCacheEntry, String> {
+        if let Some(path) = self.resolve_path(urn) {
+            return Ok(TrackCacheEntry::from_path_and_meta(
+                &path,
+                read_cache_metadata(&path),
+            ));
+        }
+        let secs = duration_ms.map(|ms| ms as f64 / 1000.0);
+        let started = std::time::Instant::now();
+        let (url, source, label) =
+            match super::zaycev::find_audio_url(&self.client, artist, title, secs).await {
+                Ok(url) => (url, DownloadSource::Zaycev, "zaycev"),
+                Err(zerr) => {
+                    let bin_dir = self
+                        .audio_dir
+                        .parent()
+                        .map(|p| p.join("bin"))
+                        .unwrap_or_else(|| self.audio_dir.join("bin"));
+                    let bin = super::youtube::ensure_ytdlp(&bin_dir, &self.client).await?;
+                    let query = format!("{artist} {title}");
+                    let url = super::youtube::find_audio_url(&bin, query.trim(), secs)
+                        .await
+                        .map_err(|yerr| format!("{zerr}; {yerr}"))?;
+                    (url, DownloadSource::Youtube, "youtube")
+                }
+            };
+        let resp = self
+            .client
+            .get(&url)
+            .send()
+            .await
+            .and_then(|r| r.error_for_status())
+            .map_err(|e| format!("{label} audio: {e}"))?;
+        println!(
+            "[TrackCache] {urn} → {label} fallback (resolved in {}ms)",
+            started.elapsed().as_millis()
+        );
+        let result = write_response_to_cache(
+            &self.audio_dir,
+            urn,
+            resp,
+            PlaybackQuality::Sq,
+            source,
+            self.app_handle.as_ref(),
+        )
+        .await
+        .map_err(|e| match e {
+            DownloadError::Fatal(e) | DownloadError::Retryable(e) => e,
+        })?;
+        Ok(TrackCacheEntry::from_path_and_meta(
+            &result.path,
+            read_cache_metadata(&result.path),
+        ))
+    }
+
     /// Try each storage URL once (healthy hosts first), then API URLs with retries.
     async fn download_with_fallback(
         &self,
@@ -1013,7 +1137,87 @@ impl TrackCacheState {
             }
         });
 
-        // 1. Try storage `/redirect/...` URLs — fast presign + direct S3 download.
+        // 1. Try anon (direct SoundCloud, streamed): download directly from SC public API v2.
+        //    Saves a hop through our streaming infra when the user can reach
+        //    SoundCloud directly.
+        if let Some(app) = self.app_handle.as_ref() {
+            let _ = app.emit(
+                "track:download-progress",
+                serde_json::json!({ "urn": urn, "downloaded": 0, "total": 1, "progress": 0.05, "source": "anon" }),
+            );
+        }
+        // Bytes are mirrored into a live .part file so playback can start on the first
+        // segments (see `live`); the finished track is still written to the cache below.
+        let live_path = temp_file_path(target_dir, urn);
+        let live_guard = super::live::register(urn, live_path.clone(), 0);
+        let anon_sink = AnonSink {
+            urn,
+            app: self.app_handle.as_ref(),
+            last_pct: std::sync::atomic::AtomicU64::new(5),
+            file: StdMutex::new(std::fs::File::create(&live_path).ok()),
+            live: live_guard.live.clone(),
+        };
+        let anon_result = self.anon.get_stream(urn, &anon_sink).await;
+        if matches!(anon_result, Ok(Some(_))) {
+            live_guard.complete();
+        } else {
+            drop(live_guard);
+        }
+        drop(anon_sink);
+        // A streaming reader may still hold it open; Windows deletes it once released.
+        std::fs::remove_file(&live_path).ok();
+        match anon_result {
+            Ok(Some(result)) => {
+                let line = format!("[TrackCache] {urn} → anon (SC api v2)");
+                println!("{line}");
+                self.diag("INFO", line);
+                match write_bytes_to_cache(
+                    target_dir,
+                    urn,
+                    &result.data,
+                    PlaybackQuality::Sq,
+                    DownloadSource::Anon,
+                    self.app_handle.as_ref(),
+                )
+                .await
+                {
+                    Ok(res) => {
+                        let kb = std::fs::metadata(&res.path)
+                            .map(|m| m.len() / 1024)
+                            .unwrap_or(0);
+                        let ms = start.elapsed().as_millis();
+                        let line =
+                            format!("[TrackCache] downloaded {urn} via anon — {kb} KB in {ms}ms");
+                        println!("{line}");
+                        self.diag("INFO", line);
+                        return Ok(res.path);
+                    }
+                    Err(DownloadError::Fatal(e)) => {
+                        let line = format!("[TrackCache] anon write failed for {urn}: {e}");
+                        eprintln!("{line}");
+                        self.diag("ERROR", line);
+                    }
+                    Err(DownloadError::Retryable(e)) => {
+                        let line = format!("[TrackCache] anon write failed for {urn}: {e}");
+                        eprintln!("{line}");
+                        self.diag("ERROR", line);
+                    }
+                }
+            }
+            Ok(None) => {
+                let line = format!("[TrackCache] anon: no usable transcoding for {urn}");
+                println!("{line}");
+                self.diag("INFO", line);
+            }
+            Err(e) => {
+                let line = format!("[TrackCache] anon failed for {urn}: {e}");
+                eprintln!("{line}");
+                self.diag("WARN", line);
+                last_err = format!("anon: {e}");
+            }
+        }
+
+        // 2. Try storage `/redirect/...` URLs — fast presign + direct S3 download.
         //    Saves storage server bandwidth when S3 is reachable from the user.
         //    No cooldown is recorded here: a failure may be S3-side (banned/blocked),
         //    but the storage stream fallback (step 3) might still work.
@@ -1079,88 +1283,6 @@ impl TrackCacheState {
                 Err(_) => {
                     eprintln!("[TrackCache] s3 redirect headers timeout for {urn} ({host})");
                 }
-            }
-        }
-
-        // 2. Try anon: download directly from SC public API v2.
-        //    Saves a hop through our streaming infra when the user can reach
-        //    SoundCloud directly.
-        if let Some(app) = self.app_handle.as_ref() {
-            let _ = app.emit(
-                "track:download-progress",
-                serde_json::json!({ "urn": urn, "downloaded": 0, "total": 1, "progress": 0.05, "source": "anon" }),
-            );
-        }
-        let last_pct = std::sync::atomic::AtomicU64::new(5);
-        let anon_progress = |frac: f64| {
-            let Some(app) = self.app_handle.as_ref() else {
-                return;
-            };
-            let clamped = (0.05 + frac.clamp(0.0, 1.0) * 0.9).min(0.95);
-            let pct = (clamped * 100.0) as u64;
-            let prev = last_pct.load(std::sync::atomic::Ordering::Relaxed);
-            if pct >= prev + 2 {
-                last_pct.store(pct, std::sync::atomic::Ordering::Relaxed);
-                let _ = app.emit(
-                    "track:download-progress",
-                    serde_json::json!({
-                        "urn": urn,
-                        "downloaded": pct,
-                        "total": 100,
-                        "progress": clamped,
-                        "source": "anon",
-                    }),
-                );
-            }
-        };
-        match self.anon.get_stream(urn, &anon_progress).await {
-            Ok(Some(result)) => {
-                let line = format!("[TrackCache] {urn} → anon (SC api v2)");
-                println!("{line}");
-                self.diag("INFO", line);
-                match write_bytes_to_cache(
-                    target_dir,
-                    urn,
-                    &result.data,
-                    PlaybackQuality::Sq,
-                    DownloadSource::Anon,
-                    self.app_handle.as_ref(),
-                )
-                .await
-                {
-                    Ok(res) => {
-                        let kb = std::fs::metadata(&res.path)
-                            .map(|m| m.len() / 1024)
-                            .unwrap_or(0);
-                        let ms = start.elapsed().as_millis();
-                        let line =
-                            format!("[TrackCache] downloaded {urn} via anon — {kb} KB in {ms}ms");
-                        println!("{line}");
-                        self.diag("INFO", line);
-                        return Ok(res.path);
-                    }
-                    Err(DownloadError::Fatal(e)) => {
-                        let line = format!("[TrackCache] anon write failed for {urn}: {e}");
-                        eprintln!("{line}");
-                        self.diag("ERROR", line);
-                    }
-                    Err(DownloadError::Retryable(e)) => {
-                        let line = format!("[TrackCache] anon write failed for {urn}: {e}");
-                        eprintln!("{line}");
-                        self.diag("ERROR", line);
-                    }
-                }
-            }
-            Ok(None) => {
-                let line = format!("[TrackCache] anon: no usable transcoding for {urn}");
-                println!("{line}");
-                self.diag("INFO", line);
-            }
-            Err(e) => {
-                let line = format!("[TrackCache] anon failed for {urn}: {e}");
-                eprintln!("{line}");
-                self.diag("WARN", line);
-                last_err = format!("anon: {e}");
             }
         }
 

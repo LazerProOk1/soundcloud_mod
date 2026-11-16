@@ -80,6 +80,7 @@ import {
   Square as _Square,
   Star as _Star,
   ThumbsDown as _ThumbsDown,
+  ThumbsUp as _ThumbsUp,
   Trash2 as _Trash2,
   Upload as _Upload,
   User as _User,
@@ -185,6 +186,7 @@ export const Sparkles = memo(_Sparkles);
 export const Star = memo(_Star);
 export const Square = memo(_Square);
 export const ThumbsDown = memo(_ThumbsDown);
+export const ThumbsUp = memo(_ThumbsUp);
 export const Trash2 = memo(_Trash2);
 export const Twitter = memo(({ size, className }: { size?: number; className?: string }) => (
   <SimpleIcon icon={siX} size={size} className={className} />

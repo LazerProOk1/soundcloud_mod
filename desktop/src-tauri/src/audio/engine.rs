@@ -6,9 +6,13 @@ use std::time::Duration;
 use tauri::State;
 use tokio::task;
 
-use crate::audio::decode::{create_player_from_bytes, resolve_normalization_gain};
+use crate::audio::decode::{
+    create_player_from_bytes, create_player_from_reader, is_ogg_opus,
+    read_cached_normalization_gain, resolve_normalization_gain,
+};
 use crate::audio::state::AudioState;
-use crate::audio::types::{AudioLoadResult, MediaCmd, EQ_BANDS};
+use crate::audio::types::{AudioLoadResult, MediaCmd, StreamLoadResult, EQ_BANDS};
+use crate::track_cache::live;
 
 const ENDED_SUPPRESS_MS: u64 = 1200;
 
@@ -38,7 +42,7 @@ fn apply_current_rate(state: &AudioState, player: &rodio::Player) {
 
 fn commit_loaded_track(
     state: &AudioState,
-    bytes: Arc<[u8]>,
+    bytes: Option<Arc<[u8]>>,
     new_player: rodio::Player,
     normalization_gain: f32,
 ) {
@@ -50,7 +54,8 @@ fn commit_loaded_track(
     *player_guard = Some(new_player);
     drop(player_guard);
 
-    *state.source_bytes.lock().unwrap() = Some(bytes);
+    // None for streamed tracks: seeking goes through the decoder instead of a rebuild.
+    *state.source_bytes.lock().unwrap() = bytes;
     *state.normalization_gain.lock().unwrap() = normalization_gain;
     // Reset song-position trackers to zero for the new track.
     *state.song_pos_secs.lock().unwrap() = 0.0;
@@ -198,9 +203,109 @@ pub async fn load_file(
     }
 
     suppress_ended_temporarily(&state);
-    commit_loaded_track(&state, bytes, new_player, normalization_gain);
+    commit_loaded_track(&state, Some(bytes), new_player, normalization_gain);
 
     Ok(AudioLoadResult { duration_secs })
+}
+
+/// Bytes needed before playback starts from a still-downloading file.
+const STREAM_START_BYTES: u64 = 160 * 1024;
+
+/// Start playing a track whose download is in progress (see `track_cache::live`).
+/// Returns `streaming: false` when there is nothing to stream (no live download within
+/// `wait_ms`, or it already finished) — the caller then loads the cached file normally.
+pub async fn load_stream(
+    urn: String,
+    normalization_cache_dir: Option<PathBuf>,
+    start_paused: bool,
+    wait_ms: u64,
+    state: State<'_, AudioState>,
+) -> Result<StreamLoadResult, String> {
+    let generation = state.load_gen.fetch_add(1, Ordering::Relaxed) + 1;
+    let not_streaming = StreamLoadResult {
+        streaming: false,
+        duration_secs: None,
+    };
+
+    let mixer = state.mixer.lock().unwrap().clone();
+    let vol = *state.volume.lock().unwrap();
+    let normalization_enabled = state.normalization_enabled.load(Ordering::Relaxed);
+    let eq = state.eq_params.clone();
+    let analyser = state.analyser_buffer.clone();
+    // Wait (async) for the download to register and buffer enough bytes.
+    let deadline = std::time::Instant::now() + Duration::from_millis(wait_ms);
+    let live = loop {
+        if state.load_gen.load(Ordering::Relaxed) != generation {
+            return Ok(not_streaming);
+        }
+        // A finished/failed attempt may be followed by the next source registering a new
+        // live download for the same URN, so just keep polling until the deadline.
+        if let Some(l) = live::get(&urn).filter(|l| l.is_running()) {
+            let total = l.total();
+            if l.written() >= STREAM_START_BYTES || (total > 0 && l.written() >= total) {
+                break l;
+            }
+        }
+        if std::time::Instant::now() > deadline {
+            return Ok(not_streaming);
+        }
+        tokio::time::sleep(Duration::from_millis(30)).await;
+    };
+
+    let built = task::spawn_blocking(
+        move || -> Result<(rodio::Player, Option<f64>, f32), String> {
+            let mut head = [0u8; 64];
+            let head_len = {
+                use std::io::Read;
+                std::fs::File::open(&live.path)
+                    .and_then(|mut f| f.read(&mut head))
+                    .map_err(|e| format!("stream open: {e}"))?
+            };
+            let opus = is_ogg_opus(&head[..head_len]);
+            let total = live.total();
+            let gain = if normalization_enabled && total > 0 {
+                read_cached_normalization_gain(
+                    normalization_cache_dir.as_deref(),
+                    Some(&urn),
+                    total as usize,
+                )
+                .unwrap_or(1.0)
+            } else {
+                1.0
+            };
+            let reader =
+                live::GrowingReader::open(live).map_err(|e| format!("stream open: {e}"))?;
+            let (player, duration) = create_player_from_reader(
+                reader,
+                total,
+                opus,
+                &mixer,
+                vol,
+                gain,
+                start_paused,
+                eq,
+                analyser,
+            )?;
+            Ok((player, duration, gain))
+        },
+    )
+    .await
+    .map_err(|e| format!("stream task failed: {e}"))?;
+
+    let Ok((new_player, duration_secs, gain)) = built else {
+        // Decoder couldn't start on the partial file — let the caller wait for the full file.
+        return Ok(not_streaming);
+    };
+    if state.load_gen.load(Ordering::Relaxed) != generation {
+        new_player.stop();
+        return Ok(not_streaming);
+    }
+    suppress_ended_temporarily(&state);
+    commit_loaded_track(&state, None, new_player, gain);
+    Ok(StreamLoadResult {
+        streaming: true,
+        duration_secs,
+    })
 }
 
 pub async fn load_url(
@@ -326,7 +431,7 @@ pub async fn load_url(
     }
 
     suppress_ended_temporarily(&state);
-    commit_loaded_track(&state, bytes, new_player, normalization_gain);
+    commit_loaded_track(&state, Some(bytes), new_player, normalization_gain);
 
     Ok(AudioLoadResult { duration_secs })
 }

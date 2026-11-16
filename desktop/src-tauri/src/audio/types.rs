@@ -53,6 +53,12 @@ pub enum AudioThreadCmd {
 }
 
 #[derive(serde::Serialize)]
+pub struct StreamLoadResult {
+    pub streaming: bool,
+    pub duration_secs: Option<f64>,
+}
+
+#[derive(serde::Serialize)]
 pub struct AudioLoadResult {
     pub duration_secs: Option<f64>,
 }

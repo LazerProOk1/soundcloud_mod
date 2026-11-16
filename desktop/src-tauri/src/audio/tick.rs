@@ -102,6 +102,12 @@ pub fn start_tick_emitter(app: &AppHandle) {
                             continue;
                         }
 
+                        // Buffering a streamed track is not a dead device.
+                        if crate::track_cache::live::STREAM_WAITING.load(Ordering::Relaxed) {
+                            last_progress_at = now;
+                            continue;
+                        }
+
                         if now.duration_since(last_progress_at).as_millis() as u64
                             > STALL_THRESHOLD_MS
                         {

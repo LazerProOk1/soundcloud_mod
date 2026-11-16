@@ -9,14 +9,15 @@ mod hls;
 
 use bytes::Bytes;
 use reqwest::Client;
+use std::sync::atomic::{AtomicU64, AtomicU8, Ordering};
 use std::sync::Arc;
 use std::sync::OnceLock;
-use std::sync::atomic::{AtomicU8, AtomicU64, Ordering};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use tauri::AppHandle;
 use tokio::sync::{Mutex, RwLock};
 
 use crate::app::diagnostics::log_native;
+pub use hls::Sink;
 use hls::{download_hls_full, download_progressive};
 
 const SC_BASE_URL: &str = "https://soundcloud.com";
@@ -54,7 +55,11 @@ fn build_transcoding_target(
     client_id: &str,
     track_authorization: Option<&str>,
 ) -> String {
-    let sep = if transcoding_url.contains('?') { "&" } else { "?" };
+    let sep = if transcoding_url.contains('?') {
+        "&"
+    } else {
+        "?"
+    };
     let mut target = format!("{transcoding_url}{sep}client_id={client_id}");
     if let Some(auth) = track_authorization.filter(|a| !a.is_empty()) {
         target.push_str("&track_authorization=");
@@ -167,7 +172,7 @@ impl AnonClient {
     pub async fn get_stream(
         &self,
         track_urn: &str,
-        progress: &(dyn Fn(f64) + Send + Sync),
+        progress: &dyn hls::Sink,
     ) -> Result<Option<AnonStreamResult>, String> {
         if self.in_cooldown() {
             return Ok(None);
@@ -184,7 +189,7 @@ impl AnonClient {
     async fn do_get_stream(
         &self,
         track_urn: &str,
-        progress: &(dyn Fn(f64) + Send + Sync),
+        progress: &dyn hls::Sink,
     ) -> Result<Option<AnonStreamResult>, String> {
         let track_id = track_urn.rsplit(':').next().unwrap_or(track_urn);
 
@@ -276,11 +281,7 @@ impl AnonClient {
                     return Ok(None);
                 }
                 match self
-                    .stream_from_transcodings(
-                        &retry_transcodings,
-                        retry_auth.as_deref(),
-                        progress,
-                    )
+                    .stream_from_transcodings(&retry_transcodings, retry_auth.as_deref(), progress)
                     .await
                 {
                     Err(e2) if e2.starts_with("__auth_required__") => Ok(None),
@@ -294,7 +295,7 @@ impl AnonClient {
         &self,
         transcodings: &[Transcoding],
         track_auth: Option<&str>,
-        progress: &(dyn Fn(f64) + Send + Sync),
+        progress: &dyn hls::Sink,
     ) -> Result<Option<AnonStreamResult>, String> {
         let ranked = ranked_transcodings(transcodings);
         if ranked.is_empty() {
@@ -308,11 +309,8 @@ impl AnonClient {
         let mut only_resource_gone = true;
 
         for t in ranked {
-            let is_progressive = t
-                .format
-                .as_ref()
-                .and_then(|f| f.protocol.as_deref())
-                == Some("progressive");
+            let is_progressive =
+                t.format.as_ref().and_then(|f| f.protocol.as_deref()) == Some("progressive");
 
             let media_url = match self.resolve_transcoding_url(&t.url, None, track_auth).await {
                 Ok(u) => {
@@ -320,9 +318,8 @@ impl AnonClient {
                     u
                 }
                 Err(e) => {
-                    let is_auth_err = e.contains("HTTP 404")
-                        || e.contains("HTTP 403")
-                        || e.contains("HTTP 401");
+                    let is_auth_err =
+                        e.contains("HTTP 404") || e.contains("HTTP 403") || e.contains("HTTP 401");
                     if !is_auth_err {
                         all_failures_are_auth = false;
                     }
@@ -509,10 +506,7 @@ fn ranked_transcodings(transcodings: &[Transcoding]) -> Vec<&Transcoding> {
     }
 
     let is_progressive = |t: &&Transcoding| {
-        t.format
-            .as_ref()
-            .and_then(|f| f.protocol.as_deref())
-            == Some("progressive")
+        t.format.as_ref().and_then(|f| f.protocol.as_deref()) == Some("progressive")
     };
 
     let mut ordered: Vec<&Transcoding> = Vec::with_capacity(candidates.len());
@@ -561,27 +555,40 @@ mod tests {
 
     #[test]
     fn build_transcoding_target_with_auth() {
-        let url = build_transcoding_target("https://api-v2.soundcloud.com/media/abc", "cid123", Some("tok456"));
+        let url = build_transcoding_target(
+            "https://api-v2.soundcloud.com/media/abc",
+            "cid123",
+            Some("tok456"),
+        );
         assert!(url.contains("client_id=cid123"));
         assert!(url.contains("track_authorization=tok456"));
     }
 
     #[test]
     fn build_transcoding_target_without_auth() {
-        let url = build_transcoding_target("https://api-v2.soundcloud.com/media/abc", "cid123", None);
+        let url =
+            build_transcoding_target("https://api-v2.soundcloud.com/media/abc", "cid123", None);
         assert!(url.contains("client_id=cid123"));
         assert!(!url.contains("track_authorization"));
     }
 
     #[test]
     fn build_transcoding_target_empty_auth() {
-        let url = build_transcoding_target("https://api-v2.soundcloud.com/media/abc", "cid123", Some(""));
+        let url = build_transcoding_target(
+            "https://api-v2.soundcloud.com/media/abc",
+            "cid123",
+            Some(""),
+        );
         assert!(!url.contains("track_authorization"));
     }
 
     #[test]
     fn build_transcoding_target_existing_query() {
-        let url = build_transcoding_target("https://api-v2.soundcloud.com/media/abc?foo=bar", "cid", Some("tok"));
+        let url = build_transcoding_target(
+            "https://api-v2.soundcloud.com/media/abc?foo=bar",
+            "cid",
+            Some("tok"),
+        );
         assert!(url.contains("&client_id=cid"));
         assert!(url.contains("&track_authorization=tok"));
     }

@@ -192,7 +192,7 @@ fn normalization_cache_file(cache_dir: &Path, cache_key: &str, bytes_len: usize)
     cache_dir.join(format!("{hash}.gain"))
 }
 
-fn read_cached_normalization_gain(
+pub(crate) fn read_cached_normalization_gain(
     cache_dir: Option<&Path>,
     cache_key: Option<&str>,
     bytes_len: usize,
@@ -325,6 +325,53 @@ pub fn resolve_normalization_gain(
 
     write_cached_normalization_gain(cache_dir, cache_key, bytes_len, gain);
     Ok(gain)
+}
+
+/// Same chain as `create_player_from_bytes`, but over a reader (e.g. a file that is still
+/// downloading). `byte_len` (0 = unknown) makes the decoder seekable.
+pub fn create_player_from_reader<R>(
+    reader: R,
+    byte_len: u64,
+    opus: bool,
+    mixer: &Mixer,
+    volume: f32,
+    normalization_gain: f32,
+    start_paused: bool,
+    eq_params: Arc<RwLock<EqParams>>,
+    analyser_buffer: Arc<AnalyserBuffer>,
+) -> Result<(Player, Option<f64>), String>
+where
+    R: std::io::Read + std::io::Seek + Send + Sync + 'static,
+{
+    let player = Player::connect_new(mixer);
+    player.set_volume(volume);
+    if start_paused {
+        player.pause();
+    }
+    let duration;
+    if opus {
+        let source =
+            OpusSource::from_reader(reader).map_err(|e| format!("Failed to decode: {e}"))?;
+        duration = source.total_duration().map(|d| d.as_secs_f64());
+        player.append(AnalyserSource::new(
+            EqSource::new(GainSource::new(source, normalization_gain), eq_params),
+            analyser_buffer,
+        ));
+    } else {
+        let mut builder = Decoder::builder().with_data(reader).with_seekable(true);
+        if byte_len > 0 {
+            builder = builder.with_byte_len(byte_len);
+        }
+        let source = builder
+            .build()
+            .map_err(|e| format!("Failed to decode: {e}"))?;
+        duration = source.total_duration().map(|d| d.as_secs_f64());
+        player.append(AnalyserSource::new(
+            EqSource::new(GainSource::new(source, normalization_gain), eq_params),
+            analyser_buffer,
+        ));
+    }
+    Ok((player, duration))
 }
 
 pub fn create_player_from_bytes(

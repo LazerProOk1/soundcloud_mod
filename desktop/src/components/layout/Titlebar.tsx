@@ -5,13 +5,16 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import {
   ChevronLeft,
   ChevronRight,
+  Compass,
   Disc3,
   Fullscreen,
+  Home,
   Minus,
   PanelLeftClose,
   PanelLeftOpen,
   PictureInPicture2,
   Search,
+  Settings,
   Square,
   X,
 } from '../../lib/icons';
@@ -95,23 +98,70 @@ const NavButtons = React.memo(() => {
   );
 });
 
-const QuickSearchPill = React.memo(() => {
+/** Spotify-style center cluster: round Home + Discover buttons and a big search field. */
+const CenterNav = React.memo(() => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
   const shortcutLabel = isMac() ? '⌘ K' : 'Ctrl K';
+  const round = (active: boolean) =>
+    `w-10 h-10 shrink-0 rounded-full flex items-center justify-center transition-colors duration-150 cursor-pointer ${
+      active
+        ? 'bg-white/[0.14] text-white'
+        : 'bg-white/[0.07] text-white/70 hover:text-white hover:bg-white/[0.12]'
+    }`;
 
+  return (
+    <div className="flex items-center gap-2 w-full max-w-[560px]">
+      <button
+        type="button"
+        title={t('titlebar.home')}
+        onClick={() => navigate('/home')}
+        className={round(pathname === '/home' || pathname === '/')}
+      >
+        <Home size={19} />
+      </button>
+      <button
+        type="button"
+        onClick={() => navigate('/search')}
+        className="flex-1 min-w-0 flex items-center gap-2.5 h-10 px-4 rounded-full bg-white/[0.07] hover:bg-white/[0.11] border border-transparent hover:border-white/[0.1] text-white/50 hover:text-white/80 transition-colors cursor-pointer"
+      >
+        <Search size={17} className="shrink-0" />
+        <span className="truncate flex-1 text-left text-[14px]">{t('titlebar.search')}</span>
+        <kbd
+          onClick={(e) => {
+            e.stopPropagation();
+            window.dispatchEvent(new CustomEvent('sc:open-command-palette'));
+          }}
+          className="hidden md:inline text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/[0.07] text-white/40 shrink-0"
+        >
+          {shortcutLabel}
+        </kbd>
+      </button>
+      <button
+        type="button"
+        title={t('titlebar.discover')}
+        onClick={() => navigate('/discover')}
+        className={round(pathname.startsWith('/discover'))}
+      >
+        <Compass size={18} />
+      </button>
+    </div>
+  );
+});
+
+const SettingsButton = React.memo(() => {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
   return (
     <button
       type="button"
-      onClick={() => window.dispatchEvent(new CustomEvent('sc:open-command-palette'))}
-      className="hidden sm:flex items-center gap-2 h-7 px-3 rounded-full text-[11.5px] transition-all duration-200 cursor-pointer max-w-[260px] w-full bg-white/[0.045] hover:bg-white/[0.09] text-white/45 hover:text-white/80 border border-white/[0.07]"
+      title={t('titlebar.settings')}
+      onClick={() => navigate('/settings')}
+      className={`${iconBtn} ${pathname.startsWith('/settings') ? '!text-white bg-white/[0.08]' : ''}`}
     >
-      <Search size={12} className="shrink-0 opacity-70" />
-      <span className="truncate flex-1 text-left">
-        {t('commandPalette.trigger', 'Search or command...')}
-      </span>
-      <kbd className="text-[9.5px] font-mono px-1.5 py-0.5 rounded bg-white/[0.06] text-white/40 shrink-0">
-        {shortcutLabel}
-      </kbd>
+      <Settings size={17} />
     </button>
   );
 });
@@ -123,7 +173,7 @@ export const Titlebar = React.memo(() => {
 
   return (
     <div
-      className="h-10 relative z-20 flex items-center justify-between gap-3 pl-2 select-none shrink-0"
+      className="h-14 relative z-20 flex items-center justify-between gap-3 pl-2 select-none shrink-0"
       data-tauri-drag-region
     >
       <div className="flex items-center shrink-0" data-tauri-drag-region>
@@ -132,10 +182,11 @@ export const Titlebar = React.memo(() => {
       </div>
 
       <div className="flex-1 flex justify-center min-w-0 px-2" data-tauri-drag-region>
-        <QuickSearchPill />
+        <CenterNav />
       </div>
 
       <div className="flex items-center h-full shrink-0">
+        <SettingsButton />
         <button
           type="button"
           title={t('player.miniPlayer')}

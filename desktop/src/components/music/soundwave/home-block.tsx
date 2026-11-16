@@ -1,7 +1,9 @@
-import React, { useCallback, useMemo, useState } from 'react';
-
+import { useQueryClient } from '@tanstack/react-query';
+import React, { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
+import { toggleDislike } from '../../../lib/dislikes';
 import { useLikedTracks, useRecommendedTracks, useRelatedPool } from '../../../lib/hooks';
 import {
   AudioLines,
@@ -9,11 +11,14 @@ import {
   Disc3,
   Fullscreen,
   Headphones,
-  playBlack14,
-  RefreshCw,
+  Pause,
+  Play,
   Sparkles,
   Star,
+  ThumbsDown,
+  ThumbsUp,
 } from '../../../lib/icons';
+import { setTrackLiked } from '../../../lib/like-toggle';
 import { isUrnLiked } from '../../../lib/likes';
 import { useLiquidLight } from '../../../lib/useLiquidLight';
 import { tuneWaveTracks } from '../../../lib/wave-vibes';
@@ -30,12 +35,8 @@ import {
   useClusterWave,
 } from '../cluster';
 import { AmbientLayer } from './ambient';
-import { HideLikedToggle } from './hide-liked-toggle';
-import { LanguageFilter } from './language-filter';
-import { WaveTrackHeader } from './track-header';
 import { useInfiniteWave } from './use-infinite-wave';
 import { VibeTuner } from './vibe-tuner';
-import { LiveWaveform } from './waveform';
 
 const CLUSTER_ORDER: ClusterId[] = [
   'for_you',
@@ -63,18 +64,17 @@ export const SoundWaveBlock = React.memo(function SoundWaveBlock() {
   const navigate = useNavigate();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const selectedLanguages = useSettingsStore((s) => s.soundwaveLanguages);
-  const setSelectedLanguages = useSettingsStore((s) => s.setSoundwaveLanguages);
   const hideLiked = useSettingsStore((s) => s.soundwaveHideLiked);
-  const setHideLiked = useSettingsStore((s) => s.setSoundwaveHideLiked);
   const waveVibe = useSettingsStore((s) => s.soundwaveVibe);
   const setWaveVibe = useSettingsStore((s) => s.setSoundwaveVibe);
   const waveMode = useSettingsStore((s) => s.soundwaveMode);
   const setWaveMode = useSettingsStore((s) => s.setSoundwaveMode);
 
   const currentTrack = usePlayerStore((s) => s.currentTrack);
+  const isPlaying = usePlayerStore((s) => s.isPlaying);
+  const qc = useQueryClient();
 
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [refreshSeed, setRefreshSeed] = useState(0);
+  const refreshSeed = 0;
   /* Dynamic cursor spotlight — tracks mouse position on the glass panel */
   const panelRef = useLiquidLight<HTMLElement>();
 
@@ -90,7 +90,7 @@ export const SoundWaveBlock = React.memo(function SoundWaveBlock() {
     return `/recommendations?${qs}`;
   }, [isAuthenticated, stableLanguages, refreshSeed]);
 
-  const { data, isLoading, isFetching } = useClusterWave({
+  const { data, isLoading } = useClusterWave({
     queryKey: ['cluster-wave', 'home', langKey, refreshSeed],
     url,
     enabled: isAuthenticated,
@@ -162,18 +162,36 @@ export const SoundWaveBlock = React.memo(function SoundWaveBlock() {
 
   if (!isAuthenticated) return null;
 
-  const handleRefresh = () => {
-    setIsRefreshing(true);
-    setRefreshSeed((s) => s + 1);
-    setTimeout(() => setIsRefreshing(false), 600);
-  };
-
   const handlePlayAll = () => {
     if (!filteredAllTracks.length) return;
     usePlayerStore.getState().play(filteredAllTracks[0], filteredAllTracks);
   };
 
-  const spinning = isRefreshing || isFetching;
+  const waveIsPlaying = isCurrent && isPlaying;
+  const handleMainPlay = () => {
+    const player = usePlayerStore.getState();
+    if (isCurrent) {
+      if (player.isPlaying) player.pause();
+      else player.resume();
+      return;
+    }
+    handlePlayAll();
+  };
+  // "Не то": dislike teaches the wave, then skip right away.
+  const handleNotThis = () => {
+    const cur = usePlayerStore.getState().currentTrack;
+    if (!cur) return;
+    void toggleDislike(qc, cur, true);
+    usePlayerStore.getState().next();
+  };
+  // "Ещё такого": a like is the strongest positive signal the wave learns from.
+  const handleMoreLikeThis = () => {
+    const cur = usePlayerStore.getState().currentTrack;
+    if (!cur) return;
+    void setTrackLiked(qc, cur, true);
+    toast.success(t('soundwave.moreLikeThisDone', 'Учтём — будет больше такого'));
+  };
+
   // Show cold state only if truly nothing available (backend down + no liked tracks cached).
   // Also wait for the related-pool query to finish — it loads slightly after the cluster wave.
   const anyLoading = isLoading || (poolLoading && likedTracks.length > 0);
@@ -225,42 +243,50 @@ export const SoundWaveBlock = React.memo(function SoundWaveBlock() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0 flex-wrap justify-end">
-            <HideLikedToggle value={hideLiked} onChange={setHideLiked} />
-            <LanguageFilter selected={selectedLanguages} onChange={setSelectedLanguages} />
-            <button
-              type="button"
-              onClick={() => navigate('/soundwave')}
-              className="flex items-center gap-1.5 h-8 px-3 rounded-full bg-white/[0.06] border border-white/[0.08] hover:bg-white/[0.11] hover:border-white/[0.16] transition-colors duration-200 text-[11.5px] font-medium text-white/75 hover:text-white cursor-pointer"
-              title={t('soundwave.openFullscreen', 'Open full wave')}
-            >
-              <Fullscreen size={13} />
-              <span className="hidden sm:inline">{t('soundwave.fullscreen', 'Поток')}</span>
-            </button>
-            <button
-              type="button"
-              onClick={handleRefresh}
-              disabled={spinning}
-              className="flex items-center justify-center w-8 h-8 rounded-full bg-white/[0.06] border border-white/[0.08] hover:bg-white/[0.1] hover:border-white/[0.14] transition-colors duration-200 text-white/70 hover:text-white/95 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
-              title={t('soundwave.refresh')}
-            >
-              <RefreshCw size={13} className={spinning ? 'animate-spin' : ''} />
-            </button>
-            <button
-              type="button"
-              onClick={handlePlayAll}
-              disabled={playableTracks.length === 0}
-              className="flex items-center justify-center w-11 h-11 rounded-full transition-all duration-200 ease-[var(--ease-apple)] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.93] hover:scale-[1.06]"
-              style={{
-                background: 'var(--color-accent)',
-                boxShadow:
-                  '0 6px 22px var(--color-accent-glow), inset 0 1px 0 rgba(255,255,255,0.30)',
-              }}
-              title={t('soundwave.playAll')}
-            >
-              {playBlack14}
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => navigate('/soundwave')}
+            className="flex items-center gap-1.5 h-8 px-3 rounded-full text-[12px] font-medium text-white/60 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer"
+            title={t('soundwave.openFullscreen', 'Open full wave')}
+          >
+            <Fullscreen size={13} />
+            {t('soundwave.settings', 'Настроить')}
+          </button>
+        </div>
+
+        {/* Justify-style controls: one big play button with quick feedback on each side. */}
+        <div className="flex items-center justify-center gap-4 py-2">
+          <button
+            type="button"
+            onClick={handleNotThis}
+            disabled={!currentTrack}
+            className="flex items-center gap-2 h-11 px-5 rounded-full bg-white/[0.08] hover:bg-white/[0.14] text-[14px] font-semibold text-white/85 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-default"
+          >
+            <ThumbsDown size={17} />
+            {t('soundwave.notThis', 'Не то')}
+          </button>
+          <button
+            type="button"
+            onClick={handleMainPlay}
+            disabled={playableTracks.length === 0 && !isCurrent}
+            className="flex items-center justify-center w-16 h-16 rounded-full bg-white text-black transition-transform duration-200 ease-[var(--ease-apple)] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed hover:scale-[1.06] active:scale-[0.95] shadow-[0_10px_30px_rgba(0,0,0,0.4)]"
+            title={t('soundwave.playAll')}
+          >
+            {waveIsPlaying ? (
+              <Pause size={26} fill="currentColor" />
+            ) : (
+              <Play size={26} fill="currentColor" className="ml-1" />
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={handleMoreLikeThis}
+            disabled={!currentTrack}
+            className="flex items-center gap-2 h-11 px-5 rounded-full bg-white/[0.08] hover:bg-white/[0.14] text-[14px] font-semibold text-white/85 transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-default"
+          >
+            <ThumbsUp size={17} />
+            {t('soundwave.moreLikeThis', 'Ещё такого')}
+          </button>
         </div>
 
         <VibeTuner
@@ -270,30 +296,6 @@ export const SoundWaveBlock = React.memo(function SoundWaveBlock() {
           onModeChange={setWaveMode}
           compact
         />
-
-        <div className="flex flex-col gap-3">
-          {waveTrack ? (
-            <WaveTrackHeader
-              track={waveTrack}
-              queue={playableTracks.length ? playableTracks : [waveTrack]}
-              isCurrent={isCurrent}
-            />
-          ) : (
-            <div className="flex items-center gap-3">
-              <div className="w-14 h-14 rounded-xl bg-white/[0.04] ring-1 ring-white/[0.06] shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-[15px] font-semibold text-white/90 leading-tight">
-                  {t('soundwave.idleTitle')}
-                </p>
-                <p className="text-[12px] text-white/45 mt-0.5 truncate">
-                  {t('soundwave.idleSub')}
-                </p>
-              </div>
-            </div>
-          )}
-
-          <LiveWaveform track={waveTrack} isCurrent={isCurrent} />
-        </div>
 
         <div className="min-h-[280px]">
           {anyLoading ? (
