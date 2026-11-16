@@ -12,7 +12,8 @@ export const GITHUB_REPO = 'soundcloud_mod';
 export const GITHUB_REPO_EN = 'soundcloud_mod';
 export const APP_VERSION = __APP_VERSION__;
 
-export const CHECK_UPDATES = false;
+// Checks GitHub releases of this repo on start and shows the update dialog.
+export const CHECK_UPDATES = true;
 
 let _staticPort: number | null = null;
 let _proxyPort: number | null = null;

@@ -420,13 +420,8 @@ async function loadTrack(track: Track) {
     // Strategy 2: Download full track to cache — Rust picks storage/API internally
     usePlayerStore.setState({ downloadProgress: 0 });
 
-    const download: Promise<TrackCacheInfo> = ensureTrackCached(urn, highQualityStreaming)
-      .catch((error) => {
-        // Not every track has an HQ transcoding — fall back to standard quality.
-        if (!highQualityStreaming || gen !== loadGen) throw error;
-        console.warn('[Audio] HQ load failed, retrying without hq:', error);
-        return ensureTrackCached(urn, false);
-      })
+    // Order: SoundCloud directly → Zaycev.net → YouTube → legacy streaming server.
+    const download: Promise<TrackCacheInfo> = ensureTrackCached(urn, highQualityStreaming, true)
       .catch((error) => {
         // SoundCloud won't serve it (DRM, removed, region-locked): find the same song on
         // Zaycev.net, then YouTube. Cached under this URN, so likes and playlists keep working.
@@ -440,6 +435,12 @@ async function loadTrack(track: Track) {
           title,
           durationMs: track.duration || null,
         });
+      })
+      .catch((error) => {
+        // Last resort: the legacy server still has some tracks found nowhere else.
+        if (gen !== loadGen) throw error;
+        console.warn('[Audio] Fallback sources failed, trying legacy server:', error);
+        return ensureTrackCached(urn, highQualityStreaming);
       });
     // Don't leave an unhandled rejection if streaming wins and the download later fails.
     download.catch(() => {});

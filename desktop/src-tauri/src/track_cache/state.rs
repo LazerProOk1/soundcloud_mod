@@ -615,7 +615,7 @@ async fn write_response_to_cache(
     let mut writer = BufWriter::with_capacity(STREAM_WRITE_BUFFER_SIZE, file);
     let content_length = response.content_length().unwrap_or(0);
     // Lets the audio engine start playing from the .part file while it's still downloading.
-    let live = super::live::register(urn, temp_path.clone(), content_length);
+    let live = super::live::register(urn, temp_path.clone(), final_path.clone(), content_length);
     let mut stream = response.bytes_stream();
     let mut total_size = 0u64;
     let mut sniff = Vec::with_capacity(AUDIO_SNIFF_LEN);
@@ -1149,7 +1149,12 @@ impl TrackCacheState {
         // Bytes are mirrored into a live .part file so playback can start on the first
         // segments (see `live`); the finished track is still written to the cache below.
         let live_path = temp_file_path(target_dir, urn);
-        let live_guard = super::live::register(urn, live_path.clone(), 0);
+        let live_guard = super::live::register(
+            urn,
+            live_path.clone(),
+            target_dir.join(urn_to_filename(urn)),
+            0,
+        );
         let anon_sink = AnonSink {
             urn,
             app: self.app_handle.as_ref(),

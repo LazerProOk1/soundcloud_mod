@@ -45,6 +45,8 @@ pub struct AudioState {
     pub media_tx: Mutex<Option<std::sync::mpsc::Sender<MediaCmd>>>,
     pub audio_tx: std::sync::mpsc::Sender<AudioThreadCmd>,
     pub source_bytes: Mutex<Option<Arc<[u8]>>>,
+    /// Streamed track: cache file it will be saved to (used to rebuild on seek/reload).
+    pub stream_final_path: Mutex<Option<std::path::PathBuf>>,
     pub follow_default_output: AtomicBool,
     pub last_known_default_output: Mutex<Option<String>>,
     pub lyrics_timeline: Mutex<Option<LyricsTimelineState>>,
@@ -150,6 +152,7 @@ pub fn init() -> AudioState {
         media_tx: Mutex::new(None),
         audio_tx: cmd_tx,
         source_bytes: Mutex::new(None),
+        stream_final_path: Mutex::new(None),
         follow_default_output: AtomicBool::new(true),
         last_known_default_output: Mutex::new(None),
         lyrics_timeline: Mutex::new(None),

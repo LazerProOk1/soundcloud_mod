@@ -23,6 +23,8 @@ pub static STREAM_WAITING: AtomicBool = AtomicBool::new(false);
 
 pub struct LiveDownload {
     pub path: PathBuf,
+    /// Where the completed file is saved in the cache.
+    pub final_path: PathBuf,
     written: AtomicU64,
     total: AtomicU64,
     state: AtomicU8,
@@ -76,9 +78,10 @@ pub fn get(urn: &str) -> Option<Arc<LiveDownload>> {
 
 /// Registers a download; the returned guard marks it failed + unregisters on drop
 /// unless `complete()` was called first.
-pub fn register(urn: &str, path: PathBuf, total: u64) -> LiveGuard {
+pub fn register(urn: &str, path: PathBuf, final_path: PathBuf, total: u64) -> LiveGuard {
     let live = Arc::new(LiveDownload {
         path,
+        final_path,
         written: AtomicU64::new(0),
         total: AtomicU64::new(total),
         state: AtomicU8::new(RUNNING),

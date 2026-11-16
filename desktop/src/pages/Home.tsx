@@ -1,38 +1,20 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { SoundWaveBlock } from '../components/music/soundwave';
+import { SoundWavePage } from './SoundWavePage';
 import { TrackCard } from '../components/music/TrackCard';
 import { HorizontalScroll } from '../components/ui/HorizontalScroll';
 import { Skeleton } from '../components/ui/Skeleton';
 import { useBatchTrackHydration, useFollowingTracks, useLikedTracks } from '../lib/hooks';
-import {
-  AudioLines,
-  ChevronRight,
-  Compass,
-  Download,
-  Headphones,
-  Heart,
-  Library,
-  Music,
-} from '../lib/icons';
+import { ChevronRight, Headphones, Heart, Music } from '../lib/icons';
 import {
   getOfflineFollowingTracks,
   getOfflineLikedTracks,
   getRecentlyPlayed,
 } from '../lib/offline-index';
-import { useAuthStore } from '../stores/auth';
 import type { Track } from '../stores/player';
 
 /* ── Helpers ──────────────────────────────────────────────── */
-
-function greetingKey() {
-  const h = new Date().getHours();
-  if (h < 6) return 'home.goodNight';
-  if (h < 12) return 'home.goodMorning';
-  if (h < 18) return 'home.goodAfternoon';
-  return 'home.goodEvening';
-}
 
 /* ── Section Header ───────────────────────────────────────── */
 
@@ -220,9 +202,6 @@ const FollowingShelf = React.memo(function FollowingShelf({
 /* ── Home Page ────────────────────────────────────────────── */
 
 export function Home() {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-  const user = useAuthStore((s) => s.user);
   const likedTracksQuery = useLikedTracks(100);
   const followingQuery = useFollowingTracks(20);
 
@@ -240,62 +219,16 @@ export function Home() {
   );
 
   return (
-    <div className="p-6 pb-4 space-y-8 page-enter">
-      {/* Hero Greeting + Quick Navigation Pills */}
-      <section className="pt-1 flex flex-wrap items-center justify-between gap-4 animate-fade-in-scale">
-        <h1 className="hero-greeting syne text-3xl leading-tight pb-1">
-          {t(greetingKey())}
-          {user?.username ? `, ${user.username}` : ''}
-        </h1>
+    <div className="page-enter">
+      {/* One SoundWave: the full wave page is the top of Home (no separate home block). */}
+      <SoundWavePage />
 
-        <div className="flex flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={() => navigate('/soundwave')}
-            className="glass-pill px-3.5 py-1.5 text-[12px] font-semibold text-white/90 inline-flex items-center gap-1.5 cursor-pointer"
-            style={{
-              background:
-                'linear-gradient(135deg, var(--color-accent-glow), rgba(255,255,255,0.06))',
-              borderColor: 'rgba(255,255,255,0.16)',
-            }}
-          >
-            <AudioLines size={13} style={{ color: 'var(--color-accent)' }} />
-            {t('nav.soundwave')}
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/discover')}
-            className="glass-pill px-3.5 py-1.5 text-[12px] font-medium text-white/65 hover:text-white inline-flex items-center gap-1.5 cursor-pointer"
-          >
-            <Compass size={13} />
-            {t('nav.discover')}
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/library')}
-            className="glass-pill px-3.5 py-1.5 text-[12px] font-medium text-white/65 hover:text-white inline-flex items-center gap-1.5 cursor-pointer"
-          >
-            <Library size={13} />
-            {t('nav.library')}
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/offline')}
-            className="glass-pill px-3.5 py-1.5 text-[12px] font-medium text-white/65 hover:text-white inline-flex items-center gap-1.5 cursor-pointer"
-          >
-            <Download size={13} />
-            {t('nav.offline')}
-          </button>
-        </div>
-      </section>
-
-      {/* Personal SoundWave Block right on the Home screen */}
-      <SoundWaveBlock />
-
-      {/* Personal shelves: Recently Played -> Liked -> Fresh Releases */}
-      <RecentlyPlayedShelf />
-      <LikedShelf likedTracks={likedShelfTracks} isLoading={likedTracksQuery.isLoading} />
-      <FollowingShelf followingTracks={followingTracks} isLoading={followingQuery.isLoading} />
+      <div className="p-6 pb-4 space-y-8">
+        {/* Personal shelves: Recently Played -> Liked -> Fresh Releases */}
+        <RecentlyPlayedShelf />
+        <LikedShelf likedTracks={likedShelfTracks} isLoading={likedTracksQuery.isLoading} />
+        <FollowingShelf followingTracks={followingTracks} isLoading={followingQuery.isLoading} />
+      </div>
     </div>
   );
 }

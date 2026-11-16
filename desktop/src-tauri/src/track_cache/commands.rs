@@ -23,10 +23,11 @@ pub async fn track_ensure_cached(
     session_id: Option<String>,
     state: State<'_, TrackCacheState>,
 ) -> Result<TrackCacheEntry, String> {
+    // Empty lists = direct SoundCloud only (the legacy server is skipped).
     let fallback_urls: Vec<String> = match (urls, url) {
         (Some(u), _) if !u.is_empty() => u,
         (_, Some(u)) => vec![u],
-        _ => return Err("no stream URL provided".into()),
+        _ => Vec::new(),
     };
     let storage_urls = storage_urls.unwrap_or_default();
     state

@@ -54,7 +54,10 @@ fn commit_loaded_track(
     *player_guard = Some(new_player);
     drop(player_guard);
 
-    // None for streamed tracks: seeking goes through the decoder instead of a rebuild.
+    // None for streamed tracks: seeking goes through the decoder, or `source_bytes_or_cached`.
+    if bytes.is_some() {
+        *state.stream_final_path.lock().unwrap() = None;
+    }
     *state.source_bytes.lock().unwrap() = bytes;
     *state.normalization_gain.lock().unwrap() = normalization_gain;
     // Reset song-position trackers to zero for the new track.
@@ -101,9 +104,21 @@ async fn build_player_from_bytes(
     .map_err(|e| format!("audio decode task failed: {e}"))?
 }
 
+/// Bytes of the current track: kept in memory for normal loads, read back from the cache
+/// file for a streamed track once its download has finished.
+fn source_bytes_or_cached(state: &AudioState) -> Option<Arc<[u8]>> {
+    if let Some(bytes) = state.source_bytes.lock().unwrap().clone() {
+        return Some(bytes);
+    }
+    let path = state.stream_final_path.lock().unwrap().clone()?;
+    let data: Arc<[u8]> = Arc::from(std::fs::read(&path).ok()?);
+    *state.source_bytes.lock().unwrap() = Some(data.clone());
+    Some(data)
+}
+
 pub fn reload_current_track(state: &AudioState) -> Result<(), String> {
     suppress_ended_temporarily(state);
-    let bytes = state.source_bytes.lock().unwrap().clone();
+    let bytes = source_bytes_or_cached(state);
     let Some(bytes) = bytes else {
         return Ok(());
     };
@@ -252,6 +267,7 @@ pub async fn load_stream(
         tokio::time::sleep(Duration::from_millis(30)).await;
     };
 
+    let final_path = live.final_path.clone();
     let built = task::spawn_blocking(
         move || -> Result<(rodio::Player, Option<f64>, f32), String> {
             let mut head = [0u8; 64];
@@ -302,6 +318,7 @@ pub async fn load_stream(
     }
     suppress_ended_temporarily(&state);
     commit_loaded_track(&state, None, new_player, gain);
+    *state.stream_final_path.lock().unwrap() = Some(final_path);
     Ok(StreamLoadResult {
         streaming: true,
         duration_secs,
@@ -500,9 +517,8 @@ pub fn seek(position: f64, state: State<'_, AudioState>) -> Result<(), String> {
         }
     }
 
-    let bytes = state.source_bytes.lock().unwrap().clone();
-    let Some(bytes) = bytes else {
-        return Err("No source to reload for seek".into());
+    let Some(bytes) = source_bytes_or_cached(&state) else {
+        return Err("No source to reload for seek (still downloading)".into());
     };
 
     let mixer = state.mixer.lock().unwrap().clone();

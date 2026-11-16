@@ -528,6 +528,8 @@ const LyricsSourceBadge = React.memo(
 
 /* ── Synced lyrics — line by line ── */
 
+const LYRIC_LEAD_SECS = 0.15;
+
 const SyncedLyrics = React.memo(({ lines }: { lines: LyricLine[] }) => {
   const displayLines = useMemo(() => buildDisplayLines(lines), [lines]);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -588,7 +590,8 @@ const SyncedLyrics = React.memo(({ lines }: { lines: LyricLine[] }) => {
     const sync = (jump = false) => {
       const lineEls = lineElsRef.current;
       if (lineEls.length === 0) return;
-      const idx = lineAt(getCurrentTime());
+      // Small lead so the line lights up as it's sung, not after (transition + render delay).
+      const idx = lineAt(getCurrentTime() + LYRIC_LEAD_SECS);
       const prev = activeRef.current;
       if (idx === prev && !jump) return;
       activeRef.current = idx;

@@ -33,9 +33,14 @@ export function getCacheInfo(urn: string): Promise<TrackCacheInfo | null> {
   return invoke<TrackCacheInfo | null>('track_get_cache_info', { urn });
 }
 
+/**
+ * `direct: true` tries only SoundCloud itself (fast); the legacy streaming server is
+ * then a last resort, after the Zaycev/YouTube fallbacks.
+ */
 export async function ensureTrackCached(
   urn: string,
   highQualityStreaming = useSettingsStore.getState().highQualityStreaming,
+  direct = false,
 ): Promise<TrackCacheInfo> {
   const cached = await getCacheInfo(urn);
   if (cached) {
@@ -45,8 +50,8 @@ export async function ensureTrackCached(
 
   const { buildStorageUrls, streamFallbackUrls, getSessionId } = await import('./api');
   const sessionId = getSessionId();
-  const urls = streamFallbackUrls(urn, highQualityStreaming);
-  const storageUrls = buildStorageUrls(urn);
+  const urls = direct ? [] : streamFallbackUrls(urn, highQualityStreaming);
+  const storageUrls = direct ? [] : buildStorageUrls(urn);
 
   const info = await invoke<TrackCacheInfo>('track_ensure_cached', {
     urn,

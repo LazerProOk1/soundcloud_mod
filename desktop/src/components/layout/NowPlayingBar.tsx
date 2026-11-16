@@ -392,7 +392,7 @@ const PlaybackQualityBadge = React.memo(() => {
   const isHq = playbackQuality === 'hq';
 
   return (
-    <div className="hidden md:flex shrink-0 items-center gap-1.5">
+    <div className="hidden 2xl:flex shrink-0 items-center gap-1.5">
       <span
         className={`inline-flex h-6 shrink-0 items-center rounded-md border px-2 text-[9px] font-semibold tracking-[0.14em] ${
           isHq
@@ -524,33 +524,20 @@ const btnClass = (active: boolean, size: 'default' | 'sm') =>
 const PlayPauseBtn = React.memo(() => {
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const togglePlay = usePlayerStore((s) => s.togglePlay);
-  const glass = useLiquidGlass();
+  // Both icons stay mounted and cross-fade with a little rotate/scale — a morph instead of a swap.
+  const icon = (show: boolean) =>
+    `absolute inset-0 flex items-center justify-center transition-all duration-200 ease-[var(--ease-spring)] ${
+      show ? 'opacity-100 scale-100 rotate-0' : 'opacity-0 scale-50 -rotate-90'
+    }`;
   return (
     <button
       type="button"
       onClick={togglePlay}
-      className="relative w-12 h-12 rounded-full flex items-center justify-center text-black hover:scale-[1.07] active:scale-[0.94] transition-all duration-300 ease-[var(--ease-spring)] cursor-pointer mx-1.5"
-      style={{
-        background:
-          'linear-gradient(165deg, rgba(255,255,255,0.98) 0%, rgba(230,230,236,0.93) 100%)',
-        boxShadow: glass
-          ? `
-          0 1px 0 0 rgba(255,255,255,1.0) inset,
-          0 -1px 0 0 rgba(0,0,0,0.22) inset,
-          1px 0 0 0 rgba(255,255,255,0.85) inset,
-          -1px 0 0 0 rgba(0,0,0,0.10) inset,
-          0 0 0 1px rgba(255,255,255,0.18),
-          0 0 0 5px rgba(255,255,255,0.06),
-          0 6px 24px rgba(0,0,0,0.42),
-          0 2px 8px rgba(0,0,0,0.28)
-          `
-          : `
-          0 4px 16px rgba(0,0,0,0.36),
-          0 1px 4px rgba(0,0,0,0.22)
-          `,
-      }}
+      aria-label={isPlaying ? 'Pause' : 'Play'}
+      className="relative w-10 h-10 rounded-full bg-white text-black flex items-center justify-center hover:scale-[1.06] active:scale-[0.92] transition-transform duration-200 ease-[var(--ease-spring)] cursor-pointer mx-1.5 shadow-[0_4px_14px_rgba(0,0,0,0.35)]"
     >
-      {isPlaying ? pauseBlack20 : playBlack20}
+      <span className={icon(isPlaying)}>{pauseBlack20}</span>
+      <span className={icon(!isPlaying)}>{playBlack20}</span>
     </button>
   );
 });
@@ -1109,8 +1096,8 @@ const TrackInfo = React.memo(({ onArtworkClick }: { onArtworkClick?: () => void 
 
   if (!currentTrack) {
     return (
-      <div className="flex items-center gap-3.5 w-[220px] md:w-[270px] xl:w-[320px] min-w-0 shrink">
-        <div className="w-14 h-14 rounded-[10px] bg-white/[0.03] ring-1 ring-white/[0.04] shrink-0" />
+      <div className="flex items-center gap-3.5 w-[260px] md:w-[320px] xl:w-[400px] min-w-0 shrink">
+        <div className="w-12 h-12 rounded-[10px] bg-white/[0.03] ring-1 ring-white/[0.04] shrink-0" />
         <p className="text-[12px] text-white/18 font-medium select-none truncate">
           Nothing playing
         </p>
@@ -1154,10 +1141,10 @@ const TrackInfoBody = React.memo(function TrackInfoBody({
         ? `/user/${encodeURIComponent(track.user.urn)}`
         : null;
   return (
-    <div className="flex items-center gap-3 w-[220px] md:w-[270px] xl:w-[320px] min-w-0 shrink relative">
+    <div className="flex items-center gap-3 w-[260px] md:w-[320px] xl:w-[400px] min-w-0 shrink relative">
       {editOpen && <EditTrackInfoDialog track={track} onClose={() => setEditOpen(false)} />}
       <div
-        className="glass-artwork relative w-14 h-14 rounded-[10px] shrink-0 cursor-pointer transition-all duration-300 ease-[var(--ease-spring)] group/art"
+        className="glass-artwork relative w-12 h-12 rounded-[10px] shrink-0 cursor-pointer transition-all duration-300 ease-[var(--ease-spring)] group/art"
         style={{
           ['--artwork-radius' as string]: '10px',
           boxShadow: glass
@@ -1180,7 +1167,12 @@ const TrackInfoBody = React.memo(function TrackInfoBody({
         onClick={handleArtworkClick}
       >
         {artworkSmall ? (
-          <img src={artworkSmall} alt="" className="w-full h-full object-cover" />
+          <img
+            key={track.urn}
+            src={artworkSmall}
+            alt=""
+            className="w-full h-full object-cover track-swap-in"
+          />
         ) : (
           <div className="w-full h-full bg-white/[0.04]" />
         )}
@@ -1199,7 +1191,7 @@ const TrackInfoBody = React.memo(function TrackInfoBody({
           </svg>
         </div>
       </div>
-      <div className="min-w-0 flex-1">
+      <div key={track.urn} className="min-w-0 flex-1 track-swap-in">
         <div className="flex items-center gap-1.5 min-w-0 group/title">
           <p
             className="text-[13px] text-white/90 truncate font-medium cursor-pointer hover:text-white leading-tight transition-colors"
@@ -1312,7 +1304,7 @@ export const NowPlayingBar = React.memo(
             <DownloadProgressPanel />
             <ProgressSlider />
 
-            <div className="h-[76px] flex items-center justify-between px-4 xl:px-5 gap-2 xl:gap-3 relative">
+            <div className="h-[62px] flex items-center justify-between px-4 xl:px-5 gap-2 xl:gap-3 relative">
               {/* Left: track info */}
               <TrackInfo onArtworkClick={openFs} />
 

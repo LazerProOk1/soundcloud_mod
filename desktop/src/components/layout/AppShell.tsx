@@ -416,7 +416,7 @@ export const AppShell = React.memo(() => {
         <main
           ref={mainRef}
           data-ui="main"
-          className="flex-1 overflow-y-auto overflow-x-hidden min-w-0"
+          className="flex-1 overflow-y-auto overflow-x-hidden min-w-0 m-2 rounded-xl bg-black/20"
         >
           <ScrollReset target={mainRef} />
           <div key={location.pathname} className="page-enter min-h-full">

@@ -46,6 +46,7 @@ import { useAuthStore } from '../stores/auth';
 import { useLyricsStore } from '../stores/lyrics';
 import { type Track, usePlayerStore } from '../stores/player';
 import { useSettingsStore } from '../stores/settings';
+import { matchesLanguages } from '../lib/track-language';
 
 /* ── Module-level wave session tracker ────────────────────────────
  * Persists across SoundWavePage unmount/remount (navigation away and back).
@@ -117,13 +118,19 @@ export function SoundWavePage() {
   const localRecs = useRecommendedTracks(relatedPool, 40);
 
   const backendWorking = rawClusters.length > 0 || rawAllTracks.length > 0;
-  const hideLikedFilter = useCallback((tr: Track) => !tr.user_favorite && !isUrnLiked(tr.urn), []);
+  // One filter for the initial pool and for tracks the infinite wave appends later.
+  // Language is checked client-side: the backend mostly ignores `languages`.
+  const waveFilter = useCallback(
+    (tr: Track) =>
+      (!hideLiked || (!tr.user_favorite && !isUrnLiked(tr.urn))) &&
+      matchesLanguages(tr, stableLanguages),
+    [hideLiked, stableLanguages],
+  );
 
   const allTracks = useMemo(() => {
     const base = backendWorking ? rawAllTracks : localRecs;
-    const filtered = hideLiked ? base.filter(hideLikedFilter) : base;
-    return tuneWaveTracks(filtered, waveVibe, waveMode);
-  }, [backendWorking, rawAllTracks, localRecs, hideLiked, hideLikedFilter, waveVibe, waveMode]);
+    return tuneWaveTracks(base.filter(waveFilter), waveVibe, waveMode);
+  }, [backendWorking, rawAllTracks, localRecs, waveFilter, waveVibe, waveMode]);
 
   const waveCluster = useMemo(
     () => rawClusters.find((c) => c.id === 'wave') ?? null,
@@ -140,7 +147,7 @@ export function SoundWavePage() {
     initialTracks: waveCluster?.tracks ?? [],
     initialCursor: null,
     languages: stableLanguages,
-    filterTrack: hideLiked ? hideLikedFilter : undefined,
+    filterTrack: waveFilter,
     onTracksAdded: onWaveTracksAdded,
   });
 
@@ -153,9 +160,8 @@ export function SoundWavePage() {
   }, [currentTrack]);
 
   const wavePreview = allTracks[0] ?? null;
-  const displayTrack = isWaveTrack
-    ? (currentTrack ?? wavePreview ?? null)
-    : (wavePreview ?? currentTrack ?? null);
+  // Show what is actually playing; the wave preview only when nothing plays.
+  const displayTrack = currentTrack ?? wavePreview ?? null;
 
   /* Upcoming tracks preview (from active wave queue or initial wave pool) */
   const upNextTracks = useMemo(() => {
