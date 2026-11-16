@@ -218,17 +218,17 @@ export function SoundWavePage() {
           items.push(it);
         }
       }
-      // Match on SoundCloud, 4 at a time.
       const found: Track[] = [];
       let next = 0;
       const worker = async () => {
-        while (next < items.length && found.length < 40) {
+        while (next < items.length && found.length < 30) {
           const it = items[next++];
           const tr = await matchOnSoundCloud(it);
           if (tr) found.push(tr);
         }
       };
-      await Promise.all([worker(), worker(), worker(), worker()]);
+      // Search is slow (seconds per query): 6 in parallel, stop at 30 hits.
+      await Promise.all(Array.from({ length: 6 }, worker));
       return found;
     },
   });

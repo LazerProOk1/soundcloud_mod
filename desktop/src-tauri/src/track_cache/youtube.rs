@@ -63,7 +63,13 @@ pub async fn ensure_ytdlp(dir: &Path, client: &Client) -> Result<PathBuf, String
 
 async fn run(bin: &Path, args: &[&str]) -> Result<String, String> {
     let mut cmd = Command::new(bin);
-    cmd.args(args).kill_on_drop(true);
+    // yt-dlp prints in the console code page on Windows (cp1251/cp866), which turned
+    // Cyrillic titles into garbage. Make it print UTF-8.
+    cmd.args(["--encoding", "utf-8"])
+        .args(args)
+        .env("PYTHONIOENCODING", "utf-8")
+        .env("PYTHONUTF8", "1")
+        .kill_on_drop(true);
     #[cfg(windows)]
     {
         const CREATE_NO_WINDOW: u32 = 0x0800_0000;
