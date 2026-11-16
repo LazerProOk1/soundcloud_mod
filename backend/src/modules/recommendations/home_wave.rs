@@ -105,40 +105,67 @@ impl RecommendationsService {
         let mut builder = ClusterBuilder::new();
         builder.reserve(exclude_vec.iter().cloned());
 
-        let (for_you_ids, for_you_features) = self
-            .build_for_you_cluster(
-                &taste_modes,
-                &exclude_vec,
-                languages,
-                anti_centroid.as_deref(),
-                &recent_artists,
-                per_cluster,
-            )
-            .await;
+        let for_you_fut = self.build_for_you_cluster(
+            &taste_modes,
+            &exclude_vec,
+            languages,
+            anti_centroid.as_deref(),
+            &recent_artists,
+            per_cluster,
+        );
+        let top_artists_fut =
+            self.load_top_artists_cluster(&sc_user_id, &exclude_set, NEIGHBORS_TOP_LIMIT);
+        let adjacent_fut =
+            self.load_adjacent_artists_cluster(&sc_user_id, &exclude_set, NEIGHBORS_ADJ_LIMIT);
+        let fresh_fut = self.load_fresh_drops(&sc_user_id, &exclude_set, FRESH_DROP_LIMIT);
+        let vibe_deep_fut = async {
+            match mixed_for_search.as_deref() {
+                Some(centroid) => {
+                    self.build_vibe_and_deep(
+                        centroid,
+                        &exclude_vec,
+                        languages,
+                        &exclude_set,
+                        per_cluster,
+                        anti_centroid.as_deref(),
+                        &recent_artists,
+                        overall_centroid.as_deref(),
+                    )
+                    .await
+                }
+                None => (Vec::new(), Vec::new()),
+            }
+        };
+
+        let (
+            (for_you_ids, for_you_features),
+            top_artists,
+            adjacent,
+            fresh,
+            (vibe_ids, deep_ids),
+        ) = tokio::join!(
+            for_you_fut,
+            top_artists_fut,
+            adjacent_fut,
+            fresh_fut,
+            vibe_deep_fut,
+        );
+
         for (id, feats) in for_you_features {
             builder.attach_features(id, feats);
         }
         builder.push("for_you", for_you_ids);
 
-        let top_artists = self
-            .load_top_artists_cluster(&sc_user_id, builder.taken(), NEIGHBORS_TOP_LIMIT)
-            .await;
         builder.push_with_neighbors(
             "top_artists",
             dedupe_neighbors(top_artists, builder.taken(), per_cluster),
         );
 
-        let adjacent = self
-            .load_adjacent_artists_cluster(&sc_user_id, builder.taken(), NEIGHBORS_ADJ_LIMIT)
-            .await;
         builder.push_with_neighbors(
             "adjacent",
             dedupe_neighbors(adjacent, builder.taken(), per_cluster),
         );
 
-        let fresh = self
-            .load_fresh_drops(&sc_user_id, builder.taken(), FRESH_DROP_LIMIT)
-            .await;
         builder.push(
             "fresh_drops",
             fresh.into_iter()
@@ -147,24 +174,22 @@ impl RecommendationsService {
                 .collect(),
         );
 
-        let (vibe_ids, deep_ids) = match mixed_for_search.as_deref() {
-            Some(centroid) => {
-                self.build_vibe_and_deep(
-                    centroid,
-                    &exclude_vec,
-                    languages,
-                    builder.taken(),
-                    per_cluster,
-                    anti_centroid.as_deref(),
-                    &recent_artists,
-                    overall_centroid.as_deref(),
-                )
-                .await
-            }
-            None => (Vec::new(), Vec::new()),
-        };
-        builder.push("same_vibe", vibe_ids);
-        builder.push("deep_cuts", deep_ids);
+        builder.push(
+            "same_vibe",
+            vibe_ids
+                .into_iter()
+                .filter(|id| !builder.taken().contains(id))
+                .take(per_cluster)
+                .collect(),
+        );
+        builder.push(
+            "deep_cuts",
+            deep_ids
+                .into_iter()
+                .filter(|id| !builder.taken().contains(id))
+                .take(per_cluster)
+                .collect(),
+        );
 
         self.apply_quality_filter(&mut builder).await;
 

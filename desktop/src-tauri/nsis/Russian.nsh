@@ -1,5 +1,5 @@
-; Russian localization for SoundCloud Desktop NSIS installer
-; Tauri picks this up automatically when languages: ["Russian"] is set
+; Russian localization for SoundCloud Mod NSIS installer
+; Tauri picks this up automatically when languages includes "Russian"
 
 LangString addOrReinstall              ${LANG_RUSSIAN} "Добавить/переустановить компоненты"
 LangString alreadyInstalled            ${LANG_RUSSIAN} "Уже установлено"

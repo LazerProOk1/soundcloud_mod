@@ -19,6 +19,21 @@ const btnCls =
 const inputCls =
   'flex-1 min-w-0 px-3 py-1.5 rounded-lg text-[13px] text-white/85 bg-white/[0.04] border border-white/[0.08] outline-none focus:border-[var(--color-accent)]';
 
+const LiquidGlassRow = React.memo(function LiquidGlassRow() {
+  const { t } = useTranslation();
+  const liquidGlass = useSettingsStore((s) => s.liquidGlass);
+  const setLiquidGlass = useSettingsStore((s) => s.setLiquidGlass);
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <div>
+        <p className="text-[13px] text-white/70 font-medium">{t('settings.liquidGlass')}</p>
+        <p className="text-[11px] text-white/30 mt-0.5">{t('settings.liquidGlassDesc')}</p>
+      </div>
+      <LiquidSwitch checked={liquidGlass} onChange={setLiquidGlass} />
+    </div>
+  );
+});
+
 const ScaleRow = React.memo(function ScaleRow() {
   const { t } = useTranslation();
   const uiScale = useSettingsStore((s) => s.uiScale);
@@ -178,6 +193,7 @@ export const InterfaceSection = React.memo(function InterfaceSection() {
       <h3 className="text-[15px] font-bold text-white/80 tracking-tight">
         {t('settings.interface')}
       </h3>
+      <LiquidGlassRow />
       <ScaleRow />
       <FontRow />
       <CssRow />

@@ -18,6 +18,7 @@ import {
   Settings,
 } from '../../lib/icons';
 import { useAuthStore } from '../../stores/auth';
+import { useCachedUrnsStore } from '../../stores/cached-urns';
 import { useSettingsStore } from '../../stores/settings';
 import { Avatar } from '../ui/Avatar';
 
@@ -38,6 +39,7 @@ const navItems = [
 export const Sidebar = React.memo(() => {
   const { t, i18n } = useTranslation();
   const user = useAuthStore((s) => s.user);
+  const cachedCount = useCachedUrnsStore((s) => s.urns.size);
   const { collapsed, pinnedPlaylists } = useSettingsStore(
     useShallow((s) => ({
       collapsed: s.sidebarCollapsed,
@@ -84,12 +86,23 @@ export const Sidebar = React.memo(() => {
           >
             {({ isActive }) => (
               <>
+                {isActive && !collapsed && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute left-1 top-1/2 -translate-y-1/2 w-[3px] h-4 rounded-full bg-accent shadow-[0_0_8px_var(--color-accent-glow)]"
+                  />
+                )}
                 <item.icon
                   size={18}
                   strokeWidth={2}
                   style={isActive ? { color: 'var(--color-accent)' } : undefined}
                 />
-                {!collapsed && t(item.label)}
+                {!collapsed && <span className="flex-1 truncate">{t(item.label)}</span>}
+                {!collapsed && item.to === '/offline' && cachedCount > 0 && (
+                  <span className="text-[10px] font-semibold tabular-nums px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300/90 border border-emerald-400/20">
+                    {cachedCount}
+                  </span>
+                )}
               </>
             )}
           </NavLink>
@@ -227,10 +240,13 @@ export const Sidebar = React.memo(() => {
             <Avatar src={user.avatar_url} alt={user.username} size={26} />
             {!collapsed && (
               <div className="min-w-0 flex-1">
-                <span className="text-[12px] text-white/60 truncate font-medium block">
+                <span className="text-[12px] text-white/75 truncate font-medium block">
                   {user.username}
                 </span>
-                <span className="text-[10px] text-white/25 truncate block">Profile</span>
+                <span className="text-[10px] text-purple-300/65 truncate flex items-center gap-1">
+                  <span className="inline-block w-1.5 h-1.5 rounded-full bg-purple-400 shadow-[0_0_6px_#a855f7]" />
+                  {t('user.starProfile', 'Star · Профиль')}
+                </span>
               </div>
             )}
           </NavLink>

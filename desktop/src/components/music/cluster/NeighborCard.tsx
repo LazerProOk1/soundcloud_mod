@@ -84,10 +84,8 @@ export const NeighborCard = React.memo(function NeighborCard({ neighbor, track, 
           }}
           className="absolute top-2.5 left-2.5 inline-flex items-center gap-1.5 max-w-[80%] pl-[3px] pr-2.5 h-7 rounded-full text-[10.5px] font-bold text-white cursor-pointer transition-all duration-300 hover:scale-105"
           style={{
-            background: 'rgba(0,0,0,0.55)',
+            background: 'rgba(14,14,18,0.74)',
             border: '0.5px solid color-mix(in srgb, var(--color-accent) 50%, transparent)',
-            backdropFilter: 'blur(14px) saturate(160%)',
-            WebkitBackdropFilter: 'blur(14px) saturate(160%)',
             boxShadow: '0 6px 16px rgba(0,0,0,0.4), 0 0 10px var(--color-accent-glow)',
           }}
         >

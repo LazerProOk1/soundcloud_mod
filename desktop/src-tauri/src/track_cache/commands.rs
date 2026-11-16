@@ -3,11 +3,14 @@ use tauri::State;
 use crate::track_cache::state::{LikeCacheEntry, TrackCacheEntry, TrackCacheState};
 
 #[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PreloadEntry {
     pub urn: String,
     pub url: Option<String>,
     pub urls: Option<Vec<String>>,
+    #[serde(default, alias = "storage_urls")]
     pub storage_urls: Option<Vec<String>>,
+    #[serde(default, alias = "session_id")]
     pub session_id: Option<String>,
 }
 
@@ -65,19 +68,19 @@ pub async fn track_preload(
         if state.is_cached(&entry.urn) {
             continue;
         }
-
-        let Some(permit) = state.try_acquire_preload_slot() else {
-            continue;
-        };
-
-        queued += 1;
-        let state = state.inner().clone();
-        let urn = entry.urn;
         let fallback_urls: Vec<String> = match (entry.urls, entry.url) {
             (Some(u), _) if !u.is_empty() => u,
             (_, Some(u)) => vec![u],
             _ => continue,
         };
+
+        let Some(permit) = state.try_acquire_preload_slot() else {
+            break;
+        };
+
+        queued += 1;
+        let state = state.inner().clone();
+        let urn = entry.urn;
         let storage_urls = entry.storage_urls.unwrap_or_default();
         let session_id = entry.session_id;
 
@@ -130,8 +133,23 @@ pub fn track_list_cached(state: State<'_, TrackCacheState>) -> Vec<String> {
 }
 
 #[tauri::command]
-pub fn track_enforce_cache_limit(limit_mb: u64, state: State<'_, TrackCacheState>) {
-    state.enforce_limit(limit_mb);
+pub fn track_remove_cached(urn: String, state: State<'_, TrackCacheState>) -> bool {
+    state.remove_cached(&urn)
+}
+
+#[tauri::command]
+pub fn track_mark_played(urn: String, state: State<'_, TrackCacheState>) {
+    state.mark_played(&urn);
+}
+
+#[tauri::command]
+pub fn track_enforce_cache_limit(
+    limit_mb: u64,
+    protected_urns: Option<Vec<String>>,
+    state: State<'_, TrackCacheState>,
+) {
+    let protected = protected_urns.unwrap_or_default();
+    state.enforce_limit(limit_mb, &protected);
 }
 
 #[tauri::command]
@@ -156,4 +174,22 @@ pub fn track_cache_likes_running(state: State<'_, TrackCacheState>) -> bool {
 #[tauri::command]
 pub fn track_cancel_cache_likes(state: State<'_, TrackCacheState>) {
     state.cancel_cache_likes();
+}
+
+#[cfg(test)]
+mod tests {
+    use super::PreloadEntry;
+
+    #[test]
+    fn preload_entry_accepts_camel_and_snake_case() {
+        let camel = r#"{"urn":"soundcloud:tracks:10","urls":["https://api"],"storageUrls":["https://s3"],"sessionId":"s1"}"#;
+        let p1: PreloadEntry = serde_json::from_str(camel).unwrap();
+        assert_eq!(p1.storage_urls.as_deref(), Some(&["https://s3".to_string()][..]));
+        assert_eq!(p1.session_id.as_deref(), Some("s1"));
+
+        let snake = r#"{"urn":"soundcloud:tracks:11","url":"https://api","storage_urls":["https://s3b"],"session_id":"s2"}"#;
+        let p2: PreloadEntry = serde_json::from_str(snake).unwrap();
+        assert_eq!(p2.storage_urls.as_deref(), Some(&["https://s3b".to_string()][..]));
+        assert_eq!(p2.session_id.as_deref(), Some("s2"));
+    }
 }

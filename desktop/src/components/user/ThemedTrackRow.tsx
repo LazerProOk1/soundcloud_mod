@@ -83,10 +83,8 @@ function ThemedTrackRowImpl({ track, index, queue, aura }: ThemedTrackRowProps) 
               <div
                 className="w-9 h-9 rounded-full flex items-center justify-center"
                 style={{
-                  background: lightAura ? auraRgba(aura, 0.8) : 'rgba(255,255,255,0.1)',
-                  border: `0.5px solid ${auraRgba(aura, 0.3)}`,
-                  backdropFilter: 'blur(16px)',
-                  WebkitBackdropFilter: 'blur(16px)',
+                  background: lightAura ? auraRgba(aura, 0.85) : 'rgba(20,20,26,0.75)',
+                  border: `0.5px solid ${auraRgba(aura, 0.35)}`,
                 }}
               >
                 {playIcon}

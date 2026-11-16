@@ -4,7 +4,7 @@ import { useSettingsStore } from '../stores/settings';
 import { ApiError, getSessionId } from './api-client';
 import { STORAGE_BASE, STREAMING_BASE, STREAMING_PREMIUM_BASE } from './constants';
 import { logHttpError, logHttpFailure, trackAsync } from './diagnostics';
-import { markHealthy, markUnhealthy } from './host-health';
+import { isHealthy, markHealthy, markUnhealthy } from './host-health';
 
 // ─── Types ──────────────────────────────────────────────────
 
@@ -15,7 +15,8 @@ export type ResolvedStreamingTrack = Partial<Track> & {
 // ─── Host resolution ────────────────────────────────────────
 
 function resolveStreamingBases(): string[] {
-  return [...new Set([STREAMING_PREMIUM_BASE, STREAMING_BASE])];
+  const unique = [...new Set([STREAMING_PREMIUM_BASE, STREAMING_BASE])];
+  return unique.sort((a, b) => Number(isHealthy(b)) - Number(isHealthy(a)));
 }
 
 // ─── Streaming JSON ─────────────────────────────────────────
@@ -28,7 +29,10 @@ async function streamingJson<T = unknown>(path: string): Promise<T> {
   for (const base of resolveStreamingBases()) {
     const url = `${base}${path}`;
     try {
-      const res = await trackAsync(`streaming:${label}`, fetch(url));
+      const res = await trackAsync(
+        `streaming:${label}`,
+        fetch(url, { signal: AbortSignal.timeout(10_000) }),
+      );
 
       if (!res.ok) {
         const body = await res.text();
@@ -87,14 +91,17 @@ export function streamFallbackUrls(
   const bases = resolveStreamingBases();
   const urls: string[] = [];
   const seen = new Set<string>();
+  const qualities = hq ? [true, false] : [false];
 
-  for (const base of bases) {
-    // premium endpoint first, then standard
-    for (const premium of [true, false]) {
-      const url = buildStreamUrl(base, trackUrn, premium, hq);
-      if (!seen.has(url)) {
-        seen.add(url);
-        urls.push(url);
+  for (const useHq of qualities) {
+    for (const base of bases) {
+      // premium endpoint first, then standard
+      for (const premium of [true, false]) {
+        const url = buildStreamUrl(base, trackUrn, premium, useHq);
+        if (!seen.has(url)) {
+          seen.add(url);
+          urls.push(url);
+        }
       }
     }
   }

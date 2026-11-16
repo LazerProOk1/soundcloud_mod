@@ -17,8 +17,8 @@ function GlassHeroPanelImpl({ hasStar, aura, className, children }: GlassHeroPan
       style={{
         background:
           'linear-gradient(165deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 50%, rgba(255,255,255,0.04) 100%)',
-        backdropFilter: 'blur(56px) saturate(190%)',
-        WebkitBackdropFilter: 'blur(56px) saturate(190%)',
+        backdropFilter: 'blur(28px) saturate(185%)',
+        WebkitBackdropFilter: 'blur(28px) saturate(185%)',
         boxShadow: hasStar
           ? `0 30px 80px rgba(0,0,0,0.42), 0 0 80px ${auraRgba(aura, 0.2)}, inset 0 1px 0 rgba(255,255,255,0.22), inset 1px 0 0 rgba(255,255,255,0.10), inset 0 -1px 0 rgba(0,0,0,0.5), inset 0 0 0 1px ${auraRgba(aura, 0.25)}`
           : 'inset 0 1px 0 rgba(255,255,255,0.18), inset 1px 0 0 rgba(255,255,255,0.09), inset 0 -1px 0 rgba(0,0,0,0.52), 0 30px 80px rgba(0,0,0,0.38)',

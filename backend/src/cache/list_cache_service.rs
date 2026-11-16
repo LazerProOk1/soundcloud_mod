@@ -249,6 +249,9 @@ impl ListCacheService {
 
         // re-read под локом — другой воркер мог уже добрать
         state = self.load(&redis_key).await;
+        if state.items.len() >= need || state.exhausted {
+            return Ok(slice_page(state, opts.page, opts.limit));
+        }
 
         let mut chunks = 0usize;
         while state.items.len() < need && !state.exhausted && chunks < MAX_CHUNKS_PER_REQUEST {
@@ -261,7 +264,12 @@ impl ListCacheService {
         }
 
         if chunks > 0 {
-            self.save(&redis_key, &state, opts.ttl_sec).await;
+            let ttl = if state.items.is_empty() {
+                opts.ttl_sec.min(30)
+            } else {
+                opts.ttl_sec
+            };
+            self.save(&redis_key, &state, ttl).await;
         }
 
         Ok(slice_page(state, opts.page, opts.limit))

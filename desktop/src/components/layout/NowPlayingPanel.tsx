@@ -118,7 +118,7 @@ export const NowPlayingPanel = React.memo(function NowPlayingPanel({
   return (
     <aside
       data-ui="now-playing"
-      className="liquid-panel-heavy shrink-0 w-[340px] h-full overflow-y-auto overflow-x-hidden scrollbar-hide"
+      className="liquid-panel-heavy animate-panel-slide-in hidden lg:block shrink-0 w-[290px] xl:w-[340px] h-full overflow-y-auto overflow-x-hidden scrollbar-hide"
       style={{ borderLeft: '1px solid rgba(255,255,255,0.055)', boxShadow: 'none' }}
     >
       <div className="p-4 space-y-4">
@@ -145,12 +145,16 @@ export const NowPlayingPanel = React.memo(function NowPlayingPanel({
         </div>
 
         <div
-          className="aspect-square rounded-2xl overflow-hidden bg-white/[0.04] shadow-[0_20px_50px_rgba(0,0,0,0.45)] ring-1 ring-white/[0.06] cursor-pointer"
+          className="group/cover aspect-square rounded-2xl overflow-hidden bg-white/[0.04] shadow-[0_20px_50px_rgba(0,0,0,0.45)] ring-1 ring-white/[0.06] cursor-pointer"
           onClick={() => navigate(`/track/${encodeURIComponent(track.urn)}`)}
           onContextMenu={(e) => openTrackMenu(e, track)}
         >
           {cover ? (
-            <img src={cover} alt="" className="w-full h-full object-cover" />
+            <img
+              src={cover}
+              alt=""
+              className="w-full h-full object-cover transition-transform duration-500 ease-[var(--ease-spring)] group-hover/cover:scale-[1.03]"
+            />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-white/20">
               <Music size={48} />
@@ -177,7 +181,7 @@ export const NowPlayingPanel = React.memo(function NowPlayingPanel({
             </button>
           </div>
           <div className="pt-1 shrink-0">
-            <LikeButton track={track} />
+            <LikeButton track={track} variant="always" title={t('track.likes')} />
           </div>
         </div>
 

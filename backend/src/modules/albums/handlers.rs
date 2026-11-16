@@ -63,7 +63,7 @@ async fn detail(
         return Err(AppError::not_found("album not found"));
     };
 
-    let artists: Vec<AlbumArtist> = sqlx::query_as(
+    let artists_fut = sqlx::query_as::<_, AlbumArtist>(
         "SELECT a.id, a.name, aa.role, a.avatar_url
          FROM album_artists aa
          JOIN artists a ON a.id = aa.artist_id
@@ -71,23 +71,23 @@ async fn detail(
          ORDER BY CASE aa.role WHEN 'primary' THEN 0 WHEN 'featured' THEN 1 ELSE 2 END, a.name",
     )
     .bind(id)
-    .fetch_all(&st.pg)
-    .await?;
+    .fetch_all(&st.pg);
 
-    let primary_artist = if let Some(pa_id) = primary_artist_id {
-        let row: Option<AlbumArtist> = sqlx::query_as(
-            "SELECT id, name, 'primary'::text AS role, avatar_url
-             FROM artists WHERE id = $1 AND merged_into IS NULL",
-        )
-        .bind(pa_id)
-        .fetch_optional(&st.pg)
-        .await?;
-        row
-    } else {
-        None
+    let primary_artist_fut = async {
+        if let Some(pa_id) = primary_artist_id {
+            sqlx::query_as::<_, AlbumArtist>(
+                "SELECT id, name, 'primary'::text AS role, avatar_url
+                 FROM artists WHERE id = $1 AND merged_into IS NULL",
+            )
+            .bind(pa_id)
+            .fetch_optional(&st.pg)
+            .await
+        } else {
+            Ok(None)
+        }
     };
 
-    let track_rows: Vec<(Option<sqlx::types::Json<Value>>, Option<i16>)> = sqlx::query_as(
+    let track_rows_fut = sqlx::query_as::<_, (Option<sqlx::types::Json<Value>>, Option<i16>)>(
         "SELECT it.raw_sc_data, at.position
          FROM album_tracks at
          JOIN indexed_tracks it ON it.id = at.indexed_track_id
@@ -95,30 +95,46 @@ async fn detail(
          ORDER BY COALESCE(at.position, 32767), it.created_at",
     )
     .bind(id)
-    .fetch_all(&st.pg)
-    .await?;
-    let mut tracks: Vec<Value> = Vec::with_capacity(track_rows.len());
+    .fetch_all(&st.pg);
+
+    let wanted_rows_fut = sqlx::query_as::<
+        _,
+        (
+            Uuid,
+            String,
+            Option<i32>,
+            Option<i16>,
+            Option<Uuid>,
+            Option<String>,
+            i16,
+        ),
+    >(
+        "SELECT wt.id, wt.title, wt.duration_ms, wt.release_year, wt.primary_artist_id, a.name, wta.position
+         FROM wanted_track_albums wta
+         JOIN wanted_tracks wt ON wt.id = wta.wanted_track_id
+         LEFT JOIN artists a ON a.id = wt.primary_artist_id
+         WHERE wta.album_id = $1
+           AND wt.indexed_track_id IS NULL
+           AND wt.status = 'wanted'
+         ORDER BY wta.position, wt.title",
+    )
+    .bind(id)
+    .fetch_all(&st.pg);
+
+    let (artists, primary_artist, track_rows, wanted_rows) = tokio::try_join!(
+        artists_fut,
+        primary_artist_fut,
+        track_rows_fut,
+        wanted_rows_fut,
+    )?;
+
+    let mut tracks: Vec<Value> = Vec::with_capacity(track_rows.len() + wanted_rows.len());
     for (raw, _pos) in track_rows {
         if let Some(j) = raw {
             tracks.push(j.0);
         }
     }
     enrich_dto::apply_to_tracks(&st.pg, &mut tracks).await?;
-
-    let wanted_rows: Vec<(Uuid, String, Option<i32>, Option<i16>, Option<Uuid>, Option<String>, i16)> =
-        sqlx::query_as(
-            "SELECT wt.id, wt.title, wt.duration_ms, wt.release_year, wt.primary_artist_id, a.name, wta.position
-             FROM wanted_track_albums wta
-             JOIN wanted_tracks wt ON wt.id = wta.wanted_track_id
-             LEFT JOIN artists a ON a.id = wt.primary_artist_id
-             WHERE wta.album_id = $1
-               AND wt.indexed_track_id IS NULL
-               AND wt.status = 'wanted'
-             ORDER BY wta.position, wt.title",
-        )
-        .bind(id)
-        .fetch_all(&st.pg)
-        .await?;
     for (wid, title, dur_ms, year, pa_id, artist_name, _pos) in wanted_rows {
         tracks.push(serde_json::json!({
             "urn": format!("wanted:tracks:{}", wid),

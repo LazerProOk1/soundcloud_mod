@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api';
-import { type Aura, DEFAULT_AURA } from '../../lib/aura';
+import { type Aura, artistAuraForId } from '../../lib/aura';
 import type { Track } from '../../stores/player';
 import type { ArtistAlbum, ArtistDetail, TracksSort } from './types';
 
@@ -48,7 +48,7 @@ export interface ArtistStar {
   aura: Aura;
 }
 
-// Star subscription feature removed — hasStar is always false.
-export function useArtistStar(_id: string | undefined): ArtistStar {
-  return { hasStar: false, aura: DEFAULT_AURA };
+// Star features & Aura field are unlocked free for all artist & album pages.
+export function useArtistStar(id: string | undefined): ArtistStar {
+  return { hasStar: Boolean(id), aura: artistAuraForId(id) };
 }

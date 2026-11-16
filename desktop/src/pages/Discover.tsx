@@ -1,14 +1,12 @@
 /**
- * Discover / Каталог — полноценная страница открытия музыки.
+ * Discover / Каталог — страница открытия новой музыки.
  *
  * Разделы:
  *  1. Рекомендованные треки (ИИ, на основе лайков)
  *  2. Открывай по жанрам (фильтр-пилюли + карточки)
  *  3. Новые релизы подписок (Following)
- *  4. Недавно прослушанные
- *  5. Понравившиеся треки
  */
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { TrackCard } from '../components/music/TrackCard';
@@ -22,8 +20,7 @@ import {
   useRecommendedTracks,
   useRelatedPool,
 } from '../lib/hooks';
-import { ChevronRight, Compass, Headphones, Heart, Music, Sparkles } from '../lib/icons';
-import { getRecentlyPlayed } from '../lib/offline-index';
+import { AudioLines, ChevronRight, Compass, Music, Sparkles } from '../lib/icons';
 import type { Track } from '../stores/player';
 
 /* ── Section Header ────────────────────────────────────────── */
@@ -91,7 +88,7 @@ const RecommendedShelf = React.memo(function RecommendedShelf({
     <section>
       <SectionHeader
         title={t('home.recommended', 'Recommended For You')}
-        icon={<Sparkles size={15} className="text-amber-400/70" />}
+        icon={<Sparkles size={15} className="text-amber-400/80" />}
       />
       <HorizontalScroll>
         {isLoading ? (
@@ -134,27 +131,40 @@ const GenreDiscover = React.memo(function GenreDiscover({ likedTracks }: { liked
     <section>
       <SectionHeader
         title={t('home.discover', 'Discover by Genre')}
-        icon={<Compass size={15} className="text-accent/80" />}
+        icon={<Compass size={15} className="text-accent/85" />}
       />
 
       {/* Genre pills */}
-      <div className="flex items-center gap-1.5 mb-4 flex-wrap">
+      <div className="flex items-center gap-2 mb-5 flex-wrap">
         {isLoading
           ? Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-7 w-20 rounded-full" />
+              <Skeleton key={i} className="h-8 w-20 rounded-full" />
             ))
-          : genres.map((g) => (
-              <button
-                key={g}
-                type="button"
-                onClick={() => setActiveGenre(g)}
-                className={`glass-pill px-4 py-1.5 text-[12px] font-medium capitalize ${
-                  selectedGenre === g ? 'text-white/92' : 'text-white/45 !bg-white/[0.04]'
-                }`}
-              >
-                {g}
-              </button>
-            ))}
+          : genres.map((g) => {
+              const active = selectedGenre === g;
+              return (
+                <button
+                  key={g}
+                  type="button"
+                  onClick={() => setActiveGenre(g)}
+                  className={`glass-pill px-4 py-1.5 text-[12px] font-medium capitalize cursor-pointer transition-all duration-200 ${
+                    active ? 'text-white' : 'text-white/50 hover:text-white/80'
+                  }`}
+                  style={
+                    active
+                      ? {
+                          background:
+                            'linear-gradient(135deg, var(--color-accent-glow), rgba(255,255,255,0.12))',
+                          borderColor: 'rgba(255,255,255,0.24)',
+                          boxShadow: '0 4px 16px var(--color-accent-glow)',
+                        }
+                      : undefined
+                  }
+                >
+                  {g}
+                </button>
+              );
+            })}
       </div>
 
       <HorizontalScroll>
@@ -189,7 +199,7 @@ const FollowingShelf = React.memo(function FollowingShelf() {
     <section>
       <SectionHeader
         title={t('home.freshReleases', 'Fresh Releases')}
-        icon={<Music size={15} className="text-white/50" />}
+        icon={<Music size={15} className="text-white/55" />}
       />
       <HorizontalScroll>
         {isLoading ? (
@@ -210,102 +220,49 @@ const FollowingShelf = React.memo(function FollowingShelf() {
   );
 });
 
-/* ── Recently played ───────────────────────────────────────── */
-
-const RecentlyPlayedShelf = React.memo(function RecentlyPlayedShelf() {
-  const { t } = useTranslation();
-  const [tracks, setTracks] = useState<Track[]>([]);
-
-  useEffect(() => {
-    getRecentlyPlayed()
-      .then(setTracks)
-      .catch(() => {});
-  }, []);
-
-  if (tracks.length === 0) return null;
-
-  return (
-    <section>
-      <SectionHeader
-        title={t('home.recentlyPlayed', 'Recently Played')}
-        icon={<Headphones size={15} className="text-white/50" />}
-      />
-      <HorizontalScroll>
-        {tracks.map((track, i) => (
-          <div
-            key={track.urn}
-            className="w-[180px] shrink-0 animate-liquid-reveal"
-            style={{ animationDelay: `${Math.min(i * 40, 480)}ms` }}
-          >
-            <TrackCard track={track} queue={tracks} />
-          </div>
-        ))}
-      </HorizontalScroll>
-    </section>
-  );
-});
-
-/* ── Liked tracks ──────────────────────────────────────────── */
-
-const LikedShelf = React.memo(function LikedShelf() {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-  const { tracks, isLoading } = useLikedTracks(60);
-  const display = useMemo(() => tracks.slice(0, 40), [tracks]);
-
-  if (!isLoading && display.length === 0) return null;
-
-  return (
-    <section>
-      <SectionHeader
-        title={t('library.likedTracks')}
-        icon={<Heart size={15} className="text-accent" />}
-        onSeeAll={() => navigate('/library')}
-      />
-      <HorizontalScroll>
-        {isLoading && display.length === 0 ? (
-          <ShelfSkeleton />
-        ) : (
-          display.map((track, i) => (
-            <div
-              key={track.urn}
-              className="w-[180px] shrink-0 animate-liquid-reveal"
-              style={{ animationDelay: `${Math.min(i * 30, 480)}ms` }}
-            >
-              <TrackCard track={track} queue={display} />
-            </div>
-          ))
-        )}
-      </HorizontalScroll>
-    </section>
-  );
-});
-
 /* ── Page hero header ──────────────────────────────────────── */
 
 function DiscoverHero() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+
   return (
     <section className="pt-1 pb-2 animate-fade-in-scale">
-      <div className="flex items-center gap-4">
-        <div
-          className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div
+            className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
+            style={{
+              background:
+                'linear-gradient(135deg, var(--color-accent-glow), rgba(99,102,241,0.18))',
+              border: '1px solid rgba(255,255,255,0.09)',
+              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.16), 0 4px 16px rgba(0,0,0,0.25)',
+            }}
+          >
+            <Compass size={22} style={{ color: 'var(--color-accent)' }} />
+          </div>
+          <div>
+            <h1 className="syne text-2xl text-white/92 leading-tight">{t('nav.discover')}</h1>
+            <p className="text-[12px] text-white/40 mt-0.5">
+              {t('discover.subtitle', 'Explore music tailored to your taste')}
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => navigate('/soundwave')}
+          className="glass-pill px-4 py-2 text-[12px] font-semibold text-white/85 hover:text-white inline-flex items-center gap-2 cursor-pointer"
           style={{
-            background: 'linear-gradient(135deg, var(--color-accent-glow), rgba(99,102,241,0.15))',
-            border: '1px solid rgba(255,255,255,0.07)',
-            boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.14), 0 4px 16px rgba(0,0,0,0.25)',
+            background: 'linear-gradient(135deg, var(--color-accent-glow), rgba(255,255,255,0.06))',
+            borderColor: 'rgba(255,255,255,0.15)',
           }}
         >
-          <Compass size={22} style={{ color: 'var(--color-accent)' }} />
-        </div>
-        <div>
-          <h1 className="syne text-2xl text-white/92 leading-tight">{t('nav.discover')}</h1>
-          <p className="text-[12px] text-white/35 mt-0.5">
-            {t('discover.subtitle', 'Explore music tailored to your taste')}
-          </p>
-        </div>
+          <AudioLines size={14} style={{ color: 'var(--color-accent)' }} />
+          {t('nav.soundwave')}
+        </button>
       </div>
-      <div className="mt-4 h-px bg-gradient-to-r from-white/[0.07] via-white/[0.03] to-transparent" />
+      <div className="mt-4 h-px bg-gradient-to-r from-white/[0.08] via-white/[0.03] to-transparent" />
     </section>
   );
 }
@@ -323,8 +280,6 @@ export function Discover() {
       <RecommendedShelf likedTracks={likedTracks} />
       <GenreDiscover likedTracks={likedTracks} />
       <FollowingShelf />
-      <RecentlyPlayedShelf />
-      <LikedShelf />
     </div>
   );
 }

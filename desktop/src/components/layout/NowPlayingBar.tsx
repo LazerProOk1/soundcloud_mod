@@ -109,7 +109,7 @@ const DownloadProgressPanel = React.memo(() => {
     <div className="pointer-events-none absolute left-1/2 top-0 z-30 -translate-x-1/2 -translate-y-[calc(100%+8px)]">
       <div
         className="flex min-w-[148px] items-center gap-2.5 rounded-full border border-white/[0.08] bg-white/[0.045] px-3 py-2 shadow-[0_10px_34px_rgba(0,0,0,0.32),inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-[22px]"
-        style={{ contain: 'strict', transform: 'translateZ(0)' }}
+        style={{ contain: 'layout paint', transform: 'translateZ(0)' }}
       >
         <div className="relative h-1.5 w-20 overflow-hidden rounded-full bg-white/[0.09]">
           <div className="absolute inset-0 rounded-full bg-[linear-gradient(180deg,rgba(255,255,255,0.08),rgba(255,255,255,0.02))]" />
@@ -178,6 +178,7 @@ export const ProgressSlider = React.memo(() => {
 
   // Reset slider state on track change so Radix doesn't render stale position.
   const currentUrn = usePlayerStore((s) => s.currentTrack?.urn);
+  const isBuffering = usePlayerStore((s) => s.isBuffering);
   const prevUrnRef = useRef<string | undefined>(undefined);
   useEffect(() => {
     if (currentUrn !== prevUrnRef.current) {
@@ -247,7 +248,13 @@ export const ProgressSlider = React.memo(() => {
       onValueChange={onValueChange}
       onValueCommit={onValueCommit}
     >
-      <Slider.Track className="relative h-[3px] grow rounded-full bg-white/[0.08] group-hover:h-[5px] transition-all duration-150">
+      <Slider.Track className="relative h-[3px] grow overflow-hidden rounded-full bg-white/[0.08] group-hover:h-[5px] transition-all duration-150">
+        {isBuffering && (
+          <div
+            aria-hidden="true"
+            className="skeleton-shimmer pointer-events-none absolute inset-0 rounded-full opacity-80"
+          />
+        )}
         <Slider.Range
           ref={rangeRef}
           className="absolute h-full rounded-full bg-accent will-change-transform"
@@ -337,7 +344,7 @@ export const VolumeLabel = React.memo(() => {
   const volume = usePlayerStore((s) => s.volume);
   return (
     <span
-      className={`text-[10px] tabular-nums w-[34px] text-right shrink-0 ${volume > 100 ? 'text-amber-400/70' : 'text-white/30'}`}
+      className={`hidden xl:inline-block text-[10px] tabular-nums w-[34px] text-right shrink-0 ${volume > 100 ? 'text-amber-400/70' : 'text-white/30'}`}
     >
       {volume}%
     </span>
@@ -385,7 +392,7 @@ const PlaybackQualityBadge = React.memo(() => {
   const isHq = playbackQuality === 'hq';
 
   return (
-    <div className="flex shrink-0 items-center gap-1.5">
+    <div className="hidden md:flex shrink-0 items-center gap-1.5">
       <span
         className={`inline-flex h-6 shrink-0 items-center rounded-md border px-2 text-[9px] font-semibold tracking-[0.14em] ${
           isHq
@@ -396,7 +403,7 @@ const PlaybackQualityBadge = React.memo(() => {
         {isHq ? t('player.qualityHQ') : t('player.qualitySQ')}
       </span>
       {playbackSource === 'storage' && (
-        <span className="inline-flex h-6 shrink-0 items-center gap-1.5 rounded-md border border-[#b7ffd8]/[0.16] bg-[#b7ffd8]/[0.07] px-2 text-[8px] font-medium tracking-[0.12em] text-[#dff7e9]/82">
+        <span className="hidden xl:inline-flex h-6 shrink-0 items-center gap-1.5 rounded-md border border-[#b7ffd8]/[0.16] bg-[#b7ffd8]/[0.07] px-2 text-[8px] font-medium tracking-[0.12em] text-[#dff7e9]/82">
           <span className="h-1.5 w-1.5 rounded-full bg-[#b7ffd8] shadow-[0_0_8px_rgba(183,255,216,0.55)]" />
           {t('player.qualityCDN')}
         </span>
@@ -826,12 +833,17 @@ const SleepTimerBtn = React.memo(() => {
         <button
           type="button"
           title={t('player.sleepTimer')}
-          className={`relative ${btnClass(isActive, 'sm')}`}
+          className={
+            isActive
+              ? 'relative h-8 px-2 rounded-full flex items-center gap-1 text-accent bg-accent/15 border border-accent/25 transition-all duration-150 ease-[var(--ease-apple)] cursor-pointer hover:bg-accent/20 active:scale-[0.97] shrink-0'
+              : `relative shrink-0 ${btnClass(false, 'sm')}`
+          }
         >
-          <Moon size={16} />
-          {/* small dot indicator when active */}
+          <Moon size={15} />
           {isActive && (
-            <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_6px_var(--color-accent-glow)]" />
+            <span className="text-[10px] font-semibold tabular-nums leading-none">
+              {afterTrack ? '1x' : fmtCountdown(remaining ?? 0)}
+            </span>
           )}
         </button>
       </Popover.Trigger>
@@ -1097,9 +1109,11 @@ const TrackInfo = React.memo(({ onArtworkClick }: { onArtworkClick?: () => void 
 
   if (!currentTrack) {
     return (
-      <div className="flex items-center gap-3.5 w-[340px] min-w-0">
+      <div className="flex items-center gap-3.5 w-[220px] md:w-[270px] xl:w-[320px] min-w-0 shrink">
         <div className="w-14 h-14 rounded-[10px] bg-white/[0.03] ring-1 ring-white/[0.04] shrink-0" />
-        <p className="text-[12px] text-white/18 font-medium select-none">Nothing playing</p>
+        <p className="text-[12px] text-white/18 font-medium select-none truncate">
+          Nothing playing
+        </p>
       </div>
     );
   }
@@ -1140,7 +1154,7 @@ const TrackInfoBody = React.memo(function TrackInfoBody({
         ? `/user/${encodeURIComponent(track.user.urn)}`
         : null;
   return (
-    <div className="flex items-center gap-3.5 w-[340px] min-w-0 relative">
+    <div className="flex items-center gap-3 w-[220px] md:w-[270px] xl:w-[320px] min-w-0 shrink relative">
       {editOpen && <EditTrackInfoDialog track={track} onClose={() => setEditOpen(false)} />}
       <div
         className="glass-artwork relative w-14 h-14 rounded-[10px] shrink-0 cursor-pointer transition-all duration-300 ease-[var(--ease-spring)] group/art"
@@ -1248,7 +1262,7 @@ const BackgroundGlow = React.memo(() => {
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           opacity: 0.07,
-          filter: 'blur(60px)',
+          filter: 'blur(28px)',
           contain: 'strict',
           transform: 'translateZ(0)',
           transition: 'background-image 1.2s ease-out',
@@ -1290,18 +1304,20 @@ export const NowPlayingBar = React.memo(
           className="liquid-panel-heavy shrink-0 relative z-[50]"
           style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}
         >
-          <BackgroundGlow />
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <BackgroundGlow />
+          </div>
           {/* Isolated layer — repaints here won't cascade to blur background */}
           <div className="relative" style={{ isolation: 'isolate' }}>
             <DownloadProgressPanel />
             <ProgressSlider />
 
-            <div className="h-[76px] flex items-center px-5 gap-3 relative">
+            <div className="h-[76px] flex items-center justify-between px-4 xl:px-5 gap-2 xl:gap-3 relative">
               {/* Left: track info */}
               <TrackInfo onArtworkClick={openFs} />
 
               {/* Center: controls */}
-              <div className="flex-1 flex flex-col items-center gap-0.5">
+              <div className="flex flex-col items-center gap-0.5 shrink-0">
                 <div className="flex items-center gap-0.5">
                   <ShuffleBtn />
                   <PrevBtn />
@@ -1313,7 +1329,7 @@ export const NowPlayingBar = React.memo(
               </div>
 
               {/* Right: volume + queue */}
-              <div className="flex items-center gap-0.5 w-[280px] justify-end">
+              <div className="flex items-center justify-end gap-0.5 flex-1 max-w-[360px] min-w-0">
                 <SleepTimerBtn />
                 <TuningBtn />
                 <EqBtn />
@@ -1321,7 +1337,7 @@ export const NowPlayingBar = React.memo(
                 <QueueBtn onClick={onQueueToggle} active={queueOpen} />
                 <NowPlayingPanelButton className={(active) => btnClass(active, 'sm')} />
                 <ControlVolumeBtn size="sm" />
-                <VolumeSlider className="w-[100px]" />
+                <VolumeSlider className="w-[60px] md:w-[76px] xl:w-[92px] shrink-0" />
                 <VolumeLabel />
               </div>
             </div>

@@ -8,10 +8,8 @@ dist/
 .DS_Store
 Thumbs.db
 .flatpak-builder
-# Claude / AI assistant files
+# Claude / AI assistant scratch files
 .claude/
-CLAUDE.md
-AGENTS.md
 docs/agent-*.md
 
 # Tauri build output

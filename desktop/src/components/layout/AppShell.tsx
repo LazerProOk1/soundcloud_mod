@@ -15,6 +15,7 @@ import { useSettingsStore } from '../../stores/settings';
 import { DynamicBackgroundConnected } from '../DynamicBackground/DynamicBackground';
 import { TrackContextMenu } from '../music/track-menu/TrackContextMenu';
 import { AmbientMeshBackground } from '../ui/AmbientMeshBackground';
+import { CommandPalette } from './CommandPalette';
 import { NowPlayingBar } from './NowPlayingBar';
 import { NowPlayingPanel } from './NowPlayingPanel';
 import { ScrollReset } from './ScrollReset';
@@ -49,7 +50,12 @@ const keybindings: Keybinding[] = [
   { key: 'ArrowDown', label: 'kb.volumeDown', group: 'playback', display: '↓' },
   { key: 'm', label: 'kb.mute', group: 'playback', display: 'M' },
   { key: '/', label: 'kb.search', group: 'navigation', display: '/' },
-  { key: 'Ctrl+K', label: 'kb.search', group: 'navigation', display: isMac() ? '⌘ K' : 'Ctrl K' },
+  {
+    key: 'Ctrl+K',
+    label: 'kb.commandPalette',
+    group: 'navigation',
+    display: isMac() ? '⌘ K' : 'Ctrl K',
+  },
   { key: 'q', label: 'kb.queue', group: 'panels', display: 'Q' },
   { key: 'l', label: 'kb.lyrics', group: 'panels', display: 'L' },
   { key: '[', label: 'kb.sidebar', group: 'panels', display: '[' },
@@ -164,7 +170,7 @@ const CustomBackground = React.memo(() => {
   const blurInset = Math.max(24, bgBlur * 2);
   const blurScale = 1 + bgBlur / 160;
   return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+    <div className="absolute inset-0 z-[1] pointer-events-none overflow-hidden">
       <div
         className="absolute transition-[filter,transform] duration-500 ease-out"
         style={{
@@ -198,38 +204,21 @@ const CustomBackground = React.memo(() => {
 
 const AmbientGlow = React.memo(() => {
   const artwork = usePlayerStore((s) => art(s.currentTrack?.artwork_url, 't500x500'));
+  // DynamicBackground paints artwork colour blobs whenever artwork is active;
+  // only render the fallback edge vignette when idle to avoid stacking blurs.
+  if (artwork) {
+    return null;
+  }
   return (
-    <>
-      {/* ── Dynamic album-art bleed — single layer, lower blur (was 2 × blur>60px) */}
-      {artwork && (
-        <div
-          aria-hidden="true"
-          className="absolute bottom-0 left-0 right-0 h-[500px] pointer-events-none"
-          style={{
-            backgroundImage: `url(${artwork})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center bottom',
-            opacity: 0.12,
-            /* blur(80px) gives nice fog; was blur(120px) — 33% cheaper kernel */
-            filter: 'blur(80px) saturate(1.8)',
-            contain: 'strict',
-            transform: 'translateZ(0)',
-            transition: 'background-image 2s ease-out',
-          }}
-        />
-      )}
-
-      {/* ── Vignette — darkens edges so glass panels pop */}
-      <div
-        aria-hidden="true"
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            'radial-gradient(ellipse 100% 100% at 50% 50%, transparent 40%, rgba(0,0,0,0.55) 100%)',
-          contain: 'strict',
-        }}
-      />
-    </>
+    <div
+      aria-hidden="true"
+      className="absolute inset-0 z-[3] pointer-events-none"
+      style={{
+        background:
+          'radial-gradient(ellipse 100% 100% at 50% 50%, transparent 40%, rgba(0,0,0,0.48) 100%)',
+        contain: 'strict',
+      }}
+    />
   );
 });
 
@@ -253,6 +242,7 @@ export const AppShell = React.memo(() => {
 
   const [queueOpen, setQueueOpen] = useState(false);
   const [kbOpen, setKbOpen] = useState(false);
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const lyricsOpen = useLyricsStore((s) => s.open);
   const volumeHoldRef = useRef<{ key: string | null; repeatCount: number; lastAt: number }>({
     key: null,
@@ -269,9 +259,17 @@ export const AppShell = React.memo(() => {
   const navigateRef = useRef(navigate);
   const queueOpenRef = useRef(queueOpen);
   const kbOpenRef = useRef(kbOpen);
+  const commandPaletteOpenRef = useRef(commandPaletteOpen);
   navigateRef.current = navigate;
   queueOpenRef.current = queueOpen;
   kbOpenRef.current = kbOpen;
+  commandPaletteOpenRef.current = commandPaletteOpen;
+
+  useEffect(() => {
+    const openPalette = () => setCommandPaletteOpen(true);
+    window.addEventListener('sc:open-command-palette', openPalette);
+    return () => window.removeEventListener('sc:open-command-palette', openPalette);
+  }, []);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -286,10 +284,10 @@ export const AppShell = React.memo(() => {
         return;
       }
 
-      // Ctrl+K — focus search (always, even in input)
+      // Ctrl+K — toggle Command Palette (always, even in input)
       if (code === 'KeyK' && (e.ctrlKey || e.metaKey)) {
         e.preventDefault();
-        navigateRef.current('/search');
+        setCommandPaletteOpen((v) => !v);
         return;
       }
 
@@ -369,6 +367,10 @@ export const AppShell = React.memo(() => {
           useSettingsStore.getState().toggleSidebar();
           break;
         case 'Escape':
+          if (commandPaletteOpenRef.current) {
+            setCommandPaletteOpen(false);
+            break;
+          }
           if (kbOpenRef.current) {
             setKbOpen(false);
             break;
@@ -396,8 +398,11 @@ export const AppShell = React.memo(() => {
   }, []);
 
   return (
-    <div className="flex flex-col h-screen relative overflow-hidden">
-      {/* Living mesh gradient — bottom of the visual stack (z-index: -50).
+    <div
+      className="flex flex-col h-screen relative overflow-hidden"
+      style={{ isolation: 'isolate' }}
+    >
+      {/* Living mesh gradient — bottom of the visual stack (z-index: 0 inside isolated root).
           Glass panels refract this light; without it they look like dark slabs. */}
       <AmbientMeshBackground />
       <CustomBackground />
@@ -414,7 +419,9 @@ export const AppShell = React.memo(() => {
           className="flex-1 overflow-y-auto overflow-x-hidden min-w-0"
         >
           <ScrollReset target={mainRef} />
-          <StableOutlet />
+          <div key={location.pathname} className="page-enter min-h-full">
+            <StableOutlet />
+          </div>
         </main>
         {nowPlayingPanel && !isOnSoundwave && <NowPlayingPanel onOpenQueue={onQueueOpen} />}
       </div>
@@ -430,6 +437,11 @@ export const AppShell = React.memo(() => {
         </Suspense>
       )}
       <KeybindingsDialog open={kbOpen} onOpenChange={setKbOpen} />
+      <CommandPalette
+        open={commandPaletteOpen}
+        onOpenChange={setCommandPaletteOpen}
+        onOpenQueue={onQueueOpen}
+      />
     </div>
   );
 });

@@ -6,8 +6,10 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { useShallow } from 'zustand/shallow';
+import { useArtworkColor } from '../../hooks/useArtworkColor';
 import { api } from '../../lib/api';
 import { getCurrentTime, handlePrev, seek } from '../../lib/audio';
+import { FFT_BIN_COUNT, readAccentRgb, subscribeAudioFft } from '../../lib/audio-fft';
 import { toggleDislike, useDislikeStatus } from '../../lib/dislikes';
 import { ago, art, durLong } from '../../lib/formatters';
 import {
@@ -85,55 +87,6 @@ function buildDisplayLines(lines: LyricLine[]): DisplayLine[] {
   return lines as DisplayLine[];
 }
 
-/* ── Color extraction ──────────────────────────────────────── */
-
-function extractColor(src: string): Promise<[number, number, number]> {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      try {
-        const c = document.createElement('canvas');
-        c.width = 10;
-        c.height = 10;
-        const ctx = c.getContext('2d')!;
-        ctx.drawImage(img, 0, 0, 10, 10);
-        const d = ctx.getImageData(0, 0, 10, 10).data;
-        let r = 0,
-          g = 0,
-          b = 0;
-        const n = d.length / 4;
-        for (let i = 0; i < d.length; i += 4) {
-          r += d[i];
-          g += d[i + 1];
-          b += d[i + 2];
-        }
-        resolve([Math.round(r / n), Math.round(g / n), Math.round(b / n)]);
-      } catch {
-        resolve([255, 85, 0]);
-      }
-    };
-    img.onerror = () => resolve([255, 85, 0]);
-    img.src = src;
-  });
-}
-
-function useArtworkColor(artworkUrl: string | null) {
-  const colorRef = useRef<[number, number, number]>([255, 85, 0]);
-  const prevArtRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    const src = art(artworkUrl, 't200x200');
-    if (!src || src === prevArtRef.current) return;
-    prevArtRef.current = src;
-    extractColor(src).then((c) => {
-      colorRef.current = c;
-    });
-  }, [artworkUrl]);
-
-  return colorRef;
-}
-
 /* ── Shared: dynamic background ───────────────────────────── */
 
 const FullscreenBackground = React.memo(
@@ -149,7 +102,7 @@ const FullscreenBackground = React.memo(
             <img
               src={artworkSrc}
               alt=""
-              className="w-full h-full object-cover scale-[1.2] blur-[72px] opacity-30 saturate-[1.2]"
+              className="w-full h-full object-cover scale-[1.14] blur-[32px] opacity-30 saturate-[1.25]"
               loading="eager"
               decoding="async"
             />
@@ -1404,30 +1357,7 @@ const LyricsPane = React.memo(({ track }: { track: Track }) => {
  * We never poll: the canvas redraws ONLY when a new frame arrives + a short
  * decay tail (~250ms) so play→pause fades smoothly. No rAF when idle. */
 
-const VIS_BINS = 64;
-
-function readAccentRgb(): [number, number, number] {
-  if (typeof window === 'undefined') return [255, 85, 0];
-  const raw = getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim();
-  if (raw.startsWith('#')) {
-    const hex = raw.slice(1);
-    const v =
-      hex.length === 3
-        ? hex
-            .split('')
-            .map((c) => c + c)
-            .join('')
-        : hex;
-    return [
-      Number.parseInt(v.slice(0, 2), 16),
-      Number.parseInt(v.slice(2, 4), 16),
-      Number.parseInt(v.slice(4, 6), 16),
-    ];
-  }
-  const m = raw.match(/(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
-  if (m) return [+m[1], +m[2], +m[3]];
-  return [255, 85, 0];
-}
+const VIS_BINS = FFT_BIN_COUNT;
 
 const FullscreenVisualizer = React.memo(() => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -1606,11 +1536,8 @@ const FullscreenVisualizer = React.memo(() => {
       }
     };
 
-    // Rust only captures samples / runs FFT while a visualizer is mounted.
-    invoke('audio_set_analyser', { enabled: true }).catch(() => {});
-    const unlistenPromise = listen<number[]>('audio:fft', (event) => {
-      const bins = event.payload;
-      if (!bins || bins.length === 0) return;
+    // Shared ref-counted bridge enables Rust FFT analyser only while mounted.
+    const unsubscribeFft = subscribeAudioFft((bins) => {
       const target = targetRef.current;
       const n = Math.min(target.length, bins.length);
       for (let i = 0; i < n; i++) target[i] = bins[i];
@@ -1620,10 +1547,9 @@ const FullscreenVisualizer = React.memo(() => {
     });
 
     return () => {
-      invoke('audio_set_analyser', { enabled: false }).catch(() => {});
+      unsubscribeFft();
       if (rafId) cancelAnimationFrame(rafId);
       ro.disconnect();
-      unlistenPromise.then((u) => u());
     };
   }, []);
 
@@ -1662,7 +1588,9 @@ export const LyricsPanel = React.memo(() => {
   const setSplitRatio = useLyricsStore((s) => s.setSplitRatio);
   const track = usePlayerStore((s) => s.currentTrack);
   const { t } = useTranslation();
-  const colorRef = useArtworkColor(track?.artwork_url ?? null);
+  const artwork200 = art(track?.artwork_url, 't200x200');
+  const artworkColors = useArtworkColor(artwork200);
+  const dominantColor: [number, number, number] = artworkColors?.dominant ?? [255, 85, 0];
   const splitLayoutRef = useRef<HTMLDivElement>(null);
   const visualizerEnabled = useSettingsStore((s) => s.lyricsVisualizer);
 
@@ -1682,7 +1610,7 @@ export const LyricsPanel = React.memo(() => {
 
   return (
     <div className="fixed inset-0 z-[60] flex flex-col overflow-hidden animate-fade-in-up bg-[#08080a]">
-      <FullscreenBackground artworkSrc={artwork500} color={colorRef.current} />
+      <FullscreenBackground artworkSrc={artwork500} color={dominantColor} />
       {visualizerEnabled && <FullscreenVisualizer />}
 
       <div

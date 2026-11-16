@@ -50,19 +50,16 @@ const RelatedCard = memo(
       <button
         type="button"
         onClick={() => navigate(`/artist/${encodeURIComponent(item.id)}`)}
-        className="group relative flex flex-col items-center gap-3 p-5 rounded-3xl cursor-pointer transition-all duration-500 overflow-hidden hover:scale-[1.03]"
+        className="group relative flex flex-col items-center gap-3 p-5 rounded-3xl cursor-pointer transition-all duration-300 overflow-hidden hover:scale-[1.03]"
         style={{
-          background: 'rgba(255,255,255,0.03)',
-          border: '0.5px solid rgba(255,255,255,0.06)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
+          background: 'rgba(255,255,255,0.035)',
+          border: '0.5px solid rgba(255,255,255,0.07)',
         }}
       >
         <div
-          className="absolute -inset-x-12 -top-20 h-44 pointer-events-none opacity-50 group-hover:opacity-90 transition-opacity duration-700"
+          className="absolute -inset-x-10 -top-16 h-44 pointer-events-none opacity-45 group-hover:opacity-85 transition-opacity duration-500"
           style={{
-            background: `radial-gradient(60% 60% at 50% 50%, ${auraRgba(aura, 0.4)}, transparent 70%)`,
-            filter: 'blur(40px)',
+            background: `radial-gradient(60% 60% at 50% 50%, ${auraRgba(aura, 0.36)} 0%, transparent 72%)`,
           }}
         />
         <div

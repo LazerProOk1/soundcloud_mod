@@ -6,19 +6,23 @@
  * 2) Pre-rendered JSX constants — referentially stable, zero cost on re-render.
  */
 import {
+  Activity as _Activity,
   AlertCircle as _AlertCircle,
   ArrowDownToLine as _ArrowDownToLine,
   ArrowUpToLine as _ArrowUpToLine,
   AudioLines as _AudioLines,
   Calendar as _Calendar,
   Check as _Check,
+  CheckCircle2 as _CheckCircle2,
   ChevronDown as _ChevronDown,
   ChevronLeft as _ChevronLeft,
   ChevronRight as _ChevronRight,
   ChevronUp as _ChevronUp,
   ClipboardCopy as _ClipboardCopy,
   Clock as _Clock,
+  Command as _Command,
   Compass as _Compass,
+  CornerDownLeft as _CornerDownLeft,
   Disc3 as _Disc3,
   Download as _Download,
   Ellipsis as _Ellipsis,
@@ -31,6 +35,7 @@ import {
   Headphones as _Headphones,
   Heart as _Heart,
   Home as _Home,
+  Info as _Info,
   Library as _Library,
   Link as _Link,
   Link2 as _Link2,
@@ -47,6 +52,7 @@ import {
   Minus as _Minus,
   Moon as _Moon,
   Music as _Music,
+  Palette as _Palette,
   PanelLeftClose as _PanelLeftClose,
   PanelLeftOpen as _PanelLeftOpen,
   PanelRight as _PanelRight,
@@ -75,12 +81,15 @@ import {
   Star as _Star,
   ThumbsDown as _ThumbsDown,
   Trash2 as _Trash2,
+  Upload as _Upload,
   User as _User,
   Users as _Users,
   Volume1 as _Volume1,
   Volume2 as _Volume2,
   VolumeX as _VolumeX,
+  Wifi as _Wifi,
   X as _X,
+  Zap as _Zap,
 } from 'lucide-react';
 import { memo } from 'react';
 import { siInstagram, siX, siYoutube } from 'simple-icons';
@@ -103,11 +112,16 @@ const SimpleIcon = memo(
 );
 
 // ── Memo-wrapped icon components ────────────────────────────
+export const Activity = memo(_Activity);
 export const AlertCircle = memo(_AlertCircle);
 export const Calendar = memo(_Calendar);
 export const Check = memo(_Check);
+export const CheckCircle2 = memo(_CheckCircle2);
 export const ClipboardCopy = memo(_ClipboardCopy);
+export const Command = memo(_Command);
+export const CornerDownLeft = memo(_CornerDownLeft);
 export const Download = memo(_Download);
+export const Upload = memo(_Upload);
 export const ChevronDown = memo(_ChevronDown);
 export const ChevronLeft = memo(_ChevronLeft);
 export const ChevronRight = memo(_ChevronRight);
@@ -124,6 +138,7 @@ export const Hash = memo(_Hash);
 export const Headphones = memo(_Headphones);
 export const Heart = memo(_Heart);
 export const Home = memo(_Home);
+export const Info = memo(_Info);
 export const Instagram = memo(({ size, className }: { size?: number; className?: string }) => (
   <SimpleIcon icon={siInstagram} size={size} className={className} />
 ));
@@ -146,6 +161,7 @@ export const Moon = memo(_Moon);
 export const MessageCircle = memo(_MessageCircle);
 export const Minus = memo(_Minus);
 export const Music = memo(_Music);
+export const Palette = memo(_Palette);
 export const PanelLeftClose = memo(_PanelLeftClose);
 export const PanelLeftOpen = memo(_PanelLeftOpen);
 export const Pencil = memo(_Pencil);
@@ -178,7 +194,9 @@ export const Users = memo(_Users);
 export const Volume1 = memo(_Volume1);
 export const Volume2 = memo(_Volume2);
 export const VolumeX = memo(_VolumeX);
+export const Wifi = memo(_Wifi);
 export const X = memo(_X);
+export const Zap = memo(_Zap);
 export const Link = memo(_Link2);
 export const SlidersHorizontal = memo(_SlidersHorizontal);
 export const AudioLines = memo(_AudioLines);

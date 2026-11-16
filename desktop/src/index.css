@@ -53,12 +53,12 @@
   --ease-bounce: cubic-bezier(0.34, 1.4, 0.64, 1);
 
   /* ── Liquid Glass v2 physics tokens ─────────────────────── */
-  /* Blur core — contrast + saturate make background "soak" into the glass */
-  --liquid-blur: 40px;
-  --liquid-blur-heavy: 60px;
+  /* Blur core calibrated per Apple HIG / GPU perf guardrails (20–30px) */
+  --liquid-blur: 24px;
+  --liquid-blur-heavy: 28px;
   --liquid-saturate: 185%;
-  --liquid-contrast: 110%;
-  --liquid-brightness: 95%;
+  --liquid-contrast: 104%;
+  --liquid-brightness: 104%;
 
   /* ── Border-radius scale ───────────────────────────────── */
   --radius-panel: 40px; /* major panels, dialogs                 */
@@ -98,37 +98,52 @@ img {
 
 /* ── Typography micro-tricks (Manrope variable font) ────────
    Large headings: tight tracking → feels premium, dense.
-   Small labels/captions: airy tracking → easier to read at 10-12px. */
+   Small labels/captions: airy tracking → easier to read at 10-12px.
+   Wrapped in @layer base so Tailwind utility classes (font-bold, etc.) win. */
 
-h1,
-h2 {
-  font-weight: 700;
-  letter-spacing: -0.03em;
+@layer base {
+  h1,
+  h2 {
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  h3,
+  h4 {
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+
+  p,
+  span,
+  li {
+    font-weight: 400;
+  }
 }
 
-h3,
-h4 {
+/* Section headings */
+.section-title {
+  font-size: 15px;
   font-weight: 600;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.015em;
+  color: rgba(255, 255, 255, 0.88);
 }
 
-/* Track title (large, ~14-15px) — tight */
+/* Track title (large, ~13-15px) — tight */
 .track-title {
-  font-weight: 600;
-  letter-spacing: -0.02em;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 /* Artist name / caption (small, 10-12px) — airy */
 .track-artist,
 .track-caption {
+  font-size: 11px;
   font-weight: 400;
   letter-spacing: 0.01em;
-}
-
-/* Section headings */
-.section-title {
-  font-weight: 700;
-  letter-spacing: -0.025em;
+  color: rgba(255, 255, 255, 0.45);
 }
 
 /* Page animations */
@@ -168,28 +183,8 @@ body,
 }
 
 /* ── Mini-player ──────────────────────────────────────────────── */
-body.mini #root::after {
-  display: none;
-}
-
-/**
- * Глобальный grain-оверлей — имитирует физическую текстуру стекла.
- * SVG-шум (feTurbulence, fractalNoise) поверх всего UI.
- * mix-blend-mode: overlay × 3.5% = едва видимо, но добавляет "материальность".
- * pointer-events: none — не перехватывает клики.
- */
-#root::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  z-index: 99998;
-  pointer-events: none;
-  background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.88' numOctaves='4' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='200' height='200' filter='url(%23n)'/></svg>");
-  background-size: 180px 180px;
-  background-repeat: repeat;
-  opacity: 0.038;
-  mix-blend-mode: overlay;
-}
+/* Note: removed full-screen mix-blend-mode: overlay SVG feTurbulence overlay
+   on #root::after — avoids full-viewport compositor blend pass every frame. */
 
 /* ── Scrollbar ─────────────────────────────────────────────── */
 ::-webkit-scrollbar {
@@ -213,9 +208,10 @@ body.mini #root::after {
 
 /* ── Glass ──────────────────────────────────────────────────── */
 .glass {
-  background: rgba(255, 255, 255, 0.025);
-  backdrop-filter: blur(40px) saturate(1.8);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.035);
+  backdrop-filter: blur(20px) saturate(180%) brightness(1.04);
+  -webkit-backdrop-filter: blur(20px) saturate(180%) brightness(1.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .glass-hover:hover {
@@ -389,9 +385,9 @@ body.mini #root::after {
   position: relative;
   isolation: isolate;
   border-radius: var(--radius-panel, 40px);
-  background: rgba(10, 10, 14, 0.28);
-  backdrop-filter: blur(36px) saturate(185%);
-  -webkit-backdrop-filter: blur(36px) saturate(185%);
+  background: rgba(10, 10, 14, 0.32);
+  backdrop-filter: blur(26px) saturate(185%) brightness(1.04);
+  -webkit-backdrop-filter: blur(26px) saturate(185%) brightness(1.04);
   box-shadow:
     0 1px 0 0 rgba(255, 255, 255, 0.22) inset,
     0 3px 8px -2px rgba(255, 255, 255, 0.05) inset,
@@ -405,18 +401,8 @@ body.mini #root::after {
   transition: background 0.38s var(--ease-spring);
 }
 
-.glass-featured::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.88' numOctaves='4' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='200' height='200' filter='url(%23n)'/></svg>");
-  background-size: 180px 180px;
-  background-repeat: repeat;
-  opacity: 0.04;
-  mix-blend-mode: overlay;
-}
+/* Note: global glass grain is provided once by #root::after so nested/scrollable
+   panels never stack multiple feTurbulence overlays or clip mid-scroll. */
 
 /* Dynamic cursor spotlight for glass-featured panels (same as .liquid-panel::after) */
 .glass-featured::after {
@@ -455,9 +441,9 @@ body.mini #root::after {
 /* ── Generic glass card ───────────────────────────────────── */
 .glass-card {
   position: relative;
-  background: rgba(10, 10, 14, 0.36);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  background: rgba(10, 10, 14, 0.4);
+  backdrop-filter: blur(20px) saturate(180%) brightness(1.04);
+  -webkit-backdrop-filter: blur(20px) saturate(180%) brightness(1.04);
   border-radius: var(--radius-card, 40px);
   /* Differential inset — top/left bright, bottom/right dark (thickness illusion) */
   box-shadow:
@@ -615,10 +601,10 @@ body.mini #root::after {
   position: relative;
   isolation: isolate;
   border-radius: var(--radius-panel, 40px);
-  background: rgba(10, 10, 14, 0.36);
-  /* 40px blur + heavy saturate — background "soaks" into the glass and becomes rich */
-  backdrop-filter: blur(40px) saturate(185%);
-  -webkit-backdrop-filter: blur(40px) saturate(185%);
+  background: rgba(10, 10, 14, 0.38);
+  /* Calibrated 24px blur + saturate + brightness — rich glass at high FPS */
+  backdrop-filter: blur(24px) saturate(185%) brightness(1.04);
+  -webkit-backdrop-filter: blur(24px) saturate(185%) brightness(1.04);
   /* ── Inset differential borders (glass thickness illusion) ─── */
   /* top: яркий глянцевый блик — primary specular hit */
   box-shadow:
@@ -644,20 +630,6 @@ body.mini #root::after {
     0 0 90px rgba(255, 255, 255, 0.014);
 }
 
-/* Grain texture layer — органический шум поверхности стекла */
-.liquid-panel::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.88' numOctaves='4' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='200' height='200' filter='url(%23n)'/></svg>");
-  background-size: 180px 180px;
-  background-repeat: repeat;
-  opacity: 0.04;
-  mix-blend-mode: overlay;
-}
-
 /**
  * .liquid-panel-heavy
  *
@@ -669,10 +641,10 @@ body.mini #root::after {
 .liquid-panel-heavy {
   position: relative;
   isolation: isolate;
-  background: rgba(6, 6, 9, 0.55);
-  /* Heavy chrome (sidebar, player bar): dense blur + rich saturation */
-  backdrop-filter: blur(44px) saturate(190%);
-  -webkit-backdrop-filter: blur(44px) saturate(190%);
+  background: rgba(6, 6, 9, 0.6);
+  /* Heavy chrome (sidebar, player bar): calibrated 28px blur + rich saturation */
+  backdrop-filter: blur(28px) saturate(185%);
+  -webkit-backdrop-filter: blur(28px) saturate(185%);
   /* Differential inset — same physics as .liquid-panel, stronger contrast */
   box-shadow:
     0 1px 0 0 rgba(255, 255, 255, 0.26) inset,
@@ -683,20 +655,6 @@ body.mini #root::after {
     /* Outer: subtle ambient rim diffusion */
     0 0 0 0.5px rgba(255, 255, 255, 0.06),
     0 0 60px rgba(255, 255, 255, 0.01);
-}
-
-/* Grain texture для heavy panels */
-.liquid-panel-heavy::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  background-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.88' numOctaves='4' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='200' height='200' filter='url(%23n)'/></svg>");
-  background-size: 180px 180px;
-  background-repeat: repeat;
-  opacity: 0.032;
-  mix-blend-mode: overlay;
 }
 
 /**
@@ -1299,10 +1257,6 @@ body.mini #root::after {
     0 4px 16px rgba(0, 0, 0, 0.14);
 }
 
-/* ── AmbientMeshBackground blob animations ───────────────────
-   ONLY transform (translate + scale) — compositor thread, no pixel cost.
-   Each blob has a unique trajectory so they never perfectly align.        */
-
 /* ── Mini-player marquee ─────────────────────────────────────── */
 @keyframes marquee {
   0% {
@@ -1319,48 +1273,6 @@ body.mini #root::after {
   /* pause on hover so the user can read the title */
 }
 
-/* ── Global typography system ────────────────────────────────────
-   Unified font-weight scale so nothing looks randomly bold/thin.
-   h1-h2: semibold. h3-h4: medium. body/p: regular (400).          */
-h1,
-h2 {
-  font-weight: 600;
-  letter-spacing: -0.02em;
-}
-h3,
-h4 {
-  font-weight: 500;
-  letter-spacing: -0.01em;
-}
-p,
-span,
-li {
-  font-weight: 400;
-}
-
-/* Section titles: semibold (15px) */
-.section-title {
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: -0.015em;
-  color: rgba(255, 255, 255, 0.88);
-}
-
-/* Track title: medium (13px) */
-.track-title {
-  font-size: 13px;
-  font-weight: 500;
-  letter-spacing: -0.01em;
-  color: rgba(255, 255, 255, 0.9);
-}
-
-/* Artist name / secondary text: regular (11px) */
-.track-artist {
-  font-size: 11px;
-  font-weight: 400;
-  color: rgba(255, 255, 255, 0.4);
-}
-
 /* ── Liquid MiniPlayer — floating pill ───────────────────────────
    Used by the redesigned Tauri mini-window (MiniPlayer.tsx).      */
 .miniplayer-root {
@@ -1372,8 +1284,8 @@ li {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   background: rgba(8, 8, 12, 0.92);
-  backdrop-filter: blur(50px) saturate(220%);
-  -webkit-backdrop-filter: blur(50px) saturate(220%);
+  backdrop-filter: blur(28px) saturate(185%);
+  -webkit-backdrop-filter: blur(28px) saturate(185%);
   display: flex;
   flex-direction: column;
 }
@@ -1384,7 +1296,7 @@ li {
 }
 
 /* ── Animated playing bars (3 equaliser bars) ───────────────────
-   Used in TrackCard overlay when a track is playing.
+   Used in TrackCard overlay and QueuePanel when a track is playing.
    scaleY loop only — GPU compositor, zero layout cost.            */
 
 @keyframes eq-bar {
@@ -1409,11 +1321,35 @@ li {
   animation-delay: 0.36s;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .eq-bar {
-    animation: none !important;
-    transform: scaleY(0.6);
+/* ── Titlebar spinning disc + panel slide-in ─────────────────── */
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
   }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 9s linear infinite;
+  will-change: transform;
+}
+
+@keyframes panel-slide-in {
+  from {
+    opacity: 0;
+    transform: translate3d(20px, 0, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.animate-panel-slide-in {
+  animation: panel-slide-in 0.32s var(--ease-apple) both;
+  will-change: transform, opacity;
 }
 
 /* ── DynamicBackground blob animations ──────────────────────────
@@ -1421,11 +1357,95 @@ li {
    ONLY translate (compositor thread). blur() stays static so its
    GPU texture cache is never invalidated — essentially free.
    prefers-reduced-motion: collapse to no movement.               */
+@keyframes db-drift-1 {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(4vw, 3vh, 0) scale(1.06);
+  }
+}
 
-/* ── SoundWave Panel — rotating light rays ───────────────────────
-   A conic-gradient disc that rotates slowly behind the panel,
-   creating Яндекс Музыка-style spotlight streaks.
-   Pure transform: rotate — compositor-only, zero layout.          */
+@keyframes db-drift-2 {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(-4vw, -3vh, 0) scale(1.08);
+  }
+}
+
+@keyframes db-drift-3 {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  33% {
+    transform: translate3d(-3vw, 2.5vh, 0) scale(1.05);
+  }
+  66% {
+    transform: translate3d(3vw, -2vh, 0) scale(0.96);
+  }
+}
+
+.dynamic-bg-blob {
+  border-radius: 50%;
+  will-change: transform;
+}
+
+.dynamic-bg-blob-1 {
+  animation: db-drift-1 26s ease-in-out infinite;
+}
+
+.dynamic-bg-blob-2 {
+  animation: db-drift-2 32s ease-in-out infinite;
+}
+
+.dynamic-bg-blob-3 {
+  animation: db-drift-3 29s ease-in-out infinite;
+}
+
+/* ── Tactile Like spring pop ───────────────────────────────── */
+@keyframes like-pop {
+  0% {
+    transform: scale(0.76);
+  }
+  45% {
+    transform: scale(1.26);
+  }
+  75% {
+    transform: scale(0.94);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-like-pop {
+  animation: like-pop 0.36s cubic-bezier(0.22, 1.4, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eq-bar {
+    animation: none !important;
+    transform: scaleY(0.6);
+  }
+  .animate-like-pop,
+  .animate-spin-slow,
+  .animate-panel-slide-in,
+  .animate-fade-in-up,
+  .animate-fade-in-scale,
+  .animate-zoom-in,
+  .page-enter,
+  .animate-marquee,
+  .dynamic-bg-blob-1,
+  .dynamic-bg-blob-2,
+  .dynamic-bg-blob-3 {
+    animation: none !important;
+  }
+}
 
 /* ══════════════════════════════════════════════════════════════
    NO-GLASS MODE — html.no-glass
@@ -1505,11 +1525,30 @@ li {
 }
 
 /* 6. Grain textures — hidden, no visual purpose without blur ─── */
-.no-glass .liquid-panel::before,
-.no-glass .liquid-panel-heavy::before,
-.no-glass .glass-featured::before,
 .no-glass .glass-card::before {
   display: none;
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  *,
+  *::before,
+  *::after {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  .liquid-panel,
+  .liquid-panel-heavy,
+  .glass-card,
+  .glass-featured,
+  .miniplayer-root {
+    background: rgba(14, 14, 18, 0.98) !important;
+  }
+}
+
+.no-glass .dynamic-bg-blob-1,
+.no-glass .dynamic-bg-blob-2,
+.no-glass .dynamic-bg-blob-3 {
+  animation: none !important;
 }
 
 /* 7. Cursor spotlight (::after) — meaningless without blur ───── */
@@ -1539,7 +1578,8 @@ li {
 svg.lucide {
   color: rgb(
     from currentColor calc(r * alpha + 10 * (1 - alpha)) calc(g * alpha + 10 * (1 - alpha))
-      calc(b * alpha + 13 * (1 - alpha)) / 1
+      calc(b * alpha + 13 * (1 - alpha)) /
+    1
   );
 }
 
@@ -1551,7 +1591,16 @@ svg.lucide {
     opacity 0.16s cubic-bezier(0.16, 1, 0.3, 1),
     transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
-.track-menu[data-state='open'] {
+.track-menu[data-state="open"] {
   opacity: 1;
   transform: scale(1);
+}
+
+/* ── Keyboard accessibility focus ring (never triggers on mouse) ── */
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible,
+[role="slider"]:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--color-accent) 75%, white);
+  outline-offset: 2px;
 }

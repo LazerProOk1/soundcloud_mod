@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, Globe, Instagram, LinkIcon, Twitter, Youtube } from '../../lib/icons';
+import { Check, Globe, Instagram, LinkIcon, Sparkles, Twitter, Youtube } from '../../lib/icons';
 
 export const VerifiedBadge = React.memo(function VerifiedBadge({ title }: { title: string }) {
   return (
@@ -9,6 +9,31 @@ export const VerifiedBadge = React.memo(function VerifiedBadge({ title }: { titl
     >
       <Check size={13} className="text-white" strokeWidth={3.5} />
     </div>
+  );
+});
+
+export const StarChip = React.memo(function StarChip({
+  label = 'Star',
+  accentColor,
+}: {
+  label?: string;
+  accentColor?: string;
+}) {
+  const glow = accentColor ?? '#a855f7';
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.18em] text-white/95"
+      style={{
+        background: `linear-gradient(135deg, ${glow}33, rgba(255,255,255,0.08))`,
+        border: `0.5px solid ${glow}66`,
+        boxShadow: `0 0 14px ${glow}33, inset 0 1px 0 rgba(255,255,255,0.2)`,
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+      }}
+    >
+      <Sparkles size={11} style={{ color: glow }} />
+      {label}
+    </span>
   );
 });
 

@@ -4,11 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import { preloadTrack } from '../../lib/audio';
 import { art, dur, fc } from '../../lib/formatters';
 import { useLiquidGlass } from '../../lib/hooks';
-import { ListMusic, ListPlus, playIcon32 } from '../../lib/icons';
+import { CheckCircle2, ListMusic, ListPlus, playIcon32 } from '../../lib/icons';
 import { recordClusterFeedback, setUrnCluster, useClusterFeedback } from '../../lib/recsFeedback';
 import { useArtistDisplay, useDisplayTitle } from '../../lib/track-display';
 import { openTrackMenu } from '../../lib/useTrackContextMenu';
 import { useTrackPlay } from '../../lib/useTrackPlay';
+import { useCachedUrnsStore } from '../../stores/cached-urns';
 import type { Track } from '../../stores/player';
 import { usePlayerStore } from '../../stores/player';
 import { AddToPlaylistDialog } from './AddToPlaylistDialog';
@@ -39,6 +40,7 @@ export const TrackCard = React.memo(
     const artistDisplay = useArtistDisplay(track);
     const displayTitle = useDisplayTitle(track);
     const isWanted = artistDisplay.availability !== 'indexed';
+    const isCachedOffline = useCachedUrnsStore((s) => s.urns.has(track.urn));
     const glass = useLiquidGlass();
 
     const artistTarget =
@@ -77,11 +79,10 @@ export const TrackCard = React.memo(
         ref={cardRef}
         className="group relative select-none"
         style={{
+          isolation: 'isolate',
           transition: 'transform 0.45s cubic-bezier(0.16,1,0.3,1)',
           contentVisibility: 'auto',
-          /* contain:'style' only — 'layout' and 'paint' clip scaled children and ambient shadows */
           containIntrinsicSize: '180px 260px',
-          willChange: 'transform',
           /* Extra padding so scale(1.02) + glow can breathe without clipping by parent */
           padding: 4,
           margin: -4,
@@ -156,7 +157,7 @@ export const TrackCard = React.memo(
                 'linear-gradient(160deg, rgba(255,255,255,0.06) 0%, rgba(0,0,0,0.50) 100%)',
             }}
           >
-            {/* Play/pause — true Liquid Glass: semi-transparent frosted sphere */}
+            {/* Play/pause — translucent glass sphere without per-card backdrop-filter */}
             <div
               className={`flex items-center justify-center transition-all duration-400 ease-[var(--ease-spring)] ${
                 isThisPlaying ? 'scale-100' : 'scale-[0.7] group-hover:scale-100'
@@ -165,19 +166,13 @@ export const TrackCard = React.memo(
                 width: 54,
                 height: 54,
                 borderRadius: '50%',
-                background: glass ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.92)',
-                ...(glass
-                  ? {
-                      backdropFilter: 'blur(20px) saturate(180%)',
-                      WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-                    }
-                  : {}),
+                background: glass ? 'rgba(24,24,30,0.68)' : 'rgba(255,255,255,0.92)',
                 boxShadow: glass
                   ? `
-                  0 1px 0 0 rgba(255,255,255,0.70) inset,
-                  0 3px 8px -1px rgba(255,255,255,0.22) inset,
+                  0 1px 0 0 rgba(255,255,255,0.55) inset,
+                  0 3px 8px -1px rgba(255,255,255,0.18) inset,
                   0 -1px 0 0 rgba(0,0,0,0.30) inset,
-                  1px 0 0 0 rgba(255,255,255,0.45) inset,
+                  1px 0 0 0 rgba(255,255,255,0.35) inset,
                   -1px 0 0 0 rgba(0,0,0,0.12) inset,
                   0 0 0 1px rgba(255,255,255,0.22),
                   0 0 0 6px rgba(255,255,255,0.06),
@@ -205,15 +200,30 @@ export const TrackCard = React.memo(
                 >
                   <div
                     className="eq-bar"
-                    style={{ width: 4, height: '100%', borderRadius: 2, background: 'white' }}
+                    style={{
+                      width: 4,
+                      height: '100%',
+                      borderRadius: 2,
+                      background: 'currentColor',
+                    }}
                   />
                   <div
                     className="eq-bar"
-                    style={{ width: 4, height: '100%', borderRadius: 2, background: 'white' }}
+                    style={{
+                      width: 4,
+                      height: '100%',
+                      borderRadius: 2,
+                      background: 'currentColor',
+                    }}
                   />
                   <div
                     className="eq-bar"
-                    style={{ width: 4, height: '100%', borderRadius: 2, background: 'white' }}
+                    style={{
+                      width: 4,
+                      height: '100%',
+                      borderRadius: 2,
+                      background: 'currentColor',
+                    }}
                   />
                 </div>
               ) : (
@@ -221,7 +231,7 @@ export const TrackCard = React.memo(
                   width="20"
                   height="20"
                   viewBox="0 0 24 24"
-                  fill="white"
+                  fill="currentColor"
                   style={{ pointerEvents: 'none', marginLeft: 2 }}
                 >
                   <path d="M8 5v14l11-7z" />
@@ -230,21 +240,38 @@ export const TrackCard = React.memo(
             </div>
           </div>
 
-          {/* Go+ badge for blocked tracks */}
-          {track.access === 'blocked' && (
-            <div
-              className="absolute top-2 left-2 flex items-center gap-1 rounded-full px-2 py-0.5"
-              style={{
-                background: glass ? 'rgba(0,0,0,0.5)' : 'rgba(20,20,24,0.88)',
-                ...(glass ? { backdropFilter: 'blur(12px) saturate(1.8)' } : {}),
-                boxShadow: glass
-                  ? '0 1px 0 0 rgba(255,255,255,0.12) inset'
-                  : '0 0 0 1px rgba(255,255,255,0.10)',
-              }}
-            >
-              <span className="text-[9px] font-bold text-amber-400 uppercase tracking-wide">
-                Go+
-              </span>
+          {/* Bottom-left badges: Go+ and/or Offline cached */}
+          {(track.access === 'blocked' || isCachedOffline) && (
+            <div className="absolute bottom-2 left-2 flex items-center gap-1.5 z-[3]">
+              {track.access === 'blocked' && (
+                <div
+                  className="flex items-center gap-1 rounded-full px-2 py-0.5"
+                  style={{
+                    background: glass ? 'rgba(10,10,14,0.72)' : 'rgba(20,20,24,0.88)',
+                    boxShadow: glass
+                      ? '0 1px 0 0 rgba(255,255,255,0.12) inset'
+                      : '0 0 0 1px rgba(255,255,255,0.10)',
+                  }}
+                >
+                  <span className="text-[9px] font-bold text-amber-400 uppercase tracking-wide">
+                    Go+
+                  </span>
+                </div>
+              )}
+              {isCachedOffline && (
+                <div
+                  title={t('offline.cachedBadge')}
+                  className="flex items-center gap-1 rounded-full px-1.5 py-0.5 text-emerald-300/95"
+                  style={{
+                    background: glass ? 'rgba(6, 28, 20, 0.78)' : 'rgba(14, 34, 24, 0.92)',
+                    boxShadow: glass
+                      ? '0 1px 0 0 rgba(110, 231, 183, 0.25) inset, 0 0 0 0.5px rgba(52, 211, 153, 0.28)'
+                      : '0 0 0 1px rgba(52, 211, 153, 0.25)',
+                  }}
+                >
+                  <CheckCircle2 size={10} />
+                </div>
+              )}
             </div>
           )}
 
@@ -253,8 +280,7 @@ export const TrackCard = React.memo(
             <div
               className="text-[10px] font-medium text-white/85 px-2 py-0.5 rounded-full"
               style={{
-                background: glass ? 'rgba(0,0,0,0.45)' : 'rgba(18,18,22,0.85)',
-                ...(glass ? { backdropFilter: 'blur(12px)' } : {}),
+                background: glass ? 'rgba(10,10,14,0.72)' : 'rgba(18,18,22,0.85)',
                 boxShadow: glass
                   ? '0 1px 0 0 rgba(255,255,255,0.10) inset'
                   : '0 0 0 1px rgba(255,255,255,0.08)',
@@ -267,7 +293,7 @@ export const TrackCard = React.memo(
           {/* Like — top left (existing component) */}
           <LikeButton track={track} variant="overlay" />
 
-          {/* Playlist + queue — top right (liquid glass pills, not dark blobs) */}
+          {/* Playlist + queue — top right */}
           <div className="absolute top-2 right-2 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-all duration-200 translate-y-1 group-hover:translate-y-0">
             <AddToPlaylistDialog trackUrns={[track.urn]}>
               <button
@@ -276,10 +302,9 @@ export const TrackCard = React.memo(
                 className="cursor-pointer w-8 h-8 rounded-full flex items-center justify-center text-white transition-all duration-200 hover:scale-110 active:scale-95"
                 title={t('playlist.addToPlaylist')}
                 style={{
-                  background: glass ? 'rgba(255,255,255,0.16)' : 'rgba(30,30,36,0.92)',
-                  ...(glass ? { backdropFilter: 'blur(16px) saturate(1.8)' } : {}),
+                  background: glass ? 'rgba(20,20,26,0.72)' : 'rgba(30,30,36,0.92)',
                   boxShadow: glass
-                    ? '0 1px 0 0 rgba(255,255,255,0.35) inset, 0 -1px 0 0 rgba(0,0,0,0.22) inset, 0 2px 10px rgba(0,0,0,0.32)'
+                    ? '0 1px 0 0 rgba(255,255,255,0.32) inset, 0 -1px 0 0 rgba(0,0,0,0.22) inset, 0 2px 10px rgba(0,0,0,0.32)'
                     : '0 0 0 1px rgba(255,255,255,0.12), 0 2px 8px rgba(0,0,0,0.28)',
                 }}
               >
@@ -292,10 +317,9 @@ export const TrackCard = React.memo(
               className="cursor-pointer w-8 h-8 rounded-full flex items-center justify-center text-white transition-all duration-200 hover:scale-110 active:scale-95"
               title={t('player.addToQueue')}
               style={{
-                background: glass ? 'rgba(255,255,255,0.16)' : 'rgba(30,30,36,0.92)',
-                ...(glass ? { backdropFilter: 'blur(16px) saturate(1.8)' } : {}),
+                background: glass ? 'rgba(20,20,26,0.72)' : 'rgba(30,30,36,0.92)',
                 boxShadow: glass
-                  ? '0 1px 0 0 rgba(255,255,255,0.35) inset, 0 -1px 0 0 rgba(0,0,0,0.22) inset, 0 2px 10px rgba(0,0,0,0.32)'
+                  ? '0 1px 0 0 rgba(255,255,255,0.32) inset, 0 -1px 0 0 rgba(0,0,0,0.22) inset, 0 2px 10px rgba(0,0,0,0.32)'
                   : '0 0 0 1px rgba(255,255,255,0.12), 0 2px 8px rgba(0,0,0,0.28)',
               }}
             >
@@ -304,15 +328,15 @@ export const TrackCard = React.memo(
           </div>
         </div>
 
-        {/* ── Ambient glow from artwork ─────────────────────────── */}
+        {/* ── Subtle hover depth shadow (zero per-card blur pass) ── */}
         {artwork && (
           <div
             aria-hidden="true"
-            className="absolute inset-0 -z-10 rounded-[32px] opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
+            className="absolute top-2 left-2 right-2 aspect-square -z-10 rounded-[32px] opacity-0 group-hover:opacity-60 transition-opacity duration-500 pointer-events-none"
             style={{
-              background: `url(${artwork}) center/cover`,
-              filter: 'blur(28px) saturate(1.4)',
-              transform: 'scale(0.9) translateY(8px)',
+              background:
+                'radial-gradient(ellipse at center, rgba(255,255,255,0.08) 0%, rgba(0,0,0,0.45) 70%, transparent 100%)',
+              transform: 'translateY(8px)',
             }}
           />
         )}
@@ -355,6 +379,10 @@ export const TrackCard = React.memo(
   },
   (prev, next) =>
     prev.track.urn === next.track.urn &&
+    prev.track.title === next.track.title &&
+    prev.track.artwork_url === next.track.artwork_url &&
+    prev.track.duration === next.track.duration &&
+    prev.track.access === next.track.access &&
     prev.track.user_favorite === next.track.user_favorite &&
     prev.track.enrichment?.primary_artist?.name === next.track.enrichment?.primary_artist?.name &&
     prev.track.enrichment?.upload_kind === next.track.enrichment?.upload_kind &&

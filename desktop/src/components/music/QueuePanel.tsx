@@ -4,10 +4,19 @@ import { CSS } from '@dnd-kit/utilities';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useShallow } from 'zustand/shallow';
-import { art, dur } from '../../lib/formatters';
-import { GripVertical, pauseTextWhite12, playIcon32, Trash2, X } from '../../lib/icons';
+import { art, dur, durLong } from '../../lib/formatters';
+import { useLiquidGlass } from '../../lib/hooks';
+import {
+  CheckCircle2,
+  GripVertical,
+  pauseTextWhite12,
+  playIcon32,
+  Trash2,
+  X,
+} from '../../lib/icons';
 import { getArtistDisplay, useArtistDisplay, useDisplayTitle } from '../../lib/track-display';
 import { openTrackMenu } from '../../lib/useTrackContextMenu';
+import { useCachedUrnsStore } from '../../stores/cached-urns';
 import { usePlayerStore } from '../../stores/player';
 import { UploadKindDot } from './UploadKindDot';
 
@@ -41,10 +50,10 @@ const NowPlayingItem = React.memo(() => {
         )}
         <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
           {isPlaying ? (
-            <div className="flex items-center gap-[2px]">
-              <div className="w-[2px] h-3 bg-accent rounded-full animate-pulse" />
-              <div className="w-[2px] h-2 bg-accent rounded-full animate-pulse [animation-delay:150ms]" />
-              <div className="w-[2px] h-3.5 bg-accent rounded-full animate-pulse [animation-delay:300ms]" />
+            <div className="flex items-end gap-[2px] h-3.5">
+              <div className="eq-bar w-[2px] h-full bg-accent rounded-full" />
+              <div className="eq-bar w-[2px] h-full bg-accent rounded-full" />
+              <div className="eq-bar w-[2px] h-full bg-accent rounded-full" />
             </div>
           ) : (
             pauseTextWhite12
@@ -127,10 +136,10 @@ const QueueRow = React.memo(function QueueRow({
         {isCurrent && (
           <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
             {isPlaying ? (
-              <div className="flex items-center gap-[2px]">
-                <div className="w-[2px] h-3 bg-accent rounded-full animate-pulse" />
-                <div className="w-[2px] h-2 bg-accent rounded-full animate-pulse [animation-delay:150ms]" />
-                <div className="w-[2px] h-3.5 bg-accent rounded-full animate-pulse [animation-delay:300ms]" />
+              <div className="flex items-end gap-[2px] h-3.5">
+                <div className="eq-bar w-[2px] h-full bg-accent rounded-full" />
+                <div className="eq-bar w-[2px] h-full bg-accent rounded-full" />
+                <div className="eq-bar w-[2px] h-full bg-accent rounded-full" />
               </div>
             ) : (
               pauseTextWhite12
@@ -145,6 +154,7 @@ const QueueRow = React.memo(function QueueRow({
 
       <button
         type="button"
+        aria-label="Remove from queue"
         onClick={(e) => {
           e.stopPropagation();
           handleRemove();
@@ -166,8 +176,10 @@ const QueueTrackRowBody = React.memo(function QueueTrackRowBody({
   isCurrent: boolean;
   onClick: () => void;
 }) {
+  const { t } = useTranslation();
   const artistDisplay = useArtistDisplay(track);
   const displayTitle = useDisplayTitle(track);
+  const isCachedOffline = useCachedUrnsStore((s) => s.urns.has(track.urn));
   return (
     <div className="flex-1 min-w-0 cursor-pointer" onClick={onClick}>
       <p
@@ -178,6 +190,14 @@ const QueueTrackRowBody = React.memo(function QueueTrackRowBody({
       <p className="text-[10px] text-white/30 truncate mt-0.5 flex items-center gap-1">
         <UploadKindDot kind={artistDisplay.uploadKind} />
         <span className="truncate">{artistDisplay.primary}</span>
+        {isCachedOffline && (
+          <span
+            title={t('offline.cachedBadge')}
+            className="inline-flex items-center text-emerald-400/80 shrink-0"
+          >
+            <CheckCircle2 size={10} />
+          </span>
+        )}
       </p>
     </div>
   );
@@ -217,6 +237,7 @@ const DraggableQueue = React.memo(({ startIndex }: { startIndex: number }) => {
 export const QueuePanel = React.memo(
   ({ open, onClose }: { open: boolean; onClose: () => void }) => {
     const { t } = useTranslation();
+    const glass = useLiquidGlass();
     const { currentTrack, queue, queueIndex } = usePlayerStore(
       useShallow((s) => ({
         currentTrack: s.currentTrack,
@@ -225,13 +246,15 @@ export const QueuePanel = React.memo(
       })),
     );
 
-    const upNextCount = queue.length - queueIndex - 1;
+    const upcoming = queue.slice(queueIndex + 1);
+    const upNextCount = upcoming.length;
+    const upNextDurationMs = upcoming.reduce((acc, tr) => acc + (tr.duration || 0), 0);
 
     return (
       <>
         {/* Backdrop */}
         <div
-          className={`fixed inset-0 bg-black/40 backdrop-blur-sm z-40 transition-opacity duration-300 ${
+          className={`fixed inset-0 bg-black/45 z-[55] transition-opacity duration-300 ${
             open ? 'opacity-100' : 'opacity-0 pointer-events-none'
           }`}
           onClick={onClose}
@@ -239,11 +262,15 @@ export const QueuePanel = React.memo(
 
         {/* Panel */}
         <div
-          className="fixed top-3 right-3 bottom-3 w-[360px] z-50 flex flex-col overflow-hidden"
+          className="fixed top-3 right-3 bottom-3 w-[min(360px,calc(100vw-24px))] z-[60] flex flex-col overflow-hidden animate-panel-slide-in"
           style={{
-            background: 'rgba(14, 14, 18, 0.86)',
-            backdropFilter: 'blur(44px) saturate(190%)',
-            WebkitBackdropFilter: 'blur(44px) saturate(190%)',
+            background: glass ? 'rgba(14, 14, 18, 0.84)' : 'rgba(14, 14, 18, 0.98)',
+            ...(glass
+              ? {
+                  backdropFilter: 'blur(28px) saturate(185%)',
+                  WebkitBackdropFilter: 'blur(28px) saturate(185%)',
+                }
+              : {}),
             borderRadius: 40,
             boxShadow: `
               0 1px 0 0 rgba(255,255,255,0.22) inset,
@@ -278,6 +305,7 @@ export const QueuePanel = React.memo(
               )}
               <button
                 type="button"
+                aria-label={t('common.close', 'Close')}
                 onClick={onClose}
                 className="w-7 h-7 rounded-lg flex items-center justify-center text-white/30 hover:text-white/60 hover:bg-white/[0.06] transition-all duration-150 cursor-pointer"
               >
@@ -300,9 +328,19 @@ export const QueuePanel = React.memo(
           <div className="flex-1 overflow-y-auto px-4 pb-4">
             {upNextCount > 0 && (
               <>
-                <p className="text-[10px] text-white/25 uppercase tracking-wider font-medium mb-2 mt-3 px-1">
-                  {t('player.upNext')} · {upNextCount}
-                </p>
+                <div className="flex items-center justify-between mb-2 mt-3 px-1">
+                  <p className="text-[10px] text-white/25 uppercase tracking-wider font-medium tabular-nums">
+                    {t('player.upNext')} · {upNextCount}
+                    {upNextDurationMs > 0 ? ` · ${durLong(upNextDurationMs)}` : ''}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => usePlayerStore.getState().clearUpcoming()}
+                    className="text-[11px] text-white/30 hover:text-white/65 transition-colors cursor-pointer"
+                  >
+                    {t('player.clearUpcoming')}
+                  </button>
+                </div>
                 <DraggableQueue startIndex={queueIndex + 1} />
               </>
             )}

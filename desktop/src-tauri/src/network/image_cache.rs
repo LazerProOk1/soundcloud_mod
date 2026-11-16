@@ -1,12 +1,22 @@
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use std::sync::OnceLock;
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::{Arc, OnceLock};
 
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 use sha2::{Digest, Sha256};
 use tokio::fs::{self, File};
 use tokio::io::AsyncWriteExt;
+use tokio::sync::{Mutex, Notify};
 
 use crate::shared::constants::is_domain_whitelisted;
+
+struct InflightImage {
+    notify: Arc<Notify>,
+    result: Arc<Mutex<Option<ImageResult>>>,
+}
+
+static TMP_COUNTER: AtomicU64 = AtomicU64::new(0);
 
 /// Permanent on-disk image cache.
 ///
@@ -17,10 +27,22 @@ use crate::shared::constants::is_domain_whitelisted;
 pub struct ImageCache {
     pub dir: PathBuf,
     pub http_client: reqwest::Client,
+    inflight: Mutex<HashMap<String, Arc<InflightImage>>>,
+}
+
+impl ImageCache {
+    pub fn new(dir: PathBuf, http_client: reqwest::Client) -> Self {
+        Self {
+            dir,
+            http_client,
+            inflight: Mutex::new(HashMap::new()),
+        }
+    }
 }
 
 pub static STATE: OnceLock<ImageCache> = OnceLock::new();
 
+#[derive(Clone)]
 pub struct ImageResult {
     pub status: u16,
     pub content_type: String,
@@ -58,17 +80,18 @@ fn sniff_content_type(data: &[u8]) -> &'static str {
     }
 }
 
-/// Atomic write: tmp -> fsync -> rename. Survives crashes — we either have
+/// Atomic write: tmp -> flush -> rename. Survives crashes — we either have
 /// the old file or the fully-written new one, never a partial blob.
 async fn write_atomic(path: &Path, data: &[u8]) -> std::io::Result<()> {
     if let Some(parent) = path.parent() {
         fs::create_dir_all(parent).await?;
     }
-    let tmp = path.with_extension(format!("tmp-{}", std::process::id()));
+    let seq = TMP_COUNTER.fetch_add(1, Ordering::Relaxed);
+    let tmp = path.with_extension(format!("tmp-{}-{seq}", std::process::id()));
     {
         let mut f = File::create(&tmp).await?;
         f.write_all(data).await?;
-        f.sync_all().await?;
+        f.flush().await?;
     }
     if let Err(e) = fs::rename(&tmp, path).await {
         let _ = fs::remove_file(&tmp).await;
@@ -158,6 +181,31 @@ pub async fn handle(encoded: &str) -> ImageResult {
         let _ = fs::remove_file(&path).await;
     }
 
+    // Coalesce concurrent fetches for the same target_url
+    let inflight_entry = {
+        let mut map = state.inflight.lock().await;
+        if let Some(existing) = map.get(&key) {
+            let notify = existing.notify.clone();
+            let result = existing.result.clone();
+            drop(map);
+            notify.notified().await;
+            if let Some(res) = result.lock().await.clone() {
+                return res;
+            }
+            return ImageResult {
+                status: 502,
+                content_type: "text/plain".into(),
+                data: b"coalesced image fetch failed".to_vec(),
+            };
+        }
+        let entry = Arc::new(InflightImage {
+            notify: Arc::new(Notify::new()),
+            result: Arc::new(Mutex::new(None)),
+        });
+        map.insert(key.clone(), entry.clone());
+        entry
+    };
+
     #[cfg(debug_assertions)]
     println!("[ImageCache] MISS {}", target_url);
 
@@ -219,11 +267,17 @@ pub async fn handle(encoded: &str) -> ImageResult {
         });
     }
 
-    ImageResult {
+    let res = ImageResult {
         status,
         content_type,
         data,
-    }
+    };
+
+    *inflight_entry.result.lock().await = Some(res.clone());
+    inflight_entry.notify.notify_waiters();
+    state.inflight.lock().await.remove(&key);
+
+    res
 }
 
 /* ── Maintenance commands (size / clear) ─────────────────── */

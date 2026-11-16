@@ -13,11 +13,12 @@ pub async fn connect(cfg: &AppConfig) -> Result<PgPool, sqlx::Error> {
         .log_slow_statements(LevelFilter::Warn, Duration::from_millis(500));
 
     PgPoolOptions::new()
+        .min_connections(2.min(cfg.database.pool_max))
         .max_connections(cfg.database.pool_max)
         .acquire_timeout(cfg.database.acquire_timeout)
         .idle_timeout(Some(Duration::from_secs(600)))
         .max_lifetime(Some(Duration::from_secs(1800)))
-        .test_before_acquire(true)
+        .test_before_acquire(false)
         .connect_with(opts)
         .await
 }

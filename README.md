@@ -1,94 +1,99 @@
 <div align="center">
 
-<img src="docs/banner.png" alt="SoundCloud Mod" width="100%">
+<img src="docs/banner.png" alt="SoundCloud Mod — Desktop Client" width="100%" />
+
+<br/>
+<br/>
+
+[![Release](https://img.shields.io/github/v/release/LazerProOk1/soundcloud_mod?style=for-the-badge&color=ff5500&label=Release)](https://github.com/LazerProOk1/soundcloud_mod/releases/latest)
+[![Windows](https://img.shields.io/badge/Windows-NSIS%20%2B%20Portable-0078D4?style=for-the-badge&logo=windows)](https://github.com/LazerProOk1/soundcloud_mod/releases/latest)
+[![Ubuntu](https://img.shields.io/badge/Ubuntu-DEB%20%2F%20AppImage%20%2F%20Flatpak-E95420?style=for-the-badge&logo=ubuntu&logoColor=white)](https://github.com/LazerProOk1/soundcloud_mod/releases/latest)
+[![Tauri](https://img.shields.io/badge/Tauri-2.0-FFC131?style=for-the-badge&logo=tauri&logoColor=111)](https://tauri.app)
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=111)](https://react.dev)
+[![Rust](https://img.shields.io/badge/Rust-Audio%20Engine-EA580C?style=for-the-badge&logo=rust)](https://www.rust-lang.org)
+[![License](https://img.shields.io/badge/License-MIT-334155?style=for-the-badge)](LICENSE)
 
 <br/>
 
-[![Release](https://img.shields.io/github/v/release/LazerProOk1/soundcloud_mod?style=for-the-badge&color=ff5500&label=release)](https://github.com/LazerProOk1/soundcloud_mod/releases/latest)
-[![Windows](https://img.shields.io/badge/Windows-10%20%2F%2011-0078D4?style=for-the-badge&logo=windows)](https://github.com/LazerProOk1/soundcloud_mod/releases/latest)
-[![Tauri](https://img.shields.io/badge/Tauri-2-FFC131?style=for-the-badge&logo=tauri)](https://tauri.app)
-[![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react)](https://react.dev)
-[![License](https://img.shields.io/badge/license-MIT-lightgrey?style=for-the-badge)](LICENSE)
-
-**Нативный клиент SoundCloud для Windows с интерфейсом Liquid Glass.**
-
-Без рекламы и вкладки браузера: свой плеер на Rust, офлайн-библиотека, синхронизированная лирика и рекомендации SoundWave.
+**Нативный клиент SoundCloud для Windows и Linux в эстетике Liquid Glass.**  
+Без рекламы и вкладки браузера: собственный аудиодвижок на Rust, локальный LRU-кэш треков,  
+синхронизированная караоке-лирика, бесплатная **Star-аура**, персональная волна **SoundWave** и **Discord Rich Presence**.
 
 </div>
 
 ---
 
-## О проекте
-
-SoundCloud Mod — десктопный клиент SoundCloud с упором на внешний вид, отзывчивость и удобство на Windows.
-
 ## Возможности
 
-### Плеер
+<table>
+<tr>
+<td width="50%" valign="top">
 
-- Собственный аудиодвижок на Rust (`rodio`) вместо `<audio>` в браузере
-- 10-полосный эквалайзер с пресетами, нормализация громкости, кроссфейд
-- Скорость воспроизведения, таймер сна, повтор и перемешивание
-- Перемотка колесом мыши по полосе прогресса (Shift — шаг 15 секунд)
-- Очередь с перетаскиванием, «играть следующим» и «в конец очереди»
-- Полноэкранный плеер и мини-плеер поверх всех окон
-- Медиаклавиши и управление из системного трея
+### Аудиодвижок (Rust)
+- Собственный плеер на базе `rodio` + декодирование MP3/OGG/Opus без браузерного `<audio>`
+- **10-полосный эквалайзер** с пресетами, ReplayGain-нормализация и кроссфейд
+- Скорость воспроизведения, таймер сна, повтор, shuffle и перемотка колесом мыши (`Shift` — ±15 с)
+- Глобальные медиаклавиши и управление из системного трея
 
-### Интерфейс
-
-- Liquid Glass: стеклянные панели поверх цветного фона, который подстраивается под обложку текущего трека
-- Панель «Сейчас играет» справа: обложка, исполнитель, описание профиля и следующий трек
-- Контекстное меню трека по правому клику во всех списках
-- Карусели со стрелками и прокруткой колесом и тачпадом
-- Масштаб интерфейса (Ctrl + колесо, Ctrl + / − / 0)
-- Свой шрифт (установленный в системе или из файла) и свой CSS поверх приложения
-- Поиск по настройкам
+### Интерфейс Liquid Glass
+- Полупрозрачные стеклянные панели поверх живого mesh-градиента и динамической палитры обложки
+- Режим без размытия (**No-Glass**) в настройках для максимальной производительности
+- Панель «Сейчас играет» справа, полноэкранный плеер и мини-плеер поверх окон
+- Свои шрифты (системные или из файла), пользовательский CSS, масштаб UI (`Ctrl` + колесо)
 - Русский и английский интерфейс
 
-### Библиотека
+</td>
+<td width="50%" valign="top">
 
-- Любимые треки, плейлисты, подписки и история прослушивания
-- Суперлайки и список дизлайков (хранятся локально)
-- Свой порядок любимых треков: «наверх» и «вниз» из меню трека
-- Добавление в плейлисты, скачивание трека в файл
-- Импорт библиотеки из Яндекс Музыки
+### Библиотека и офлайн-кэш
+- Любимые треки, плейлисты, подписки и история прослушиваний
+- Суперлайки, локальный список дизлайков и собственный порядок любимых треков
+- Умный **кэш аудио и предзагрузка очереди** (параллельная загрузка HLS/progressive, защита пролайканных треков от вытеснения)
+- Импорт библиотеки из **Яндекс Музыки** и сохранение треков в файл
 
-### SoundWave
+### SoundWave, лирика и интеграции
+- **SoundWave** — бесконечная персональная волна рекомендаций от трека или исполнителя с фильтром языков
+- Синхронизированный текст с посимвольной караоке-подсветкой (**LRCLib** + **SoundCloud**) и FFT-визуализатором
+- **Discord Rich Presence** с обложкой, таймером и названием трека
+- Авторизация через аккаунт SoundCloud или **QR-код** с другого устройства
 
-- Бесконечная персональная лента рекомендаций, которая учится на лайках, дизлайках и пропусках
-- Волна от трека или от исполнителя, фильтр по языкам
+</td>
+</tr>
+</table>
 
-### Лирика
+---
 
-- Синхронизированный текст с караоке-подсветкой и автопрокруткой
-- Источники: LRCLib и SoundCloud
-- Визуализатор спектра (считается только когда открыт, без лишней нагрузки)
+## Горячие клавиши
 
-### Офлайн
+| Клавиша | Действие | Клавиша | Действие |
+|---|---|---|---|
+| `Space` | Пауза / воспроизведение | `Q` | Открыть / закрыть очередь |
+| `←` / `→` | Перемотка на ±5 с | `L` | Открыть / закрыть лирику |
+| `↑` / `↓` | Громкость (ускорение при удержании) | `[` | Свернуть / развернуть боковую панель |
+| `N` / `P` | Следующий / предыдущий трек | `F11` | Полноэкранный режим |
+| `S` / `R` | Перемешивание / повтор | `/` или `Ctrl + K` | Поиск |
+| `M` | Выключить / включить звук | `Ctrl + /` | Показать все горячие клавиши |
 
-- Кэш аудио для мгновенного переключения треков
-- Скачивание треков для прослушивания без интернета, лайкнутые треки хранятся отдельно и не вытесняются кэшем
-
-### Интеграции
-
-- Discord Rich Presence: трек, исполнитель, обложка и таймер
-- Вход через аккаунт SoundCloud, а также по QR-коду с другого устройства, где вы уже вошли
+---
 
 ## Установка
 
-1. Скачайте установщик `*_x64-setup.exe` со страницы [релизов](https://github.com/LazerProOk1/soundcloud_mod/releases/latest).
-2. Запустите его. Если Windows SmartScreen предупредит о неизвестном издателе, нажмите «Подробнее», затем «Выполнить в любом случае».
-3. Войдите в аккаунт SoundCloud.
+### Windows (10 / 11 x64)
+- **Установщик (NSIS):** скачайте `*_x64-setup.exe` со страницы [Releases](https://github.com/LazerProOk1/soundcloud_mod/releases/latest) и запустите установку. Если Windows SmartScreen покажет предупреждение о неизвестном издателе — нажмите **«Подробнее» → «Выполнить в любом случае»**.
+- **Portable:** скачайте `*-windows-x64-portable.zip`, распакуйте в любую папку и запускайте `SoundCloud Mod.exe` без установки.
 
-Мод ставится как отдельное приложение (`com.lazerprook1.soundcloudmod`) и не конфликтует с другими клиентами SoundCloud: у него свои настройки и кэш.
+### Linux (Ubuntu / Debian / Flatpak)
+- **Ubuntu / Debian:** скачайте `.deb` (`sudo apt install ./SoundCloud*.deb`) или универсальный `.AppImage` (`chmod +x SoundCloud*.AppImage && ./SoundCloud*.AppImage`). Также доступны `.rpm` и [Flatpak-манифест](.github/flatpak/io.github.LazerProOk1.soundcloudmod.yml).
 
-Новые функции сначала появляются в исходниках и попадают в установщик со следующим релизом. Самую свежую версию можно собрать самостоятельно.
+> Приложение устанавливается с отдельным идентификатором (`com.lazerprook1.soundcloudmod`) и хранит настройки и кэш независимо от других клиентов.
 
-**Требования:** Windows 10 или 11, x64, около 200 МБ свободного места.
+**Системные требования:** Windows 10 / 11 (x64, WebView2 Runtime) или Linux x64 (`libwebkit2gtk-4.1`), ~200 МБ свободного места.
+
+---
 
 ## Сборка из исходников
 
-Понадобятся Node.js 20+, pnpm 10+ и Rust stable. На Windows также нужен WebView2 (есть в Windows 11 и обновлённой Windows 10).
+Необходимы **Node.js 20+**, **pnpm 10+** и **Rust (stable)**.
 
 ```bash
 git clone https://github.com/LazerProOk1/soundcloud_mod.git
@@ -96,45 +101,48 @@ cd soundcloud_mod/desktop
 pnpm install
 ```
 
-Режим разработки с горячей перезагрузкой интерфейса:
+Запуск в режиме разработки (hot-reload интерфейса + Rust-бэкенд):
 
 ```bash
 pnpm tauri dev
 ```
 
-Сборка установщика (NSIS):
+Проверка кода и сборка NSIS-установщика:
 
 ```bash
-pnpm tauri build
+pnpm check         # Biome lint + format
+pnpm build         # TypeScript + Vite production build
+pnpm tauri build   # Итоговый установщик в desktop/src-tauri/target/release/bundle/nsis/
 ```
 
-Готовый установщик появится в `desktop/src-tauri/target/release/bundle/nsis/`.
+---
 
-## Стек
+## Технологический стек
 
 | Слой | Технологии |
 |---|---|
-| Оболочка | Tauri 2 (Rust) |
+| Оболочка | [Tauri 2](https://tauri.app) (Rust) |
 | Интерфейс | React 19, TypeScript, Tailwind CSS 4 |
-| Состояние и данные | Zustand 5, TanStack Query 5 |
-| Аудио | `rodio`, собственные эквалайзер, нормализация и FFT на Rust |
-| Шрифты | Manrope, Syne |
-| Установщик | NSIS |
+| Состояние и запросы | Zustand 5, TanStack Query 5, dnd-kit |
+| Аудио на Rust | `rodio`, Symphonia / Opus, 10-полосный EQ, ReplayGain, FFT-анализатор |
+| Линтер и сборка | Biome, Vite, NSIS |
 
-## Структура
+---
 
+## Структура репозитория
+
+```text
+soundcloud_mod/
+├── desktop/
+│   ├── src/              # React 19 UI: страницы, Liquid Glass компоненты, stores, lib
+│   └── src-tauri/        # Rust: audio engine, track_cache, image_cache, Discord RPC, tray
+├── backend/              # Серверная часть (Rust/Axum прокси и кэш к API SoundCloud)
+└── docs/                 # Графические материалы для README
 ```
-desktop/
-  src/          интерфейс: страницы, компоненты, хранилища, хуки
-  src-tauri/    Rust: аудиодвижок, кэш треков, трей, Discord, сеть
-backend/        серверная часть (прокси к API SoundCloud)
-docs/           изображения для README
-```
 
-## Благодарности
+---
 
-Тексты песен — [LRCLib](https://lrclib.net).
+## Благодарности и лицензия
 
-## Лицензия
-
-[MIT](LICENSE). Проект не связан с SoundCloud и не одобрен ею; SoundCloud — товарный знак SoundCloud Global Limited & Co. KG.
+- Синхронизированная лирика предоставляется через [LRCLib](https://lrclib.net).
+- Распространяется под лицензией [MIT](LICENSE). Проект не аффилирован с SoundCloud; SoundCloud является товарным знаком SoundCloud Global Limited & Co. KG.

@@ -278,7 +278,7 @@ export function useHistory(limit = 50) {
 
 export interface FeaturedResponse {
   type: 'track' | 'playlist' | 'user';
-  data: any;
+  data: Record<string, unknown>;
 }
 
 export function useFeatured() {
@@ -495,12 +495,18 @@ export function useLikedTracks(limit = 30) {
 const ALL_LIKES_MAX_PAGES = 50;
 let _allLikesPromise: Promise<Track[]> | null = null;
 let _allLikesRetryAt = 0; // wall-clock ms — don't retry before this
+let _allLikesFailCount = 0;
 
 export function fetchAllLikedTracks(
   pageSize = 200,
   onPage?: (tracks: Track[]) => void,
 ): Promise<Track[]> {
-  if (_allLikesPromise && !onPage) return _allLikesPromise;
+  if (!onPage) {
+    if (_allLikesPromise) return _allLikesPromise;
+    if (Date.now() < _allLikesRetryAt) {
+      return Promise.reject(new Error('Liked tracks fetch cooling down'));
+    }
+  }
 
   const promise = (async () => {
     const all: Track[] = [];
@@ -511,6 +517,8 @@ export function fetchAllLikedTracks(
       onPage?.(data.collection);
       if (!data.has_more) break;
     }
+    _allLikesFailCount = 0;
+    _allLikesRetryAt = 0;
     void rememberLikedTracks(all);
     return all;
   })();
@@ -520,7 +528,7 @@ export function fetchAllLikedTracks(
     promise.catch(() => {
       // Exponential backoff: don't allow a retry for at least 30s after failure,
       // doubling up to 5min. This prevents a retry storm when the network is down.
-      const backoffMs = Math.min(30_000 * 2 ** Math.round(_allLikesRetryAt / 60_000), 300_000);
+      const backoffMs = Math.min(30_000 * 2 ** Math.min(_allLikesFailCount++, 4), 300_000);
       _allLikesRetryAt = Date.now() + backoffMs;
       _allLikesPromise = null;
     });
@@ -532,6 +540,7 @@ export function fetchAllLikedTracks(
 export function invalidateAllLikesCache() {
   _allLikesPromise = null;
   _allLikesRetryAt = 0;
+  _allLikesFailCount = 0;
 }
 
 /* ── Fresh from followed artists ───────────────────────────────── */
@@ -783,8 +792,8 @@ export function useUserWebProfiles(userUrn: string | undefined) {
 }
 
 export function useUserSubscription(_userUrn: string | undefined) {
-  // Star subscription UI removed — always report no badge.
-  return { data: false } as const;
+  // Star features are unlocked free for every profile.
+  return { data: true } as const;
 }
 
 /* ── My Library ────────────────────────────────────────────────── */

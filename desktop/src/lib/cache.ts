@@ -1,10 +1,12 @@
 import { appCacheDir, join } from '@tauri-apps/api/path';
 import { mkdir, readDir, remove, writeFile } from '@tauri-apps/plugin-fs';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
-import type { PlaybackQuality, PlaybackSource } from '../stores/player';
+import { useCachedUrnsStore } from '../stores/cached-urns';
+import { type PlaybackQuality, type PlaybackSource, usePlayerStore } from '../stores/player';
 import { useSettingsStore } from '../stores/settings';
 import { getStaticPort } from './constants';
 import { trackedInvoke as invoke } from './diagnostics';
+import { resolveWallpaperUrl } from './wallpapers';
 
 const WALLPAPERS_DIR = 'wallpapers';
 const CACHE_MAINTENANCE_INTERVAL_MS = 60 * 1000;
@@ -37,6 +39,7 @@ export async function ensureTrackCached(
 ): Promise<TrackCacheInfo> {
   const cached = await getCacheInfo(urn);
   if (cached) {
+    useCachedUrnsStore.getState().markCached(urn);
     return cached;
   }
 
@@ -45,12 +48,14 @@ export async function ensureTrackCached(
   const urls = streamFallbackUrls(urn, highQualityStreaming);
   const storageUrls = buildStorageUrls(urn);
 
-  return invoke<TrackCacheInfo>('track_ensure_cached', {
+  const info = await invoke<TrackCacheInfo>('track_ensure_cached', {
     urn,
     urls,
     storageUrls,
     sessionId,
   });
+  useCachedUrnsStore.getState().markCached(urn);
+  return info;
 }
 
 export function getCacheSize(): Promise<number> {
@@ -61,16 +66,32 @@ export function getLikedCacheSize(): Promise<number> {
   return invoke<number>('track_liked_cache_size');
 }
 
-export function clearCache(): Promise<void> {
-  return invoke('track_clear_cache');
+export async function clearCache(): Promise<void> {
+  await invoke('track_clear_cache');
+  const remaining = await listCachedUrns().catch(() => []);
+  useCachedUrnsStore.setState({ urns: new Set(remaining), hydrated: true });
 }
 
-export function clearLikedCache(): Promise<void> {
-  return invoke('track_clear_liked_cache');
+export async function clearLikedCache(): Promise<void> {
+  await invoke('track_clear_liked_cache');
+  const remaining = await listCachedUrns().catch(() => []);
+  useCachedUrnsStore.setState({ urns: new Set(remaining), hydrated: true });
 }
 
 export function listCachedUrns(): Promise<string[]> {
   return invoke<string[]>('track_list_cached');
+}
+
+export async function removeCachedTrack(urn: string): Promise<boolean> {
+  const removed = await invoke<boolean>('track_remove_cached', { urn });
+  if (removed) {
+    useCachedUrnsStore.getState().removeCached(urn);
+  }
+  return removed;
+}
+
+export function markTrackPlayed(urn: string): Promise<void> {
+  return invoke('track_mark_played', { urn });
 }
 
 export interface LikeCacheEntry {
@@ -96,7 +117,17 @@ export function enforceAudioCacheLimit(
   limitMb = useSettingsStore.getState().audioCacheLimitMB,
 ): Promise<void> {
   if (!limitMb || limitMb <= 0) return Promise.resolve();
-  return invoke('track_enforce_cache_limit', { limitMb });
+  const { currentTrack, queue, queueIndex } = usePlayerStore.getState();
+  const protectedSet = new Set<string>();
+  if (currentTrack?.urn) protectedSet.add(currentTrack.urn);
+  for (let i = Math.max(0, queueIndex); i <= Math.min(queue.length - 1, queueIndex + 3); i++) {
+    const u = queue[i]?.urn;
+    if (u) protectedSet.add(u);
+  }
+  return invoke('track_enforce_cache_limit', {
+    limitMb,
+    protectedUrns: Array.from(protectedSet),
+  });
 }
 
 /* ── Cache maintenance ───────────────────────────────────── */
@@ -199,11 +230,9 @@ export async function removeWallpaper(name: string): Promise<void> {
   await remove(path).catch(() => {});
 }
 
-/** HTTP URL для wallpaper по имени файла */
+/** HTTP / asset URL для wallpaper по имени файла (поддерживает preset:*) */
 export function getWallpaperUrl(name: string): string | null {
-  const port = getStaticPort();
-  if (!port) return null;
-  return `http://127.0.0.1:${port}/wallpapers/${encodeURIComponent(name)}`;
+  return resolveWallpaperUrl(name, getStaticPort());
 }
 
 /* ── Track Download ──────────────────────────────────────── */

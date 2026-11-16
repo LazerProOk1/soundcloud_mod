@@ -58,6 +58,7 @@ export const PlaylistCard = React.memo(
     return (
       <div
         className="group relative flex flex-col gap-3 cursor-pointer select-none"
+        style={{ contain: 'content' }}
         onClick={() => navigate(`/playlist/${encodeURIComponent(playlist.urn)}`)}
       >
         <div className="relative aspect-square rounded-[32px] overflow-hidden bg-white/[0.02] ring-1 ring-white/[0.06] shadow-lg group-hover:shadow-2xl group-hover:ring-white/[0.15] transition-all duration-500 ease-[var(--ease-apple)]">
@@ -66,6 +67,7 @@ export const PlaylistCard = React.memo(
               src={cover}
               alt={playlist.title}
               className="w-full h-full object-cover transition-transform duration-700 ease-[var(--ease-apple)] group-hover:scale-[1.05]"
+              loading="lazy"
               decoding="async"
             />
           ) : (
@@ -79,8 +81,8 @@ export const PlaylistCard = React.memo(
             <div
               className={`absolute inset-0 flex items-center justify-center transition-all duration-300 ${
                 isPlayingFromThis
-                  ? 'bg-black/40 backdrop-blur-sm opacity-100'
-                  : 'bg-black/0 opacity-0 group-hover:bg-black/40 group-hover:backdrop-blur-sm group-hover:opacity-100'
+                  ? 'bg-black/45 opacity-100'
+                  : 'bg-black/0 opacity-0 group-hover:bg-black/45 group-hover:opacity-100'
               }`}
             >
               <div
@@ -104,7 +106,7 @@ export const PlaylistCard = React.memo(
 
           {playlist.track_count != null && (
             <div
-              className={`absolute bottom-2.5 right-2.5 flex items-center gap-1.5 text-[11px] font-medium bg-black/60 backdrop-blur-md text-white/90 px-2.5 py-1 rounded-full shadow-lg ${
+              className={`absolute bottom-2.5 right-2.5 flex items-center gap-1.5 text-[11px] font-medium bg-black/70 text-white/90 px-2.5 py-1 rounded-full shadow-lg border border-white/[0.08] ${
                 showPlayback
                   ? 'opacity-0 group-hover:opacity-100 transition-opacity duration-300'
                   : ''

@@ -102,10 +102,12 @@ async fn tail(
     let languages = parse_languages(q.languages.as_deref());
     let mode = WaveMode::parse(q.mode.as_deref());
 
-    let liked = st.events.get_recent_liked(&ctx.sc_user_id, 5).await?;
-    let skipped = st.events.get_recent_skipped(&ctx.sc_user_id, 3).await?;
-    let played = st.events.get_recent_played(&ctx.sc_user_id, 50).await?;
-    let disliked = st.dislikes.list_ids_by_user_id(&ctx.sc_user_id, 200).await?;
+    let (liked, skipped, played, disliked) = tokio::try_join!(
+        st.events.get_recent_liked(&ctx.sc_user_id, 5),
+        st.events.get_recent_skipped(&ctx.sc_user_id, 3),
+        st.events.get_recent_played(&ctx.sc_user_id, 50),
+        st.dislikes.list_ids_by_user_id(&ctx.sc_user_id, 200),
+    )?;
 
     let disliked_set: HashSet<String> = disliked.iter().cloned().collect();
     let positive: Vec<String> = liked
@@ -130,15 +132,9 @@ async fn tail(
     if !seq_session.contains(&seed_track_id) {
         seq_session.push(seed_track_id.clone());
     }
-    let seq_pool = st
-        .recommendations
-        .sequential_next_pool(&seq_session, limit * 2)
-        .await
-        .unwrap_or_default();
-
-    let fusion = st
-        .recommendations
-        .wave_fusion(
+    let (seq_res, fusion_res) = tokio::join!(
+        st.recommendations.sequential_next_pool(&seq_session, limit * 2),
+        st.recommendations.wave_fusion(
             &ctx.sc_user_id,
             Some(&seed_track_id),
             &positive,
@@ -148,8 +144,10 @@ async fn tail(
             languages.as_deref(),
             mode,
             &req_id,
-        )
-        .await?;
+        ),
+    );
+    let seq_pool = seq_res.unwrap_or_default();
+    let fusion = fusion_res?;
 
     let out = if seq_pool.is_empty() {
         fusion
@@ -301,4 +299,29 @@ async fn search(
         .search_by_text(&q.q.unwrap_or_default(), limit, languages.as_deref())
         .await?;
     Ok(Json(out))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_languages_filters_empty_and_none() {
+        assert_eq!(parse_languages(None), None);
+        assert_eq!(parse_languages(Some("")), None);
+        assert_eq!(parse_languages(Some(",,,")), None);
+        assert_eq!(
+            parse_languages(Some("ru,en,,de")),
+            Some(vec!["ru".to_string(), "en".to_string(), "de".to_string()])
+        );
+    }
+
+    #[test]
+    fn parse_limit_uses_positive_values_or_fallback() {
+        assert_eq!(parse_limit(None, 20), 20);
+        assert_eq!(parse_limit(Some("0"), 20), 20);
+        assert_eq!(parse_limit(Some("-5"), 20), 20);
+        assert_eq!(parse_limit(Some("abc"), 20), 20);
+        assert_eq!(parse_limit(Some("12"), 20), 12);
+    }
 }

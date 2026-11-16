@@ -1,15 +1,8 @@
 /**
  * AmbientMeshBackground — full-screen living mesh gradient.
  *
- * Four enormous colour blobs sit at z-index -50, beneath every UI surface.
- * Static on purpose: animating them forces every backdrop-filter panel above
- * to re-blur each frame, which pegs the GPU on laptops.
- *
- * Without this layer, Liquid Glass panels have nothing to refract and just look
- * like flat dark rectangles. With it, each glass surface becomes a coloured
- * lens — exactly the Yandex Music / Apple Music "vibe" effect.
- *
- * Usage: mount once in App.tsx or AppShell.tsx at the very bottom of the render tree.
+ * Uses smooth multi-stop radial gradients without heavy offscreen `filter: blur()`
+ * layers so Liquid Glass panels above refract vivid colour at zero blur-pass GPU cost.
  */
 import React from 'react';
 
@@ -18,117 +11,22 @@ export const AmbientMeshBackground = React.memo(function AmbientMeshBackground()
     <div
       aria-hidden="true"
       style={{
-        position: 'fixed',
+        position: 'absolute',
         inset: 0,
-        zIndex: -50,
+        zIndex: 0,
         overflow: 'hidden',
         pointerEvents: 'none',
-        /* Isolate the blobs into their own stacking context — no bleed into z-siblings */
         isolation: 'isolate',
-        /* contain: layout paint keeps repaints inside this element */
-        contain: 'layout paint',
+        contain: 'strict',
+        background: `
+          radial-gradient(ellipse 68% 64% at 14% 12%, rgba(255,95,20,0.28) 0%, rgba(255,60,0,0.12) 38%, rgba(255,60,0,0.02) 64%, transparent 78%),
+          radial-gradient(ellipse 62% 58% at 88% 16%, rgba(99,102,241,0.24) 0%, rgba(79,70,229,0.10) 40%, rgba(79,70,229,0.02) 66%, transparent 80%),
+          radial-gradient(ellipse 58% 54% at 18% 88%, rgba(34,211,238,0.16) 0%, rgba(6,182,212,0.07) 42%, transparent 76%),
+          radial-gradient(ellipse 54% 52% at 86% 86%, rgba(236,72,153,0.15) 0%, rgba(168,85,247,0.06) 42%, transparent 76%),
+          radial-gradient(ellipse 46% 52% at 4% 48%, rgba(120,80,220,0.16) 0%, rgba(80,60,180,0.06) 44%, transparent 76%),
+          rgba(6, 6, 9, 0.96)
+        `,
       }}
-    >
-      {/*
-       * Blob 1 — Warm Orange/Amber (top-left)
-       * SoundCloud brand anchor. Largest blob, sets the warm tone.
-       */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '-10%',
-          left: '-5%',
-          width: '70%',
-          height: '70%',
-          borderRadius: '50%',
-          background:
-            'radial-gradient(ellipse at center, rgba(255,100,20,0.55) 0%, rgba(255,60,0,0.28) 45%, transparent 70%)',
-          filter: 'blur(120px)',
-        }}
-      />
-
-      {/*
-       * Blob 2 — Deep Violet/Indigo (top-right)
-       * Noble, premium counterpoint to the orange. Matches --color-ui-accent.
-       */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '0%',
-          right: '-8%',
-          width: '65%',
-          height: '65%',
-          borderRadius: '50%',
-          background:
-            'radial-gradient(ellipse at center, rgba(99,102,241,0.45) 0%, rgba(79,70,229,0.22) 50%, transparent 70%)',
-          filter: 'blur(140px)',
-        }}
-      />
-
-      {/*
-       * Blob 3 — Teal/Cyan (bottom-left)
-       * Cool, fresh bottom counterweight. Matches waveform accent gradient.
-       */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: '-5%',
-          left: '5%',
-          width: '60%',
-          height: '60%',
-          borderRadius: '50%',
-          background:
-            'radial-gradient(ellipse at center, rgba(34,211,238,0.32) 0%, rgba(6,182,212,0.16) 50%, transparent 70%)',
-          filter: 'blur(160px)',
-        }}
-      />
-
-      {/*
-       * Blob 4 — Deep Magenta/Rose (bottom-right)
-       * Warmth anchor for bottom-right. Makes the vignette feel alive.
-       */}
-      <div
-        style={{
-          position: 'absolute',
-          bottom: '-10%',
-          right: '-2%',
-          width: '58%',
-          height: '58%',
-          borderRadius: '50%',
-          background:
-            'radial-gradient(ellipse at center, rgba(236,72,153,0.28) 0%, rgba(168,85,247,0.14) 50%, transparent 70%)',
-          filter: 'blur(150px)',
-        }}
-      />
-
-      {/*
-       * Blob 5 — Mid-screen left anchor
-       * Fills the centre gap so the sidebar glass effect is visible top-to-bottom.
-       */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '30%',
-          left: '-10%',
-          width: '45%',
-          height: '55%',
-          borderRadius: '50%',
-          background:
-            'radial-gradient(ellipse at center, rgba(120,80,220,0.30) 0%, rgba(80,60,180,0.14) 50%, transparent 70%)',
-          filter: 'blur(140px)',
-        }}
-      />
-
-      {/* Dark overlay — 0.38: blobs are static now, so they need to read clearly; lets ambient colour bleed
-          through so Liquid Glass panels refract visibly across the full height. */}
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'rgba(6, 6, 9, 0.38)',
-          pointerEvents: 'none',
-        }}
-      />
-    </div>
+    />
   );
 });

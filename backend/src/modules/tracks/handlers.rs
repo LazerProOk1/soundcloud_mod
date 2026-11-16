@@ -159,7 +159,7 @@ async fn get_streams(
         params.push(("secret_token".into(), t));
     }
     let url = request_url(&format!("/tracks/{track_urn}/streams"), "", &params);
-    cached_or_fetch(&st, "GET", &url, CacheScope::Shared, None, 3600, || async {
+    cached_or_fetch(&st, "GET", &url, CacheScope::Shared, None, 300, || async {
         st.tracks
             .get_streams(&ctx.access_token, &track_urn, &params)
             .await
@@ -186,7 +186,7 @@ async fn proxy_stream(
         st.config.streaming.service_url,
         urlencoding::encode(&track_urn),
     );
-    Redirect::permanent(&url).into_response()
+    Redirect::temporary(&url).into_response()
 }
 
 async fn get_comments(

@@ -1,16 +1,9 @@
 /**
  * DynamicBackground
  *
- * Renders three large animated colour blobs derived from the current track artwork.
- * Sits between the custom wallpaper and the content layer.
- *
- * Behaviour:
- *  - When no track / no artwork: renders nothing (null).
- *  - When a custom wallpaper is active: mix-blend-mode: screen + lower opacity
- *    so the blobs tint the wallpaper rather than replacing it.
- *  - All keyframe animations respect prefers-reduced-motion.
- *  - CSS custom properties drive the blob colours so React only re-renders
- *    when the artwork URL actually changes (colour values go through inline vars).
+ * Renders three soft colour fields derived from the current track artwork.
+ * Uses smooth multi-stop radial gradients (without heavy offscreen filter: blur)
+ * so overlapping Liquid Glass backdrop-filter layers remain smooth at 60–120 fps.
  */
 
 import React, { useEffect, useRef } from 'react';
@@ -19,29 +12,25 @@ import { art } from '../../lib/formatters';
 import { usePlayerStore } from '../../stores/player';
 import { useSettingsStore } from '../../stores/settings';
 
-/* ── Helpers ────────────────────────────────────────────────── */
-
 interface BlobProps {
   colorVar: string;
+  midVar: string;
   className: string;
   style?: React.CSSProperties;
 }
 
-const Blob = React.memo(({ colorVar, className, style }: BlobProps) => (
+const Blob = React.memo(({ colorVar, midVar, className, style }: BlobProps) => (
   <div
     aria-hidden="true"
     className={`dynamic-bg-blob ${className}`}
     style={{
-      background: `radial-gradient(ellipse at center, var(${colorVar}) 0%, transparent 70%)`,
+      background: `radial-gradient(ellipse at center, var(${colorVar}, transparent) 0%, var(${midVar}, transparent) 38%, transparent 72%)`,
       ...style,
     }}
   />
 ));
 
-/* ── Component ──────────────────────────────────────────────── */
-
 interface DynamicBackgroundProps {
-  /** When true (custom wallpaper active), uses blend mode + lower opacity */
   blendMode?: boolean;
 }
 
@@ -50,22 +39,30 @@ export const DynamicBackground = React.memo(({ blendMode = false }: DynamicBackg
   const colors = useArtworkColor(artwork);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Push colour vars onto the container so CSS can read them without React re-renders
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
     if (colors) {
-      el.style.setProperty('--db-color-1', rgbToCss(colors.dominant, blendMode ? 0.55 : 0.45));
-      el.style.setProperty('--db-color-2', rgbToCss(colors.secondary, blendMode ? 0.45 : 0.36));
-      el.style.setProperty('--db-color-3', rgbToCss(colors.tertiary, blendMode ? 0.4 : 0.3));
+      el.style.setProperty('--db-color-1', rgbToCss(colors.dominant, blendMode ? 0.36 : 0.28));
+      el.style.setProperty('--db-mid-1', rgbToCss(colors.dominant, blendMode ? 0.14 : 0.1));
+      el.style.setProperty('--db-color-2', rgbToCss(colors.secondary, blendMode ? 0.3 : 0.22));
+      el.style.setProperty('--db-mid-2', rgbToCss(colors.secondary, blendMode ? 0.11 : 0.08));
+      el.style.setProperty('--db-color-3', rgbToCss(colors.tertiary, blendMode ? 0.24 : 0.18));
+      el.style.setProperty('--db-mid-3', rgbToCss(colors.tertiary, blendMode ? 0.08 : 0.06));
     } else {
-      el.style.removeProperty('--db-color-1');
-      el.style.removeProperty('--db-color-2');
-      el.style.removeProperty('--db-color-3');
+      for (const prop of [
+        '--db-color-1',
+        '--db-mid-1',
+        '--db-color-2',
+        '--db-mid-2',
+        '--db-color-3',
+        '--db-mid-3',
+      ]) {
+        el.style.removeProperty(prop);
+      }
     }
   }, [colors, blendMode]);
 
-  // Don't render anything if there's no track
   if (!artwork) return null;
 
   return (
@@ -78,74 +75,66 @@ export const DynamicBackground = React.memo(({ blendMode = false }: DynamicBackg
         inset: 0,
         pointerEvents: 'none',
         overflow: 'hidden',
-        zIndex: 0,
-        // When over custom wallpaper, screen blend tints without replacing
+        zIndex: 2,
         mixBlendMode: blendMode ? 'screen' : 'normal',
-        opacity: blendMode ? 0.6 : 1,
+        opacity: blendMode ? 0.65 : 1,
         contain: 'strict',
         transform: 'translateZ(0)',
         willChange: 'opacity',
-        // Smooth colour transitions when track changes
         transition: 'opacity 0.8s ease-out',
       }}
     >
-      {/* Blob 1 — dominant colour, upper-left drift */}
       <Blob
         colorVar="--db-color-1"
+        midVar="--db-mid-1"
         className="dynamic-bg-blob-1"
         style={{
           position: 'absolute',
-          width: '65vw',
-          height: '65vh',
-          top: '-10vh',
-          left: '-10vw',
-          filter: 'blur(80px)',
+          width: '72vw',
+          height: '72vh',
+          top: '-14vh',
+          left: '-12vw',
         }}
       />
 
-      {/* Blob 2 — secondary colour, lower-right drift */}
       <Blob
         colorVar="--db-color-2"
+        midVar="--db-mid-2"
         className="dynamic-bg-blob-2"
         style={{
           position: 'absolute',
-          width: '55vw',
-          height: '55vh',
-          bottom: '-8vh',
-          right: '-8vw',
-          filter: 'blur(90px)',
+          width: '62vw',
+          height: '62vh',
+          bottom: '-12vh',
+          right: '-10vw',
         }}
       />
 
-      {/* Blob 3 — tertiary colour, centre drift */}
       <Blob
         colorVar="--db-color-3"
+        midVar="--db-mid-3"
         className="dynamic-bg-blob-3"
         style={{
           position: 'absolute',
-          width: '45vw',
-          height: '45vh',
-          top: '25vh',
-          left: '28vw',
-          filter: 'blur(100px)',
+          width: '54vw',
+          height: '54vh',
+          top: '22vh',
+          left: '24vw',
         }}
       />
 
-      {/* Dark vignette overlay — keeps text legible and glass panels visible */}
       <div
         style={{
           position: 'absolute',
           inset: 0,
           background:
-            'radial-gradient(ellipse 110% 110% at 50% 50%, transparent 30%, rgba(6,6,9,0.72) 100%)',
+            'radial-gradient(ellipse 110% 110% at 50% 50%, transparent 32%, rgba(6,6,9,0.68) 100%)',
           pointerEvents: 'none',
         }}
       />
     </div>
   );
 });
-
-/* ── Wrapper that reads custom-wallpaper state ──────────────── */
 
 export const DynamicBackgroundConnected = React.memo(() => {
   const hasWallpaper = useSettingsStore((s) => !!s.backgroundImage);

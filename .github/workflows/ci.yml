@@ -14,6 +14,63 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  checks:
+    if: "!contains(github.event.head_commit.message, '!release')"
+    name: Lint, Build & Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: desktop/pnpm-lock.yaml
+
+      - name: Install frontend dependencies
+        working-directory: desktop
+        run: pnpm install --frozen-lockfile
+
+      - name: Biome lint & format check
+        working-directory: desktop
+        run: pnpm biome ci src/
+
+      - name: TypeScript & Vite build
+        working-directory: desktop
+        run: pnpm build
+
+      - name: Frontend unit tests
+        working-directory: desktop
+        run: node --experimental-strip-types --test src/lib/__tests__/*.test.ts
+
+      - name: Install Tauri Linux system deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libasound2-dev
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache (checks)
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            desktop/src-tauri -> target
+            backend -> target
+          key: ubuntu-checks
+
+      - name: Tauri Rust tests
+        working-directory: desktop/src-tauri
+        run: cargo test --lib
+
+      - name: Backend Rust check & tests
+        working-directory: backend
+        run: cargo test
+
   desktop:
     if: "!contains(github.event.head_commit.message, '!release')"
     name: Desktop (${{ matrix.job_name }})
@@ -22,8 +79,11 @@ jobs:
       matrix:
         include:
           - platform: windows-latest
-            args: ""
+            args: "--bundles nsis,msi"
             job_name: windows
+          - platform: ubuntu-22.04
+            args: "--bundles deb,appimage,rpm"
+            job_name: ubuntu
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
@@ -37,6 +97,19 @@ jobs:
           node-version: 22
           cache: pnpm
           cache-dependency-path: desktop/pnpm-lock.yaml
+
+      - name: Install Linux system dependencies
+        if: matrix.job_name == 'ubuntu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            libasound2-dev \
+            patchelf \
+            rpm \
+            squashfs-tools
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
@@ -57,11 +130,45 @@ jobs:
           projectPath: desktop
           args: ${{ matrix.args }}
 
-      - name: Upload artifacts
+      - name: Package Windows Portable ZIP
+        if: matrix.job_name == 'windows'
+        shell: pwsh
+        run: |
+          $version = (Get-Content desktop/src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
+          $portableDir = "portable-staging"
+          New-Item -ItemType Directory -Force -Path $portableDir | Out-Null
+          $exe = Get-ChildItem -Path "desktop/src-tauri/target/release" -Filter "*.exe" |
+            Where-Object { $_.Name -notlike "*-setup.exe" -and $_.Name -notlike "uninstall*" } |
+            Select-Object -First 1
+          if (-not $exe) { throw "Release executable not found" }
+          Copy-Item $exe.FullName "$portableDir/SoundCloud Mod.exe"
+          @"
+          SoundCloud Mod v$version (Windows x64 Portable)
+          ===============================================
+          Run "SoundCloud Mod.exe" directly — no installation required.
+          Requires Microsoft Edge WebView2 Runtime (pre-installed on Windows 11 and modern Windows 10).
+          "@ | Set-Content -Path "$portableDir/README-PORTABLE.txt" -Encoding UTF8
+          New-Item -ItemType Directory -Force -Path "artifacts" | Out-Null
+          Compress-Archive -Path "$portableDir/*" -DestinationPath "artifacts/SoundCloud-Mod-v$version-windows-x64-portable.zip" -Force
+
+      - name: Upload Windows artifacts
+        if: matrix.job_name == 'windows'
         uses: actions/upload-artifact@v4
         with:
-          name: ci-${{ matrix.job_name }}
-          retention-days: 3
+          name: ci-windows
+          retention-days: 5
           path: |
             desktop/src-tauri/target/**/release/bundle/nsis/*.exe
             desktop/src-tauri/target/**/release/bundle/msi/*.msi
+            artifacts/*-windows-x64-portable.zip
+
+      - name: Upload Ubuntu artifacts
+        if: matrix.job_name == 'ubuntu'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-ubuntu
+          retention-days: 5
+          path: |
+            desktop/src-tauri/target/**/release/bundle/deb/*.deb
+            desktop/src-tauri/target/**/release/bundle/appimage/*.AppImage
+            desktop/src-tauri/target/**/release/bundle/rpm/*.rpm

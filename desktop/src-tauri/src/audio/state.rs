@@ -44,7 +44,7 @@ pub struct AudioState {
     pub load_gen: AtomicU64,
     pub media_tx: Mutex<Option<std::sync::mpsc::Sender<MediaCmd>>>,
     pub audio_tx: std::sync::mpsc::Sender<AudioThreadCmd>,
-    pub source_bytes: Mutex<Option<Vec<u8>>>,
+    pub source_bytes: Mutex<Option<Arc<[u8]>>>,
     pub follow_default_output: AtomicBool,
     pub last_known_default_output: Mutex<Option<String>>,
     pub lyrics_timeline: Mutex<Option<LyricsTimelineState>>,
@@ -126,7 +126,7 @@ pub fn init() -> AudioState {
     let shared_mixer = mixer_rx.recv().expect("audio thread failed to init");
 
     let http_client = reqwest::Client::builder()
-        .timeout(Duration::from_secs(30))
+        .read_timeout(Duration::from_secs(30))
         .connect_timeout(Duration::from_secs(10))
         .build()
         .expect("failed to build HTTP client");

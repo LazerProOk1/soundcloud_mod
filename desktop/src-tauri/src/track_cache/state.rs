@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 use std::error::Error as _;
+use std::fs::{FileTimes, Metadata, OpenOptions};
+use std::io::Read as _;
 use std::path::Path;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -20,14 +22,16 @@ const MIN_AUDIO_SIZE: u64 = 8192;
 const AUDIO_SNIFF_LEN: usize = 16;
 const STREAM_WRITE_BUFFER_SIZE: usize = 256 * 1024;
 const STORAGE_CONNECT_TIMEOUT_MS: u64 = 3_000;
-const STORAGE_TIMEOUT_MS: u64 = 8_000;
-const STORAGE_COOLDOWN_SECS: u64 = 30;
+const STORAGE_HEADERS_TIMEOUT_MS: u64 = 5_000;
+const STORAGE_COOLDOWN_SECS: u64 = 60;
+const STORAGE_COOLDOWN_AFTER: u8 = 2;
 const DOWNLOAD_CONNECT_TIMEOUT_MS: u64 = 4_000;
 const DOWNLOAD_READ_TIMEOUT_SECS: u64 = 30; // per-chunk read timeout — enough for slow servers
 const RETRY_DELAYS_MS: [u64; 2] = [300, 1_000]; // short backoff between retries
-const MAX_PARALLEL_PRELOADS: usize = 20;
+const MAX_PARALLEL_PRELOADS: usize = 3;
 const MAX_PARALLEL_LIKES: usize = 4;
 const CACHE_METADATA_EXT: &str = ".meta.json";
+const PROGRESS_EMIT_STEP: f64 = 0.02;
 
 /// Magic-byte validation for audio files
 fn is_valid_audio(prefix: &[u8], total_size: u64) -> bool {
@@ -271,12 +275,13 @@ struct DownloadResult {
 }
 
 #[derive(serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct LikeCacheEntry {
     pub urn: String,
     pub urls: Vec<String>,
-    #[serde(default)]
+    #[serde(default, alias = "storage_urls")]
     pub storage_urls: Vec<String>,
-    #[serde(default)]
+    #[serde(default, alias = "session_id")]
     pub session_id: Option<String>,
 }
 
@@ -317,12 +322,69 @@ fn dir_size(dir: &Path) -> u64 {
     total
 }
 
+fn is_temp_cache_file(path: &Path) -> bool {
+    let Some(name) = path.file_name().and_then(|s| s.to_str()) else {
+        return false;
+    };
+    name.ends_with(".part") || name.ends_with(".tmp")
+}
+
+fn is_valid_cached_file(path: &Path) -> bool {
+    let Ok(mut file) = std::fs::File::open(path) else {
+        return false;
+    };
+    let Ok(meta) = file.metadata() else {
+        return false;
+    };
+    if !meta.is_file() || meta.len() < MIN_AUDIO_SIZE {
+        return false;
+    }
+    let mut sniff = [0u8; AUDIO_SNIFF_LEN];
+    let n = file.read(&mut sniff).unwrap_or(0);
+    is_valid_audio(&sniff[..n], meta.len())
+}
+
+fn mark_used(path: &Path) {
+    let Ok(file) = OpenOptions::new().write(true).open(path) else {
+        return;
+    };
+    let _ = file.set_times(FileTimes::new().set_accessed(SystemTime::now()));
+}
+
+fn last_used(meta: &Metadata) -> SystemTime {
+    let accessed = meta.accessed().ok();
+    let modified = meta.modified().ok();
+    match (accessed, modified) {
+        (Some(a), Some(b)) => a.max(b),
+        (Some(a), None) | (None, Some(a)) => a,
+        (None, None) => UNIX_EPOCH,
+    }
+}
+
+fn sweep_temp_files(dir: &Path) {
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return;
+    };
+    let mut removed = 0u32;
+    for entry in entries.flatten() {
+        let path = entry.path();
+        if entry.metadata().map(|m| m.is_file()).unwrap_or(false) && is_temp_cache_file(&path) {
+            if std::fs::remove_file(&path).is_ok() {
+                removed += 1;
+            }
+        }
+    }
+    if removed > 0 {
+        println!("[TrackCache] swept {removed} leftover temp files in {}", dir.display());
+    }
+}
+
 fn clear_audio_dir(dir: &Path) {
     if let Ok(entries) = std::fs::read_dir(dir) {
         for entry in entries.flatten() {
             let path = entry.path();
             if entry.metadata().map(|m| m.is_file()).unwrap_or(false)
-                && is_audio_cache_file(&path)
+                && (is_audio_cache_file(&path) || is_temp_cache_file(&path))
             {
                 std::fs::remove_file(&path).ok();
                 remove_cache_metadata(&path);
@@ -345,13 +407,12 @@ fn collect_cached_urns(
         let Some(urn) = filename_to_urn(&name) else {
             continue;
         };
-        let meta = entry.metadata();
-        if meta.map(|m| m.len() >= MIN_AUDIO_SIZE).unwrap_or(false) {
+        let path = entry.path();
+        if is_valid_cached_file(&path) {
             if seen.insert(urn.clone()) {
                 out.push(urn);
             }
         } else {
-            let path = entry.path();
             std::fs::remove_file(&path).ok();
             remove_cache_metadata(&path);
         }
@@ -370,12 +431,15 @@ pub struct TrackCacheState {
     likes_limiter: Arc<Semaphore>,
     likes_running: Arc<std::sync::atomic::AtomicBool>,
     likes_cancel: Arc<std::sync::atomic::AtomicBool>,
-    /// Per-host storage circuit breaker: host -> epoch secs of last failure.
-    storage_cooldowns: Arc<StdMutex<HashMap<String, u64>>>,
+    /// Per-host storage circuit breaker: host -> (consecutive_failures, epoch_secs).
+    storage_cooldowns: Arc<StdMutex<HashMap<String, (u8, u64)>>>,
     anon: Arc<AnonClient>,
 }
 
 pub fn init(audio_dir: PathBuf, liked_dir: PathBuf) -> TrackCacheState {
+    sweep_temp_files(&audio_dir);
+    sweep_temp_files(&liked_dir);
+
     let client = Client::builder()
         .redirect(reqwest::redirect::Policy::limited(10))
         .tcp_nodelay(true)
@@ -390,7 +454,7 @@ pub fn init(audio_dir: PathBuf, liked_dir: PathBuf) -> TrackCacheState {
         .tcp_nodelay(true)
         .pool_max_idle_per_host(4)
         .connect_timeout(Duration::from_millis(STORAGE_CONNECT_TIMEOUT_MS))
-        .timeout(Duration::from_millis(STORAGE_TIMEOUT_MS))
+        .read_timeout(Duration::from_secs(DOWNLOAD_READ_TIMEOUT_SECS))
         .build()
         .expect("failed to build storage client");
 
@@ -478,6 +542,7 @@ async fn write_response_to_cache(
     let mut stream = response.bytes_stream();
     let mut total_size = 0u64;
     let mut sniff = Vec::with_capacity(AUDIO_SNIFF_LEN);
+    let mut last_progress = 0.0f64;
 
     while let Some(chunk) = stream.next().await {
         let chunk = match chunk {
@@ -501,16 +566,20 @@ async fn write_response_to_cache(
 
         if let Some(app) = app_handle {
             if content_length > 0 {
-                let _ = app.emit(
-                    "track:download-progress",
-                    serde_json::json!({
-                        "urn": urn,
-                        "downloaded": total_size,
-                        "total": content_length,
-                        "progress": total_size as f64 / content_length as f64,
-                        "source": source.label(),
-                    }),
-                );
+                let progress = (total_size as f64 / content_length as f64).min(1.0);
+                if progress - last_progress >= PROGRESS_EMIT_STEP || progress >= 1.0 {
+                    last_progress = progress;
+                    let _ = app.emit(
+                        "track:download-progress",
+                        serde_json::json!({
+                            "urn": urn,
+                            "downloaded": total_size,
+                            "total": content_length,
+                            "progress": progress,
+                            "source": source.label(),
+                        }),
+                    );
+                }
             }
         }
     }
@@ -521,6 +590,13 @@ async fn write_response_to_cache(
     }
     drop(writer);
 
+    if content_length > 0 && total_size < content_length {
+        cleanup_temp_file(&temp_path).await;
+        return Err(DownloadError::Retryable(format!(
+            "truncated response: got {total_size} of {content_length} bytes"
+        )));
+    }
+
     if !is_valid_audio(&sniff, total_size) {
         cleanup_temp_file(&temp_path).await;
         return Err(DownloadError::Fatal("Invalid audio data".into()));
@@ -528,36 +604,26 @@ async fn write_response_to_cache(
 
     let cache_meta = TrackCacheMetadata { quality, source: Some(source) };
 
-    if let Ok(meta) = tokio::fs::metadata(&final_path).await {
-        if meta.len() >= MIN_AUDIO_SIZE {
-            cleanup_temp_file(&temp_path).await;
-            return Ok(DownloadResult { path: final_path });
-        }
+    if is_valid_cached_file(&final_path) {
+        cleanup_temp_file(&temp_path).await;
+        return Ok(DownloadResult { path: final_path });
     }
 
+    write_cache_metadata(&final_path, &cache_meta).await;
     match tokio::fs::rename(&temp_path, &final_path).await {
-        Ok(()) => {
-            write_cache_metadata(&final_path, &cache_meta).await;
-            Ok(DownloadResult { path: final_path })
-        }
+        Ok(()) => Ok(DownloadResult { path: final_path }),
         Err(first_err) => {
-            if tokio::fs::metadata(&final_path)
-                .await
-                .map(|meta| meta.len() >= MIN_AUDIO_SIZE)
-                .unwrap_or(false)
-            {
+            if is_valid_cached_file(&final_path) {
                 cleanup_temp_file(&temp_path).await;
                 return Ok(DownloadResult { path: final_path });
             }
 
             tokio::fs::remove_file(&final_path).await.ok();
             match tokio::fs::rename(&temp_path, &final_path).await {
-                Ok(()) => {
-                    write_cache_metadata(&final_path, &cache_meta).await;
-                    Ok(DownloadResult { path: final_path })
-                }
+                Ok(()) => Ok(DownloadResult { path: final_path }),
                 Err(second_err) => {
                     cleanup_temp_file(&temp_path).await;
+                    remove_cache_metadata(&final_path);
                     Err(DownloadError::Fatal(format!(
                         "Cache rename failed: {first_err}; {second_err}"
                     )))
@@ -582,15 +648,14 @@ async fn write_bytes_to_cache(
         return Err(DownloadError::Fatal("Invalid audio data".into()));
     }
 
-    // Emit "writing" progress so the UI doesn't look stuck at 1%
     if let Some(app) = app_handle {
         let _ = app.emit(
             "track:download-progress",
             serde_json::json!({
                 "urn": urn,
-                "downloaded": total_size / 2,
+                "downloaded": total_size,
                 "total": total_size,
-                "progress": 0.5,
+                "progress": 0.96,
                 "source": source.label(),
             }),
         );
@@ -615,36 +680,26 @@ async fn write_bytes_to_cache(
 
     let cache_meta = TrackCacheMetadata { quality, source: Some(source) };
 
-    if let Ok(meta) = tokio::fs::metadata(&final_path).await {
-        if meta.len() >= MIN_AUDIO_SIZE {
-            cleanup_temp_file(&temp_path).await;
-            return Ok(DownloadResult { path: final_path });
-        }
+    if is_valid_cached_file(&final_path) {
+        cleanup_temp_file(&temp_path).await;
+        return Ok(DownloadResult { path: final_path });
     }
 
+    write_cache_metadata(&final_path, &cache_meta).await;
     match tokio::fs::rename(&temp_path, &final_path).await {
-        Ok(()) => {
-            write_cache_metadata(&final_path, &cache_meta).await;
-            Ok(DownloadResult { path: final_path })
-        }
+        Ok(()) => Ok(DownloadResult { path: final_path }),
         Err(first_err) => {
-            if tokio::fs::metadata(&final_path)
-                .await
-                .map(|meta| meta.len() >= MIN_AUDIO_SIZE)
-                .unwrap_or(false)
-            {
+            if is_valid_cached_file(&final_path) {
                 cleanup_temp_file(&temp_path).await;
                 return Ok(DownloadResult { path: final_path });
             }
 
             tokio::fs::remove_file(&final_path).await.ok();
             match tokio::fs::rename(&temp_path, &final_path).await {
-                Ok(()) => {
-                    write_cache_metadata(&final_path, &cache_meta).await;
-                    Ok(DownloadResult { path: final_path })
-                }
+                Ok(()) => Ok(DownloadResult { path: final_path }),
                 Err(second_err) => {
                     cleanup_temp_file(&temp_path).await;
+                    remove_cache_metadata(&final_path);
                     Err(DownloadError::Fatal(format!(
                         "Cache rename failed: {first_err}; {second_err}"
                     )))
@@ -729,20 +784,23 @@ impl TrackCacheState {
 
     /// Resolve the existing cached path (liked dir takes priority).
     /// Returns `None` if the track is not cached in either directory.
+    /// Removes corrupted/truncated files if found.
     fn resolve_path(&self, urn: &str) -> Option<PathBuf> {
         let liked = self.liked_file_path(urn);
-        if std::fs::metadata(&liked)
-            .map(|m| m.len() >= MIN_AUDIO_SIZE)
-            .unwrap_or(false)
-        {
-            return Some(liked);
+        if liked.exists() {
+            if is_valid_cached_file(&liked) {
+                return Some(liked);
+            }
+            std::fs::remove_file(&liked).ok();
+            remove_cache_metadata(&liked);
         }
         let audio = self.file_path(urn);
-        if std::fs::metadata(&audio)
-            .map(|m| m.len() >= MIN_AUDIO_SIZE)
-            .unwrap_or(false)
-        {
-            return Some(audio);
+        if audio.exists() {
+            if is_valid_cached_file(&audio) {
+                return Some(audio);
+            }
+            std::fs::remove_file(&audio).ok();
+            remove_cache_metadata(&audio);
         }
         None
     }
@@ -764,6 +822,23 @@ impl TrackCacheState {
         ))
     }
 
+    pub fn mark_played(&self, urn: &str) {
+        if let Some(path) = self.resolve_path(urn) {
+            mark_used(&path);
+        }
+    }
+
+    pub fn remove_cached(&self, urn: &str) -> bool {
+        let mut removed = false;
+        for path in [self.file_path(urn), self.liked_file_path(urn)] {
+            if path.exists() && std::fs::remove_file(&path).is_ok() {
+                remove_cache_metadata(&path);
+                removed = true;
+            }
+        }
+        removed
+    }
+
     /// Download track, save to cache. Coalesces concurrent requests for the same URN.
     /// Tries each URL in order with retries, falling back to the next on failure.
     fn storage_host_available(&self, host: &str) -> bool {
@@ -772,13 +847,18 @@ impl TrackCacheState {
         };
         match map.get(host) {
             None => true,
-            Some(failed_at) => now_secs().saturating_sub(*failed_at) >= STORAGE_COOLDOWN_SECS,
+            Some((failures, failed_at)) => {
+                *failures < STORAGE_COOLDOWN_AFTER
+                    || now_secs().saturating_sub(*failed_at) >= STORAGE_COOLDOWN_SECS
+            }
         }
     }
 
     fn mark_storage_host_failed(&self, host: &str) {
         if let Ok(mut map) = self.storage_cooldowns.lock() {
-            map.insert(host.to_string(), now_secs());
+            let entry = map.entry(host.to_string()).or_insert((0, 0));
+            entry.0 = entry.0.saturating_add(1);
+            entry.1 = now_secs();
         }
     }
 
@@ -796,9 +876,16 @@ impl TrackCacheState {
         session_id: Option<&str>,
         liked: bool,
     ) -> Result<TrackCacheEntry, String> {
-        if let Some(entry) = self.get_cache_entry(urn) {
+        if liked {
+            let _ = self.promote_to_liked(urn).await;
+        }
+        if let Some(path) = self.resolve_path(urn) {
+            mark_used(&path);
             println!("[TrackCache] hit: {urn}");
-            return Ok(entry);
+            return Ok(TrackCacheEntry::from_path_and_meta(
+                &path,
+                read_cache_metadata(&path),
+            ));
         }
 
         let target_dir = if liked { &self.liked_dir } else { &self.audio_dir };
@@ -813,10 +900,17 @@ impl TrackCacheState {
             notify.notified().await;
             let res = result_slot.lock().await;
             return match res.as_ref() {
-                Some(Ok(path)) => Ok(TrackCacheEntry::from_path_and_meta(
-                    path,
-                    read_cache_metadata(path),
-                )),
+                Some(Ok(path)) => {
+                    if liked {
+                        let _ = self.promote_to_liked(urn).await;
+                    }
+                    let final_path = self.resolve_path(urn).unwrap_or_else(|| path.clone());
+                    mark_used(&final_path);
+                    Ok(TrackCacheEntry::from_path_and_meta(
+                        &final_path,
+                        read_cache_metadata(&final_path),
+                    ))
+                }
                 Some(Err(e)) => Err(e.clone()),
                 None => Err("download completed without result".into()),
             };
@@ -844,8 +938,10 @@ impl TrackCacheState {
         notify.notify_waiters();
         self.active.lock().await.remove(urn);
 
-        download_result
-            .map(|path| TrackCacheEntry::from_path_and_meta(&path, read_cache_metadata(&path)))
+        download_result.map(|path| {
+            mark_used(&path);
+            TrackCacheEntry::from_path_and_meta(&path, read_cache_metadata(&path))
+        })
     }
 
     /// Try each storage URL once (healthy hosts first), then API URLs with retries.
@@ -882,8 +978,14 @@ impl TrackCacheState {
             };
             let prefer_hq = storage_url.contains("/hq/");
 
-            match self.client.get(&redirect_url).send().await {
-                Ok(resp) if resp.status().is_success() => {
+            let headers_res = tokio::time::timeout(
+                Duration::from_millis(STORAGE_HEADERS_TIMEOUT_MS),
+                self.client.get(&redirect_url).send(),
+            )
+            .await;
+
+            match headers_res {
+                Ok(Ok(resp)) if resp.status().is_success() => {
                     let quality = if prefer_hq {
                         PlaybackQuality::Hq
                     } else {
@@ -916,15 +1018,18 @@ impl TrackCacheState {
                         }
                     }
                 }
-                Ok(resp) if resp.status().as_u16() == 404 || resp.status().as_u16() == 410 => {}
-                Ok(resp) => {
+                Ok(Ok(resp)) if resp.status().as_u16() == 404 || resp.status().as_u16() == 410 => {}
+                Ok(Ok(resp)) => {
                     eprintln!(
                         "[TrackCache] s3 redirect HTTP {} for {urn} ({host})",
                         resp.status()
                     );
                 }
-                Err(err) => {
+                Ok(Err(err)) => {
                     eprintln!("[TrackCache] s3 redirect failed for {urn} ({host}): {err}");
+                }
+                Err(_) => {
+                    eprintln!("[TrackCache] s3 redirect headers timeout for {urn} ({host})");
                 }
             }
         }
@@ -932,14 +1037,35 @@ impl TrackCacheState {
         // 2. Try anon: download directly from SC public API v2.
         //    Saves a hop through our streaming infra when the user can reach
         //    SoundCloud directly.
-        // Reset progress so UI doesn't look stuck at whatever S3 left it at.
         if let Some(app) = self.app_handle.as_ref() {
             let _ = app.emit(
                 "track:download-progress",
                 serde_json::json!({ "urn": urn, "downloaded": 0, "total": 1, "progress": 0.05, "source": "anon" }),
             );
         }
-        match self.anon.get_stream(urn).await {
+        let last_pct = std::sync::atomic::AtomicU64::new(5);
+        let anon_progress = |frac: f64| {
+            let Some(app) = self.app_handle.as_ref() else {
+                return;
+            };
+            let clamped = (0.05 + frac.clamp(0.0, 1.0) * 0.9).min(0.95);
+            let pct = (clamped * 100.0) as u64;
+            let prev = last_pct.load(std::sync::atomic::Ordering::Relaxed);
+            if pct >= prev + 2 {
+                last_pct.store(pct, std::sync::atomic::Ordering::Relaxed);
+                let _ = app.emit(
+                    "track:download-progress",
+                    serde_json::json!({
+                        "urn": urn,
+                        "downloaded": pct,
+                        "total": 100,
+                        "progress": clamped,
+                        "source": "anon",
+                    }),
+                );
+            }
+        };
+        match self.anon.get_stream(urn, &anon_progress).await {
             Ok(Some(result)) => {
                 let line = format!("[TrackCache] {urn} → anon (SC api v2)");
                 println!("{line}");
@@ -1002,8 +1128,14 @@ impl TrackCacheState {
             }
             let prefer_hq = storage_url.contains("/hq/");
 
-            match self.storage_client.get(*storage_url).send().await {
-                Ok(resp) if resp.status().is_success() => {
+            let headers_res = tokio::time::timeout(
+                Duration::from_millis(STORAGE_HEADERS_TIMEOUT_MS),
+                self.storage_client.get(*storage_url).send(),
+            )
+            .await;
+
+            match headers_res {
+                Ok(Ok(resp)) if resp.status().is_success() => {
                     self.mark_storage_host_ok(&host);
                     let quality = if prefer_hq {
                         PlaybackQuality::Hq
@@ -1039,13 +1171,19 @@ impl TrackCacheState {
                         }
                     }
                 }
-                Ok(resp) if resp.status().as_u16() == 404 || resp.status().as_u16() == 410 => {}
-                Ok(resp) => {
+                Ok(Ok(resp)) if resp.status().as_u16() == 404 || resp.status().as_u16() == 410 => {
+                    self.mark_storage_host_ok(&host);
+                }
+                Ok(Ok(resp)) => {
                     eprintln!("[TrackCache] storage HTTP {} for {urn} ({host})", resp.status());
                     self.mark_storage_host_failed(&host);
                 }
-                Err(err) => {
+                Ok(Err(err)) => {
                     eprintln!("[TrackCache] storage failed for {urn} ({host}): {err}");
+                    self.mark_storage_host_failed(&host);
+                }
+                Err(_) => {
+                    eprintln!("[TrackCache] storage headers timeout for {urn} ({host})");
                     self.mark_storage_host_failed(&host);
                 }
             }
@@ -1132,9 +1270,15 @@ impl TrackCacheState {
 
     fn liked_has_file(&self, urn: &str) -> bool {
         let path = self.liked_file_path(urn);
-        std::fs::metadata(&path)
-            .map(|m| m.len() >= MIN_AUDIO_SIZE)
-            .unwrap_or(false)
+        if !path.exists() {
+            return false;
+        }
+        if is_valid_cached_file(&path) {
+            return true;
+        }
+        std::fs::remove_file(&path).ok();
+        remove_cache_metadata(&path);
+        false
     }
 
     /// If the track lives only in the regular audio cache, move it to the
@@ -1146,10 +1290,11 @@ impl TrackCacheState {
             return true;
         }
         let audio = self.file_path(urn);
-        if !std::fs::metadata(&audio)
-            .map(|m| m.len() >= MIN_AUDIO_SIZE)
-            .unwrap_or(false)
-        {
+        if !is_valid_cached_file(&audio) {
+            if audio.exists() {
+                std::fs::remove_file(&audio).ok();
+                remove_cache_metadata(&audio);
+            }
             return false;
         }
 
@@ -1159,6 +1304,7 @@ impl TrackCacheState {
 
         if tokio::fs::rename(&audio, &liked).await.is_ok() {
             tokio::fs::rename(&audio_meta, &liked_meta).await.ok();
+            mark_used(&liked);
             return true;
         }
 
@@ -1174,6 +1320,7 @@ impl TrackCacheState {
             tokio::fs::remove_file(&audio_meta).await.ok();
         }
         tokio::fs::remove_file(&audio).await.ok();
+        mark_used(&liked);
         true
     }
 
@@ -1249,6 +1396,9 @@ impl TrackCacheState {
             let Ok(permit) = self.likes_limiter.clone().acquire_owned().await else {
                 break;
             };
+            if self.likes_cancel.load(std::sync::atomic::Ordering::Relaxed) {
+                break;
+            }
 
             let state = self.clone();
             let done = done.clone();
@@ -1367,11 +1517,14 @@ impl TrackCacheState {
         urns
     }
 
-    pub fn enforce_limit(&self, limit_mb: u64) {
+    pub fn enforce_limit(&self, limit_mb: u64, protected_urns: &[String]) {
         if limit_mb == 0 {
             return;
         }
         let limit_bytes = limit_mb * 1024 * 1024;
+        let protected: std::collections::HashSet<String> =
+            protected_urns.iter().map(|u| urn_to_filename(u)).collect();
+        let now = SystemTime::now();
 
         let mut files: Vec<(PathBuf, u64, std::time::SystemTime)> = Vec::new();
         let mut total = 0u64;
@@ -1379,20 +1532,45 @@ impl TrackCacheState {
         if let Ok(entries) = std::fs::read_dir(&self.audio_dir) {
             for entry in entries.flatten() {
                 let path = entry.path();
+                let Ok(meta) = entry.metadata() else {
+                    continue;
+                };
+                if !meta.is_file() {
+                    continue;
+                }
+
+                // Clean up abandoned temp files older than 30 minutes
+                if is_temp_cache_file(&path) {
+                    if let Ok(mod_time) = meta.modified() {
+                        if now.duration_since(mod_time).unwrap_or_default() > Duration::from_secs(1800) {
+                            std::fs::remove_file(&path).ok();
+                        }
+                    }
+                    continue;
+                }
+
+                // Clean up orphan .meta.json files whose audio file no longer exists
+                if let Some(name) = path.file_name().and_then(|s| s.to_str()) {
+                    if let Some(base_name) = name.strip_suffix(CACHE_METADATA_EXT) {
+                        if !self.audio_dir.join(base_name).exists() {
+                            std::fs::remove_file(&path).ok();
+                        }
+                        continue;
+                    }
+                }
+
                 if !is_audio_cache_file(&path) {
                     continue;
                 }
-                if let Ok(meta) = entry.metadata() {
-                    if meta.is_file() {
-                        let size = meta.len();
-                        let accessed = meta
-                            .accessed()
-                            .or_else(|_| meta.modified())
-                            .unwrap_or(std::time::UNIX_EPOCH);
-                        total += size;
-                        files.push((path, size, accessed));
-                    }
+
+                let size = meta.len();
+                total += size;
+                let file_name = entry.file_name().to_string_lossy().into_owned();
+                if protected.contains(&file_name) {
+                    continue;
                 }
+                let used = last_used(&meta);
+                files.push((path, size, used));
             }
         }
 
@@ -1414,9 +1592,127 @@ impl TrackCacheState {
                 removed += 1;
             }
         }
-        println!(
-            "[TrackCache] evicted {removed} files, freed {} MB",
-            (before - total) / (1024 * 1024)
+        if removed > 0 {
+            println!(
+                "[TrackCache] evicted {removed} files, freed {} MB",
+                (before - total) / (1024 * 1024)
+            );
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::atomic::{AtomicU64, Ordering};
+
+    static TEST_DIR_SEQ: AtomicU64 = AtomicU64::new(0);
+
+    struct TempDirGuard(PathBuf);
+
+    impl TempDirGuard {
+        fn new(label: &str) -> Self {
+            let seq = TEST_DIR_SEQ.fetch_add(1, Ordering::Relaxed);
+            let dir = std::env::temp_dir().join(format!(
+                "sc_mod_test_{}_{}_{}",
+                label,
+                std::process::id(),
+                seq
+            ));
+            std::fs::create_dir_all(&dir).expect("create temp test dir");
+            Self(dir)
+        }
+    }
+
+    impl Drop for TempDirGuard {
+        fn drop(&mut self) {
+            std::fs::remove_dir_all(&self.0).ok();
+        }
+    }
+
+    #[test]
+    fn validates_known_audio_magic_bytes() {
+        let mut id3 = vec![0u8; 16];
+        id3[..3].copy_from_slice(b"ID3");
+        assert!(is_valid_audio(&id3, MIN_AUDIO_SIZE));
+        assert!(!is_valid_audio(&id3, MIN_AUDIO_SIZE - 1));
+
+        let mut ogg = vec![0u8; 16];
+        ogg[..4].copy_from_slice(b"OggS");
+        assert!(is_valid_audio(&ogg, 64_000));
+
+        let mut ftyp = vec![0u8; 16];
+        ftyp[4..8].copy_from_slice(b"ftyp");
+        assert!(is_valid_audio(&ftyp, 64_000));
+
+        let mut adts = vec![0u8; 16];
+        adts[0] = 0xff;
+        adts[1] = 0xf1;
+        assert!(is_valid_audio(&adts, 64_000));
+
+        let html_err = b"<!DOCTYPE html><";
+        assert!(!is_valid_audio(html_err, 64_000));
+    }
+
+    #[test]
+    fn urn_filename_roundtrip() {
+        let urn = "soundcloud:tracks:123456789";
+        let filename = urn_to_filename(urn);
+        assert_eq!(filename, "soundcloud_tracks_123456789.audio");
+        assert_eq!(filename_to_urn(&filename).as_deref(), Some(urn));
+    }
+
+    #[test]
+    fn enforce_limit_preserves_protected_urns_and_cleans_orphans() {
+        let root = TempDirGuard::new("lru");
+        let audio_dir = root.0.join("audio");
+        let liked_dir = root.0.join("liked");
+        std::fs::create_dir_all(&audio_dir).unwrap();
+        std::fs::create_dir_all(&liked_dir).unwrap();
+
+        let state = init(audio_dir.clone(), liked_dir);
+
+        // Two 1 MiB files -> exceeds 1 MiB limit; protected file must survive
+        let protected_urn = "soundcloud:tracks:1001";
+        let evict_urn = "soundcloud:tracks:1002";
+
+        let protected_path = audio_dir.join(urn_to_filename(protected_urn));
+        let evict_path = audio_dir.join(urn_to_filename(evict_urn));
+
+        let mut payload = vec![0u8; 900 * 1024];
+        payload[..4].copy_from_slice(b"OggS");
+
+        std::fs::write(&evict_path, &payload).unwrap();
+        std::fs::write(cache_metadata_path(&evict_path), b"{}").unwrap();
+
+        std::fs::write(&protected_path, &payload).unwrap();
+        std::fs::write(cache_metadata_path(&protected_path), b"{}").unwrap();
+
+        // Orphan metadata file should be pruned automatically
+        let orphan_meta = audio_dir.join("soundcloud_tracks_9999.audio.meta.json");
+        std::fs::write(&orphan_meta, b"{}").unwrap();
+
+        state.enforce_limit(1, &[protected_urn.to_string()]);
+
+        assert!(protected_path.exists(), "protected track must remain cached");
+        assert!(!evict_path.exists(), "unprotected track must be evicted");
+        assert!(
+            !cache_metadata_path(&evict_path).exists(),
+            "evicted track metadata must be removed"
         );
+        assert!(!orphan_meta.exists(), "orphan metadata must be pruned");
+    }
+
+    #[test]
+    fn like_cache_entry_accepts_camel_and_snake_case() {
+        let camel = r#"{"urn":"soundcloud:tracks:1","urls":["https://a"],"storageUrls":["https://b"],"sessionId":"sid"}"#;
+        let parsed_camel: LikeCacheEntry = serde_json::from_str(camel).unwrap();
+        assert_eq!(parsed_camel.storage_urls.as_deref(), Some(&["https://b".to_string()][..]));
+        assert_eq!(parsed_camel.session_id.as_deref(), Some("sid"));
+
+        let snake = r#"{"urn":"soundcloud:tracks:2","urls":["https://a"],"storage_urls":["https://c"],"session_id":"sid2"}"#;
+        let parsed_snake: LikeCacheEntry = serde_json::from_str(snake).unwrap();
+        assert_eq!(parsed_snake.storage_urls.as_deref(), Some(&["https://c".to_string()][..]));
+        assert_eq!(parsed_snake.session_id.as_deref(), Some("sid2"));
     }
 }

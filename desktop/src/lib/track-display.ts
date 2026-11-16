@@ -31,9 +31,7 @@ export function getArtistDisplay(
   const availability = (enrichment?.availability ?? 'indexed') as TrackAvailability;
   const pending = enrichment?.state === 'pending' || (!enrichment && availability === 'indexed');
   const uploadKind =
-    enrichment && enrichment.upload_kind && enrichment.upload_kind !== 'unknown'
-      ? enrichment.upload_kind
-      : null;
+    enrichment?.upload_kind && enrichment.upload_kind !== 'unknown' ? enrichment.upload_kind : null;
 
   // Priority: enrichment.primary_artist → publisher_metadata.artist → uploader
   const realName = real?.name?.trim() || null;

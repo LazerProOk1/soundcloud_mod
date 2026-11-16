@@ -30,10 +30,10 @@ export function UserPage() {
 
   const isOwnProfile = !!user && currentUser?.urn === user.urn;
 
-  // Star subscription UI removed — badge always hidden.
-  useSubscription(false);
-  useUserSubscription(undefined);
-  const hasStar = false;
+  // Star features and Aura customization are unlocked free for all users.
+  const { data: ownHasStar } = useSubscription(isOwnProfile);
+  const { data: userHasStar } = useUserSubscription(isOwnProfile ? undefined : urn);
+  const hasStar = isOwnProfile ? (ownHasStar ?? true) : (userHasStar ?? true);
 
   const readonly = useUserAura(urn, hasStar && !isOwnProfile);
   const editable = useEditableUserAura(urn, hasStar && isOwnProfile);

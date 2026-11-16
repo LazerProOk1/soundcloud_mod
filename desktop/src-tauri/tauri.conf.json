@@ -27,13 +27,28 @@
   },
   "bundle": {
     "active": true,
-    "targets": "nsis",
+    "targets": "all",
     "publisher": "LazerProOk1",
     "copyright": "© 2026 LazerProOk1",
+    "category": "AudioVideo",
+    "shortDescription": "Native Liquid Glass SoundCloud client with Rust audio engine",
+    "longDescription": "SoundCloud Mod is a native desktop client for SoundCloud featuring a custom Rust audio engine, 10-band EQ, local track caching, synchronized lyrics, SoundWave discovery, free Star auras, and Discord Rich Presence.",
+    "linux": {
+      "deb": {
+        "depends": [
+          "libwebkit2gtk-4.1-0",
+          "libayatana-appindicator3-1",
+          "libasound2"
+        ]
+      },
+      "appimage": {
+        "bundleMediaFramework": true
+      }
+    },
     "windows": {
       "nsis": {
-        "languages": ["Russian"],
-        "displayLanguageSelector": false,
+        "languages": ["Russian", "English"],
+        "displayLanguageSelector": true,
         "installMode": "currentUser",
         "compression": "lzma",
         "headerImage": "nsis/header.bmp",

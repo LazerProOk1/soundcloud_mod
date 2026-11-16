@@ -1,18 +1,21 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import { SoundWaveBlock } from '../components/music/soundwave';
 import { TrackCard } from '../components/music/TrackCard';
 import { HorizontalScroll } from '../components/ui/HorizontalScroll';
 import { Skeleton } from '../components/ui/Skeleton';
+import { useBatchTrackHydration, useFollowingTracks, useLikedTracks } from '../lib/hooks';
 import {
-  useBatchTrackHydration,
-  useDiscoverData,
-  useFollowingTracks,
-  useLikedTracks,
-  useRecommendedTracks,
-  useRelatedPool,
-} from '../lib/hooks';
-import { ChevronRight, Compass, Headphones, Heart, Music, Sparkles } from '../lib/icons';
+  AudioLines,
+  ChevronRight,
+  Compass,
+  Download,
+  Headphones,
+  Heart,
+  Library,
+  Music,
+} from '../lib/icons';
 import {
   getOfflineFollowingTracks,
   getOfflineLikedTracks,
@@ -81,15 +84,40 @@ function ShelfSkeleton({ count = 8 }: { count?: number }) {
   );
 }
 
-/* ── Featured Card (hero, first feed track) ───────────────── */
+/* ── Recently played ──────────────────────────────────────── */
 
-/* ── Feed Track Card (compact horizontal) ─────────────────── */
+const RecentlyPlayedShelf = React.memo(function RecentlyPlayedShelf() {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const [tracks, setTracks] = useState<Track[]>([]);
 
-/* ── Feed Playlist Card ───────────────────────────────────── */
+  useEffect(() => {
+    getRecentlyPlayed()
+      .then(setTracks)
+      .catch(() => {});
+  }, []);
 
-/* ── Isolated Sections ────────────────────────────────────── */
+  if (tracks.length === 0) return null;
 
-// FallbackShelf удалён — содержал захардкоженные треки оригинального автора
+  return (
+    <section>
+      <SectionHeader
+        title={t('home.recentlyPlayed', 'Recently Played')}
+        icon={<Headphones size={15} className="text-white/60" />}
+        onSeeAll={() => navigate('/library?tab=history')}
+      />
+      <HorizontalScroll>
+        {tracks.map((track) => (
+          <div key={track.urn} className="w-[180px] shrink-0">
+            <TrackCard track={track} queue={tracks} />
+          </div>
+        ))}
+      </HorizontalScroll>
+    </section>
+  );
+});
+
+/* ── Liked tracks ─────────────────────────────────────────── */
 
 const LikedShelf = React.memo(function LikedShelf({
   likedTracks,
@@ -135,6 +163,8 @@ const LikedShelf = React.memo(function LikedShelf({
   );
 });
 
+/* ── Following releases ───────────────────────────────────── */
+
 const FollowingShelf = React.memo(function FollowingShelf({
   followingTracks,
   isLoading,
@@ -170,7 +200,7 @@ const FollowingShelf = React.memo(function FollowingShelf({
     <section>
       <SectionHeader
         title={t('home.freshReleases')}
-        icon={<Music size={15} className="text-white/50" />}
+        icon={<Music size={15} className="text-white/55" />}
       />
       <HorizontalScroll>
         {showSkeleton ? (
@@ -187,131 +217,11 @@ const FollowingShelf = React.memo(function FollowingShelf({
   );
 });
 
-const RecentlyPlayedShelf = React.memo(function RecentlyPlayedShelf() {
-  const { t } = useTranslation();
-  const [tracks, setTracks] = useState<Track[]>([]);
-
-  useEffect(() => {
-    getRecentlyPlayed()
-      .then(setTracks)
-      .catch(() => {});
-  }, []);
-
-  if (tracks.length === 0) return null;
-
-  return (
-    <section>
-      <SectionHeader
-        title={t('home.recentlyPlayed', 'Recently Played')}
-        icon={<Headphones size={15} className="text-white/50" />}
-      />
-      <HorizontalScroll>
-        {tracks.map((track) => (
-          <div key={track.urn} className="w-[180px] shrink-0">
-            <TrackCard track={track} queue={tracks} />
-          </div>
-        ))}
-      </HorizontalScroll>
-    </section>
-  );
-});
-
-const DiscoverSection = React.memo(function DiscoverSection({
-  likedTracks,
-}: {
-  likedTracks: Track[];
-}) {
-  const { t } = useTranslation();
-  const { data: pool, isLoading } = useRelatedPool(likedTracks);
-
-  // ── Recommended ──
-  const recommendedTracks = useRecommendedTracks(pool, 40);
-  useBatchTrackHydration(recommendedTracks);
-
-  // ── Discover by genre ──
-  const discoverData = useDiscoverData(pool, likedTracks);
-  const [activeGenre, setActiveGenre] = useState<string | null>(null);
-  const genres = useMemo(() => discoverData.map((d) => d.genre), [discoverData]);
-  const selectedGenre =
-    activeGenre && genres.includes(activeGenre) ? activeGenre : (genres[0] ?? null);
-  const genreTracks = useMemo(
-    () => discoverData.find((d) => d.genre === selectedGenre)?.tracks ?? [],
-    [discoverData, selectedGenre],
-  );
-
-  return (
-    <>
-      {/* Recommended For You */}
-      {(isLoading || recommendedTracks.length > 0) && (
-        <section>
-          <SectionHeader
-            title={t('home.recommended', 'Recommended For You')}
-            icon={<Sparkles size={15} className="text-amber-400/70" />}
-          />
-          <HorizontalScroll>
-            {isLoading ? (
-              <ShelfSkeleton />
-            ) : (
-              recommendedTracks.map((track, i) => (
-                <div
-                  key={track.urn}
-                  className="w-[180px] shrink-0 animate-liquid-reveal"
-                  style={{ animationDelay: `${Math.min(i * 45, 540)}ms` }}
-                >
-                  <TrackCard track={track} queue={recommendedTracks} />
-                </div>
-              ))
-            )}
-          </HorizontalScroll>
-        </section>
-      )}
-
-      {/* Discover by genre */}
-      {(isLoading || genres.length > 0) && (
-        <section>
-          <SectionHeader
-            title={t('home.discover', 'Discover')}
-            icon={<Compass size={15} className="text-cyan-400/70" />}
-          />
-          <div className="flex items-center gap-1.5 mb-4 flex-wrap">
-            {genres.map((g) => (
-              <button
-                key={g}
-                type="button"
-                onClick={() => setActiveGenre(g)}
-                className={`glass-pill px-3.5 py-1.5 text-[12px] font-medium capitalize ${
-                  selectedGenre === g ? 'text-white/92' : 'text-white/45 !bg-white/[0.04]'
-                }`}
-              >
-                {g}
-              </button>
-            ))}
-          </div>
-          <HorizontalScroll>
-            {isLoading ? (
-              <ShelfSkeleton />
-            ) : (
-              genreTracks.map((track, i) => (
-                <div
-                  key={track.urn}
-                  className="w-[180px] shrink-0 animate-liquid-reveal"
-                  style={{ animationDelay: `${Math.min(i * 45, 540)}ms` }}
-                >
-                  <TrackCard track={track} queue={genreTracks} />
-                </div>
-              ))
-            )}
-          </HorizontalScroll>
-        </section>
-      )}
-    </>
-  );
-});
-
 /* ── Home Page ────────────────────────────────────────────── */
 
 export function Home() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const user = useAuthStore((s) => s.user);
   const likedTracksQuery = useLikedTracks(100);
   const followingQuery = useFollowingTracks(20);
@@ -330,20 +240,62 @@ export function Home() {
   );
 
   return (
-    <div className="p-6 pb-4 space-y-8">
-      {/* Hero Greeting — no data hooks, won't re-render */}
-      <section className="pt-1 animate-fade-in-scale">
+    <div className="p-6 pb-4 space-y-8 page-enter">
+      {/* Hero Greeting + Quick Navigation Pills */}
+      <section className="pt-1 flex flex-wrap items-center justify-between gap-4 animate-fade-in-scale">
         <h1 className="hero-greeting syne text-3xl leading-tight pb-1">
           {t(greetingKey())}
           {user?.username ? `, ${user.username}` : ''}
         </h1>
+
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => navigate('/soundwave')}
+            className="glass-pill px-3.5 py-1.5 text-[12px] font-semibold text-white/90 inline-flex items-center gap-1.5 cursor-pointer"
+            style={{
+              background:
+                'linear-gradient(135deg, var(--color-accent-glow), rgba(255,255,255,0.06))',
+              borderColor: 'rgba(255,255,255,0.16)',
+            }}
+          >
+            <AudioLines size={13} style={{ color: 'var(--color-accent)' }} />
+            {t('nav.soundwave')}
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/discover')}
+            className="glass-pill px-3.5 py-1.5 text-[12px] font-medium text-white/65 hover:text-white inline-flex items-center gap-1.5 cursor-pointer"
+          >
+            <Compass size={13} />
+            {t('nav.discover')}
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/library')}
+            className="glass-pill px-3.5 py-1.5 text-[12px] font-medium text-white/65 hover:text-white inline-flex items-center gap-1.5 cursor-pointer"
+          >
+            <Library size={13} />
+            {t('nav.library')}
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/offline')}
+            className="glass-pill px-3.5 py-1.5 text-[12px] font-medium text-white/65 hover:text-white inline-flex items-center gap-1.5 cursor-pointer"
+          >
+            <Download size={13} />
+            {t('nav.offline')}
+          </button>
+        </div>
       </section>
 
-      {/* Each section is isolated — own hooks, own re-render boundary */}
+      {/* Personal SoundWave Block right on the Home screen */}
+      <SoundWaveBlock />
+
+      {/* Personal shelves: Recently Played -> Liked -> Fresh Releases */}
+      <RecentlyPlayedShelf />
       <LikedShelf likedTracks={likedShelfTracks} isLoading={likedTracksQuery.isLoading} />
       <FollowingShelf followingTracks={followingTracks} isLoading={followingQuery.isLoading} />
-      <RecentlyPlayedShelf />
-      <DiscoverSection likedTracks={likedTracksQuery.tracks} />
     </div>
   );
 }
