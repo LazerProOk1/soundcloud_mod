@@ -8,7 +8,7 @@
  *   – Лента «Далее в волне» с быстрым переходом к любому следующему треку
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -37,16 +37,15 @@ import {
   RefreshCw,
   SkipBack,
   SkipForward,
-  Sparkles,
 } from '../lib/icons';
 import { isUrnLiked } from '../lib/likes';
 import { useArtistDisplay, useDisplayTitle } from '../lib/track-display';
+import { matchesLanguages } from '../lib/track-language';
 import { tuneWaveTracks } from '../lib/wave-vibes';
 import { useAuthStore } from '../stores/auth';
 import { useLyricsStore } from '../stores/lyrics';
 import { type Track, usePlayerStore } from '../stores/player';
 import { useSettingsStore } from '../stores/settings';
-import { matchesLanguages } from '../lib/track-language';
 
 /* ── Module-level wave session tracker ────────────────────────────
  * Persists across SoundWavePage unmount/remount (navigation away and back).
@@ -81,15 +80,6 @@ export function SoundWavePage() {
 
   const [refreshSeed, setRefreshSeed] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
-
-  const tips = useMemo(() => {
-    const translated = t('soundwave.tips', { returnObjects: true });
-    if (Array.isArray(translated) && translated.length > 0) {
-      return translated.map(String);
-    }
-    return [t('soundwave.tagline')];
-  }, [t]);
-  const [tipIdx] = useState(() => Math.floor(Math.random() * 100));
 
   const stableLanguages = useMemo(() => [...selectedLanguages].sort(), [selectedLanguages]);
   const langKey = stableLanguages.join(',') || 'all';
@@ -189,6 +179,22 @@ export function SoundWavePage() {
     usePlayerStore.getState().play(allTracks[0], allTracks);
   }, [allTracks]);
 
+  // Changing language / vibe / mode while the wave plays restarts it with the new mix
+  // (once the re-filtered pool is ready), instead of finishing the old queue.
+  const filterKey = `${stableLanguages.join(',')}|${waveVibe}|${waveMode}|${hideLiked}`;
+  const prevFilterKey = useRef(filterKey);
+  const restartPending = useRef(false);
+  useEffect(() => {
+    if (prevFilterKey.current === filterKey) return;
+    prevFilterKey.current = filterKey;
+    if (isWaveTrack) restartPending.current = true;
+  }, [filterKey, isWaveTrack]);
+  useEffect(() => {
+    if (!restartPending.current || allTracks.length === 0) return;
+    restartPending.current = false;
+    handleStartWave();
+  }, [allTracks, handleStartWave]);
+
   const handlePlayFromWave = useCallback(
     (track: Track) => {
       const source = isWaveTrack && queue.length > 0 ? queue : allTracks;
@@ -251,7 +257,7 @@ export function SoundWavePage() {
       {/* ── Soft Liquid Glass ambient orbs (blur-free smooth gradients) ─ */}
       <div
         aria-hidden="true"
-        className="absolute pointer-events-none"
+        className="wave-blob absolute pointer-events-none"
         style={{
           width: '120%',
           height: '78%',
@@ -259,14 +265,14 @@ export function SoundWavePage() {
           left: '-15%',
           borderRadius: '50%',
           background: dom
-            ? `radial-gradient(ellipse at center, ${rgbToCss(dom, 0.4)} 0%, ${rgbToCss(dom, 0.14)} 42%, transparent 70%)`
-            : 'radial-gradient(ellipse at center, var(--color-accent-glow) 0%, transparent 68%)',
+            ? `radial-gradient(ellipse at center, ${rgbToCss(dom, 0.22)} 0%, ${rgbToCss(dom, 0.07)} 42%, transparent 70%)`
+            : 'none',
           transition: 'background 1.2s ease-out',
         }}
       />
       <div
         aria-hidden="true"
-        className="absolute pointer-events-none"
+        className="wave-blob absolute pointer-events-none"
         style={{
           width: '105%',
           height: '68%',
@@ -274,8 +280,8 @@ export function SoundWavePage() {
           right: '-18%',
           borderRadius: '50%',
           background: sec
-            ? `radial-gradient(ellipse at center, ${rgbToCss(sec, 0.32)} 0%, ${rgbToCss(sec, 0.11)} 42%, transparent 70%)`
-            : 'radial-gradient(ellipse at center, rgba(99,102,241,0.22) 0%, transparent 68%)',
+            ? `radial-gradient(ellipse at center, ${rgbToCss(sec, 0.14)} 0%, ${rgbToCss(sec, 0.05)} 42%, transparent 70%)`
+            : 'none',
           transition: 'background 1.2s ease-out',
         }}
       />
@@ -298,15 +304,8 @@ export function SoundWavePage() {
         {/* ── Top Bar: Brand + Live Pill + Filters + Refresh ── */}
         <header className="flex flex-wrap items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-3">
-            <div
-              className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0"
-              style={{
-                background: 'linear-gradient(135deg, var(--color-accent), rgba(255,255,255,0.16))',
-                boxShadow:
-                  '0 0 24px var(--color-accent-glow), inset 0 1px 0 rgba(255,255,255,0.28)',
-              }}
-            >
-              <AudioLines size={18} style={{ color: 'var(--color-accent-contrast)' }} />
+            <div className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-white text-black">
+              <AudioLines size={18} />
             </div>
             <div>
               <div className="flex items-center gap-2">
@@ -347,10 +346,8 @@ export function SoundWavePage() {
               disabled={spinning}
               className="flex items-center gap-2 h-8 px-3.5 rounded-full text-[12px] font-semibold text-white/85 hover:text-white transition-all duration-200 cursor-pointer disabled:opacity-40 active:scale-95 select-none"
               style={{
-                background: 'rgba(255,255,255,0.10)',
-                border: '1px solid rgba(255,255,255,0.16)',
-                backdropFilter: 'blur(16px)',
-                WebkitBackdropFilter: 'blur(16px)',
+                background: 'rgba(255,255,255,0.08)',
+                border: '1px solid rgba(255,255,255,0.1)',
               }}
             >
               <RefreshCw size={12} className={spinning ? 'animate-spin' : ''} />
@@ -367,20 +364,7 @@ export function SoundWavePage() {
         />
 
         {/* ── Central Liquid Glass Stage ────────────────────────── */}
-        <section
-          className="relative rounded-[32px] p-6 md:p-8 flex flex-col items-center gap-6 my-auto"
-          style={{
-            background:
-              'linear-gradient(160deg, rgba(255,255,255,0.085) 0%, rgba(255,255,255,0.03) 55%, rgba(10,10,16,0.45) 100%)',
-            border: '1px solid rgba(255,255,255,0.12)',
-            backdropFilter: 'blur(26px) saturate(160%)',
-            WebkitBackdropFilter: 'blur(26px) saturate(160%)',
-            boxShadow: dom
-              ? `0 24px 80px rgba(0,0,0,0.5), 0 0 80px ${rgbToCss(dom, 0.2)}, inset 0 1px 0 rgba(255,255,255,0.18)`
-              : '0 24px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.18)',
-            transition: 'box-shadow 1.2s ease-out',
-          }}
-        >
+        <section className="relative p-2 md:p-4 flex flex-col items-center gap-6 my-auto">
           {/* Artist & Track Title */}
           <div className="text-center max-w-2xl w-full">
             {displayTrack ? (
@@ -395,9 +379,7 @@ export function SoundWavePage() {
                   style={{
                     fontSize: 'clamp(28px, 5vw, 56px)',
                     fontFamily: 'var(--font-display)',
-                    textShadow: dom
-                      ? `0 0 60px ${rgbToCss(dom, 0.45)}, 0 4px 24px rgba(0,0,0,0.45)`
-                      : '0 4px 24px rgba(0,0,0,0.45)',
+                    textShadow: '0 2px 12px rgba(0,0,0,0.35)',
                   }}
                 >
                   {artistDisplay.primary}
@@ -452,10 +434,7 @@ export function SoundWavePage() {
               style={{
                 width: 216,
                 height: 216,
-                boxShadow: dom
-                  ? `0 22px 64px ${rgbToCss(dom, 0.55)}, 0 8px 24px rgba(0,0,0,0.55)`
-                  : '0 22px 64px rgba(0,0,0,0.55)',
-                transition: 'box-shadow 1.2s ease-out',
+                boxShadow: '0 16px 40px rgba(0,0,0,0.5)',
               }}
             >
               {artworkUrl ? (
@@ -480,15 +459,9 @@ export function SoundWavePage() {
                 <div
                   className="w-[62px] h-[62px] rounded-full flex items-center justify-center transition-transform duration-200 group-hover/art:scale-110 active:scale-90"
                   style={{
-                    background:
-                      isPlaying && !!currentTrack
-                        ? 'linear-gradient(165deg, rgba(255,255,255,0.98) 0%, rgba(218,218,230,0.92) 100%)'
-                        : 'var(--color-accent)',
-                    boxShadow:
-                      isPlaying && !!currentTrack
-                        ? '0 1px 0 rgba(255,255,255,1) inset, 0 8px 24px rgba(0,0,0,0.45)'
-                        : '0 8px 26px var(--color-accent-glow)',
-                    color: isPlaying && !!currentTrack ? '#0b0b0f' : 'var(--color-accent-contrast)',
+                    background: '#fff',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.45)',
+                    color: '#0b0b0f',
                   }}
                 >
                   {isBuffering && !!currentTrack ? (
@@ -520,12 +493,7 @@ export function SoundWavePage() {
                 type="button"
                 onClick={handleStartWave}
                 disabled={allTracks.length === 0}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-full text-[13.5px] font-bold cursor-pointer hover:brightness-110 active:scale-95 transition-all disabled:opacity-40 select-none"
-                style={{
-                  background: 'var(--color-accent)',
-                  color: 'var(--color-accent-contrast)',
-                  boxShadow: '0 6px 26px var(--color-accent-glow)',
-                }}
+                className="flex items-center gap-2 px-5 py-2.5 rounded-full text-[13.5px] font-bold cursor-pointer bg-white text-black hover:scale-[1.04] active:scale-95 transition-transform disabled:opacity-40 select-none"
               >
                 <Play size={14} fill="currentColor" strokeWidth={0} />
                 {t('soundwave.startWave', 'Start wave')}
@@ -586,64 +554,42 @@ export function SoundWavePage() {
           )}
         </section>
 
-        {/* ── Up Next in Wave Strip + Rotating Tip ────────────── */}
-        <footer className="flex flex-col gap-4 shrink-0">
-          {upNextTracks.length > 0 && (
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between px-1">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/40">
-                  {t('soundwave.upNext', 'Up next in wave')}
-                </span>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
-                {upNextTracks.map((tr) => {
-                  const thumb = art(tr.artwork_url, 'large');
-                  return (
-                    <button
-                      key={tr.urn}
-                      type="button"
-                      onClick={() => handlePlayFromWave(tr)}
-                      className="flex items-center gap-2.5 p-2 rounded-2xl text-left transition-all duration-200 cursor-pointer hover:bg-white/[0.11] active:scale-[0.98]"
-                      style={{
-                        background: 'rgba(255,255,255,0.055)',
-                        border: '1px solid rgba(255,255,255,0.09)',
-                        backdropFilter: 'blur(16px)',
-                        WebkitBackdropFilter: 'blur(16px)',
-                      }}
-                    >
-                      {thumb ? (
-                        <img
-                          src={thumb}
-                          alt={tr.title}
-                          className="w-10 h-10 rounded-xl object-cover shrink-0 ring-1 ring-white/10"
-                          decoding="async"
-                          loading="lazy"
-                        />
-                      ) : (
-                        <div className="w-10 h-10 rounded-xl bg-white/[0.06] shrink-0 flex items-center justify-center">
-                          <AudioLines size={14} className="text-white/30" />
-                        </div>
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <p className="text-[12px] font-semibold text-white/88 truncate">
-                          {tr.title}
-                        </p>
-                        <p className="text-[10.5px] text-white/45 truncate">
-                          {tr.user?.username ?? ''}
-                        </p>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          <div className="flex items-center justify-center gap-2 text-center pt-1">
-            <Sparkles size={13} className="text-white/35 shrink-0" />
-            <p className="text-[12px] text-white/40 select-none">{tips[tipIdx % tips.length]}</p>
-          </div>
-        </footer>
+        {/* ── Up next: a compact "Next" row of chips, like a queue preview ── */}
+        {upNextTracks.length > 0 && (
+          <footer className="flex flex-wrap items-center justify-center gap-2 shrink-0">
+            <span className="text-[13px] font-semibold text-white/60 mr-1">
+              {t('soundwave.next', 'Next')}
+            </span>
+            {upNextTracks.slice(0, 3).map((tr, i) => {
+              const thumb = art(tr.artwork_url, 't67x67');
+              return (
+                <button
+                  key={tr.urn}
+                  type="button"
+                  onClick={() => handlePlayFromWave(tr)}
+                  title={`${tr.user?.username ?? ''} — ${tr.title}`}
+                  className="wave-next-chip flex items-center gap-2 h-9 pl-1 pr-3.5 rounded-full bg-white/[0.07] hover:bg-white/[0.14] border border-white/[0.08] cursor-pointer max-w-[240px]"
+                  style={{ animationDelay: `${i * 60}ms` }}
+                >
+                  {thumb ? (
+                    <img
+                      src={thumb}
+                      alt=""
+                      className="w-7 h-7 rounded-full object-cover shrink-0"
+                      decoding="async"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <span className="w-7 h-7 rounded-full bg-white/[0.08] shrink-0 flex items-center justify-center">
+                      <AudioLines size={12} className="text-white/40" />
+                    </span>
+                  )}
+                  <span className="text-[13px] font-medium text-white/90 truncate">{tr.title}</span>
+                </button>
+              );
+            })}
+          </footer>
+        )}
       </div>
     </div>
   );

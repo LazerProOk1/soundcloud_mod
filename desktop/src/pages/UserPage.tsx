@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
-import { AuraField } from '../components/user/AuraField';
 import { IdentityHub } from '../components/user/IdentityHub';
 import { USER_PAGE_KEYFRAMES } from '../components/user/keyframes';
 import { TabDock, type TabId } from '../components/user/TabDock';
@@ -13,9 +12,8 @@ import {
   UserTracksTab,
 } from '../components/user/UserTabs';
 import { useEditableUserAura, useUserAura } from '../components/user/useUserAura';
-import { useUser, useUserSubscription, useUserWebProfiles } from '../lib/hooks';
+import { useUser, useUserWebProfiles } from '../lib/hooks';
 import { Loader2 } from '../lib/icons';
-import { useSubscription } from '../lib/subscription';
 import { useAuthStore } from '../stores/auth';
 
 export function UserPage() {
@@ -30,10 +28,8 @@ export function UserPage() {
 
   const isOwnProfile = !!user && currentUser?.urn === user.urn;
 
-  // Star features and Aura customization are unlocked free for all users.
-  const { data: ownHasStar } = useSubscription(isOwnProfile);
-  const { data: userHasStar } = useUserSubscription(isOwnProfile ? undefined : urn);
-  const hasStar = isOwnProfile ? (ownHasStar ?? true) : (userHasStar ?? true);
+  // Profile decoration (Star badge, aura picker, star field) is switched off: plain profile.
+  const hasStar = false;
 
   const readonly = useUserAura(urn, hasStar && !isOwnProfile);
   const editable = useEditableUserAura(urn, hasStar && isOwnProfile);
@@ -65,8 +61,6 @@ export function UserPage() {
     <>
       <style>{USER_PAGE_KEYFRAMES}</style>
       <div className="relative w-full min-h-screen">
-        <AuraField aura={aura} isStar={hasStar} />
-
         <div
           className="relative z-10 w-full max-w-[1480px] mx-auto px-4 md:px-8 pt-10 md:pt-16 pb-32"
           style={{ isolation: 'isolate' }}

@@ -41,6 +41,7 @@ export const VibeTuner = React.memo(function VibeTuner({
               type="button"
               onClick={() => onVibeChange(item.id)}
               aria-pressed={active}
+              data-vibe-active={active}
               className={`inline-flex items-center gap-1.5 rounded-full font-medium transition-all duration-200 cursor-pointer active:scale-95 select-none ${
                 compact ? 'h-7 px-2.5 text-[11.5px]' : 'h-8 px-3 text-[12px]'
               } ${

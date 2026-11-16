@@ -262,7 +262,7 @@ export const ProgressSlider = React.memo(() => {
       </Slider.Track>
       <Slider.Thumb
         ref={thumbRef}
-        className="block w-3 h-3 rounded-full bg-accent shadow-[0_0_10px_var(--color-accent-glow)] scale-0 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-150 outline-none will-change-transform"
+        className="block w-3 h-3 rounded-full bg-accent scale-0 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-150 outline-none will-change-transform"
       />
       <span ref={tipRef} className={tipClass} />
     </Slider.Root>
@@ -404,7 +404,7 @@ const PlaybackQualityBadge = React.memo(() => {
       </span>
       {playbackSource === 'storage' && (
         <span className="hidden xl:inline-flex h-6 shrink-0 items-center gap-1.5 rounded-md border border-[#b7ffd8]/[0.16] bg-[#b7ffd8]/[0.07] px-2 text-[8px] font-medium tracking-[0.12em] text-[#dff7e9]/82">
-          <span className="h-1.5 w-1.5 rounded-full bg-[#b7ffd8] shadow-[0_0_8px_rgba(183,255,216,0.55)]" />
+          <span className="h-1.5 w-1.5 rounded-full bg-[#b7ffd8]" />
           {t('player.qualityCDN')}
         </span>
       )}
@@ -667,7 +667,7 @@ export const PlaybackRateSlider = React.memo(() => {
         <Slider.Track className="relative h-[3px] grow rounded-full bg-white/[0.08] transition-all duration-150 group-hover/rate:h-[4px]">
           <Slider.Range className="absolute h-full rounded-full bg-accent" />
         </Slider.Track>
-        <Slider.Thumb className="block h-2.5 w-2.5 rounded-full bg-accent shadow-[0_0_10px_var(--color-accent-glow)] outline-none transition-all duration-150 scale-0 opacity-0 group-hover/rate:scale-100 group-hover/rate:opacity-100" />
+        <Slider.Thumb className="block h-2.5 w-2.5 rounded-full bg-accent outline-none transition-all duration-150 scale-0 opacity-0 group-hover/rate:scale-100 group-hover/rate:opacity-100" />
       </Slider.Root>
       {/* 1.00x tick mark */}
       <div className="relative mt-1 h-2 w-full pointer-events-none">
@@ -780,7 +780,7 @@ export const PitchSlider = React.memo(() => {
         <Slider.Track className="relative h-[3px] grow rounded-full bg-white/[0.08] transition-all duration-150 group-hover/pitch:h-[4px]">
           <Slider.Range className="absolute h-full rounded-full bg-accent" />
         </Slider.Track>
-        <Slider.Thumb className="block h-2.5 w-2.5 rounded-full bg-accent shadow-[0_0_10px_var(--color-accent-glow)] outline-none transition-all duration-150 scale-0 opacity-0 group-hover/pitch:scale-100 group-hover/pitch:opacity-100 disabled:scale-0 disabled:opacity-0" />
+        <Slider.Thumb className="block h-2.5 w-2.5 rounded-full bg-accent outline-none transition-all duration-150 scale-0 opacity-0 group-hover/pitch:scale-100 group-hover/pitch:opacity-100 disabled:scale-0 disabled:opacity-0" />
       </Slider.Root>
       {/* 0 semi tick */}
       <div className="relative mt-1 h-2 w-full pointer-events-none">

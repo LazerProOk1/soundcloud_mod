@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { type Aura, auraRgba } from '../../lib/aura';
+import type { Aura } from '../../lib/aura';
 import { fc } from '../../lib/formatters';
 
 export type TabId = 'popular' | 'tracks' | 'playlists' | 'likes' | 'followers' | 'following';
@@ -19,7 +19,7 @@ interface TabDockProps<T extends string = string> {
 
 const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
-function TabDockImpl<T extends string>({ tabs, active, onChange, aura }: TabDockProps<T>) {
+function TabDockImpl<T extends string>({ tabs, active, onChange }: TabDockProps<T>) {
   const dockRef = useRef<HTMLDivElement>(null);
   const [pill, setPill] = useState<{ x: number; w: number } | null>(null);
   const [overflows, setOverflows] = useState(false);
@@ -131,7 +131,7 @@ function TabDockImpl<T extends string>({ tabs, active, onChange, aura }: TabDock
   }, [isHovered]);
 
   return (
-    <div className="sticky top-3 z-40 flex justify-center pointer-events-none px-2 sm:px-4">
+    <div className="relative z-10 flex justify-start pointer-events-none">
       <div
         ref={dockRef}
         onPointerDown={onPointerDown}
@@ -142,26 +142,17 @@ function TabDockImpl<T extends string>({ tabs, active, onChange, aura }: TabDock
         onWheel={onWheel}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        className={`pointer-events-auto relative flex items-center gap-0.5 sm:gap-1 p-1 sm:p-1.5 rounded-2xl min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x select-none [&::-webkit-scrollbar]:hidden [scrollbar-width:none] ${
+        className={`pointer-events-auto relative flex items-center gap-2 p-1 sm:p-1.5 rounded-2xl min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x select-none [&::-webkit-scrollbar]:hidden [scrollbar-width:none] ${
           overflows ? 'cursor-grab' : 'cursor-default'
         }`}
-        style={{
-          background: 'rgba(15,15,18,0.55)',
-          backdropFilter: 'blur(40px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(40px) saturate(180%)',
-          boxShadow:
-            '0 24px 60px rgba(0,0,0,0.45), inset 0 0 0 1px rgba(255,255,255,0.08), inset 0 1px 0 rgba(255,255,255,0.08)',
-        }}
       >
         {pill && (
           <div
-            className="absolute top-1 bottom-1 sm:top-1.5 sm:bottom-1.5 rounded-xl transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)]"
+            className="absolute top-1 bottom-1 sm:top-1.5 sm:bottom-1.5 rounded-full bg-white"
             style={{
               left: pill.x,
               width: pill.w,
-              background: `linear-gradient(180deg, ${auraRgba(aura, 0.22)}, ${auraRgba(aura, 0.06)})`,
-              border: `0.5px solid ${auraRgba(aura, 0.35)}`,
-              boxShadow: `0 6px 20px ${auraRgba(aura, 0.25)}, inset 0 0.5px 0 rgba(255,255,255,0.12)`,
+              transition: 'left 0.5s var(--spring-soft), width 0.5s var(--spring-soft)',
             }}
           />
         )}
@@ -173,18 +164,16 @@ function TabDockImpl<T extends string>({ tabs, active, onChange, aura }: TabDock
               type="button"
               data-tab={tab.id}
               onClick={() => onChange(tab.id)}
-              className={`relative z-10 shrink-0 inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 md:px-4 h-8 sm:h-9 rounded-xl text-[12px] sm:text-[12.5px] font-semibold transition-colors duration-300 ${
+              className={`relative z-10 shrink-0 inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 md:px-4 h-8 sm:h-9 rounded-full text-[13px] sm:text-[14px] font-semibold transition-colors duration-300 ${
                 overflows ? 'cursor-grab' : 'cursor-pointer'
-              } ${isActive ? 'text-white' : 'text-white/45 hover:text-white/85'}`}
+              } ${isActive ? 'text-black' : 'text-white/80 bg-white/[0.07] hover:bg-white/[0.12] hover:text-white'}`}
             >
               <span className="whitespace-nowrap">{tab.label}</span>
               {tab.count != null && (
                 <span
-                  className="hidden sm:inline-flex text-[10px] tabular-nums font-bold px-1.5 py-0.5 rounded-md transition-colors"
-                  style={{
-                    background: isActive ? 'rgba(255,255,255,0.16)' : 'rgba(255,255,255,0.05)',
-                    color: isActive ? '#fff' : 'rgba(255,255,255,0.35)',
-                  }}
+                  className={`hidden sm:inline text-[12px] tabular-nums font-medium ${
+                    isActive ? 'text-black/55' : 'text-white/45'
+                  }`}
                 >
                   {fc(tab.count)}
                 </span>

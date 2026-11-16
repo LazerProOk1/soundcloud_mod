@@ -39,11 +39,11 @@ export default function YMImportFloatingStatus() {
           <div className="relative h-2.5 overflow-hidden rounded-full bg-white/[0.08] ring-1 ring-white/[0.06]">
             <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.1),rgba(255,255,255,0.02))]" />
             <div
-              className="absolute inset-y-0 left-0 rounded-full bg-[linear-gradient(90deg,rgba(255,120,64,0.72),rgba(255,85,0,1)_58%,rgba(255,185,120,0.92))] shadow-[0_0_12px_rgba(255,85,0,0.9),0_0_28px_rgba(255,85,0,0.45)] transition-[width] duration-500 ease-out"
+              className="absolute inset-y-0 left-0 rounded-full bg-[linear-gradient(90deg,rgba(255,120,64,0.72),rgba(255,85,0,1)_58%,rgba(255,185,120,0.92))] transition-[width] duration-500 ease-out"
               style={{ width: `${pct}%` }}
             />
             <div
-              className="absolute top-1/2 h-3.5 w-3.5 -translate-y-1/2 rounded-full border border-white/45 bg-white shadow-[0_0_10px_rgba(255,255,255,0.85),0_0_18px_rgba(255,85,0,0.7)] transition-[left] duration-500 ease-out"
+              className="absolute top-1/2 h-3.5 w-3.5 -translate-y-1/2 rounded-full border border-white/45 bg-white transition-[left] duration-500 ease-out"
               style={{ left: glowLeft }}
             />
           </div>

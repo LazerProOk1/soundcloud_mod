@@ -4,7 +4,7 @@ import { Check, Globe, Instagram, LinkIcon, Sparkles, Twitter, Youtube } from '.
 export const VerifiedBadge = React.memo(function VerifiedBadge({ title }: { title: string }) {
   return (
     <div
-      className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center ring-2 ring-white/20 shadow-[0_0_16px_rgba(59,130,246,0.55)]"
+      className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center ring-2 ring-white/20"
       title={title}
     >
       <Check size={13} className="text-white" strokeWidth={3.5} />
@@ -48,7 +48,7 @@ export const ProChip = React.memo(function ProChip({ plan }: { plan: string }) {
         WebkitBackdropFilter: 'blur(12px)',
       }}
     >
-      <span className="w-1.5 h-1.5 rounded-full bg-orange-400 shadow-[0_0_6px_#ff5500]" />
+      <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
       {plan}
     </span>
   );

@@ -59,7 +59,7 @@ const TrackRow = React.memo(
           onClick={togglePlay}
         >
           {isThisPlaying ? (
-            <div className="w-9 h-9 rounded-full bg-accent text-accent-contrast flex items-center justify-center shadow-[0_0_15px_var(--color-accent-glow)] scale-100 animate-fade-in-up">
+            <div className="w-9 h-9 rounded-full bg-accent text-accent-contrast flex items-center justify-center scale-100 animate-fade-in-up">
               <Pause size={16} fill="currentColor" strokeWidth={0} />
             </div>
           ) : (

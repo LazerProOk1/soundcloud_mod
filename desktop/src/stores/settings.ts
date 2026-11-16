@@ -53,10 +53,23 @@ export const THEME_PRESETS: Record<Exclude<ThemePreset, 'custom'>, ThemePresetDe
   },
 };
 
+export type MusicSourceId = 'soundcloud' | 'zaycev' | 'youtube' | 'audius';
+export interface MusicSource {
+  id: MusicSourceId;
+  enabled: boolean;
+}
+export const DEFAULT_MUSIC_SOURCES: MusicSource[] = [
+  { id: 'soundcloud', enabled: true },
+  { id: 'zaycev', enabled: true },
+  { id: 'youtube', enabled: true },
+  { id: 'audius', enabled: true },
+];
+
 export interface SettingsState {
   /** Where tracks are fetched first; the other sources stay as fallbacks. */
-  primarySource: 'soundcloud' | 'zaycev';
-  setPrimarySource: (s: 'soundcloud' | 'zaycev') => void;
+  /** Where tracks are downloaded from, in priority order; disabled ones are skipped. */
+  musicSources: MusicSource[];
+  setMusicSources: (sources: MusicSource[]) => void;
   nowPlayingPanel: boolean;
   setNowPlayingPanel: (open: boolean) => void;
   uiScale: number;
@@ -93,6 +106,8 @@ export interface SettingsState {
   soundwaveVibe: WaveVibeId;
   soundwaveHideLiked: boolean;
   lyricsVisualizer: boolean;
+  /** Synced lyrics light up word by word (karaoke) instead of whole lines. */
+  lyricsWordMode: boolean;
   cacheListenedTracks: boolean;
   /** Crossfade duration in seconds. 0 = disabled. */
   crossfadeDuration: number;
@@ -126,6 +141,7 @@ export interface SettingsState {
   setSoundwaveVibe: (vibe: WaveVibeId) => void;
   setSoundwaveHideLiked: (v: boolean) => void;
   setLyricsVisualizer: (v: boolean) => void;
+  setLyricsWordMode: (v: boolean) => void;
   setCacheListenedTracks: (v: boolean) => void;
   setCrossfadeDuration: (secs: number) => void;
   setArtistWaveCollapsed: (v: boolean) => void;
@@ -144,7 +160,7 @@ const DEFAULTS = {
   backgroundBlur: 0,
   glassBlur: 40,
   uiScale: 100,
-  primarySource: 'soundcloud' as 'soundcloud' | 'zaycev',
+  musicSources: DEFAULT_MUSIC_SOURCES,
   nowPlayingPanel: true,
   customCss: '',
   customCssEnabled: true,
@@ -169,6 +185,7 @@ const DEFAULTS = {
   // Liked tracks don't belong in a discovery wave.
   soundwaveHideLiked: true,
   lyricsVisualizer: false,
+  lyricsWordMode: true,
   cacheListenedTracks: true,
   crossfadeDuration: 0,
   artistWaveCollapsed: false,
@@ -182,7 +199,7 @@ export const useSettingsStore = create<SettingsState>()(
       ...DEFAULTS,
       setAccentColor: (accentColor) => set({ accentColor, themePreset: 'custom' }),
       setUiScale: (uiScale) => set({ uiScale }),
-      setPrimarySource: (primarySource) => set({ primarySource }),
+      setMusicSources: (musicSources) => set({ musicSources }),
       setNowPlayingPanel: (nowPlayingPanel) => set({ nowPlayingPanel }),
       setCustomCss: (customCss) => set({ customCss }),
       setCustomCssEnabled: (customCssEnabled) => set({ customCssEnabled }),
@@ -234,6 +251,7 @@ export const useSettingsStore = create<SettingsState>()(
       setSoundwaveVibe: (soundwaveVibe) => set({ soundwaveVibe }),
       setSoundwaveHideLiked: (soundwaveHideLiked) => set({ soundwaveHideLiked }),
       setLyricsVisualizer: (lyricsVisualizer) => set({ lyricsVisualizer }),
+      setLyricsWordMode: (lyricsWordMode) => set({ lyricsWordMode }),
       setCacheListenedTracks: (cacheListenedTracks) => set({ cacheListenedTracks }),
       setCrossfadeDuration: (crossfadeDuration) => set({ crossfadeDuration }),
       setArtistWaveCollapsed: (artistWaveCollapsed) => set({ artistWaveCollapsed }),
@@ -252,11 +270,22 @@ export const useSettingsStore = create<SettingsState>()(
     {
       name: 'sc-settings',
       storage: createJSONStorage(() => tauriStorage),
-      version: 18,
+      version: 19,
       migrate: (persistedState) => {
         const prev = (persistedState ?? {}) as Partial<SettingsState> & {
           soundwaveDiversity?: number;
+          primarySource?: 'soundcloud' | 'zaycev';
         };
+        // v18 → v19: single "primary source" → ordered source list.
+        const musicSources =
+          prev.musicSources ??
+          (prev.primarySource === 'zaycev'
+            ? [
+                DEFAULT_MUSIC_SOURCES[1],
+                DEFAULT_MUSIC_SOURCES[0],
+                ...DEFAULT_MUSIC_SOURCES.slice(2),
+              ]
+            : DEFAULT_MUSIC_SOURCES);
         // v13 → v14: diversity-slider (0..1) → toggle ('similar' | 'diverse').
         // > 0.5 трактуем как 'diverse', иначе 'similar'.
         const inferredMode: 'similar' | 'diverse' =
@@ -267,11 +296,12 @@ export const useSettingsStore = create<SettingsState>()(
           ...DEFAULTS,
           ...prev,
           soundwaveMode: prev.soundwaveMode ?? inferredMode,
+          musicSources,
         } as SettingsState;
       },
       partialize: (s) => ({
         uiScale: s.uiScale,
-        primarySource: s.primarySource,
+        musicSources: s.musicSources,
         nowPlayingPanel: s.nowPlayingPanel,
         customCss: s.customCss,
         customCssEnabled: s.customCssEnabled,
@@ -302,6 +332,7 @@ export const useSettingsStore = create<SettingsState>()(
         soundwaveVibe: s.soundwaveVibe,
         soundwaveHideLiked: s.soundwaveHideLiked,
         lyricsVisualizer: s.lyricsVisualizer,
+        lyricsWordMode: s.lyricsWordMode,
         cacheListenedTracks: s.cacheListenedTracks,
         crossfadeDuration: s.crossfadeDuration,
         artistWaveCollapsed: s.artistWaveCollapsed,

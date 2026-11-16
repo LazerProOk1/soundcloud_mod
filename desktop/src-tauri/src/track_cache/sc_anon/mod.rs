@@ -371,6 +371,22 @@ impl AnonClient {
         Err(msg)
     }
 
+    /// Resolves a soundcloud.com URL (track / playlist) into its api-v2 JSON.
+    pub async fn resolve_url(&self, url: &str) -> Result<serde_json::Value, String> {
+        let client_id = self.get_client_id().await?;
+        self.client
+            .get("https://api-v2.soundcloud.com/resolve")
+            .query(&[("url", url), ("client_id", client_id.as_str())])
+            .header("User-Agent", SC_USER_AGENT)
+            .send()
+            .await
+            .and_then(|r| r.error_for_status())
+            .map_err(|e| format!("soundcloud resolve: {e}"))?
+            .json()
+            .await
+            .map_err(|e| format!("soundcloud resolve: {e}"))
+    }
+
     async fn get_client_id(&self) -> Result<String, String> {
         {
             let cached = self.client_id.read().await;

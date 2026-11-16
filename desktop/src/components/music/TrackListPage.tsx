@@ -6,6 +6,11 @@ import { Clock, Download, Loader2, Search, Shuffle } from '../../lib/icons';
 import { type Track, usePlayerStore } from '../../stores/player';
 import { TrackTableRow } from './TrackTableRow';
 
+const fabIcon = (show: boolean) =>
+  `absolute inset-0 flex items-center justify-center transition-all duration-300 ease-[var(--ease-spring)] ${
+    show ? 'opacity-100 scale-100 rotate-0' : 'opacity-0 scale-50 -rotate-90'
+  }`;
+
 /**
  * Spotify/Justify-style list page: colour band from the cover, big tile and title,
  * a play/shuffle row, then a plain track table. Used for liked tracks, history, etc.
@@ -20,6 +25,10 @@ export const TrackListPage = React.memo(function TrackListPage({
   isLoading,
   footer,
   onDownload,
+  subtitle,
+  description,
+  actions,
+  renderRows,
 }: {
   kind: string;
   title: string;
@@ -34,6 +43,13 @@ export const TrackListPage = React.memo(function TrackListPage({
   footer?: React.ReactNode;
   /** Shows a "download for offline" button. */
   onDownload?: () => void;
+  /** Line under the title (e.g. the owner). */
+  subtitle?: React.ReactNode;
+  description?: string;
+  /** Extra buttons in the action row (like, pin, copy link...). */
+  actions?: React.ReactNode;
+  /** Custom row rendering (e.g. drag-and-drop for own playlists). */
+  renderRows?: (shown: Track[]) => React.ReactNode;
 }) {
   const { t } = useTranslation();
   const colors = useArtworkColor(colorFrom ?? null);
@@ -54,7 +70,19 @@ export const TrackListPage = React.memo(function TrackListPage({
     : 'color-mix(in srgb, var(--color-accent) 55%, #1a1a2e)';
 
   const shuffle = usePlayerStore((s) => s.shuffle);
+  const currentUrn = usePlayerStore((s) => s.currentTrack?.urn);
+  const isPlaying = usePlayerStore((s) => s.isPlaying);
+  // The big button follows playback when the current track comes from this list.
+  const listActive = useMemo(
+    () => !!currentUrn && tracks.some((tr) => tr.urn === currentUrn),
+    [tracks, currentUrn],
+  );
+  const showPause = listActive && isPlaying;
   const play = () => {
+    if (listActive) {
+      usePlayerStore.getState().togglePlay();
+      return;
+    }
     if (!shown.length) return;
     const first = shuffle ? shown[Math.floor(Math.random() * shown.length)] : shown[0];
     usePlayerStore.getState().play(first, shown);
@@ -74,7 +102,8 @@ export const TrackListPage = React.memo(function TrackListPage({
           <h1 className="text-[clamp(32px,6vw,84px)] font-black tracking-tight leading-[1.02] text-white truncate">
             {title}
           </h1>
-          <p className="mt-3 text-[14px] text-white/70">
+          {subtitle && <div className="mt-3 text-[14px] text-white">{subtitle}</div>}
+          <p className="mt-2 text-[14px] text-white/70">
             {t('trackList.meta', {
               count: totalCount ?? tracks.length,
               duration: durLong(totalMs),
@@ -88,12 +117,20 @@ export const TrackListPage = React.memo(function TrackListPage({
           type="button"
           onClick={play}
           disabled={!shown.length}
-          title={t('common.play', 'Play')}
-          className="w-14 h-14 rounded-full bg-accent flex items-center justify-center text-black shadow-[0_8px_24px_rgba(0,0,0,0.35)] hover:scale-[1.05] cursor-pointer disabled:opacity-40"
+          title={showPause ? t('common.pause', 'Pause') : t('common.play', 'Play')}
+          className="play-fab relative w-14 h-14 rounded-full bg-accent flex items-center justify-center text-black shadow-[0_8px_24px_rgba(0,0,0,0.35)] cursor-pointer disabled:opacity-40"
         >
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" className="ml-0.5">
-            <path d="M8 5v14l11-7z" />
-          </svg>
+          {/* Both icons stay mounted and morph (fade + rotate) into each other. */}
+          <span className={fabIcon(!showPause)}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" className="ml-0.5">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </span>
+          <span className={fabIcon(showPause)}>
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M6 5h4v14H6zM14 5h4v14h-4z" />
+            </svg>
+          </span>
         </button>
         {/* Shuffle is a toggle (dot = on), like Spotify/Justify. */}
         <button
@@ -108,6 +145,7 @@ export const TrackListPage = React.memo(function TrackListPage({
           <Shuffle size={24} />
           {shuffle && <span className="absolute bottom-0 w-1 h-1 rounded-full bg-accent" />}
         </button>
+        {actions}
         {onDownload && (
           <button
             type="button"
@@ -141,6 +179,12 @@ export const TrackListPage = React.memo(function TrackListPage({
         )}
       </div>
 
+      {description && (
+        <p className="px-8 -mt-1 mb-4 max-w-3xl text-[13px] leading-relaxed text-white/55 whitespace-pre-wrap break-words line-clamp-3 hover:line-clamp-none">
+          {description}
+        </p>
+      )}
+
       <div className="px-4 pb-8">
         <div className="grid grid-cols-[32px_minmax(0,1fr)_minmax(0,0.7fr)_40px_56px] items-center gap-4 px-4 h-9 mb-2 border-b border-white/[0.08] text-[13px] text-white/50">
           <span className="text-center">#</span>
@@ -160,6 +204,8 @@ export const TrackListPage = React.memo(function TrackListPage({
           <p className="py-16 text-center text-[14px] text-white/40">
             {query ? t('library.noMatches') : t('trackList.empty', 'Nothing here yet')}
           </p>
+        ) : renderRows ? (
+          renderRows(shown)
         ) : (
           shown.map((track, i) => (
             <TrackTableRow key={track.urn} track={track} index={i} queue={shown} />

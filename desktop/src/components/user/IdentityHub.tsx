@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { type Aura, auraRgba } from '../../lib/aura';
-import { Calendar, Globe, Sparkles } from '../../lib/icons';
+import { Calendar, Globe } from '../../lib/icons';
 import { CopyLinkButton } from '../ui/CopyLinkButton';
 import { GlassHeroPanel } from '../ui/GlassHeroPanel';
 import { AuraPicker } from './AuraPicker';
@@ -76,9 +76,6 @@ export function IdentityHub({
             {user.plan && user.plan !== 'Free' && <ProChip plan={user.plan} />}
             {formattedDate && <InfoChip icon={<Calendar size={11} />}>{formattedDate}</InfoChip>}
             {country && <InfoChip icon={<Globe size={11} />}>{country}</InfoChip>}
-            {isOwnProfile && (
-              <InfoChip icon={<Sparkles size={11} />}>{t('user.publicProfile')}</InfoChip>
-            )}
           </div>
 
           <div className="flex flex-col items-center lg:items-start gap-3">

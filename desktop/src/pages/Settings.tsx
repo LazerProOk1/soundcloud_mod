@@ -82,8 +82,8 @@ const LanguageSection = React.memo(function LanguageSection() {
   const { t, i18n } = useTranslation();
 
   return (
-    <section className="glass-card p-6">
-      <h3 className="text-[15px] font-bold text-white/80 tracking-tight mb-4">
+    <section className="settings-section">
+      <h3 className="text-[22px] font-bold text-white tracking-tight mb-4">
         {t('settings.language')}
       </h3>
       <div className="flex gap-2">
@@ -369,11 +369,9 @@ const CacheSection = React.memo(function CacheSection() {
   const tempSize = (audioSize ?? 0) + (imagesSize ?? 0);
 
   return (
-    <section className="glass-card p-6 space-y-2">
+    <section className="settings-section space-y-2">
       <div className="flex items-center justify-between gap-3 mb-2">
-        <h3 className="text-[15px] font-bold text-white/80 tracking-tight">
-          {t('settings.cache')}
-        </h3>
+        <h3 className="text-[22px] font-bold text-white tracking-tight">{t('settings.cache')}</h3>
 
         <div className="flex items-center gap-3 min-w-[80px] justify-end">
           {tempSize > 0 && (
@@ -597,9 +595,7 @@ const WallpaperPicker = React.memo(function WallpaperPicker() {
               title={t(preset.labelKey, preset.fallbackLabel)}
               onClick={() => handleSelect(preset.id)}
               className={`relative group w-20 h-14 rounded-xl overflow-hidden border-2 transition-all duration-200 cursor-pointer ${
-                selected
-                  ? 'border-white/45 shadow-[0_0_12px_rgba(255,255,255,0.14)]'
-                  : 'border-white/[0.06] hover:border-white/[0.18]'
+                selected ? 'border-white/45' : 'border-white/[0.06] hover:border-white/[0.18]'
               }`}
             >
               {url && <img src={url} alt="" className="w-full h-full object-cover" />}
@@ -620,7 +616,7 @@ const WallpaperPicker = React.memo(function WallpaperPicker() {
               key={name}
               className={`relative group w-20 h-14 rounded-xl overflow-hidden border-2 transition-all duration-200 cursor-pointer ${
                 backgroundImage === name
-                  ? 'border-white/40 shadow-[0_0_12px_rgba(255,255,255,0.1)]'
+                  ? 'border-white/40'
                   : 'border-white/[0.06] hover:border-white/[0.15]'
               }`}
               onClick={() => handleSelect(name)}
@@ -853,9 +849,9 @@ const ThemeSection = React.memo(function ThemeSection() {
   const colorInputRef = useRef<HTMLInputElement>(null);
 
   return (
-    <section className="glass-card p-6 space-y-6">
+    <section className="settings-section space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-[15px] font-bold text-white/80 tracking-tight">
+        <h3 className="text-[22px] font-bold text-white tracking-tight">
           {t('settings.appearance')}
         </h3>
         <button
@@ -1090,8 +1086,8 @@ const AudioDeviceSection = React.memo(function AudioDeviceSection() {
   if (sinks.length === 0) return null;
 
   return (
-    <section className="glass-card p-6">
-      <h3 className="text-[15px] font-bold text-white/80 tracking-tight mb-4">
+    <section className="settings-section">
+      <h3 className="text-[22px] font-bold text-white tracking-tight mb-4">
         {t('settings.audioDevice')}
       </h3>
       <div className="flex gap-2 flex-wrap">
@@ -1138,11 +1134,9 @@ const StartupSection = React.memo(function StartupSection() {
   const setStartupPage = useSettingsStore((s) => s.setStartupPage);
 
   return (
-    <section className="glass-card p-6 space-y-4">
+    <section className="settings-section space-y-4">
       <div>
-        <h3 className="text-[15px] font-bold text-white/80 tracking-tight">
-          {t('settings.startup')}
-        </h3>
+        <h3 className="text-[22px] font-bold text-white tracking-tight">{t('settings.startup')}</h3>
         <p className="text-[12px] text-white/35 mt-1">{t('settings.startupPageDesc')}</p>
       </div>
       <div className="grid grid-cols-2 gap-2">
@@ -1186,10 +1180,8 @@ const PlaybackSection = React.memo(function PlaybackSection() {
   const discordRpcShowButton = useSettingsStore((s) => s.discordRpcShowButton);
   const setDiscordRpcShowButton = useSettingsStore((s) => s.setDiscordRpcShowButton);
   return (
-    <section className="glass-card p-6 space-y-5">
-      <h3 className="text-[15px] font-bold text-white/80 tracking-tight">
-        {t('settings.playback')}
-      </h3>
+    <section className="settings-section space-y-5">
+      <h3 className="text-[22px] font-bold text-white tracking-tight">{t('settings.playback')}</h3>
 
       {/* Lyrics visualizer */}
       <div className="flex items-center justify-between">
@@ -1317,8 +1309,8 @@ const ImportSection = React.memo(function ImportSection() {
   const [ymOpen, setYmOpen] = useState(false);
 
   return (
-    <section className="glass-card p-6">
-      <h3 className="text-[15px] font-bold text-white/80 tracking-tight mb-4">
+    <section className="settings-section">
+      <h3 className="text-[22px] font-bold text-white tracking-tight mb-4">
         {t('settings.import')}
       </h3>
       <button
@@ -1391,11 +1383,9 @@ const BackupSection = React.memo(function BackupSection() {
   );
 
   return (
-    <section className="glass-card p-6 space-y-4">
+    <section className="settings-section space-y-4">
       <div>
-        <h3 className="text-[15px] font-bold text-white/80 tracking-tight">
-          {t('settings.backup')}
-        </h3>
+        <h3 className="text-[22px] font-bold text-white tracking-tight">{t('settings.backup')}</h3>
         <p className="text-[11px] text-white/30 mt-1">{t('settings.backupDesc')}</p>
       </div>
       <div className="flex flex-wrap items-center gap-3">
@@ -1439,58 +1429,22 @@ const AccountSection = React.memo(function AccountSection() {
   const [transferOpen, setTransferOpen] = useState(false);
 
   return (
-    <section className="glass-card p-6">
-      <h3 className="text-[15px] font-bold text-white/80 tracking-tight mb-5">
+    <section className="settings-section">
+      <h3 className="text-[22px] font-bold text-white tracking-tight mb-5">
         {t('settings.account')}
       </h3>
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <button
           type="button"
           onClick={() => setTransferOpen(true)}
-          className="flex items-center gap-2 px-5 py-3 rounded-[20px] text-[13px] font-semibold text-white/80 hover:text-white transition-all duration-300 cursor-pointer w-fit"
-          style={{
-            background: 'rgba(255,255,255,0.06)',
-            backdropFilter: 'blur(16px) saturate(180%)',
-            WebkitBackdropFilter: 'blur(16px) saturate(180%)',
-            boxShadow: `
-              0 1px 0 0 rgba(255,255,255,0.18) inset,
-              1px 0 0 0 rgba(255,255,255,0.10) inset,
-              0 -1px 0 0 rgba(0,0,0,0.30) inset,
-              0 0 0 0.5px rgba(255,255,255,0.08),
-              0 4px 16px rgba(0,0,0,0.18)
-            `,
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.10)';
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.06)';
-          }}
+          className="h-10 px-5 rounded-full text-[14px] font-semibold bg-white text-black hover:scale-[1.03] transition-transform cursor-pointer"
         >
           {t('qrLink.transferSession')}
         </button>
         <button
           type="button"
           onClick={logout}
-          className="flex items-center gap-2 px-5 py-3 rounded-[20px] text-[13px] font-semibold text-red-400 hover:text-red-300 transition-all duration-300 cursor-pointer w-fit"
-          style={{
-            background: 'rgba(239,68,68,0.08)',
-            backdropFilter: 'blur(16px) saturate(180%)',
-            WebkitBackdropFilter: 'blur(16px) saturate(180%)',
-            boxShadow: `
-              0 1px 0 0 rgba(255,150,150,0.20) inset,
-              1px 0 0 0 rgba(255,150,150,0.12) inset,
-              0 -1px 0 0 rgba(0,0,0,0.25) inset,
-              0 0 0 0.5px rgba(239,68,68,0.18),
-              0 4px 16px rgba(0,0,0,0.16)
-            `,
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.14)';
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLButtonElement).style.background = 'rgba(239,68,68,0.08)';
-          }}
+          className="h-10 px-5 rounded-full text-[14px] font-semibold text-white/80 border border-white/25 hover:border-red-400 hover:text-red-400 transition-colors cursor-pointer"
         >
           {t('auth.signOut')}
         </button>

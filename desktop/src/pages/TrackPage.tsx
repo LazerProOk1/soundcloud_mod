@@ -112,7 +112,7 @@ const EngagementChip = React.memo(function EngagementChip({
   const tone = activeTone === 'accent' ? 'text-accent' : 'text-emerald-400';
   const toneBg =
     activeTone === 'accent'
-      ? 'bg-accent/15 border-accent/25 shadow-[0_0_16px_rgba(255,85,0,0.18)]'
+      ? 'bg-accent/15 border-accent/25'
       : 'bg-emerald-500/15 border-emerald-500/25';
 
   return (

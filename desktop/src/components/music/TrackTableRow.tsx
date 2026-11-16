@@ -1,6 +1,6 @@
 import React from 'react';
 import { art, dur } from '../../lib/formatters';
-import { Music } from '../../lib/icons';
+import { Music, Trash2 } from '../../lib/icons';
 import { useArtistDisplay, useDisplayTitle } from '../../lib/track-display';
 import { openTrackMenu } from '../../lib/useTrackContextMenu';
 import { useTrackPlay } from '../../lib/useTrackPlay';
@@ -12,10 +12,15 @@ export const TrackTableRow = React.memo(function TrackTableRow({
   track,
   index,
   queue,
+  onRemove,
+  removeLabel,
 }: {
   track: Track;
   index: number;
   queue: Track[];
+  /** Shows a remove button on hover (own playlists). */
+  onRemove?: (track: Track) => void;
+  removeLabel?: string;
 }) {
   const { isThis, isThisPlaying, togglePlay } = useTrackPlay(track, queue);
   const title = useDisplayTitle(track);
@@ -27,6 +32,7 @@ export const TrackTableRow = React.memo(function TrackTableRow({
     <div
       onDoubleClick={togglePlay}
       onContextMenu={(e) => openTrackMenu(e, track)}
+      style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 56px' }}
       className={`group grid grid-cols-[32px_minmax(0,1fr)_minmax(0,0.7fr)_40px_56px] items-center gap-4 px-4 h-14 rounded-md select-none transition-colors duration-150 ${
         isThis ? 'bg-white/[0.08]' : 'hover:bg-white/[0.06]'
       }`}
@@ -84,9 +90,25 @@ export const TrackTableRow = React.memo(function TrackTableRow({
 
       <LikeButton track={track} />
 
-      <span className="text-right text-[13px] tabular-nums text-white/55">
-        {dur(track.duration)}
-      </span>
+      {onRemove ? (
+        <span className="flex items-center justify-end">
+          <span className="text-[13px] tabular-nums text-white/55 group-hover:hidden">
+            {dur(track.duration)}
+          </span>
+          <button
+            type="button"
+            onClick={() => onRemove(track)}
+            title={removeLabel}
+            className="hidden group-hover:flex w-8 h-8 items-center justify-center rounded-full text-white/50 hover:text-red-400 hover:bg-red-500/10 cursor-pointer"
+          >
+            <Trash2 size={15} />
+          </button>
+        </span>
+      ) : (
+        <span className="text-right text-[13px] tabular-nums text-white/55">
+          {dur(track.duration)}
+        </span>
+      )}
     </div>
   );
 });

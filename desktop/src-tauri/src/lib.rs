@@ -215,6 +215,7 @@ pub fn run() {
             audio::audio_clear_comments_timeline,
             audio::save_track_to_path,
             import::ym_import_start,
+            import::import_fetch_link,
             import::ym_import_stop,
             track_cache::track_ensure_cached,
             track_cache::track_is_cached,

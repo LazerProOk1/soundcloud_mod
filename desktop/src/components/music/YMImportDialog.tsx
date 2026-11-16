@@ -73,8 +73,8 @@ function YMImportDialog({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="dialog-overlay fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm" />
-        <Dialog.Content className="dialog-content fixed z-[80] top-1/2 left-1/2 w-full max-w-[520px] bg-[#1a1a1e]/95 backdrop-blur-2xl border border-white/[0.08] rounded-3xl shadow-2xl overflow-hidden">
+        <Dialog.Overlay className="dialog-overlay fixed inset-0 z-[80] bg-black/65" />
+        <Dialog.Content className="dialog-content fixed z-[80] top-1/2 left-1/2 w-full max-w-[520px] bg-[#282828] rounded-2xl shadow-[0_24px_60px_rgba(0,0,0,0.6)] overflow-hidden">
           {/* Header */}
           <div className="px-7 pt-6 pb-4 border-b border-white/[0.06] flex items-center justify-between">
             <Dialog.Title className="text-[18px] font-bold text-white/90 tracking-tight">

@@ -42,7 +42,7 @@ export const TrackTitleArtist = React.memo(function TrackTitleArtist({
       <p
         className={`${TITLE_CLS[size]} font-medium truncate transition-colors duration-150 ${
           highlight
-            ? 'text-accent drop-shadow-[0_0_8px_rgba(255,85,0,0.4)]'
+            ? 'text-accent drop-'
             : isWanted
               ? 'text-white/55'
               : 'text-white/90 hover:text-white cursor-pointer'

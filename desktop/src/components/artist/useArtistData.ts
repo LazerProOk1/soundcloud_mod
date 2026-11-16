@@ -50,5 +50,5 @@ export interface ArtistStar {
 
 // Star features & Aura field are unlocked free for all artist & album pages.
 export function useArtistStar(id: string | undefined): ArtistStar {
-  return { hasStar: Boolean(id), aura: artistAuraForId(id) };
+  return { hasStar: false, aura: artistAuraForId(id) };
 }

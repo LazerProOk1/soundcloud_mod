@@ -61,7 +61,7 @@ function AuraPickerImpl({ aura, onPickAura, customHex, onPickCustom }: AuraPicke
           onChange={(e) => onPickCustom(e.target.value)}
           className="absolute inset-0 opacity-0 cursor-pointer"
         />
-        <span className="absolute inset-0 flex items-center justify-center pointer-events-none text-white drop-shadow-[0_0_4px_rgba(0,0,0,0.6)]">
+        <span className="absolute inset-0 flex items-center justify-center pointer-events-none text-white drop-">
           <Sparkles size={12} />
         </span>
       </label>

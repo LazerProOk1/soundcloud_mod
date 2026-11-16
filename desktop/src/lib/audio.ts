@@ -420,34 +420,38 @@ async function loadTrack(track: Track) {
     // Strategy 2: Download full track to cache — Rust picks storage/API internally
     usePlayerStore.setState({ downloadProgress: 0 });
 
-    // Order: SoundCloud directly → Zaycev.net → YouTube → legacy streaming server.
-    // Zaycev.net / YouTube by artist + title; cached under this URN, so likes and
-    // playlists keep working.
-    const fromFallback = () =>
+    // Sources in the user's order (Settings → Sources). Fallback sites search by
+    // artist + title; the result is cached under this URN, so likes and playlists work.
+    const fromFallback = (source: string) => () =>
       invoke<TrackCacheInfo>('track_cache_from_fallback', {
         urn,
         artist: getArtistDisplay(track).primary,
         title: getDisplayTitle(track),
         durationMs: track.duration || null,
+        sources: [source],
       });
-    const fromSoundCloud = () => ensureTrackCached(urn, highQualityStreaming, true);
-    const zaycevFirst = useSettingsStore.getState().primarySource === 'zaycev';
-    const [first, second] = zaycevFirst
-      ? [fromFallback, fromSoundCloud]
-      : [fromSoundCloud, fromFallback];
+    const enabled = useSettingsStore
+      .getState()
+      .musicSources.filter((s) => s.enabled)
+      .map((s) => s.id);
+    const steps = enabled.map((id) =>
+      id === 'soundcloud'
+        ? () => ensureTrackCached(urn, highQualityStreaming, true)
+        : fromFallback(id),
+    );
+    // Last resort: the legacy server still has some tracks found nowhere else.
+    if (enabled.includes('soundcloud'))
+      steps.push(() => ensureTrackCached(urn, highQualityStreaming));
+    if (steps.length === 0) steps.push(() => ensureTrackCached(urn, highQualityStreaming, true));
 
-    const download: Promise<TrackCacheInfo> = first()
-      .catch((error) => {
+    let download: Promise<TrackCacheInfo> = steps[0]();
+    for (const step of steps.slice(1)) {
+      download = download.catch((error) => {
         if (gen !== loadGen) throw error;
-        console.warn('[Audio] Primary source failed, trying the next one:', error);
-        return second();
-      })
-      .catch((error) => {
-        // Last resort: the legacy server still has some tracks found nowhere else.
-        if (gen !== loadGen) throw error;
-        console.warn('[Audio] Fallback sources failed, trying legacy server:', error);
-        return ensureTrackCached(urn, highQualityStreaming);
+        console.warn('[Audio] Source failed, trying the next one:', error);
+        return step();
       });
+    }
     // Don't leave an unhandled rejection if streaming wins and the download later fails.
     download.catch(() => {});
 

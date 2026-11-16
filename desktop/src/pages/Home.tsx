@@ -1,18 +1,24 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { SoundWavePage } from './SoundWavePage';
 import { TrackCard } from '../components/music/TrackCard';
 import { HorizontalScroll } from '../components/ui/HorizontalScroll';
 import { Skeleton } from '../components/ui/Skeleton';
-import { useBatchTrackHydration, useFollowingTracks, useLikedTracks } from '../lib/hooks';
-import { ChevronRight, Headphones, Heart, Music } from '../lib/icons';
+import { art } from '../lib/formatters';
+import {
+  useBatchTrackHydration,
+  useFollowingTracks,
+  useLikedTracks,
+  useMyPlaylists,
+} from '../lib/hooks';
+import { Clock, Headphones, Heart, ListMusic, Music } from '../lib/icons';
 import {
   getOfflineFollowingTracks,
   getOfflineLikedTracks,
   getRecentlyPlayed,
 } from '../lib/offline-index';
 import type { Track } from '../stores/player';
+import { SoundWavePage } from './SoundWavePage';
 
 /* ── Helpers ──────────────────────────────────────────────── */
 
@@ -20,35 +26,91 @@ import type { Track } from '../stores/player';
 
 function SectionHeader({
   title,
-  icon,
   onSeeAll,
 }: {
   title: string;
-  icon: React.ReactNode;
+  icon?: React.ReactNode;
   onSeeAll?: () => void;
 }) {
   const { t } = useTranslation();
   return (
-    <div className="flex items-center justify-between mb-5">
-      <div className="flex items-center gap-3">
-        <div className="glass-flat w-8 h-8 rounded-xl flex items-center justify-center shrink-0">
-          {icon}
-        </div>
-        <h2 className="text-[17px] font-semibold tracking-tight text-white/92">{title}</h2>
-      </div>
+    <div className="flex items-end justify-between mb-4">
+      <h2 className="text-[24px] font-bold tracking-tight text-white">{title}</h2>
       {onSeeAll && (
         <button
           type="button"
           onClick={onSeeAll}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium text-white/45 hover:text-white/80 bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.06] hover:border-white/[0.1] transition-all duration-200 cursor-pointer"
+          className="text-[13px] font-semibold text-white/55 hover:text-white hover:underline cursor-pointer"
         >
           {t('common.seeAll')}
-          <ChevronRight size={11} />
         </button>
       )}
     </div>
   );
 }
+
+/* ── Quick access tiles (liked, history, own playlists) ──── */
+
+const QuickTiles = React.memo(function QuickTiles() {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { playlists } = useMyPlaylists(50);
+  const gradient = (from: string, to: string, icon: React.ReactNode) => (
+    <div
+      className="w-full h-full flex items-center justify-center text-white"
+      style={{ background: `linear-gradient(135deg, ${from}, ${to})` }}
+    >
+      {icon}
+    </div>
+  );
+  const tiles: { key: string; title: string; to: string; tile: React.ReactNode }[] = [
+    {
+      key: 'liked',
+      title: t('library.likedTracks'),
+      to: '/liked',
+      tile: gradient('#4f46e5', '#a5b4fc', <Heart size={22} fill="currentColor" />),
+    },
+    ...playlists.slice(0, 4).map((p) => {
+      const cover = art(p.artwork_url ?? p.tracks?.[0]?.artwork_url, 't200x200');
+      return {
+        key: p.urn,
+        title: p.title,
+        to: `/playlist/${encodeURIComponent(p.urn)}`,
+        tile: cover ? (
+          <img src={cover} alt="" className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-white/[0.08] text-white/50">
+            <ListMusic size={22} />
+          </div>
+        ),
+      };
+    }),
+    {
+      key: 'history',
+      title: t('home.recentlyPlayed', 'Recently Played'),
+      to: '/history',
+      tile: gradient('#86198f', '#e879f9', <Clock size={22} />),
+    },
+  ];
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2">
+      {tiles.map((tile, i) => (
+        <button
+          key={tile.key}
+          type="button"
+          onClick={() => navigate(tile.to)}
+          className="quick-tile group flex items-center gap-3 h-16 rounded-md overflow-hidden bg-white/[0.07] hover:bg-white/[0.14] text-left cursor-pointer"
+          style={{ animationDelay: `${i * 40}ms` }}
+        >
+          <div className="w-16 h-16 shrink-0">{tile.tile}</div>
+          <span className="flex-1 min-w-0 truncate text-[14px] font-bold text-white pr-3">
+            {tile.title}
+          </span>
+        </button>
+      ))}
+    </div>
+  );
+});
 
 /* ── Skeletons ────────────────────────────────────────────── */
 
@@ -86,7 +148,7 @@ const RecentlyPlayedShelf = React.memo(function RecentlyPlayedShelf() {
       <SectionHeader
         title={t('home.recentlyPlayed', 'Recently Played')}
         icon={<Headphones size={15} className="text-white/60" />}
-        onSeeAll={() => navigate('/library?tab=history')}
+        onSeeAll={() => navigate('/history')}
       />
       <HorizontalScroll>
         {tracks.map((track) => (
@@ -128,7 +190,7 @@ const LikedShelf = React.memo(function LikedShelf({
       <SectionHeader
         title={t('library.likedTracks')}
         icon={<Heart size={15} className="text-accent" />}
-        onSeeAll={() => navigate('/library')}
+        onSeeAll={() => navigate('/liked')}
       />
       <HorizontalScroll>
         {showSkeleton ? (
@@ -223,7 +285,8 @@ export function Home() {
       {/* One SoundWave: the full wave page is the top of Home (no separate home block). */}
       <SoundWavePage />
 
-      <div className="p-6 pb-4 space-y-8">
+      <div className="px-8 pt-2 pb-6 space-y-9">
+        <QuickTiles />
         {/* Personal shelves: Recently Played -> Liked -> Fresh Releases */}
         <RecentlyPlayedShelf />
         <LikedShelf likedTracks={likedShelfTracks} isLoading={likedTracksQuery.isLoading} />

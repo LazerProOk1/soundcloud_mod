@@ -69,7 +69,7 @@ export const AboutSection = React.memo(function AboutSection() {
 
   return (
     <>
-      <section className="glass-card p-6 space-y-5">
+      <section className="settings-section space-y-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-accent/15 border border-accent/25 flex items-center justify-center text-accent">

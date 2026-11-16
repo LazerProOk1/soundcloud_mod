@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { ChevronDown, ChevronUp } from '../../lib/icons';
 import {
   FONT_FILE_ACCEPT,
   importFontFile,
@@ -9,7 +10,7 @@ import {
   sanitizeFontName,
 } from '../../lib/interface-font';
 import { UI_SCALE_MAX, UI_SCALE_MIN, UI_SCALE_STEP } from '../../lib/ui-scale';
-import { useSettingsStore } from '../../stores/settings';
+import { type MusicSourceId, useSettingsStore } from '../../stores/settings';
 import { LiquidSwitch } from '../ui/LiquidSwitch';
 
 const rangeCls =
@@ -186,36 +187,93 @@ const CssRow = React.memo(function CssRow() {
   );
 });
 
+const SOURCE_META: Record<MusicSourceId, { label: string; dot: string }> = {
+  soundcloud: { label: 'SoundCloud', dot: '#ff5500' },
+  zaycev: { label: 'Зайцев.нет', dot: '#3b82f6' },
+  youtube: { label: 'YouTube Music', dot: '#ef4444' },
+  audius: { label: 'Audius', dot: '#c026d3' },
+};
+
+/** Ordered list of download sources: arrows change the priority, switches turn them off. */
 const SourceRow = React.memo(function SourceRow() {
   const { t } = useTranslation();
-  const source = useSettingsStore((s) => s.primarySource);
-  const setSource = useSettingsStore((s) => s.setPrimarySource);
-  const options = [
-    { id: 'soundcloud', label: 'SoundCloud', dot: '#ff5500' },
-    { id: 'zaycev', label: 'Зайцев.нет', dot: '#3b82f6' },
-  ] as const;
+  const sources = useSettingsStore((s) => s.musicSources);
+  const setSources = useSettingsStore((s) => s.setMusicSources);
+  const move = (i: number, dir: -1 | 1) => {
+    const j = i + dir;
+    if (j < 0 || j >= sources.length) return;
+    const next = [...sources];
+    [next[i], next[j]] = [next[j], next[i]];
+    setSources(next);
+  };
+  const toggle = (i: number) =>
+    setSources(sources.map((s, k) => (k === i ? { ...s, enabled: !s.enabled } : s)));
+  const arrow =
+    'w-7 h-7 rounded-full flex items-center justify-center text-white/50 hover:text-white hover:bg-white/[0.08] cursor-pointer disabled:opacity-20 disabled:pointer-events-none';
   return (
     <div className="space-y-3">
       <div>
-        <p className="text-[13px] text-white/70 font-medium">{t('settings.primarySource')}</p>
-        <p className="text-[11px] text-white/30 mt-0.5">{t('settings.primarySourceDesc')}</p>
+        <p className="text-[13px] text-white/70 font-medium">{t('settings.sources')}</p>
+        <p className="text-[11px] text-white/30 mt-0.5">{t('settings.sourcesDesc')}</p>
       </div>
-      <div className="flex flex-wrap gap-2">
-        {options.map((o) => (
-          <button
-            key={o.id}
-            type="button"
-            onClick={() => setSource(o.id)}
-            className={`flex items-center gap-2 h-9 px-4 rounded-full text-[13px] font-semibold transition-colors cursor-pointer ${
-              source === o.id
-                ? 'bg-white text-black'
-                : 'bg-white/[0.07] text-white/80 hover:bg-white/[0.12]'
-            }`}
-          >
-            <span className="w-2 h-2 rounded-full" style={{ background: o.dot }} />
-            {o.label}
-          </button>
-        ))}
+      <div className="flex flex-col">
+        {sources.map((src, i) => {
+          const meta = SOURCE_META[src.id];
+          return (
+            <div
+              key={src.id}
+              className="source-row flex items-center gap-3 h-12 px-2 rounded-lg hover:bg-white/[0.04]"
+            >
+              <span className="w-5 text-[13px] tabular-nums text-white/40 text-center">
+                {i + 1}
+              </span>
+              <span
+                className="w-2.5 h-2.5 rounded-full shrink-0"
+                style={{ background: meta.dot }}
+              />
+              <span
+                className={`flex-1 text-[14px] font-semibold ${src.enabled ? 'text-white' : 'text-white/35'}`}
+              >
+                {meta.label}
+              </span>
+              <button
+                type="button"
+                className={arrow}
+                disabled={i === 0}
+                onClick={() => move(i, -1)}
+                aria-label={t('settings.sourceUp')}
+              >
+                <ChevronUp size={16} />
+              </button>
+              <button
+                type="button"
+                className={arrow}
+                disabled={i === sources.length - 1}
+                onClick={() => move(i, 1)}
+                aria-label={t('settings.sourceDown')}
+              >
+                <ChevronDown size={16} />
+              </button>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={src.enabled}
+                onClick={() => toggle(i)}
+                className={`relative w-10 h-6 rounded-full cursor-pointer transition-colors ${
+                  src.enabled ? 'bg-accent' : 'bg-white/[0.15]'
+                }`}
+              >
+                <span
+                  className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow"
+                  style={{
+                    transform: `translateX(${src.enabled ? 16 : 0}px)`,
+                    transition: 'transform 0.4s var(--spring-bouncy)',
+                  }}
+                />
+              </button>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -224,10 +282,8 @@ const SourceRow = React.memo(function SourceRow() {
 export const InterfaceSection = React.memo(function InterfaceSection() {
   const { t } = useTranslation();
   return (
-    <section className="glass-card p-6 space-y-6">
-      <h3 className="text-[15px] font-bold text-white/80 tracking-tight">
-        {t('settings.interface')}
-      </h3>
+    <section className="settings-section space-y-6">
+      <h3 className="text-[22px] font-bold text-white tracking-tight">{t('settings.interface')}</h3>
       <LiquidGlassRow />
       <SourceRow />
       <ScaleRow />

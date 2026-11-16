@@ -221,7 +221,7 @@ export const EqualizerPanel = React.memo(function EqualizerPanel({
                   onClick={() => setEqEnabled(!eqEnabled)}
                   className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-200 cursor-pointer border ${
                     eqEnabled
-                      ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20 shadow-[0_0_12px_rgba(52,211,153,0.15)]'
+                      ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20'
                       : 'bg-white/[0.04] text-white/25 border-white/[0.06] hover:text-white/50'
                   }`}
                 >

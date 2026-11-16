@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { useShallow } from 'zustand/shallow';
 import { useArtworkColor } from '../../hooks/useArtworkColor';
 import { api } from '../../lib/api';
@@ -79,12 +80,6 @@ const SOURCE_LABELS: Record<LyricsSource, string> = {
   self_gen: 'AI',
   none: '',
 };
-
-type DisplayLine = LyricLine;
-
-function buildDisplayLines(lines: LyricLine[]): DisplayLine[] {
-  return lines as DisplayLine[];
-}
 
 /* ── Shared: dynamic background ───────────────────────────── */
 
@@ -483,12 +478,16 @@ const LyricsSourceBadge = React.memo(
     source,
     hasSynced,
     onSearch,
+    copyText,
   }: {
     source: LyricsSource;
     hasSynced: boolean;
     onSearch: () => void;
+    copyText: string;
   }) => {
     const { t } = useTranslation();
+    const wordMode = useSettingsStore((s) => s.lyricsWordMode);
+    const setWordMode = useSettingsStore((s) => s.setLyricsWordMode);
     const label = source === 'self_gen' ? t('track.selfGenerated') : SOURCE_LABELS[source];
     return (
       <div className="flex items-center justify-between px-12 pt-3 pb-0">
@@ -501,17 +500,28 @@ const LyricsSourceBadge = React.memo(
             <span />
           )}
           {hasSynced && (
-            <span
-              className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-              style={{
-                color: 'var(--color-accent)',
-                background: 'var(--color-accent-glow)',
-                border: '1px solid var(--color-accent-glow)',
-              }}
+            <button
+              type="button"
+              onClick={() => setWordMode(!wordMode)}
+              aria-pressed={wordMode}
+              className={`text-[11px] font-semibold px-2.5 py-1 rounded-full cursor-pointer transition-colors ${
+                wordMode ? 'bg-white text-black' : 'bg-white/[0.06] text-white/60 hover:text-white'
+              }`}
             >
-              ♪ Karaoke
-            </span>
+              {t('track.lyricsWordMode')}
+            </button>
           )}
+          <button
+            type="button"
+            onClick={() => {
+              void navigator.clipboard
+                .writeText(copyText)
+                .then(() => toast.success(t('track.lyricsCopied')));
+            }}
+            className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-white/[0.06] text-white/60 hover:text-white cursor-pointer transition-colors"
+          >
+            {t('track.lyricsCopy')}
+          </button>
         </div>
         <button
           type="button"
@@ -529,55 +539,103 @@ const LyricsSourceBadge = React.memo(
 /* ── Synced lyrics — line by line ── */
 
 const LYRIC_LEAD_SECS = 0.15;
+/** An instrumental break at least this long gets countdown dots. */
+const LYRIC_GAP_MIN_SECS = 3;
+/** Auto-follow resumes this long after the user scrolled the lyrics by hand. */
+const LYRIC_MANUAL_SCROLL_MS = 3500;
+
+interface LyricItem {
+  time: number;
+  /** Start of the next item (Infinity for the last one). */
+  end: number;
+  text: string;
+  gap: boolean;
+  /** How long the word-by-word sweep takes for this line. */
+  sweep: number;
+  /** Words with the point (0..1 of the sweep) where each one lights up. */
+  words: { text: string; at: number }[];
+}
+
+function buildItems(lines: LyricLine[]): LyricItem[] {
+  const src = lines.filter((l) => Number.isFinite(l.time));
+  const out: LyricItem[] = [];
+  const gap = (time: number, end: number): LyricItem => ({
+    time,
+    end,
+    text: '',
+    gap: true,
+    sweep: end - time,
+    words: [],
+  });
+  if (src.length > 0 && src[0].time >= LYRIC_GAP_MIN_SECS) out.push(gap(0, src[0].time));
+  for (let i = 0; i < src.length; i++) {
+    const line = src[i];
+    const end = i + 1 < src.length ? src[i + 1].time : Number.POSITIVE_INFINITY;
+    const text = line.text.trim();
+    if (!text) {
+      // Empty LRC line = instrumental break; short ones are simply skipped.
+      if (end - line.time >= LYRIC_GAP_MIN_SECS) out.push(gap(line.time, end));
+      continue;
+    }
+    const parts = text.split(/\s+/);
+    const total = parts.reduce((n, w) => n + w.length, 0) || 1;
+    let acc = 0;
+    const words = parts.map((w) => {
+      const at = acc / total;
+      acc += w.length;
+      return { text: w, at };
+    });
+    // Sweep over the line's slot, but not slower than a relaxed singing pace
+    // (a line followed by a long silence shouldn't crawl).
+    const sweep = Math.max(0.4, Math.min(end - line.time, 0.6 + total * 0.13));
+    out.push({ time: line.time, end, text, gap: false, sweep, words });
+  }
+  return out;
+}
+
+const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
 
 const SyncedLyrics = React.memo(({ lines }: { lines: LyricLine[] }) => {
-  const displayLines = useMemo(() => buildDisplayLines(lines), [lines]);
+  const items = useMemo(() => buildItems(lines), [lines]);
+  const wordMode = useSettingsStore((s) => s.lyricsWordMode);
   const containerRef = useRef<HTMLDivElement>(null);
-  const activeRef = useRef(-1);
-  const linesRef = useRef(displayLines);
-  const lineElsRef = useRef<HTMLElement[]>([]);
-
   const manualScrollRef = useRef(false);
   const syncRef = useRef<((jump?: boolean) => void) | null>(null);
-  linesRef.current = displayLines;
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    lineElsRef.current = Array.from(container.querySelectorAll<HTMLElement>('.lyric-line'));
-    activeRef.current = -1;
+    const lineEls = Array.from(container.querySelectorAll<HTMLElement>('.lyric-line'));
+    let active = -1;
+    let litCount = -1;
+    let manualTimer: ReturnType<typeof setTimeout> | undefined;
     manualScrollRef.current = false;
 
     const markManual = () => {
       manualScrollRef.current = true;
+      clearTimeout(manualTimer);
+      manualTimer = setTimeout(() => {
+        manualScrollRef.current = false;
+        syncRef.current?.(true);
+      }, LYRIC_MANUAL_SCROLL_MS);
     };
     container.addEventListener('wheel', markManual, { passive: true });
     container.addEventListener('touchstart', markManual, { passive: true });
-    container.addEventListener('pointerdown', markManual);
 
     void invoke('audio_set_lyrics_timeline', {
-      lines: displayLines.map((line) => ({ timeSecs: line.time })),
+      lines: items.map((item) => ({ timeSecs: item.time })),
     });
 
-    // Line-by-line: the active line lights up as a whole, no per-character sweep.
-    const setLineState = (i: number, state: string) => {
-      const el = lineElsRef.current[i];
-      if (!el || el.dataset.state === state) return;
-      el.dataset.state = state;
-    };
-
-    // Active line is computed here from the real playback position (not only from the
-    // Rust `lyrics:active_line` event, which fires on line *changes*), so it is correct
-    // right after opening the panel mid-track and right after clicking a line.
-    const lineAt = (t: number) => {
-      const ls = linesRef.current;
+    // Active item from the real playback position, so it's right after opening the
+    // panel mid-track, after a seek and after clicking a line.
+    const itemAt = (t: number) => {
       let lo = 0;
-      let hi = ls.length - 1;
+      let hi = items.length - 1;
       let found = -1;
       while (lo <= hi) {
         const mid = (lo + hi) >> 1;
-        if (ls[mid].time <= t + 0.05) {
+        if (items[mid].time <= t + 0.05) {
           found = mid;
           lo = mid + 1;
         } else {
@@ -587,39 +645,79 @@ const SyncedLyrics = React.memo(({ lines }: { lines: LyricLine[] }) => {
       return found;
     };
 
+    // Per-frame detail of the active item: word sweep or gap dots + countdown.
+    const paintActive = (t: number) => {
+      if (active < 0) return;
+      const item = items[active];
+      const el = lineEls[active];
+      if (!el) return;
+      if (item.gap) {
+        const p = clamp01((t - item.time) / (item.end - item.time));
+        const dots = el.querySelectorAll<HTMLElement>('.lyric-gap-dots > i');
+        dots.forEach((dot, i) => {
+          dot.style.setProperty('--fill', String(clamp01(p * dots.length - i)));
+        });
+        const count = el.querySelector<HTMLElement>('.lyric-gap-count');
+        const left = String(Math.max(1, Math.ceil(item.end - t)));
+        if (count && count.textContent !== left) count.textContent = left;
+        return;
+      }
+      if (!wordMode) return;
+      const p = clamp01((t - item.time) / item.sweep);
+      let n = 0;
+      while (n < item.words.length && item.words[n].at <= p) n++;
+      if (n === litCount) return;
+      litCount = n;
+      const words = el.querySelectorAll<HTMLElement>('.lyric-w');
+      words.forEach((w, i) => {
+        if (i < n) w.setAttribute('data-lit', '');
+        else w.removeAttribute('data-lit');
+      });
+    };
+
     const sync = (jump = false) => {
-      const lineEls = lineElsRef.current;
       if (lineEls.length === 0) return;
-      // Small lead so the line lights up as it's sung, not after (transition + render delay).
-      const idx = lineAt(getCurrentTime() + LYRIC_LEAD_SECS);
-      const prev = activeRef.current;
-      if (idx === prev && !jump) return;
-      activeRef.current = idx;
-
-      for (let i = 0; i < lineEls.length; i++) {
-        let state: string;
-        if (i === idx) state = 'active';
-        else if (i === idx - 1) state = 'past-near';
-        else if (i === idx + 1) state = 'next-near';
-        else if (idx >= 0 && i < idx) state = 'past';
-        else state = 'next';
-        setLineState(i, state);
+      // Small lead so a line lights up as it's sung, not after the transition.
+      const t = getCurrentTime() + LYRIC_LEAD_SECS;
+      const idx = itemAt(t);
+      const prev = active;
+      if (idx !== prev || jump) {
+        active = idx;
+        litCount = -1;
+        for (let i = 0; i < lineEls.length; i++) {
+          let state: string;
+          if (i === idx) state = 'active';
+          else if (i === idx - 1) state = 'past-near';
+          else if (i === idx + 1) state = 'next-near';
+          else if (idx >= 0 && i < idx) state = 'past';
+          else state = 'next';
+          if (lineEls[i].dataset.state !== state) lineEls[i].dataset.state = state;
+        }
+        if (idx >= 0 && !manualScrollRef.current) {
+          const el = lineEls[idx];
+          const top = el.offsetTop - container.clientHeight / 2 + el.clientHeight / 2;
+          // Smooth glide to the next line; instant snap when opening or jumping.
+          const smooth = !jump && prev >= 0 && Math.abs(idx - prev) <= 2;
+          container.scrollTo({ top, behavior: smooth ? 'smooth' : 'auto' });
+        }
       }
-
-      if (idx >= 0 && !manualScrollRef.current) {
-        const el = lineEls[idx];
-        const top = el.offsetTop - container.clientHeight / 2 + el.clientHeight / 2;
-        // Smooth glide to the next line; instant snap when opening or jumping.
-        const smooth = !jump && prev >= 0 && Math.abs(idx - prev) <= 2;
-        container.scrollTo({ top, behavior: smooth ? 'smooth' : 'auto' });
-      }
+      paintActive(t);
     };
     syncRef.current = sync;
     sync(true);
-    const unsubTime = subscribe(() => sync());
 
+    // Position ticks keep it right while paused/seeking; rAF makes the word sweep
+    // and the gap dots move smoothly while playing.
+    const unsubTime = subscribe(() => sync());
+    let raf = 0;
+    const frame = () => {
+      sync();
+      raf = requestAnimationFrame(frame);
+    };
     const applyPaused = (paused: boolean) => {
       container.classList.toggle('lyrics-paused', paused);
+      cancelAnimationFrame(raf);
+      if (!paused) raf = requestAnimationFrame(frame);
     };
     applyPaused(!usePlayerStore.getState().isPlaying);
     const unsubPlayer = usePlayerStore.subscribe((s, prev) => {
@@ -629,36 +727,63 @@ const SyncedLyrics = React.memo(({ lines }: { lines: LyricLine[] }) => {
     return () => {
       container.removeEventListener('wheel', markManual);
       container.removeEventListener('touchstart', markManual);
-      container.removeEventListener('pointerdown', markManual);
+      clearTimeout(manualTimer);
+      cancelAnimationFrame(raf);
       void invoke('audio_clear_lyrics_timeline');
       unsubTime();
       syncRef.current = null;
       unsubPlayer();
     };
-  }, [displayLines]);
+  }, [items, wordMode]);
+
+  const jumpTo = (time: number) => {
+    manualScrollRef.current = false;
+    seek(time);
+    syncRef.current?.(true);
+  };
 
   return (
     <div
       ref={containerRef}
-      className="flex-1 overflow-y-auto scrollbar-hide px-12 py-16 relative"
+      className={`flex-1 overflow-y-auto scrollbar-hide px-12 py-16 relative ${wordMode ? 'lyrics-word-mode' : ''}`}
       style={{
         maskImage: 'linear-gradient(transparent 0%, black 10%, black 90%, transparent 100%)',
       }}
     >
       <div className="flex flex-col gap-2">
-        {displayLines.map((line, i) => (
-          <div
-            key={`${line.time}-${i}`}
-            className="lyric-line"
-            onClick={() => {
-              manualScrollRef.current = false;
-              seek(line.time);
-              syncRef.current?.(true);
-            }}
-          >
-            <span className="lyric-fill">{line.text}</span>
-          </div>
-        ))}
+        {items.map((item) =>
+          item.gap ? (
+            <div
+              key={`g-${item.time}`}
+              className="lyric-line lyric-gap"
+              onClick={() => jumpTo(Math.max(item.time, item.end - 0.6))}
+            >
+              <span className="lyric-gap-dots">
+                <i />
+                <i />
+                <i />
+              </span>
+              <span className="lyric-gap-count" />
+            </div>
+          ) : (
+            <div
+              key={`l-${item.time}-${item.text}`}
+              className="lyric-line"
+              onClick={() => jumpTo(item.time)}
+            >
+              <span className="lyric-fill">
+                {wordMode
+                  ? item.words.map((w, j) => (
+                      <React.Fragment key={w.at}>
+                        <span className="lyric-w">{w.text}</span>
+                        {j < item.words.length - 1 ? ' ' : ''}
+                      </React.Fragment>
+                    ))
+                  : item.text}
+              </span>
+            </div>
+          ),
+        )}
       </div>
       <div className="h-[40vh]" />
     </div>
@@ -1067,7 +1192,7 @@ const SplitDivider = React.memo(
         <div
           className={`absolute left-1/2 top-1/2 flex h-14 w-3 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border transition-all duration-150 ${
             active
-              ? 'border-white/18 bg-white/[0.12] shadow-[0_0_20px_rgba(255,255,255,0.08)]'
+              ? 'border-white/18 bg-white/[0.12]'
               : 'border-white/[0.08] bg-white/[0.04] group-hover/splitter:border-white/14 group-hover/splitter:bg-white/[0.08]'
           }`}
         >
@@ -1183,7 +1308,12 @@ const LyricsPane = React.memo(({ track }: { track: Track }) => {
   if (lyrics?.synced && lyrics.synced.length > 0) {
     return (
       <>
-        <LyricsSourceBadge source={lyrics.source} hasSynced={true} onSearch={startSearch} />
+        <LyricsSourceBadge
+          source={lyrics.source}
+          hasSynced={true}
+          onSearch={startSearch}
+          copyText={lyrics.synced.map((l) => l.text).join('\n')}
+        />
         <SyncedLyrics lines={lyrics.synced} />
       </>
     );
@@ -1192,7 +1322,12 @@ const LyricsPane = React.memo(({ track }: { track: Track }) => {
   if (lyrics?.plain) {
     return (
       <>
-        <LyricsSourceBadge source={lyrics.source} hasSynced={false} onSearch={startSearch} />
+        <LyricsSourceBadge
+          source={lyrics.source}
+          hasSynced={false}
+          onSearch={startSearch}
+          copyText={lyrics.plain}
+        />
         <PlainLyrics text={lyrics.plain} />
       </>
     );

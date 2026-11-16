@@ -9,7 +9,6 @@ import { ArtistTracksTab, type TracksView } from '../components/artist/ArtistTra
 import type { ArtistTabId, TracksSort } from '../components/artist/types';
 import { useArtistDetail, useArtistStar } from '../components/artist/useArtistData';
 import { ArtistSoundWave } from '../components/artist/wave';
-import { AuraField } from '../components/user/AuraField';
 import { USER_PAGE_KEYFRAMES } from '../components/user/keyframes';
 import { type TabDescriptor, TabDock } from '../components/user/TabDock';
 import { Loader2 } from '../lib/icons';
@@ -71,8 +70,6 @@ export function ArtistPage() {
     <>
       <style>{USER_PAGE_KEYFRAMES}</style>
       <div className="relative w-full min-h-screen">
-        <AuraField aura={aura} isStar={hasStar} />
-
         <div
           className="relative z-10 w-full max-w-[1480px] mx-auto px-4 md:px-8 pt-10 md:pt-16 pb-32"
           style={{ isolation: 'isolate' }}

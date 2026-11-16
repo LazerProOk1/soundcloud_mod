@@ -277,6 +277,7 @@ pub enum DownloadSource {
     Api,
     Youtube,
     Zaycev,
+    Audius,
 }
 
 impl DownloadSource {
@@ -287,6 +288,7 @@ impl DownloadSource {
             Self::Api => "api",
             Self::Youtube => "youtube",
             Self::Zaycev => "zaycev",
+            Self::Audius => "audius",
         }
     }
 }
@@ -1051,12 +1053,18 @@ impl TrackCacheState {
     /// For tracks SoundCloud won't serve: find the same song on Zaycev.net (fast, direct
     /// MP3), then YouTube (yt-dlp), and cache it under the same URN so likes, playlists and
     /// offline keep working. Streams like any other download via `live`.
+    /// Resolves a soundcloud.com link (used by import by link).
+    pub async fn resolve_soundcloud_url(&self, url: &str) -> Result<serde_json::Value, String> {
+        self.anon.resolve_url(url).await
+    }
+
     pub async fn cache_from_fallback(
         &self,
         urn: &str,
         artist: &str,
         title: &str,
         duration_ms: Option<u64>,
+        sources: &[String],
     ) -> Result<TrackCacheEntry, String> {
         if let Some(path) = self.resolve_path(urn) {
             return Ok(TrackCacheEntry::from_path_and_meta(
@@ -1066,23 +1074,55 @@ impl TrackCacheState {
         }
         let secs = duration_ms.map(|ms| ms as f64 / 1000.0);
         let started = std::time::Instant::now();
-        let (url, source, label) =
-            match super::zaycev::find_audio_url(&self.client, artist, title, secs).await {
-                Ok(url) => (url, DownloadSource::Zaycev, "zaycev"),
-                Err(zerr) => {
+        // Fallback sources in the user's order; the first one that finds the song wins.
+        let order: Vec<&str> = if sources.is_empty() {
+            vec!["zaycev", "youtube"]
+        } else {
+            sources.iter().map(String::as_str).collect()
+        };
+        let mut errors = Vec::new();
+        let mut found = None;
+        for name in order {
+            let res = match name {
+                "zaycev" => super::zaycev::find_audio_url(&self.client, artist, title, secs)
+                    .await
+                    .map(|u| (u, DownloadSource::Zaycev, "zaycev")),
+                "audius" => super::audius::find_audio_url(&self.client, artist, title, secs)
+                    .await
+                    .map(|u| (u, DownloadSource::Audius, "audius")),
+                "youtube" => {
                     let bin_dir = self
                         .audio_dir
                         .parent()
                         .map(|p| p.join("bin"))
                         .unwrap_or_else(|| self.audio_dir.join("bin"));
-                    let bin = super::youtube::ensure_ytdlp(&bin_dir, &self.client).await?;
-                    let query = format!("{artist} {title}");
-                    let url = super::youtube::find_audio_url(&bin, query.trim(), secs)
-                        .await
-                        .map_err(|yerr| format!("{zerr}; {yerr}"))?;
-                    (url, DownloadSource::Youtube, "youtube")
+                    match super::youtube::ensure_ytdlp(&bin_dir, &self.client).await {
+                        Ok(bin) => {
+                            let query = format!("{artist} {title}");
+                            super::youtube::find_audio_url(&bin, query.trim(), secs)
+                                .await
+                                .map(|u| (u, DownloadSource::Youtube, "youtube"))
+                        }
+                        Err(e) => Err(e),
+                    }
                 }
+                _ => continue,
             };
+            match res {
+                Ok(hit) => {
+                    found = Some(hit);
+                    break;
+                }
+                Err(e) => errors.push(e),
+            }
+        }
+        let (url, source, label) = found.ok_or_else(|| {
+            if errors.is_empty() {
+                "no fallback sources enabled".to_string()
+            } else {
+                errors.join("; ")
+            }
+        })?;
         let resp = self
             .client
             .get(&url)

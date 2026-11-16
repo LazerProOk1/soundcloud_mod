@@ -733,9 +733,6 @@ body,
   color: #fff;
   transform: scale(1.04);
   filter: none;
-  text-shadow:
-    0 0 22px rgba(255, 255, 255, 0.35),
-    0 0 48px color-mix(in srgb, var(--color-accent) 35%, transparent);
   animation: lyric-in 0.3s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -777,6 +774,73 @@ body,
     transform: none;
     filter: none;
     animation: none;
+  }
+}
+
+/* Word-by-word mode: the active line stays dim and its words light up as sung. */
+.lyric-w {
+  display: inline-block;
+  transition:
+    color 0.22s ease,
+    transform 0.45s var(--spring-bouncy);
+}
+.lyrics-word-mode .lyric-line[data-state="active"] .lyric-w {
+  color: rgba(255, 255, 255, 0.38);
+}
+.lyrics-word-mode .lyric-line[data-state="active"] .lyric-w[data-lit] {
+  color: #fff;
+  transform: translateY(-2px);
+}
+
+/* Instrumental break: three dots fill up, seconds count down. Collapsed until it plays. */
+.lyric-line.lyric-gap {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  height: 0;
+  padding: 0;
+  opacity: 0;
+  overflow: hidden;
+  filter: none;
+  transition:
+    height 0.45s var(--ease-out-soft),
+    padding 0.45s var(--ease-out-soft),
+    opacity 0.3s ease,
+    transform 0.45s var(--spring-soft);
+}
+.lyric-line.lyric-gap[data-state="active"] {
+  height: 60px;
+  padding: 10px 0;
+  opacity: 1;
+}
+.lyric-gap-dots {
+  display: flex;
+  gap: 12px;
+  transform-origin: left center;
+}
+.lyric-gap[data-state="active"] .lyric-gap-dots {
+  animation: gap-breathe 2.4s ease-in-out infinite;
+}
+.lyrics-paused .lyric-gap .lyric-gap-dots {
+  animation-play-state: paused;
+}
+.lyric-gap-dots > i {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  opacity: calc(0.22 + 0.78 * var(--fill, 0));
+  transform: scale(calc(0.78 + 0.32 * var(--fill, 0)));
+}
+.lyric-gap-count {
+  font-size: 20px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.45);
+  font-variant-numeric: tabular-nums;
+}
+@keyframes gap-breathe {
+  50% {
+    transform: scale(1.08);
   }
 }
 
@@ -1478,6 +1542,8 @@ body,
    slightly translucent so the wallpaper / cover colour still shows through.
    ══════════════════════════════════════════════════════════════ */
 .no-glass {
+  /* Every glow in the app is built from this colour — classic mode has none. */
+  --color-accent-glow: transparent;
   --classic-panel: rgba(18, 18, 18, 0.84);
   --classic-elev: rgba(255, 255, 255, 0.06);
   --classic-elev-2: rgba(255, 255, 255, 0.1);
@@ -1494,9 +1560,9 @@ body,
 }
 .no-glass .liquid-panel,
 .no-glass .liquid-panel-heavy,
-.no-glass [data-ui='sidebar'],
-.no-glass [data-ui='main'],
-.no-glass [data-ui='now-playing'] {
+.no-glass [data-ui="sidebar"],
+.no-glass [data-ui="main"],
+.no-glass [data-ui="now-playing"] {
   background: var(--classic-panel) !important;
   box-shadow: none !important;
   border-color: transparent !important;
@@ -1534,11 +1600,11 @@ body,
 .no-glass .miniplayer-root {
   background: rgba(18, 18, 18, 0.96);
 }
-.no-glass [class*='bg-[#101012]'] {
+.no-glass [class*="bg-[#101012]"] {
   background: rgba(18, 18, 18, 0.96) !important;
 }
 /* Glows → none. */
-.no-glass [class*='shadow-[0_0_'] {
+.no-glass [class*="shadow-[0_0_"] {
   box-shadow: none !important;
 }
 
@@ -1607,47 +1673,187 @@ a:focus-visible,
    bouncy ≈ slight overshoot, soft ≈ barely any, smooth ≈ critically damped.
    ══════════════════════════════════════════════════════════════ */
 :root {
-  --spring-bouncy: linear(0, 0.026, 0.094, 0.191, 0.306, 0.428, 0.551, 0.668, 0.774, 0.867, 0.945, 1.008, 1.056, 1.09, 1.112, 1.124, 1.126, 1.122, 1.113, 1.1, 1.085, 1.07, 1.054, 1.04, 1.027, 1.015, 1.006, 0.998, 0.992, 0.988, 0.985, 0.984, 0.984, 0.985, 0.986, 0.988, 0.99, 0.992, 0.993, 0.995, 1);
-  --spring-soft: linear(0, 0.018, 0.065, 0.131, 0.209, 0.294, 0.38, 0.464, 0.544, 0.618, 0.685, 0.745, 0.798, 0.844, 0.882, 0.915, 0.941, 0.963, 0.98, 0.993, 1.003, 1.01, 1.015, 1.018, 1.019, 1.02, 1.02, 1.019, 1.017, 1.016, 1.014, 1.013, 1.011, 1.009, 1.008, 1.006, 1.005, 1.004, 1.003, 1.002, 1);
-  --spring-smooth: linear(0, 0.022, 0.075, 0.147, 0.228, 0.31, 0.391, 0.467, 0.537, 0.601, 0.657, 0.708, 0.751, 0.789, 0.822, 0.85, 0.874, 0.895, 0.912, 0.927, 0.939, 0.949, 0.958, 0.965, 0.971, 0.976, 0.98, 0.984, 0.987, 0.989, 0.991, 0.993, 0.994, 0.995, 0.996, 0.997, 0.997, 0.998, 0.998, 0.998, 1);
+  --spring-bouncy: linear(
+    0,
+    0.026,
+    0.094,
+    0.191,
+    0.306,
+    0.428,
+    0.551,
+    0.668,
+    0.774,
+    0.867,
+    0.945,
+    1.008,
+    1.056,
+    1.09,
+    1.112,
+    1.124,
+    1.126,
+    1.122,
+    1.113,
+    1.1,
+    1.085,
+    1.07,
+    1.054,
+    1.04,
+    1.027,
+    1.015,
+    1.006,
+    0.998,
+    0.992,
+    0.988,
+    0.985,
+    0.984,
+    0.984,
+    0.985,
+    0.986,
+    0.988,
+    0.99,
+    0.992,
+    0.993,
+    0.995,
+    1
+  );
+  --spring-soft: linear(
+    0,
+    0.018,
+    0.065,
+    0.131,
+    0.209,
+    0.294,
+    0.38,
+    0.464,
+    0.544,
+    0.618,
+    0.685,
+    0.745,
+    0.798,
+    0.844,
+    0.882,
+    0.915,
+    0.941,
+    0.963,
+    0.98,
+    0.993,
+    1.003,
+    1.01,
+    1.015,
+    1.018,
+    1.019,
+    1.02,
+    1.02,
+    1.019,
+    1.017,
+    1.016,
+    1.014,
+    1.013,
+    1.011,
+    1.009,
+    1.008,
+    1.006,
+    1.005,
+    1.004,
+    1.003,
+    1.002,
+    1
+  );
+  --spring-smooth: linear(
+    0,
+    0.022,
+    0.075,
+    0.147,
+    0.228,
+    0.31,
+    0.391,
+    0.467,
+    0.537,
+    0.601,
+    0.657,
+    0.708,
+    0.751,
+    0.789,
+    0.822,
+    0.85,
+    0.874,
+    0.895,
+    0.912,
+    0.927,
+    0.939,
+    0.949,
+    0.958,
+    0.965,
+    0.971,
+    0.976,
+    0.98,
+    0.984,
+    0.987,
+    0.989,
+    0.991,
+    0.993,
+    0.994,
+    0.995,
+    0.996,
+    0.997,
+    0.997,
+    0.998,
+    0.998,
+    0.998,
+    1
+  );
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  /* Press feedback everywhere: squeeze instantly, spring back. */
-  button:not(:disabled),
-  [data-ui='sidebar'] a {
-    transition:
-      scale 0.5s var(--spring-bouncy),
-      background-color 0.15s,
-      color 0.15s,
-      opacity 0.15s,
-      box-shadow 0.15s,
-      border-color 0.15s;
-  }
-  button:not(:disabled):active {
-    scale: 0.93;
-    transition-duration: 0.08s, 0.15s, 0.15s, 0.15s, 0.15s, 0.15s;
-  }
-  [data-ui='sidebar'] a:active {
-    scale: 0.97;
-    transition-duration: 0.08s, 0.15s, 0.15s, 0.15s, 0.15s, 0.15s;
-  }
+/* Press feedback everywhere: squeeze instantly, spring back. Kept even with
+   reduced motion — it's a tiny, direct response to the user's own click. */
+button:not(:disabled),
+[data-ui="sidebar"] a,
+[role="button"] {
+  transition:
+    scale 0.5s var(--spring-bouncy),
+    background-color 0.15s,
+    color 0.15s,
+    opacity 0.15s,
+    box-shadow 0.15s,
+    border-color 0.15s,
+    filter 0.15s;
+}
+button:not(:disabled):hover {
+  filter: brightness(1.08);
+}
+button:not(:disabled):active,
+[role="button"]:active {
+  scale: 0.93;
+  transition-duration: 0.08s, 0.15s, 0.15s, 0.15s, 0.15s, 0.15s, 0.15s;
+}
+[data-ui="sidebar"] a:active {
+  scale: 0.97;
+  transition-duration: 0.08s, 0.15s, 0.15s, 0.15s, 0.15s, 0.15s, 0.15s;
+}
+/* Big round play buttons grow a little on hover, like Spotify/Justify. */
+.play-fab:not(:disabled):hover {
+  scale: 1.06;
+}
+.play-fab:not(:disabled):active {
+  scale: 0.92;
+}
 
+@media (prefers-reduced-motion: no-preference) {
   /* Page change: content rises in. */
   .page-enter {
     animation: view-fwd 0.5s var(--ease-out-soft) backwards;
   }
 
   /* Sliders: the knob grows with a spring under the cursor. */
-  [role='slider'] {
+  [role="slider"] {
     transition:
       scale 0.45s var(--spring-bouncy),
       opacity 0.15s !important;
   }
 
   /* Dialogs, popovers, toasts spring in. */
-  [role='dialog'] {
+  [role="dialog"] {
     animation: modal-spring-in 0.6s var(--spring-soft);
   }
   [data-radix-popper-content-wrapper] > * {
@@ -1712,7 +1918,7 @@ a:focus-visible,
   animation: heart-pop 0.6s ease-out;
 }
 .heart-pop::before {
-  content: '';
+  content: "";
   position: absolute;
   inset: 0;
   border-radius: 50%;
@@ -1777,4 +1983,77 @@ a:focus-visible,
   .np-cover-img {
     animation: none;
   }
+}
+
+/* Classic: calm wave page — solid chips, plain title, faint cover colour. */
+.no-glass .wave-blob {
+  opacity: 0.35;
+}
+.no-glass .soundwave-title {
+  background: none !important;
+  -webkit-text-fill-color: #fff !important;
+  color: #fff !important;
+}
+.no-glass [data-vibe-active="true"] {
+  background: #fff !important;
+  color: #000 !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+.no-glass [data-vibe-active="true"] span {
+  color: inherit !important;
+}
+
+/* Toast status icons (white toasts). */
+.app-toast[data-type="success"] [data-icon] {
+  color: #16a34a;
+}
+.app-toast[data-type="error"] [data-icon] {
+  color: #dc2626;
+}
+.app-toast[data-type="info"] [data-icon] {
+  color: #2563eb;
+}
+.app-toast [data-description] {
+  color: rgba(0, 0, 0, 0.6);
+  font-weight: 500;
+}
+
+/* Wave "Next" chips rise in one after another whenever the queue changes. */
+.wave-next-chip {
+  animation: view-fwd 0.45s var(--ease-out-soft) backwards;
+}
+
+/* Icons follow the text weight: the UI uses semibold/bold type, so a hairline
+   2px lucide stroke looks foreign next to it. Filled icons (stroke 0) are untouched. */
+svg.lucide:not([stroke-width="0"]) {
+  stroke-width: 2.3;
+}
+
+.quick-tile {
+  animation: view-fwd 0.45s var(--ease-out-soft) backwards;
+}
+
+/* Settings: flat sections with big titles and hairline separators (no cards). */
+.settings-section {
+  padding: 8px 4px 28px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+.settings-section:last-child {
+  border-bottom: none;
+}
+
+/* QR code: plain dark tile, no aurora/specular glow. */
+.qr-aurora,
+.qr-mesh,
+.qr-specular {
+  display: none !important;
+}
+.qr-rim,
+.qr-frame {
+  background: #181818 !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 16px !important;
+  animation: none !important;
 }

@@ -20,6 +20,7 @@ import {
   ChevronUp as _ChevronUp,
   ClipboardCopy as _ClipboardCopy,
   Clock as _Clock,
+  Cloud as _Cloud,
   Command as _Command,
   Compass as _Compass,
   CornerDownLeft as _CornerDownLeft,
@@ -35,6 +36,7 @@ import {
   Headphones as _Headphones,
   Heart as _Heart,
   Home as _Home,
+  Import as _Import,
   Info as _Info,
   Library as _Library,
   Link as _Link,
@@ -119,9 +121,11 @@ export const Calendar = memo(_Calendar);
 export const Check = memo(_Check);
 export const CheckCircle2 = memo(_CheckCircle2);
 export const ClipboardCopy = memo(_ClipboardCopy);
+export const Cloud = memo(_Cloud);
 export const Command = memo(_Command);
 export const CornerDownLeft = memo(_CornerDownLeft);
 export const Download = memo(_Download);
+export const Import = memo(_Import);
 export const Upload = memo(_Upload);
 export const ChevronDown = memo(_ChevronDown);
 export const ChevronLeft = memo(_ChevronLeft);

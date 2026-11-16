@@ -81,7 +81,7 @@ export function Login() {
       >
         <div className="relative">
           <div className="absolute inset-0 bg-accent/25 blur-2xl rounded-full scale-150" />
-          <div className="relative w-20 h-20 rounded-[24px] bg-white/[0.06] backdrop-blur-2xl border border-white/[0.12] flex items-center justify-center shadow-[0_0_40px_rgba(255,85,0,0.12),inset_0_1px_0_rgba(255,255,255,0.16)]">
+          <div className="relative w-20 h-20 rounded-[24px] bg-white/[0.06] backdrop-blur-2xl border border-white/[0.12] flex items-center justify-center">
             <Disc3 size={36} className="text-accent" strokeWidth={1.5} />
           </div>
         </div>
@@ -170,7 +170,7 @@ export function Login() {
             <button
               type="button"
               onClick={handleLogin}
-              className="w-full py-3.5 rounded-2xl bg-accent text-accent-contrast font-semibold text-sm hover:bg-accent-hover active:scale-[0.97] transition-all duration-200 ease-[var(--ease-apple)] cursor-pointer shadow-[0_0_40px_var(--color-accent-glow),0_4px_12px_rgba(0,0,0,0.3)] hover:shadow-[0_0_60px_var(--color-accent-glow),0_4px_16px_rgba(0,0,0,0.4)]"
+              className="w-full py-3.5 rounded-2xl bg-accent text-accent-contrast font-semibold text-sm hover:bg-accent-hover active:scale-[0.97] transition-all duration-200 ease-[var(--ease-apple)] cursor-pointer"
             >
               {t('auth.signIn')}
             </button>

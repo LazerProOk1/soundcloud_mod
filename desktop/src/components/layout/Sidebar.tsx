@@ -2,7 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { art } from '../../lib/formatters';
-import { useMyPlaylists } from '../../lib/hooks';
+import { useMyPlaylists, usePlaylist } from '../../lib/hooks';
 import { AudioLines, Clock, Download, Heart, Library, ListMusic } from '../../lib/icons';
 import { useAuthStore } from '../../stores/auth';
 import { useCachedUrnsStore } from '../../stores/cached-urns';
@@ -77,7 +77,7 @@ export const Sidebar = React.memo(() => {
       <div
         className={`flex items-center gap-2.5 px-4 pt-4 pb-3 text-white/70 ${collapsed ? 'justify-center px-0' : ''}`}
       >
-        <Library size={20} />
+        <Library size={22} />
         {!collapsed && (
           <span className="text-[15px] font-bold text-white/90">{t('sidebar.myLibrary')}</span>
         )}
@@ -99,7 +99,7 @@ export const Sidebar = React.memo(() => {
           tile={gradientTile('#4f46e5', '#a5b4fc', <Heart size={18} fill="currentColor" />)}
         />
         <Row
-          to="/library?tab=history"
+          to="/history"
           title={t('library.history')}
           collapsed={collapsed}
           tile={gradientTile('#0f766e', '#5eead4', <Clock size={18} />)}
@@ -113,27 +113,18 @@ export const Sidebar = React.memo(() => {
         />
 
         {playlists.length > 0 && !collapsed && <div className="h-px bg-white/[0.06] my-2 mx-2" />}
-        {playlists.map((p) => {
-          const cover = art(p.artwork_url ?? p.tracks?.[0]?.artwork_url, 't200x200');
-          return (
-            <Row
-              key={p.urn}
-              to={`/playlist/${encodeURIComponent(p.urn)}`}
-              title={p.title}
-              subtitle={t('sidebar.playlistTracks', { count: p.track_count ?? 0 })}
-              collapsed={collapsed}
-              tile={
-                cover ? (
-                  <img src={cover} alt="" className="w-full h-full object-cover" loading="lazy" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-white/40">
-                    <ListMusic size={18} />
-                  </div>
-                )
-              }
-            />
-          );
-        })}
+        {playlists.map((p) => (
+          <Row
+            key={p.urn}
+            to={`/playlist/${encodeURIComponent(p.urn)}`}
+            title={p.title}
+            subtitle={t('sidebar.playlistTracks', { count: p.track_count ?? 0 })}
+            collapsed={collapsed}
+            tile={
+              <PlaylistTile urn={p.urn} artwork={p.artwork_url ?? p.tracks?.[0]?.artwork_url} />
+            }
+          />
+        ))}
       </div>
 
       {user && (
@@ -159,3 +150,17 @@ export const Sidebar = React.memo(() => {
     </aside>
   );
 });
+
+/** Playlist artwork; playlists without their own cover use the first track's art. */
+function PlaylistTile({ urn, artwork }: { urn: string; artwork?: string | null }) {
+  // Only fetched when the list item has no artwork (one small request, cached).
+  const { data } = usePlaylist(artwork ? undefined : urn);
+  const cover = art(artwork ?? data?.artwork_url ?? data?.tracks?.[0]?.artwork_url, 't200x200');
+  return cover ? (
+    <img src={cover} alt="" className="w-full h-full object-cover" loading="lazy" />
+  ) : (
+    <div className="w-full h-full flex items-center justify-center text-white/40">
+      <ListMusic size={18} />
+    </div>
+  );
+}

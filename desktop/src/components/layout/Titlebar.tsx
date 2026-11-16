@@ -8,6 +8,7 @@ import {
   Compass,
   Disc3,
   Home,
+  Import,
   Minus,
   PanelLeftClose,
   PanelLeftOpen,
@@ -49,14 +50,14 @@ const Brand = React.memo(() => {
         title={t(collapsed ? 'nav.expand' : 'nav.collapse')}
         className={iconBtn}
       >
-        {collapsed ? <PanelLeftOpen size={16} /> : <PanelLeftClose size={16} />}
+        {collapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
       </button>
       <Disc3
-        size={16}
+        size={18}
         className={`text-accent pointer-events-none ${isPlaying ? 'animate-spin-slow' : ''}`}
       />
       <span
-        className="text-[13px] text-white/90 pointer-events-none"
+        className="text-[15px] text-white/90 pointer-events-none"
         style={{ fontFamily: 'var(--font-display)', fontWeight: 800, letterSpacing: '-0.02em' }}
       >
         SoundCloud
@@ -146,6 +147,33 @@ const CenterNav = React.memo(() => {
   );
 });
 
+const ImportDialog = React.lazy(() =>
+  import('../music/ImportDialog').then((m) => ({ default: m.ImportDialog })),
+);
+
+/** White "Import" pill: move playlists in by link, from Yandex Music or as text. */
+const ImportButton = React.memo(() => {
+  const { t } = useTranslation();
+  const [open, setOpen] = React.useState(false);
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="hidden md:flex items-center gap-2 h-8 px-3.5 mr-1 rounded-full bg-white text-black text-[13px] font-bold cursor-pointer hover:scale-[1.04] transition-transform"
+      >
+        <Import size={15} />
+        {t('import.button')}
+      </button>
+      {open && (
+        <React.Suspense fallback={null}>
+          <ImportDialog open={open} onOpenChange={setOpen} />
+        </React.Suspense>
+      )}
+    </>
+  );
+});
+
 const SettingsButton = React.memo(() => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -180,6 +208,7 @@ export const Titlebar = React.memo(() => {
       </div>
 
       <div className="flex items-center h-full shrink-0">
+        <ImportButton />
         <SettingsButton />
         {win && (
           <>

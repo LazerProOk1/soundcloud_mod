@@ -26,6 +26,7 @@
   "player": {
     "queue": "Queue",
     "nowPlaying": "Now Playing",
+    "next": "Next",
     "upNext": "Up Next",
     "clearUpcoming": "Clear upcoming",
     "clearQueue": "Clear Queue",
@@ -131,6 +132,9 @@
     "lyrics": "Lyrics",
     "lyricsNotFound": "Lyrics not found",
     "lyricsNotFoundHint": "Try a manual search with a different artist or title.",
+    "lyricsWordMode": "Word by word",
+    "lyricsCopy": "Copy",
+    "lyricsCopied": "Lyrics copied",
     "lyricsLoading": "Searching lyrics...",
     "hidePanel": "Hide panel",
     "showPanel": "Show panel",
@@ -465,6 +469,10 @@
       "SoundWave fullscreen discovery mode & local offline cache badges",
       "JSON backup & restore for settings, equalizer, and local library"
     ],
+    "sources": "Music sources",
+    "sourcesDesc": "Where tracks are downloaded from, top first. If a source has no song, the next one is tried. SoundCloud keeps likes and playlists; the rest search by artist and title.",
+    "sourceUp": "Move up",
+    "sourceDown": "Move down",
     "primarySource": "Primary music source",
     "primarySourceDesc": "Where tracks load from first. If missing, the others are tried (SoundCloud, Zaycev.net, YouTube)."
   },
@@ -535,6 +543,25 @@
     "done": "Import complete!",
     "savingPlaylist": "Saving playlist...",
     "backgroundHint": "Import continues in the background. You can close this window"
+  },
+  "import": {
+    "title": "Move music in",
+    "byLink": "By link",
+    "byText": "As text",
+    "link": "Link",
+    "load": "Load",
+    "linkHint": "A playlist, album, track or artist link works:",
+    "loadFailed": "Couldn't load this link",
+    "untitled": "Imported",
+    "tracksCount": "{{count}} tracks",
+    "textLabel": "One track per line: Artist - Title",
+    "textHint": "{{count}} tracks recognised. Lists from VK or Apple Music can be pasted here.",
+    "textPlaylist": "Imported list",
+    "run": "Import",
+    "progress": "Searching {{done}}/{{total}} · found {{found}}",
+    "done": "Playlist created: {{found}} of {{total}} found",
+    "nothingFound": "Nothing was found on SoundCloud",
+    "button": "Import"
   },
   "update": {
     "available": "Update available",

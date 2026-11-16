@@ -47,10 +47,11 @@ pub async fn track_cache_from_fallback(
     artist: String,
     title: String,
     duration_ms: Option<u64>,
+    sources: Option<Vec<String>>,
     state: State<'_, TrackCacheState>,
 ) -> Result<TrackCacheEntry, String> {
     state
-        .cache_from_fallback(&urn, &artist, &title, duration_ms)
+        .cache_from_fallback(&urn, &artist, &title, duration_ms, &sources.unwrap_or_default())
         .await
 }
 

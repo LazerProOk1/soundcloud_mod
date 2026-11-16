@@ -86,6 +86,9 @@ const Discover = lazy(() =>
 const LikedPage = lazy(() =>
   import('./pages/LikedPage').then((module) => ({ default: module.LikedPage })),
 );
+const HistoryPage = lazy(() =>
+  import('./pages/HistoryPage').then((module) => ({ default: module.HistoryPage })),
+);
 const SoundWavePage = lazy(() =>
   import('./pages/SoundWavePage').then((module) => ({ default: module.SoundWavePage })),
 );
@@ -279,16 +282,20 @@ export default function App() {
     <ThemeProvider>
       <LiquidGlassDefs />
       <Toaster
-        theme="dark"
-        position="top-right"
-        offset={48}
+        theme="light"
+        position="top-center"
+        offset={56}
         toastOptions={{
+          // Plain white pill with a coloured status icon, calm and readable.
+          className: 'app-toast',
           style: {
-            background: 'rgba(30, 30, 34, 0.9)',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            color: 'rgba(255,255,255,0.85)',
-            fontSize: '13px',
+            background: '#fff',
+            border: 'none',
+            color: '#111',
+            fontSize: '14px',
+            fontWeight: 600,
+            borderRadius: '12px',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.35)',
           },
         }}
       />
@@ -353,6 +360,14 @@ export default function App() {
                   element={
                     <RouteLoader>
                       <LikedPage />
+                    </RouteLoader>
+                  }
+                />
+                <Route
+                  path="history"
+                  element={
+                    <RouteLoader>
+                      <HistoryPage />
                     </RouteLoader>
                   }
                 />
