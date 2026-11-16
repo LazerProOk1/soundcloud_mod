@@ -1,4 +1,5 @@
 import * as Dialog from '@radix-ui/react-dialog';
+import { invoke } from '@tauri-apps/api/core';
 import React, { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -11,8 +12,6 @@ import {
   type ImportProgress,
   importToPlaylist,
 } from '../../lib/link-import';
-
-const YMImportDialog = React.lazy(() => import('./YMImportDialog'));
 
 type Tab = 'link' | 'yandex' | 'text';
 
@@ -38,18 +37,26 @@ export function ImportDialog({
   const [loading, setLoading] = useState(false);
   const [list, setList] = useState<{ title: string; tracks: ImportItem[] } | null>(null);
   const [progress, setProgress] = useState<ImportProgress | null>(null);
-  const [ymOpen, setYmOpen] = useState(false);
+  const [token, setToken] = useState('');
   const cancelRef = useRef({ cancelled: false });
 
   const running = progress != null && progress.done < progress.total;
 
   const load = async () => {
-    if (!url.trim()) return;
+    const yandex = tab === 'yandex';
+    if (yandex ? !token.trim() : !url.trim()) return;
     setLoading(true);
     setList(null);
     try {
-      const res = await fetchLinkList(url.trim());
-      setList({ title: res.title || t('import.untitled'), tracks: res.tracks });
+      const res = yandex
+        ? await invoke<{ title: string; tracks: ImportItem[] }>('import_fetch_yandex_likes', {
+            token: token.trim(),
+          })
+        : await fetchLinkList(url.trim());
+      setList({
+        title: yandex ? t('import.ymLikes') : res.title || t('import.untitled'),
+        tracks: res.tracks,
+      });
     } catch (e) {
       toast.error(t('import.loadFailed'), { description: String(e) });
     } finally {
@@ -57,8 +64,7 @@ export function ImportDialog({
     }
   };
 
-  const items: ImportItem[] =
-    tab === 'text' ? parseTextList(text) : tab === 'link' ? (list?.tracks ?? []) : [];
+  const items: ImportItem[] = tab === 'text' ? parseTextList(text) : (list?.tracks ?? []);
   const title = tab === 'text' ? t('import.textPlaylist') : (list?.title ?? '');
 
   const run = async () => {
@@ -84,7 +90,10 @@ export function ImportDialog({
   const tabBtn = (id: Tab, icon: React.ReactNode, label: string) => (
     <button
       type="button"
-      onClick={() => (id === 'yandex' ? setYmOpen(true) : setTab(id))}
+      onClick={() => {
+        setTab(id);
+        setList(null);
+      }}
       className={`flex items-center gap-2 h-10 px-4 rounded-full text-[14px] font-semibold cursor-pointer transition-colors ${
         tab === id ? 'bg-white text-black' : 'bg-white/[0.08] text-white hover:bg-white/[0.14]'
       }`}
@@ -115,7 +124,39 @@ export function ImportDialog({
               {tabBtn('text', <ListMusic size={17} />, t('import.byText'))}
             </div>
 
-            {tab === 'link' ? (
+            {tab === 'yandex' ? (
+              <div className="space-y-4">
+                <p className="text-[14px] font-bold text-white">{t('import.ymToken')}</p>
+                <div className="flex gap-3">
+                  <input
+                    type="password"
+                    value={token}
+                    onChange={(e) => setToken(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && void load()}
+                    placeholder={t('ym.tokenPlaceholder')}
+                    autoComplete="off"
+                    className="flex-1 min-w-0 h-12 px-4 rounded-md bg-[#3e3e3e] text-[15px] text-white placeholder:text-white/35 outline-none border border-transparent focus:border-white"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void load()}
+                    disabled={loading || !token.trim()}
+                    className="h-12 px-6 rounded-full bg-white text-black text-[15px] font-bold cursor-pointer disabled:opacity-50"
+                  >
+                    {loading ? <Loader2 size={18} className="animate-spin" /> : t('import.load')}
+                  </button>
+                </div>
+                {list ? (
+                  <ListPreview title={list.title} tracks={list.tracks} />
+                ) : (
+                  <ol className="text-[13px] text-white/60 space-y-1 list-decimal pl-5">
+                    <li>{t('ym.step1')}</li>
+                    <li>{t('ym.step2')}</li>
+                    <li>{t('ym.step3')}</li>
+                  </ol>
+                )}
+              </div>
+            ) : tab === 'link' ? (
               <div className="space-y-4">
                 <p className="text-[14px] font-bold text-white">{t('import.link')}</p>
                 <div className="flex gap-3">
@@ -136,10 +177,7 @@ export function ImportDialog({
                   </button>
                 </div>
                 {list ? (
-                  <p className="text-[14px] text-white/80">
-                    <span className="font-bold text-white">{list.title}</span> ·{' '}
-                    {t('import.tracksCount', { count: list.tracks.length })}
-                  </p>
+                  <ListPreview title={list.title} tracks={list.tracks} />
                 ) : (
                   <>
                     <p className="text-[14px] text-white/60">{t('import.linkHint')}</p>
@@ -201,11 +239,28 @@ export function ImportDialog({
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
-      {ymOpen && (
-        <React.Suspense fallback={null}>
-          <YMImportDialog open={ymOpen} onOpenChange={setYmOpen} />
-        </React.Suspense>
-      )}
     </>
+  );
+}
+
+/** What was found at the link: shown right away, before searching SoundCloud. */
+function ListPreview({ title, tracks }: { title: string; tracks: ImportItem[] }) {
+  const { t } = useTranslation();
+  return (
+    <div className="space-y-2">
+      <p className="text-[14px] text-white/80">
+        <span className="font-bold text-white">{title}</span> ·{' '}
+        {t('import.tracksCount', { count: tracks.length })}
+      </p>
+      <div className="max-h-48 overflow-y-auto rounded-md bg-black/25 divide-y divide-white/[0.05]">
+        {tracks.slice(0, 200).map((tr, i) => (
+          <div key={`${i}-${tr.title}`} className="flex gap-3 px-3 py-1.5 text-[13px]">
+            <span className="w-6 text-right tabular-nums text-white/35">{i + 1}</span>
+            <span className="truncate text-white">{tr.title}</span>
+            <span className="truncate text-white/50">{tr.artist}</span>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

@@ -172,9 +172,105 @@ pub async fn find_audio_url(
         .ok_or_else(|| "yt-dlp returned no audio URL".to_string())
 }
 
+/// A track from a YouTube Music radio: metadata only (it's played from SoundCloud).
+#[derive(serde::Serialize, Clone, Debug, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct RadioTrack {
+    pub artist: String,
+    pub title: String,
+    pub duration_ms: Option<u64>,
+}
+
+/// "duration\tchannel\ttitle" → artist / title. YouTube titles are often
+/// "Artist - Song (Official Video)"; otherwise the channel is the artist ("X - Topic").
+pub fn parse_radio_line(line: &str) -> Option<RadioTrack> {
+    let mut parts = line.splitn(3, '\t');
+    let (dur, channel, raw_title) = (parts.next()?, parts.next()?, parts.next()?.trim());
+    if raw_title.is_empty() {
+        return None;
+    }
+    let channel = channel
+        .trim()
+        .trim_end_matches(" - Topic")
+        .trim_end_matches("VEVO")
+        .trim()
+        .to_string();
+    let (artist, title) = ["- ", "– ", "— "]
+        .iter()
+        .find_map(|sep| {
+            let i = raw_title.find(&format!(" {sep}"))?;
+            Some((
+                raw_title[..i].trim().to_string(),
+                raw_title[i + 1 + sep.len()..].trim().to_string(),
+            ))
+        })
+        .unwrap_or((channel, raw_title.to_string()));
+    if title.is_empty() {
+        return None;
+    }
+    Some(RadioTrack {
+        artist,
+        title,
+        duration_ms: dur.parse::<f64>().ok().map(|s| (s * 1000.0) as u64),
+    })
+}
+
+/// YouTube's endless "mix" for a song: finds the song, then lists its radio playlist.
+/// Only metadata — the wave matches these on SoundCloud.
+pub async fn radio(
+    bin: &Path,
+    query: &str,
+    duration_secs: Option<f64>,
+    limit: usize,
+) -> Result<Vec<RadioTrack>, String> {
+    let search = format!("ytsearch6:{query}");
+    let listing = run(
+        bin,
+        &[
+            "--flat-playlist",
+            "--no-warnings",
+            "--print",
+            "%(id)s\t%(duration)s\t%(title)s",
+            &search,
+        ],
+    )
+    .await?;
+    let id = pick_best(&listing, query, duration_secs)
+        .ok_or_else(|| "no matching YouTube result".to_string())?;
+    let mix = format!("https://www.youtube.com/watch?v={id}&list=RD{id}");
+    let end = (limit + 1).to_string();
+    let out = run(
+        bin,
+        &[
+            "--flat-playlist",
+            "--no-warnings",
+            "--playlist-end",
+            &end,
+            "--print",
+            "%(duration)s\t%(channel)s\t%(title)s",
+            &mix,
+        ],
+    )
+    .await?;
+    // The first entry is the seed song itself.
+    Ok(out.lines().skip(1).filter_map(parse_radio_line).collect())
+}
+
 #[cfg(test)]
 mod tests {
-    use super::pick_best;
+    use super::{parse_radio_line, pick_best};
+
+    #[test]
+    fn radio_lines_split_artist_and_title() {
+        let a = parse_radio_line("201\tkizaru - Topic\tBandana").unwrap();
+        assert_eq!((a.artist.as_str(), a.title.as_str()), ("kizaru", "Bandana"));
+        assert_eq!(a.duration_ms, Some(201_000));
+        let b = parse_radio_line("NA\tSomeVEVO\tMonetochka - Gori (Official Video)").unwrap();
+        assert_eq!(b.artist, "Monetochka");
+        assert_eq!(b.title, "Gori (Official Video)");
+        assert_eq!(b.duration_ms, None);
+        assert!(parse_radio_line("100\tx\t").is_none());
+    }
 
     #[test]
     fn picks_closest_duration_and_skips_covers() {

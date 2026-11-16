@@ -9,6 +9,7 @@
  */
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { invoke } from '@tauri-apps/api/core';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -40,7 +41,13 @@ import {
   ThumbsUp,
 } from '../lib/icons';
 import { isUrnLiked } from '../lib/likes';
-import { useArtistDisplay, useDisplayTitle } from '../lib/track-display';
+import { matchOnSoundCloud } from '../lib/link-import';
+import {
+  getArtistDisplay,
+  getDisplayTitle,
+  useArtistDisplay,
+  useDisplayTitle,
+} from '../lib/track-display';
 import { matchesLanguages } from '../lib/track-language';
 import { dedupeSongs, isVariant } from '../lib/track-variants';
 import { mixIn, rankWave } from '../lib/wave-rank';
@@ -169,9 +176,68 @@ export function SoundWavePage() {
     },
   });
 
+  /* "New" like Justify: YouTube Music radio of a few of your tracks, matched on
+     SoundCloud. Much closer to your taste than SoundCloud's own recommendations. */
+  const ytmSeeds = useMemo(() => {
+    const liked = [...likedQuery.tracks]
+      .map((tr) => ({ tr, k: hashKey(`${tr.urn}:ytm:${refreshSeed}`) }))
+      .sort((a, b) => a.k - b.k)
+      .map((x) => x.tr);
+    const out: Track[] = [];
+    for (const tr of [...seeds.slice(0, 2), ...liked]) {
+      if (out.length >= 3) break;
+      if (!out.some((o) => o.urn === tr.urn)) out.push(tr);
+    }
+    return out;
+  }, [likedQuery.tracks, seeds, refreshSeed]);
+  const ytmKey = ytmSeeds.map((s) => s.urn).join(',');
+  const { data: ytmTracks = [] } = useQuery({
+    queryKey: ['wave-ytm', ytmKey],
+    enabled: isAuthenticated && ytmSeeds.length > 0,
+    staleTime: 30 * 60_000,
+    queryFn: async () => {
+      const radios = await Promise.all(
+        ytmSeeds.map((s) =>
+          invoke<{ artist: string; title: string; durationMs: number | null }[]>('wave_ytm_radio', {
+            query: `${getArtistDisplay(s).primary} ${getDisplayTitle(s)}`,
+            durationMs: s.duration || null,
+            limit: 20,
+          }).catch(() => []),
+        ),
+      );
+      // Round-robin over the radios, one song once.
+      const seen = new Set<string>();
+      const items: { artist: string; title: string; durationMs: number | null }[] = [];
+      for (let i = 0; i < 20; i++) {
+        for (const r of radios) {
+          const it = r[i];
+          if (!it) continue;
+          const key = `${it.artist}|${it.title}`.toLowerCase();
+          if (seen.has(key)) continue;
+          seen.add(key);
+          items.push(it);
+        }
+      }
+      // Match on SoundCloud, 4 at a time.
+      const found: Track[] = [];
+      let next = 0;
+      const worker = async () => {
+        while (next < items.length && found.length < 40) {
+          const it = items[next++];
+          const tr = await matchOnSoundCloud(it);
+          if (tr) found.push(tr);
+        }
+      };
+      await Promise.all([worker(), worker(), worker(), worker()]);
+      return found;
+    },
+  });
+
   const allTracks = useMemo(() => {
     const base = backendWorking ? rawAllTracks : localRecs;
-    let pool = [...seedRelated, ...base].filter(waveFilter);
+    // Taste-driven picks lead: "more like this", then YouTube Music radio (two of them
+    // for every one server recommendation).
+    let pool = [...seedRelated, ...mixIn(ytmTracks, base, 2)].filter(waveFilter);
     // "Familiar" character: liked tracks woven into the stream (one after every two new ones).
     if (!hideLiked && waveMode === 'similar') {
       const liked = [...likedQuery.tracks]
@@ -194,6 +260,7 @@ export function SoundWavePage() {
     rawAllTracks,
     localRecs,
     seedRelated,
+    ytmTracks,
     waveFilter,
     waveVibe,
     waveMode,
@@ -306,8 +373,15 @@ export function SoundWavePage() {
   // "More like this": once the seed's related tracks arrive, the rest of the queue is rebuilt
   // around them (the current track keeps playing).
   const reshapeAfterSeed = useRef(false);
+  const ytmApplied = useRef(false);
   useEffect(() => {
-    if (!reshapeAfterSeed.current || seedRelated.length === 0 || !isWaveTrack) return;
+    if (ytmApplied.current || ytmTracks.length === 0 || !isWaveTrack) return;
+    ytmApplied.current = true;
+    reshapeAfterSeed.current = true;
+  }, [ytmTracks, isWaveTrack]);
+  useEffect(() => {
+    if (!reshapeAfterSeed.current || !isWaveTrack) return;
+    if (seedRelated.length === 0 && ytmTracks.length === 0) return;
     reshapeAfterSeed.current = false;
     const { currentTrack: cur } = usePlayerStore.getState();
     const { queue: q, queueIndex: qi } = usePlayerStore.getState();
@@ -318,7 +392,7 @@ export function SoundWavePage() {
     _registerWave(upcoming.map((tr) => tr.urn));
     usePlayerStore.getState().clearUpcoming();
     usePlayerStore.getState().addToQueue(upcoming);
-  }, [seedRelated, allTracks, isWaveTrack]);
+  }, [seedRelated, ytmTracks, allTracks, isWaveTrack]);
 
   const handlePlayFromWave = useCallback(
     (track: Track) => {

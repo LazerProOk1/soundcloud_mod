@@ -239,7 +239,8 @@ impl super::sc_anon::Sink for AnonSink<'_> {
         let pct = (clamped * 100.0) as u64;
         let prev = self.last_pct.load(std::sync::atomic::Ordering::Relaxed);
         if pct >= prev + 2 {
-            self.last_pct.store(pct, std::sync::atomic::Ordering::Relaxed);
+            self.last_pct
+                .store(pct, std::sync::atomic::Ordering::Relaxed);
             let _ = app.emit(
                 "track:download-progress",
                 serde_json::json!({
@@ -261,7 +262,9 @@ impl super::sc_anon::Sink for AnonSink<'_> {
     }
     fn push(&self, bytes: &[u8]) {
         use std::io::Write;
-        let Ok(mut guard) = self.file.lock() else { return };
+        let Ok(mut guard) = self.file.lock() else {
+            return;
+        };
         let Some(f) = guard.as_mut() else { return };
         if f.write_all(bytes).is_ok() && f.flush().is_ok() {
             self.live.add(bytes.len() as u64);
@@ -1053,6 +1056,22 @@ impl TrackCacheState {
     /// For tracks SoundCloud won't serve: find the same song on Zaycev.net (fast, direct
     /// MP3), then YouTube (yt-dlp), and cache it under the same URN so likes, playlists and
     /// offline keep working. Streams like any other download via `live`.
+    /// YouTube Music radio for a song (metadata only) — the "new" part of My Wave.
+    pub async fn ytm_radio(
+        &self,
+        query: &str,
+        duration_ms: Option<u64>,
+        limit: usize,
+    ) -> Result<Vec<super::youtube::RadioTrack>, String> {
+        let bin_dir = self
+            .audio_dir
+            .parent()
+            .map(|p| p.join("bin"))
+            .unwrap_or_else(|| self.audio_dir.join("bin"));
+        let bin = super::youtube::ensure_ytdlp(&bin_dir, &self.client).await?;
+        super::youtube::radio(&bin, query, duration_ms.map(|ms| ms as f64 / 1000.0), limit).await
+    }
+
     /// Resolves a soundcloud.com link (used by import by link).
     pub async fn resolve_soundcloud_url(&self, url: &str) -> Result<serde_json::Value, String> {
         self.anon.resolve_url(url).await

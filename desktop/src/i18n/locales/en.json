@@ -557,6 +557,8 @@
     "textLabel": "One track per line: Artist - Title",
     "textHint": "{{count}} tracks recognised. Lists from VK or Apple Music can be pasted here.",
     "textPlaylist": "Imported list",
+    "ymToken": "Yandex Music token",
+    "ymLikes": "Liked on Yandex Music",
     "run": "Import",
     "progress": "Searching {{done}}/{{total}} · found {{found}}",
     "done": "Playlist created: {{found}} of {{total}} found",

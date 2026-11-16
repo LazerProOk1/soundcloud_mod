@@ -118,10 +118,13 @@ export function useInfiniteWave(opts: {
           const existing = new Set(usePlayerStore.getState().queue.map((t) => t.urn));
           const pick = (list: Track[]) =>
             list.filter((t) => !existing.has(t.urn) && (!filterFn || filterFn(t)));
-          let fresh = pick(batch.tracks);
-          // Server has nothing new (or all of it was filtered out): keep the wave going
-          // from the local pool instead of letting it run dry.
-          if (fresh.length === 0) fresh = pick(fallbackRef.current?.() ?? []).slice(0, batchLimit);
+          // The local pool (YouTube Music radio, "more like this", liked) comes first:
+          // it's what the listener's taste picked. The server batch only fills the gaps.
+          let fresh = pick(fallbackRef.current?.() ?? []).slice(0, batchLimit);
+          if (fresh.length < batchLimit / 2) {
+            const have = new Set(fresh.map((t) => t.urn));
+            fresh = [...fresh, ...pick(batch.tracks).filter((t) => !have.has(t.urn))];
+          }
           fresh = rankRef.current ? rankRef.current(fresh) : fresh;
           if (fresh.length > 0) {
             usePlayerStore.getState().addToQueue(fresh);

@@ -17,23 +17,29 @@ export function fetchLinkList(url: string): Promise<ImportList> {
   return invoke<ImportList>('import_fetch_link', { url });
 }
 
-async function findOnSoundCloud(item: ImportItem): Promise<string | null> {
-  if (item.urn) return item.urn;
+/** Best SoundCloud upload of a song (artist + title + length must agree), or null. */
+export async function matchOnSoundCloud(item: ImportItem): Promise<Track | null> {
   const q = `${item.artist} ${item.title}`.trim();
   if (!q) return null;
   try {
     const res = await api<{ collection: Track[] }>(
       `/tracks?q=${encodeURIComponent(q)}&limit=6&linked_partitioning=true`,
+      { silent: true },
     );
-    let best: { urn: string; score: number } | null = null;
+    let best: { track: Track; score: number } | null = null;
     for (const tr of res.collection ?? []) {
       const score = matchScore(item, tr);
-      if (score >= 2 && (!best || score > best.score)) best = { urn: tr.urn, score };
+      if (score >= 2 && (!best || score > best.score)) best = { track: tr, score };
     }
-    return best?.urn ?? null;
+    return best?.track ?? null;
   } catch {
     return null;
   }
+}
+
+async function findOnSoundCloud(item: ImportItem): Promise<string | null> {
+  if (item.urn) return item.urn;
+  return (await matchOnSoundCloud(item))?.urn ?? null;
 }
 
 export interface ImportProgress {
@@ -69,16 +75,26 @@ export async function importToPlaylist(
   };
   await Promise.all(Array.from({ length: 4 }, worker));
 
-  const unique = [...new Set(urns.filter((u): u is string => !!u))].slice(0, PLAYLIST_LIMIT);
+  const unique = [...new Set(urns.filter((u): u is string => !!u))];
   const missing = items.filter((_, i) => !urns[i]);
   if (signal.cancelled || unique.length === 0) return { urn: null, found, missing };
 
-  const created = await api<{ urn?: string }>('/playlists', {
-    method: 'POST',
-    body: JSON.stringify({
-      playlist: { title, sharing: 'private', tracks: unique.map((urn) => ({ urn })) },
-    }),
-  });
+  // SoundCloud playlists hold up to 500 tracks: big imports become "Title", "Title (2)", …
+  let firstUrn: string | null = null;
+  for (let i = 0; i * PLAYLIST_LIMIT < unique.length; i++) {
+    const part = unique.slice(i * PLAYLIST_LIMIT, (i + 1) * PLAYLIST_LIMIT);
+    const created = await api<{ urn?: string }>('/playlists', {
+      method: 'POST',
+      body: JSON.stringify({
+        playlist: {
+          title: i === 0 ? title : `${title} (${i + 1})`,
+          sharing: 'private',
+          tracks: part.map((urn) => ({ urn })),
+        },
+      }),
+    });
+    firstUrn ??= created?.urn ?? null;
+  }
   queryClient.invalidateQueries({ queryKey: ['me', 'playlists'] }).catch(() => undefined);
-  return { urn: created?.urn ?? null, found, missing };
+  return { urn: firstUrn, found, missing };
 }

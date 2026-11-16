@@ -131,6 +131,94 @@ async fn yandex(client: &Client, segs: &[&str]) -> Result<LinkList, String> {
     }
 }
 
+/// Yandex Music "Liked" with the user's OAuth token. The API wants a client header;
+/// without it some requests are refused or return an empty library.
+#[tauri::command]
+pub async fn import_fetch_yandex_likes(token: String) -> Result<LinkList, String> {
+    let token = token.trim().trim_start_matches("OAuth ").to_string();
+    if token.is_empty() {
+        return Err("empty token".into());
+    }
+    let client = client()?;
+    let get = |url: String| {
+        client
+            .get(url)
+            .header("Authorization", format!("OAuth {token}"))
+            .header("X-Yandex-Music-Client", "YandexMusicAndroid/24023621")
+            .header("Accept", "application/json")
+            .send()
+    };
+    let status = get(format!("{YM_API}/account/status"))
+        .await
+        .map_err(|e| format!("Yandex Music: {e}"))?;
+    if status.status().as_u16() == 401 || status.status().as_u16() == 403 {
+        return Err("Yandex Music: token rejected (copy it again)".into());
+    }
+    let status: Value = status
+        .error_for_status()
+        .map_err(|e| format!("Yandex Music: {e}"))?
+        .json()
+        .await
+        .map_err(|e| format!("Yandex Music: {e}"))?;
+    let uid = status
+        .pointer("/result/account/uid")
+        .and_then(|v| {
+            v.as_u64()
+                .or_else(|| v.as_str().and_then(|s| s.parse().ok()))
+        })
+        .ok_or("Yandex Music: no account in the token response")?;
+
+    let likes: Value = get(format!("{YM_API}/users/{uid}/likes/tracks"))
+        .await
+        .and_then(|r| r.error_for_status())
+        .map_err(|e| format!("Yandex Music likes: {e}"))?
+        .json()
+        .await
+        .map_err(|e| format!("Yandex Music likes: {e}"))?;
+    // Ids come as "123:456" (track:album) or numbers.
+    let ids: Vec<String> = likes
+        .pointer("/result/library/tracks")
+        .and_then(Value::as_array)
+        .map(|a| {
+            a.iter()
+                .filter_map(|t| {
+                    let id = t.get("id")?;
+                    let id = id
+                        .as_str()
+                        .map(str::to_string)
+                        .or_else(|| id.as_u64().map(|n| n.to_string()))?;
+                    Some(id.split(':').next().unwrap_or(&id).to_string())
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+    if ids.is_empty() {
+        return Err("Yandex Music: no liked tracks".into());
+    }
+
+    let mut tracks = Vec::with_capacity(ids.len());
+    for chunk in ids.chunks(100) {
+        let res: Value = client
+            .post(format!("{YM_API}/tracks"))
+            .header("Authorization", format!("OAuth {token}"))
+            .header("X-Yandex-Music-Client", "YandexMusicAndroid/24023621")
+            .form(&[("track-ids", chunk.join(","))])
+            .send()
+            .await
+            .and_then(|r| r.error_for_status())
+            .map_err(|e| format!("Yandex Music tracks: {e}"))?
+            .json()
+            .await
+            .map_err(|e| format!("Yandex Music tracks: {e}"))?;
+        tracks.extend(ym_tracks(res.get("result")));
+    }
+    Ok(LinkList {
+        source: "yandex".into(),
+        title: "Yandex Music".into(),
+        tracks,
+    })
+}
+
 /* ── Spotify (public embed page, no account needed) ────────── */
 
 fn next_data(html: &str) -> Option<Value> {

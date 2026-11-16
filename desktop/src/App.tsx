@@ -5,7 +5,6 @@ import { Toaster } from 'sonner';
 import { useShallow } from 'zustand/shallow';
 import { AppShell } from './components/layout/AppShell';
 import { MiniPlayer } from './components/layout/MiniPlayer';
-import YMImportFloatingStatus from './components/music/YMImportFloatingStatus';
 import { ReAuthOverlay } from './components/ReAuthOverlay';
 import { ThemeProvider } from './components/ThemeProvider';
 import { LiquidGlassDefs } from './components/ui/LiquidGlassDefs';
@@ -19,7 +18,6 @@ import { useCachedUrnsStore } from './stores/cached-urns';
 import { useMiniPlayerStore } from './stores/mini-player';
 import { useSessionExpiryStore } from './stores/session-expiry';
 import { type StartupPage, useSettingsStore } from './stores/settings';
-import { useYmImportStore } from './stores/ym-import';
 
 /* ── Hydration guard ─────────────────────────────────────────────
  * tauriStorage reads from disk asynchronously. Until the auth and
@@ -151,7 +149,6 @@ export default function App() {
   }, [liquidGlass]);
 
   useEffect(() => {
-    useYmImportStore.getState().initBridge();
     void useCachedUrnsStore.getState().hydrate();
   }, []);
 
@@ -300,7 +297,6 @@ export default function App() {
         }}
       />
       <ReAuthOverlay />
-      <YMImportFloatingStatus />
       <BrowserRouter>
         {showOfflineOnlyShell ? (
           <Routes>

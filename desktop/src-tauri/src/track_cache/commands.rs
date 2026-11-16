@@ -51,7 +51,26 @@ pub async fn track_cache_from_fallback(
     state: State<'_, TrackCacheState>,
 ) -> Result<TrackCacheEntry, String> {
     state
-        .cache_from_fallback(&urn, &artist, &title, duration_ms, &sources.unwrap_or_default())
+        .cache_from_fallback(
+            &urn,
+            &artist,
+            &title,
+            duration_ms,
+            &sources.unwrap_or_default(),
+        )
+        .await
+}
+
+/// YouTube Music radio for a song, for My Wave (metadata; matched on SoundCloud in JS).
+#[tauri::command]
+pub async fn wave_ytm_radio(
+    query: String,
+    duration_ms: Option<u64>,
+    limit: Option<usize>,
+    state: State<'_, TrackCacheState>,
+) -> Result<Vec<super::youtube::RadioTrack>, String> {
+    state
+        .ytm_radio(&query, duration_ms, limit.unwrap_or(25).min(50))
         .await
 }
 
