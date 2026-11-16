@@ -8,16 +8,19 @@
  *   – Лента «Далее в волне» с быстрым переходом к любому следующему треку
  */
 
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { useShallow } from 'zustand/shallow';
 import { useClusterWave } from '../components/music/cluster';
 import { useInfiniteWave } from '../components/music/soundwave/use-infinite-wave';
 import { VibeTuner } from '../components/music/soundwave/vibe-tuner';
 import { WaveTuneDialog } from '../components/music/soundwave/wave-tune-dialog';
 import { rgbToCss, useArtworkColor } from '../hooks/useArtworkColor';
+import { api } from '../lib/api';
+import { handlePrev } from '../lib/audio';
 import { toggleDislike } from '../lib/dislikes';
 import { recordEvent } from '../lib/events';
 import { art } from '../lib/formatters';
@@ -28,6 +31,8 @@ import {
   Pause,
   Play,
   RefreshCw,
+  SkipBack,
+  SkipForward,
   SlidersHorizontal,
   Sparkles,
   ThumbsDown,
@@ -37,10 +42,12 @@ import { isUrnLiked } from '../lib/likes';
 import { useArtistDisplay, useDisplayTitle } from '../lib/track-display';
 import { matchesLanguages } from '../lib/track-language';
 import { dedupeSongs, isVariant } from '../lib/track-variants';
+import { mixIn, rankWave } from '../lib/wave-rank';
 import { tuneWaveTracks } from '../lib/wave-vibes';
 import { useAuthStore } from '../stores/auth';
 import { type Track, usePlayerStore } from '../stores/player';
 import { useSettingsStore } from '../stores/settings';
+import { useWaveTasteStore } from '../stores/wave-taste';
 
 /* ── Module-level wave session tracker ────────────────────────────
  * Persists across SoundWavePage unmount/remount (navigation away and back).
@@ -50,6 +57,13 @@ import { useSettingsStore } from '../stores/settings';
 const _waveUrns = new Set<string>();
 function _registerWave(urns: string[]) {
   for (const u of urns) _waveUrns.add(u);
+}
+
+/** Small string hash for a stable pseudo-random order. */
+function hashKey(s: string) {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) h = Math.imul(h ^ s.charCodeAt(i), 16777619);
+  return h >>> 0;
 }
 
 /* ── SoundWavePage ────────────────────────────────────────────────── */
@@ -117,11 +131,70 @@ export function SoundWavePage() {
     [hideLiked, hideVariants, stableLanguages],
   );
 
+  /* Taste: skips, finished tracks, "Not this", "More like this" (persisted). */
+  const taste = useWaveTasteStore(
+    useShallow((s) => ({ artists: s.artists, banned: s.banned, recent: s.recent })),
+  );
+  const seeds = useWaveTasteStore((s) => s.seeds);
+  // "More like this": related tracks of the latest seeds lead the wave.
+  const seedKey = seeds
+    .slice(0, 3)
+    .map((s) => s.urn)
+    .join(',');
+  const { data: seedRelated = [] } = useQuery({
+    queryKey: ['wave-seeds', seedKey],
+    enabled: isAuthenticated && seedKey.length > 0,
+    staleTime: 10 * 60_000,
+    queryFn: async () => {
+      const lists = await Promise.all(
+        seeds.slice(0, 3).map((s) => {
+          const id = s.urn.split(':').pop() ?? s.urn;
+          return api<{ collection?: Track[] }>(
+            `/tracks/${encodeURIComponent(id)}/related?limit=20`,
+            { silent: true },
+          )
+            .then((r) => r.collection ?? [])
+            .catch(() => [] as Track[]);
+        }),
+      );
+      return lists.flat();
+    },
+  });
+
   const allTracks = useMemo(() => {
     const base = backendWorking ? rawAllTracks : localRecs;
-    // One upload per song: reuploads of the same track collapse to the most played one.
-    return tuneWaveTracks(dedupeSongs(base.filter(waveFilter)), waveVibe, waveMode);
-  }, [backendWorking, rawAllTracks, localRecs, waveFilter, waveVibe, waveMode]);
+    let pool = [...seedRelated, ...base].filter(waveFilter);
+    // "Familiar" character: liked tracks woven into the stream (one after every two new ones).
+    if (!hideLiked && waveMode === 'similar') {
+      const liked = [...likedQuery.tracks]
+        // Stable shuffle (changes only with "Update wave"), so the queue doesn't jump around.
+        .map((tr) => ({ tr, k: hashKey(`${tr.urn}:${refreshSeed}`) }))
+        .sort((a, b) => a.k - b.k)
+        .map((x) => x.tr)
+        .slice(0, 40);
+      pool = mixIn(
+        pool,
+        liked.filter((tr) => matchesLanguages(tr, stableLanguages)),
+        2,
+      );
+    }
+    // One upload per song, vibe order, then taste on top.
+    return rankWave(tuneWaveTracks(dedupeSongs(pool), waveVibe, waveMode), taste);
+    // likedQuery.tracks only matters for the familiar mix; taste re-ranks on every change.
+  }, [
+    backendWorking,
+    rawAllTracks,
+    localRecs,
+    seedRelated,
+    waveFilter,
+    waveVibe,
+    waveMode,
+    hideLiked,
+    likedQuery.tracks,
+    stableLanguages,
+    taste,
+    refreshSeed,
+  ]);
 
   const waveCluster = useMemo(
     () => rawClusters.find((c) => c.id === 'wave') ?? null,
@@ -175,12 +248,15 @@ export function SoundWavePage() {
   const handleNotThis = () => {
     if (!displayTrack) return;
     void toggleDislike(queryClient, displayTrack, true);
+    useWaveTasteStore.getState().notThis(displayTrack);
     playerNext();
   };
   /** "More like this": a positive signal for recommendations (doesn't touch your likes). */
   const handleMoreLikeThis = () => {
     if (!displayTrack) return;
     recordEvent('like', displayTrack.urn);
+    useWaveTasteStore.getState().moreLikeThis(displayTrack);
+    reshapeAfterSeed.current = true;
     toast.success(t('soundwave.moreLikeThisDone'));
   };
 
@@ -206,6 +282,19 @@ export function SoundWavePage() {
     restartPending.current = false;
     handleStartWave();
   }, [allTracks, handleStartWave]);
+
+  // "More like this": once the seed's related tracks arrive, the rest of the queue is rebuilt
+  // around them (the current track keeps playing).
+  const reshapeAfterSeed = useRef(false);
+  useEffect(() => {
+    if (!reshapeAfterSeed.current || seedRelated.length === 0 || !isWaveTrack) return;
+    reshapeAfterSeed.current = false;
+    const { currentTrack: cur } = usePlayerStore.getState();
+    const upcoming = allTracks.filter((tr) => tr.urn !== cur?.urn).slice(0, 60);
+    _registerWave(upcoming.map((tr) => tr.urn));
+    usePlayerStore.getState().clearUpcoming();
+    usePlayerStore.getState().addToQueue(upcoming);
+  }, [seedRelated, allTracks, isWaveTrack]);
 
   const handlePlayFromWave = useCallback(
     (track: Track) => {
@@ -460,6 +549,15 @@ export function SoundWavePage() {
             </button>
             <button
               type="button"
+              onClick={handlePrev}
+              disabled={!currentTrack}
+              aria-label={t('kb.prevTrack')}
+              className="w-11 h-11 rounded-full flex items-center justify-center text-white/75 hover:text-white hover:bg-white/[0.1] cursor-pointer disabled:opacity-30 disabled:cursor-default"
+            >
+              <SkipBack size={22} fill="currentColor" />
+            </button>
+            <button
+              type="button"
               onClick={handlePlayPause}
               disabled={allTracks.length === 0 && !isWaveTrack}
               aria-label={isPlaying ? 'Pause' : 'Play'}
@@ -472,6 +570,15 @@ export function SoundWavePage() {
               ) : (
                 <Play size={24} fill="currentColor" strokeWidth={0} className="ml-0.5" />
               )}
+            </button>
+            <button
+              type="button"
+              onClick={playerNext}
+              disabled={!currentTrack}
+              aria-label={t('kb.nextTrack')}
+              className="w-11 h-11 rounded-full flex items-center justify-center text-white/75 hover:text-white hover:bg-white/[0.1] cursor-pointer disabled:opacity-30 disabled:cursor-default"
+            >
+              <SkipForward size={22} fill="currentColor" />
             </button>
             <button
               type="button"

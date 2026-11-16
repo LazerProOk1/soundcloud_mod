@@ -5,6 +5,7 @@ import { useCachedUrnsStore } from '../stores/cached-urns';
 import type { Track } from '../stores/player';
 import { usePlayerStore } from '../stores/player';
 import { type CrossfadeCurve, useSettingsStore } from '../stores/settings';
+import { useWaveTasteStore } from '../stores/wave-taste';
 import {
   api,
   buildStorageUrls,
@@ -28,6 +29,8 @@ import { art } from './formatters';
 import { rememberRecentlyPlayed, rememberTracks } from './offline-index';
 import { getUrnCluster, recordClusterFeedback } from './recsFeedback';
 import { getArtistDisplay, getDisplayTitle } from './track-display';
+import { dedupeSongs, isVariant } from './track-variants';
+import { rankWave } from './wave-rank';
 
 const SKIP_THRESHOLD_SEC = 30;
 /** Минимум, чтобы засчитать «прослушано полностью» для коротких треков (50% длительности). */
@@ -691,6 +694,7 @@ function afterLoad(track: Track, gen: number) {
     return;
   }
   hasTrack = true;
+  useWaveTasteStore.getState().played(track);
 
   const historyTrack =
     usePlayerStore.getState().currentTrack?.urn === track.urn
@@ -903,6 +907,8 @@ function recordFullPlay() {
   if (playedEnough) {
     const positionPct = cachedDuration > 0 ? Math.min(1, cachedTime / cachedDuration) : undefined;
     recordEvent('full_play', currentUrn, positionPct);
+    const cur = usePlayerStore.getState().currentTrack;
+    if (cur?.urn === currentUrn) useWaveTasteStore.getState().finished(cur);
     const cluster = getUrnCluster(currentUrn);
     if (cluster) recordClusterFeedback(cluster, 'complete');
   }
@@ -930,6 +936,9 @@ usePlayerStore.subscribe((state, prev) => {
       const previousDuration = cachedDuration > 0 ? cachedDuration : fallbackDuration;
       const positionPct = previousDuration > 0 ? previousTime / previousDuration : undefined;
       recordEvent('skip', previousUrn, positionPct);
+      if (prev.currentTrack?.urn === previousUrn) {
+        useWaveTasteStore.getState().skipped(prev.currentTrack, previousTime);
+      }
     }
     lastEndedUrn = null;
 
@@ -1092,7 +1101,13 @@ async function autoplayRelated(lastTrack: Track) {
     const res = await api<{ collection: Track[] }>(
       `/tracks/${encodeURIComponent(lastTrack.urn)}/related?limit=20`,
     );
-    const fresh = res.collection.filter((t) => !existingUrns.has(t.urn));
+    const hideVariants = useSettingsStore.getState().soundwaveHideVariants;
+    const fresh = rankWave(
+      dedupeSongs(
+        res.collection.filter((t) => !existingUrns.has(t.urn) && (!hideVariants || !isVariant(t))),
+      ),
+      useWaveTasteStore.getState(),
+    );
     if (fresh.length === 0) {
       usePlayerStore.getState().pause();
       return;

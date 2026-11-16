@@ -147,35 +147,12 @@ export const QrCode = React.memo(({ payload, size = 280 }: QrCodeProps) => {
         imageSize: 0.3,
         hideBackgroundDots: true,
       },
-      dotsOptions: {
-        type: 'rounded',
-        gradient: {
-          type: 'linear',
-          rotation: Math.PI / 4,
-          colorStops: [
-            { offset: 0, color: '#ffffff' },
-            { offset: 0.5, color: accentLight },
-            { offset: 1, color: accent },
-          ],
-        },
-      },
-      cornersSquareOptions: {
-        type: 'extra-rounded',
-        gradient: {
-          type: 'linear',
-          rotation: 0,
-          colorStops: [
-            { offset: 0, color: accent },
-            { offset: 1, color: accentLight },
-          ],
-        },
-      },
-      cornersDotOptions: {
-        type: 'dot',
-        color: '#ffffff',
-      },
+      // Plain white code: no accent gradient, readable by any camera.
+      dotsOptions: { type: 'rounded', color: '#ffffff' },
+      cornersSquareOptions: { type: 'extra-rounded', color: '#ffffff' },
+      cornersDotOptions: { type: 'dot', color: '#ffffff' },
     }),
-    [accent, accentLight, payload, size, logoBadge],
+    [payload, size, logoBadge],
   );
 
   useEffect(() => {

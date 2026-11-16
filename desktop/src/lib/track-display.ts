@@ -76,28 +76,31 @@ export function getArtistDisplay(
   };
 }
 
+/** Lowercase, ё→е, single spaces: "Тёмный  Принц" and "темный принц" are the same name. */
+function sameName(a: string, b: string) {
+  const n = (x: string) => x.toLowerCase().replace(/ё/g, 'е').replace(/\s+/g, ' ').trim();
+  return !!a && n(a) === n(b);
+}
+
 export function getDisplayTitle(
-  track: Pick<Track, 'title' | 'enrichment' | 'publisher_metadata'>,
+  track: Pick<Track, 'title' | 'enrichment' | 'publisher_metadata'> & {
+    user?: Pick<NonNullable<Track['user']>, 'username'> | null;
+  },
 ): string {
   const real = track.enrichment?.primary_artist;
   // Use enrichment name (verified preferred) or publisher_metadata as fallback for title stripping
   const artistName =
     real?.verified && real.name ? real.name.trim() : (publisherArtist(track) ?? '');
+  // Uploads titled "Artist - Song": strip the artist (also when it's just the uploader name).
+  const names = [artistName, real?.name ?? '', track.user?.username ?? ''].filter(Boolean);
+  if (names.length === 0) return track.title;
 
-  if (!artistName) return track.title;
-
-  const albumTitle = track.enrichment?.album?.title;
-  const artistLower = artistName.toLowerCase();
   for (const sep of TITLE_SEPARATORS) {
     const idx = track.title.indexOf(sep);
     if (idx > 0) {
       const left = track.title.slice(0, idx).trim();
-      if (left.toLowerCase() === artistLower) {
-        const right = track.title.slice(idx + sep.length).trim();
-        if (albumTitle && right.toLowerCase() === albumTitle.trim().toLowerCase()) {
-          return right;
-        }
-        return right;
+      if (names.some((name) => sameName(left, name))) {
+        return track.title.slice(idx + sep.length).trim() || track.title;
       }
     }
   }
@@ -139,7 +142,9 @@ export function getArtistTarget(
 }
 
 export function useDisplayTitle(
-  track: Pick<Track, 'title' | 'enrichment' | 'publisher_metadata'>,
+  track: Pick<Track, 'title' | 'enrichment' | 'publisher_metadata'> & {
+    user?: Pick<NonNullable<Track['user']>, 'username'> | null;
+  },
 ): string {
   return useMemo(
     () => getDisplayTitle(track),
@@ -150,6 +155,7 @@ export function useDisplayTitle(
       track.enrichment?.primary_artist?.name,
       track.enrichment?.primary_artist?.verified,
       track.enrichment?.album?.title,
+      track.user?.username,
     ],
   );
 }

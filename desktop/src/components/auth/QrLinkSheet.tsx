@@ -46,7 +46,7 @@ export const QrLinkSheet = React.memo(
             className="fixed inset-0 z-[100] animate-in fade-in duration-200"
             style={{ background: 'rgba(0,0,0,0.65)' }}
           />
-          <Dialog.Content className="fixed left-1/2 top-1/2 z-[101] w-[420px] max-w-[92vw] -translate-x-1/2 -translate-y-1/2 rounded-2xl overflow-hidden outline-none bg-[#282828] shadow-[0_24px_60px_rgba(0,0,0,0.6)]">
+          <Dialog.Content className="fixed left-1/2 top-1/2 z-[101] w-[420px] max-w-[92vw] -translate-x-1/2 -translate-y-1/2 rounded-2xl overflow-hidden outline-none app-surface">
             <div className="relative p-7" style={{ isolation: 'isolate' }}>
               <Dialog.Close className="absolute top-5 right-5 w-8 h-8 flex items-center justify-center rounded-full text-white/60 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer">
                 <X size={18} />

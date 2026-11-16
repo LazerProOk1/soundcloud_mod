@@ -5,7 +5,6 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useShallow } from 'zustand/shallow';
 import { art, dur, durLong } from '../../lib/formatters';
-import { useLiquidGlass } from '../../lib/hooks';
 import {
   CheckCircle2,
   GripVertical,
@@ -39,10 +38,10 @@ const NowPlayingItem = React.memo(() => {
 
   return (
     <div
-      className="glass-flat flex items-center gap-3 px-3 py-2.5 rounded-2xl ring-1 ring-white/[0.08] cursor-pointer"
+      className="flex items-center gap-3.5 px-2 py-2 rounded-lg hover:bg-white/[0.06] cursor-pointer"
       onClick={handleClick}
     >
-      <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 relative bg-white/[0.04]">
+      <div className="w-14 h-14 rounded-md overflow-hidden shrink-0 relative bg-white/[0.04]">
         {artwork ? (
           <img src={artwork} alt="" className="w-full h-full object-cover" decoding="async" />
         ) : (
@@ -61,14 +60,14 @@ const NowPlayingItem = React.memo(() => {
         </div>
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-[12px] text-accent font-medium truncate leading-snug">
+        <p className="text-[15px] text-accent font-semibold truncate leading-snug">
           {currentTrack.title}
         </p>
-        <p className="text-[10px] text-white/30 truncate mt-0.5">
+        <p className="text-[13px] text-white/55 truncate mt-0.5">
           {getArtistDisplay(currentTrack).primary}
         </p>
       </div>
-      <span className="text-[10px] text-white/20 tabular-nums shrink-0">
+      <span className="text-[12px] text-white/45 tabular-nums shrink-0">
         {dur(currentTrack.duration)}
       </span>
     </div>
@@ -108,16 +107,12 @@ const QueueRow = React.memo(function QueueRow({
       onContextMenu={(e) => openTrackMenu(e, track, absIdx)}
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`flex items-center gap-3 px-3 py-2 group select-none ${
-        isDragging
-          ? 'opacity-40 scale-[0.97] rounded-xl transition-all duration-150'
-          : isCurrent
-            ? 'rounded-xl bg-white/[0.08] ring-1 ring-white/[0.08] transition-all duration-150'
-            : 'liquid-row-hover'
+      className={`flex items-center gap-3 pl-1 pr-2 py-1.5 rounded-lg group select-none transition-colors duration-150 ${
+        isDragging ? 'opacity-40' : isCurrent ? 'bg-white/[0.08]' : 'hover:bg-white/[0.06]'
       }`}
     >
       <div
-        className="text-white/15 group-hover:text-white/30 hover:!text-white/50 cursor-grab active:cursor-grabbing transition-colors touch-none"
+        className="text-transparent group-hover:text-white/35 hover:!text-white/70 cursor-grab active:cursor-grabbing transition-colors touch-none"
         {...attributes}
         {...listeners}
       >
@@ -125,7 +120,7 @@ const QueueRow = React.memo(function QueueRow({
       </div>
 
       <div
-        className="w-9 h-9 rounded-lg overflow-hidden shrink-0 relative bg-white/[0.04] cursor-pointer"
+        className="w-11 h-11 rounded-md overflow-hidden shrink-0 relative bg-white/[0.04] cursor-pointer"
         onClick={handleClick}
       >
         {artwork ? (
@@ -150,7 +145,9 @@ const QueueRow = React.memo(function QueueRow({
 
       <QueueTrackRowBody track={track} isCurrent={isCurrent} onClick={handleClick} />
 
-      <span className="text-[10px] text-white/20 tabular-nums shrink-0">{dur(track.duration)}</span>
+      <span className="text-[12px] text-white/45 tabular-nums shrink-0 group-hover:hidden">
+        {dur(track.duration)}
+      </span>
 
       <button
         type="button"
@@ -159,9 +156,9 @@ const QueueRow = React.memo(function QueueRow({
           e.stopPropagation();
           handleRemove();
         }}
-        className="w-6 h-6 rounded-md flex items-center justify-center text-white/0 group-hover:text-white/20 hover:!text-white/50 hover:!bg-white/[0.06] transition-all duration-150 cursor-pointer shrink-0"
+        className="hidden group-hover:flex w-8 h-8 rounded-full items-center justify-center text-white/55 hover:text-white hover:bg-white/[0.08] cursor-pointer shrink-0"
       >
-        <X size={12} />
+        <X size={15} />
       </button>
     </div>
   );
@@ -183,11 +180,11 @@ const QueueTrackRowBody = React.memo(function QueueTrackRowBody({
   return (
     <div className="flex-1 min-w-0 cursor-pointer" onClick={onClick}>
       <p
-        className={`text-[12px] truncate leading-snug ${isCurrent ? 'text-accent font-medium' : 'text-white/80'}`}
+        className={`text-[14px] truncate leading-snug ${isCurrent ? 'text-accent font-semibold' : 'text-white'}`}
       >
         {displayTitle}
       </p>
-      <p className="text-[10px] text-white/30 truncate mt-0.5 flex items-center gap-1">
+      <p className="text-[12.5px] text-white/55 truncate mt-0.5 flex items-center gap-1">
         <UploadKindDot kind={artistDisplay.uploadKind} />
         <span className="truncate">{artistDisplay.primary}</span>
         {isCachedOffline && (
@@ -237,7 +234,6 @@ const DraggableQueue = React.memo(({ startIndex }: { startIndex: number }) => {
 export const QueuePanel = React.memo(
   ({ open, onClose }: { open: boolean; onClose: () => void }) => {
     const { t } = useTranslation();
-    const glass = useLiquidGlass();
     const { currentTrack, queue, queueIndex } = usePlayerStore(
       useShallow((s) => ({
         currentTrack: s.currentTrack,
@@ -262,28 +258,8 @@ export const QueuePanel = React.memo(
 
         {/* Panel */}
         <div
-          className="fixed top-3 right-3 bottom-3 w-[min(360px,calc(100vw-24px))] z-[60] flex flex-col overflow-hidden animate-panel-slide-in"
+          className="app-surface fixed top-3 right-3 bottom-3 w-[min(380px,calc(100vw-24px))] z-[60] flex flex-col overflow-hidden rounded-2xl animate-panel-slide-in"
           style={{
-            background: glass ? 'rgba(14, 14, 18, 0.84)' : 'rgba(14, 14, 18, 0.98)',
-            ...(glass
-              ? {
-                  backdropFilter: 'blur(28px) saturate(185%)',
-                  WebkitBackdropFilter: 'blur(28px) saturate(185%)',
-                }
-              : {}),
-            borderRadius: 40,
-            boxShadow: `
-              0 1px 0 0 rgba(255,255,255,0.22) inset,
-              0 3px 8px -2px rgba(255,255,255,0.06) inset,
-              1px 0 0 0 rgba(255,255,255,0.12) inset,
-              0 -1px 0 0 rgba(0,0,0,0.55) inset,
-              -1px 0 0 0 rgba(0,0,0,0.24) inset,
-              0 0 0 0.5px rgba(255,255,255,0.08),
-              0 4px 10px rgba(0,0,0,0.10),
-              0 16px 40px rgba(0,0,0,0.22),
-              0 40px 80px rgba(0,0,0,0.28),
-              0 0 80px rgba(255,255,255,0.012)
-            `,
             transform: open ? 'translateX(0)' : 'translateX(calc(100% + 16px))',
             visibility: open ? 'visible' : 'hidden',
             transition: 'transform 340ms cubic-bezier(0.16, 1, 0.3, 1), visibility 340ms',
@@ -291,15 +267,15 @@ export const QueuePanel = React.memo(
         >
           {/* Header */}
           <div className="flex items-center justify-between px-5 pt-5 pb-3">
-            <h2 className="text-base font-semibold tracking-tight">{t('player.queue')}</h2>
+            <h2 className="text-[22px] font-bold tracking-tight text-white">{t('player.queue')}</h2>
             <div className="flex items-center gap-1">
               {queue.length > 0 && (
                 <button
                   type="button"
                   onClick={() => usePlayerStore.getState().clearQueue()}
-                  className="h-7 px-2.5 rounded-lg text-[11px] text-white/30 hover:text-white/60 hover:bg-white/[0.06] transition-all duration-150 cursor-pointer flex items-center gap-1.5"
+                  className="h-8 px-3 rounded-full text-[12.5px] font-semibold text-white/60 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer flex items-center gap-1.5"
                 >
-                  <Trash2 size={12} />
+                  <Trash2 size={14} />
                   {t('player.clearQueue')}
                 </button>
               )}
@@ -307,9 +283,9 @@ export const QueuePanel = React.memo(
                 type="button"
                 aria-label={t('common.close', 'Close')}
                 onClick={onClose}
-                className="w-7 h-7 rounded-lg flex items-center justify-center text-white/30 hover:text-white/60 hover:bg-white/[0.06] transition-all duration-150 cursor-pointer"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer"
               >
-                <X size={16} />
+                <X size={18} />
               </button>
             </div>
           </div>
@@ -317,7 +293,7 @@ export const QueuePanel = React.memo(
           {/* Now Playing (single item, not draggable) */}
           {currentTrack && (
             <div className="px-4 pb-2">
-              <p className="text-[10px] text-white/25 uppercase tracking-wider font-medium mb-2 px-1">
+              <p className="text-[14px] text-white font-bold mb-1.5 px-2">
                 {t('player.nowPlaying')}
               </p>
               <NowPlayingItem />
@@ -328,15 +304,18 @@ export const QueuePanel = React.memo(
           <div className="flex-1 overflow-y-auto px-4 pb-4">
             {upNextCount > 0 && (
               <>
-                <div className="flex items-center justify-between mb-2 mt-3 px-1">
-                  <p className="text-[10px] text-white/25 uppercase tracking-wider font-medium tabular-nums">
-                    {t('player.upNext')} · {upNextCount}
-                    {upNextDurationMs > 0 ? ` · ${durLong(upNextDurationMs)}` : ''}
+                <div className="flex items-center justify-between mb-1.5 mt-4 px-2">
+                  <p className="text-[14px] text-white font-bold">
+                    {t('player.upNext')}
+                    <span className="ml-2 text-[12.5px] font-normal text-white/50 tabular-nums">
+                      {upNextCount}
+                      {upNextDurationMs > 0 ? ` · ${durLong(upNextDurationMs)}` : ''}
+                    </span>
                   </p>
                   <button
                     type="button"
                     onClick={() => usePlayerStore.getState().clearUpcoming()}
-                    className="text-[11px] text-white/30 hover:text-white/65 transition-colors cursor-pointer"
+                    className="text-[12.5px] font-semibold text-white/55 hover:text-white transition-colors cursor-pointer"
                   >
                     {t('player.clearUpcoming')}
                   </button>

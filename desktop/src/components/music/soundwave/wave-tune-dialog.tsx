@@ -106,7 +106,7 @@ export const WaveTuneDialog = React.memo(function WaveTuneDialog({
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-[80] bg-black/65" />
-        <Dialog.Content className="fixed z-[80] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[680px] max-w-[94vw] max-h-[90vh] overflow-y-auto rounded-2xl bg-[#282828] shadow-[0_24px_60px_rgba(0,0,0,0.6)] p-8 outline-none">
+        <Dialog.Content className="fixed z-[80] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[680px] max-w-[94vw] max-h-[90vh] overflow-y-auto rounded-2xl app-surface p-8 outline-none">
           <div className="flex items-start justify-between mb-7">
             <Dialog.Title className="text-[28px] font-bold text-white tracking-tight">
               {t('waveTune.title')}

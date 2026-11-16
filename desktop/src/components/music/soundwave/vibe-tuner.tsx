@@ -42,27 +42,15 @@ export const VibeTuner = React.memo(function VibeTuner({
               onClick={() => onVibeChange(item.id)}
               aria-pressed={active}
               data-vibe-active={active}
-              className={`inline-flex items-center gap-1.5 rounded-full font-medium transition-all duration-200 cursor-pointer active:scale-95 select-none ${
-                compact ? 'h-7 px-2.5 text-[11.5px]' : 'h-8 px-3 text-[12px]'
+              className={`inline-flex items-center gap-1.5 rounded-full font-semibold transition-colors duration-200 cursor-pointer select-none ${
+                compact ? 'h-7 px-2.5 text-[11.5px]' : 'h-8 px-3.5 text-[12.5px]'
               } ${
                 active
-                  ? 'text-white shadow-sm'
-                  : 'text-white/55 hover:text-white/85 bg-white/[0.045] hover:bg-white/[0.085] border border-white/[0.07]'
+                  ? 'bg-white text-black'
+                  : 'text-white/75 hover:text-white bg-white/[0.07] hover:bg-white/[0.12]'
               }`}
-              style={
-                active
-                  ? {
-                      background: `color-mix(in srgb, ${item.tint} 22%, rgba(255,255,255,0.08))`,
-                      border: `1px solid color-mix(in srgb, ${item.tint} 55%, rgba(255,255,255,0.18))`,
-                      boxShadow: `0 4px 16px color-mix(in srgb, ${item.tint} 28%, transparent)`,
-                    }
-                  : undefined
-              }
             >
-              <span
-                className="shrink-0"
-                style={{ color: active ? item.tint : 'rgba(255,255,255,0.5)' }}
-              >
+              <span className="shrink-0" style={{ color: active ? '#000' : item.tint }}>
                 {VIBE_ICON[item.id]}
               </span>
               <span>{t(`soundwave.vibes.${item.id}`)}</span>
@@ -75,7 +63,7 @@ export const VibeTuner = React.memo(function VibeTuner({
       <div
         role="group"
         aria-label={t('soundwave.modeLabel')}
-        className="inline-flex items-center rounded-full p-0.5 bg-white/[0.04] border border-white/[0.08] shrink-0"
+        className="inline-flex items-center rounded-full p-0.5 bg-white/[0.07] shrink-0"
       >
         {(['similar', 'diverse'] as const).map((m) => {
           const active = mode === m;
@@ -87,11 +75,7 @@ export const VibeTuner = React.memo(function VibeTuner({
               aria-pressed={active}
               className={`rounded-full font-semibold transition-all duration-200 cursor-pointer select-none ${
                 compact ? 'px-2.5 py-1 text-[10.5px]' : 'px-3 py-1 text-[11px]'
-              } ${
-                active
-                  ? 'bg-white/[0.14] text-white shadow-sm'
-                  : 'text-white/45 hover:text-white/80'
-              }`}
+              } ${active ? 'bg-white text-black' : 'text-white/60 hover:text-white'}`}
             >
               {t(`soundwave.modes.${m}`)}
             </button>

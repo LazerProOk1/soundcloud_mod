@@ -99,7 +99,7 @@ export function ImportDialog({
       <Dialog.Root open={open} onOpenChange={(v) => !running && onOpenChange(v)}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-[80] bg-black/65" />
-          <Dialog.Content className="fixed z-[80] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[640px] max-w-[94vw] rounded-2xl bg-[#282828] shadow-[0_24px_60px_rgba(0,0,0,0.6)] p-7 outline-none">
+          <Dialog.Content className="fixed z-[80] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[640px] max-w-[94vw] rounded-2xl app-surface p-7 outline-none">
             <div className="flex items-start justify-between mb-5">
               <Dialog.Title className="text-[26px] font-bold text-white tracking-tight">
                 {t('import.title')}
