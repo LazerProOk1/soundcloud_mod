@@ -6,12 +6,6 @@ import type { WaveVibeId } from '../lib/wave-vibes';
 export type ThemePreset = 'soundcloud' | 'dark' | 'neon' | 'forest' | 'crimson' | 'custom';
 export type StartupPage = 'home' | 'search' | 'library' | 'settings';
 export type DiscordRpcMode = 'track' | 'artist' | 'activity';
-export interface SidebarPinnedPlaylist {
-  urn: string;
-  title: string;
-  artworkUrl: string | null;
-}
-
 export interface ThemePresetDef {
   accent: string;
   bg: string;
@@ -88,7 +82,6 @@ export interface SettingsState {
   backgroundImage: string;
   backgroundOpacity: number;
   backgroundBlur: number;
-  glassBlur: number;
   audioCacheLimitMB: number;
   language: string;
   eqEnabled: boolean;
@@ -98,7 +91,6 @@ export interface SettingsState {
   highQualityStreaming: boolean;
   sidebarCollapsed: boolean;
   startupPage: StartupPage;
-  pinnedPlaylists: SidebarPinnedPlaylist[];
   discordRpcEnabled: boolean;
   discordRpcMode: DiscordRpcMode;
   discordRpcShowButton: boolean;
@@ -136,7 +128,6 @@ export interface SettingsState {
   setBackgroundImage: (url: string) => void;
   setBackgroundOpacity: (opacity: number) => void;
   setBackgroundBlur: (blur: number) => void;
-  setGlassBlur: (blur: number) => void;
   setAudioCacheLimitMB: (limit: number) => void;
   setLanguage: (lang: string) => void;
   setEqEnabled: (enabled: boolean) => void;
@@ -147,8 +138,6 @@ export interface SettingsState {
   setHighQualityStreaming: (enabled: boolean) => void;
   toggleSidebar: () => void;
   setStartupPage: (page: StartupPage) => void;
-  pinPlaylist: (playlist: SidebarPinnedPlaylist) => void;
-  unpinPlaylist: (urn: string) => void;
   setDiscordRpcEnabled: (enabled: boolean) => void;
   setDiscordRpcMode: (mode: DiscordRpcMode) => void;
   setDiscordRpcShowButton: (show: boolean) => void;
@@ -174,7 +163,6 @@ const DEFAULTS = {
   backgroundImage: '',
   backgroundOpacity: 0.15,
   backgroundBlur: 0,
-  glassBlur: 40,
   uiScale: 100,
   musicSources: DEFAULT_MUSIC_SOURCES,
   nowPlayingPanel: true,
@@ -191,7 +179,6 @@ const DEFAULTS = {
   highQualityStreaming: false,
   sidebarCollapsed: false,
   startupPage: 'home' as StartupPage,
-  pinnedPlaylists: [] as SidebarPinnedPlaylist[],
   discordRpcEnabled: true,
   discordRpcMode: 'track' as DiscordRpcMode,
   discordRpcShowButton: true,
@@ -237,7 +224,6 @@ export const useSettingsStore = create<SettingsState>()(
       setBackgroundImage: (backgroundImage) => set({ backgroundImage }),
       setBackgroundOpacity: (backgroundOpacity) => set({ backgroundOpacity }),
       setBackgroundBlur: (backgroundBlur) => set({ backgroundBlur }),
-      setGlassBlur: (glassBlur) => set({ glassBlur }),
       setAudioCacheLimitMB: (audioCacheLimitMB) => set({ audioCacheLimitMB }),
       setLanguage: (language) => set({ language }),
       setEqEnabled: (eqEnabled) => set({ eqEnabled }),
@@ -253,17 +239,6 @@ export const useSettingsStore = create<SettingsState>()(
       setHighQualityStreaming: (highQualityStreaming) => set({ highQualityStreaming }),
       toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
       setStartupPage: (startupPage) => set({ startupPage }),
-      pinPlaylist: (playlist) =>
-        set((s) => ({
-          pinnedPlaylists: [
-            playlist,
-            ...s.pinnedPlaylists.filter((item) => item.urn !== playlist.urn),
-          ].slice(0, 8),
-        })),
-      unpinPlaylist: (urn) =>
-        set((s) => ({
-          pinnedPlaylists: s.pinnedPlaylists.filter((item) => item.urn !== urn),
-        })),
       setDiscordRpcEnabled: (discordRpcEnabled) => set({ discordRpcEnabled }),
       setDiscordRpcMode: (discordRpcMode) => set({ discordRpcMode }),
       setDiscordRpcShowButton: (discordRpcShowButton) => set({ discordRpcShowButton }),
@@ -290,7 +265,6 @@ export const useSettingsStore = create<SettingsState>()(
           backgroundImage: DEFAULTS.backgroundImage,
           backgroundOpacity: DEFAULTS.backgroundOpacity,
           backgroundBlur: DEFAULTS.backgroundBlur,
-          glassBlur: DEFAULTS.glassBlur,
         }),
     }),
     {
@@ -339,7 +313,6 @@ export const useSettingsStore = create<SettingsState>()(
         backgroundImage: s.backgroundImage,
         backgroundOpacity: s.backgroundOpacity,
         backgroundBlur: s.backgroundBlur,
-        glassBlur: s.glassBlur,
         audioCacheLimitMB: s.audioCacheLimitMB,
         language: s.language,
         eqEnabled: s.eqEnabled,
@@ -349,7 +322,6 @@ export const useSettingsStore = create<SettingsState>()(
         highQualityStreaming: s.highQualityStreaming,
         sidebarCollapsed: s.sidebarCollapsed,
         startupPage: s.startupPage,
-        pinnedPlaylists: s.pinnedPlaylists,
         discordRpcEnabled: s.discordRpcEnabled,
         discordRpcMode: s.discordRpcMode,
         discordRpcShowButton: s.discordRpcShowButton,

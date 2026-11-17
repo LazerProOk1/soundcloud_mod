@@ -18,8 +18,6 @@ export interface ArtistDisplay {
   availability: TrackAvailability;
 }
 
-export type UploadKind = 'original' | 'demo' | 'alt' | 'reupload' | 'unknown';
-
 const TITLE_SEPARATORS = [' - ', ' — ', ' – ', ' -- '] as const;
 
 export function getArtistDisplay(

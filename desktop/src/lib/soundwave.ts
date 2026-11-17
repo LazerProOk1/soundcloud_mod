@@ -1,4 +1,3 @@
-import { useQuery } from '@tanstack/react-query';
 import type { Track } from '../stores/player';
 import { api } from './api';
 
@@ -7,14 +6,6 @@ export interface RecommendResult {
   score?: number;
   payload?: Record<string, unknown>;
 }
-
-export interface IndexingStats {
-  indexed: number;
-  pending: number;
-}
-
-const SW_STALE_MS = 0;
-const SW_GC_MS = 1000 * 60 * 5;
 
 function normLanguages(langs: string[] | undefined): string | undefined {
   if (!langs || langs.length === 0) return undefined;
@@ -167,82 +158,4 @@ export async function sendWaveFeedback(opts: {
   } catch {
     return null;
   }
-}
-
-/**
- * React-Query wrapper for the first SmartWave batch.
- * Continued by `useInfiniteWave` which calls `fetchSmartWave({ cursor })` internally.
- */
-export function useSmartWave(opts: {
-  seedKind: SmartWaveSeedKind;
-  seedId?: string;
-  languages?: string[];
-  enabled?: boolean;
-  limit?: number;
-}) {
-  const enabled = opts.enabled !== false && (opts.seedKind === 'user' || !!opts.seedId);
-  const languages = normLanguages(opts.languages);
-
-  return useQuery<SmartWaveBatch>({
-    queryKey: [
-      'smartwave',
-      opts.seedKind,
-      opts.seedId ?? 'self',
-      languages ?? 'all',
-      opts.limit ?? 20,
-    ],
-    enabled,
-    staleTime: SW_STALE_MS,
-    gcTime: SW_GC_MS,
-    queryFn: () =>
-      fetchSmartWave({
-        seedKind: opts.seedKind,
-        seedId: opts.seedId,
-        languages: opts.languages,
-        limit: opts.limit,
-      }),
-  });
-}
-
-/**
- * Free-form vibe search. Returns hydrated tracks in Qdrant score order.
- * Kept flat (not cluster-grouped) — search is a single-intent query.
- */
-export function useSoundWaveSearch(opts: { q: string; languages?: string[]; limit?: number }) {
-  const q = opts.q.trim();
-  const limit = opts.limit ?? 24;
-  const languages = normLanguages(opts.languages);
-
-  return useQuery({
-    queryKey: ['soundwave', 'search', q, limit, languages ?? 'all'],
-    enabled: q.length >= 2,
-    staleTime: SW_STALE_MS,
-    gcTime: SW_GC_MS,
-    retry: 1,
-    queryFn: async () => {
-      const qs = new URLSearchParams({ q, limit: String(limit) });
-      if (languages) qs.set('languages', languages);
-
-      const recs = await api<RecommendResult[]>(
-        `/recommendations/search?${qs}`,
-        undefined,
-        30_000,
-      ).catch(() => [] as RecommendResult[]);
-      if (!recs.length) return { tracks: [] as Track[], recs };
-
-      const tracks = await hydrateByIds(recs);
-      return { tracks, recs };
-    },
-  });
-}
-
-/** Optional lightweight poll of indexing stats. Fails silently if endpoint absent. */
-export function useIndexingStats() {
-  return useQuery({
-    queryKey: ['soundwave', 'indexing-stats'],
-    staleTime: 1000 * 30,
-    gcTime: 1000 * 60 * 5,
-    retry: false,
-    queryFn: () => api<IndexingStats>('/indexing/stats').catch(() => null as IndexingStats | null),
-  });
 }

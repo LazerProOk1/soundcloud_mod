@@ -78,16 +78,6 @@ export function logHttpFailure(label: string, url: string, error: unknown, elaps
   logError(`[Perf] HTTP FAIL ${label} ${url} | error=${String(error)}${elapsed}`);
 }
 
-export function describeError(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  if (typeof error === 'string') return error;
-  try {
-    return JSON.stringify(error);
-  } catch {
-    return String(error);
-  }
-}
-
 export async function trackAsync<T>(
   label: string,
   promise: Promise<T>,

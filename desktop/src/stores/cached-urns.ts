@@ -7,7 +7,6 @@ interface CachedUrnsState {
   markCached: (urn: string) => void;
   markManyCached: (urns: string[]) => void;
   removeCached: (urn: string) => void;
-  clearAll: () => void;
 }
 
 export function hasCachedTrack(urns: ReadonlySet<string>, urn: string | null | undefined): boolean {
@@ -75,9 +74,5 @@ export const useCachedUrnsStore = create<CachedUrnsState>((set, get) => ({
       next.delete(urn);
       return { urns: next };
     });
-  },
-
-  clearAll: () => {
-    set((state) => (state.urns.size === 0 ? state : { urns: new Set<string>() }));
   },
 }));

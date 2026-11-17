@@ -43,7 +43,3 @@ export function getAppMode(): AppMode {
   if (offlineBypass || !navigatorOnline || !backendReachable) return 'offline';
   return 'online';
 }
-
-export function isOfflineMode() {
-  return getAppMode() !== 'online';
-}
