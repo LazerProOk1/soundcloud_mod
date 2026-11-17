@@ -4,6 +4,7 @@ import { useArtworkColor } from '../../hooks/useArtworkColor';
 import { durLong } from '../../lib/formatters';
 import { Clock, Download, Loader2, Search, Shuffle } from '../../lib/icons';
 import { type Track, usePlayerStore } from '../../stores/player';
+import { VirtualList } from '../ui/VirtualList';
 import { TrackTableRow } from './TrackTableRow';
 
 const fabIcon = (show: boolean) =>
@@ -73,10 +74,9 @@ export const TrackListPage = React.memo(function TrackListPage({
   const currentUrn = usePlayerStore((s) => s.currentTrack?.urn);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   // The big button follows playback when the current track comes from this list.
-  const listActive = useMemo(
-    () => !!currentUrn && tracks.some((tr) => tr.urn === currentUrn),
-    [tracks, currentUrn],
-  );
+  // O(1) per track change instead of a linear scan of the whole list.
+  const trackUrns = useMemo(() => new Set(tracks.map((tr) => tr.urn)), [tracks]);
+  const listActive = !!currentUrn && trackUrns.has(currentUrn);
   const showPause = listActive && isPlaying;
   const play = () => {
     if (listActive) {
@@ -207,9 +207,14 @@ export const TrackListPage = React.memo(function TrackListPage({
         ) : renderRows ? (
           renderRows(shown)
         ) : (
-          shown.map((track, i) => (
-            <TrackTableRow key={track.urn} track={track} index={i} queue={shown} />
-          ))
+          <VirtualList
+            items={shown}
+            rowHeight={56}
+            getItemKey={(track) => track.urn}
+            renderItem={(track, index) => (
+              <TrackTableRow track={track} index={index} queue={shown} />
+            )}
+          />
         )}
         {!query && footer}
       </div>

@@ -11,6 +11,17 @@ use crate::audio::types::{
     AudioThreadCmd, STALL_COOLDOWN_MS, STALL_THRESHOLD_MS, TICK_INTERVAL_MS,
 };
 
+/// Decoder state copied out of the `player` mutex so the tick loop works without it.
+enum PlayerSnapshot {
+    NoPlayer,
+    Empty,
+    Track {
+        wall_pos: f64,
+        pos_ms: u64,
+        playing: bool,
+    },
+}
+
 pub fn start_tick_emitter(app: &AppHandle) {
     let handle = app.clone();
     std::thread::Builder::new()
@@ -40,9 +51,28 @@ pub fn start_tick_emitter(app: &AppHandle) {
                     continue;
                 }
 
-                let player_guard = state.player.lock().unwrap();
-                if let Some(ref player) = *player_guard {
-                    if player.empty() {
+                // Snapshot the decoder state under the player lock and release it right
+                // away: emitting events, taking other mutexes and logging used to happen
+                // while holding `player`, so seek/play/rate changes could wait a whole tick.
+                let snapshot = {
+                    let guard = state.player.lock().unwrap();
+                    match guard.as_ref() {
+                        None => PlayerSnapshot::NoPlayer,
+                        Some(player) if player.empty() => PlayerSnapshot::Empty,
+                        Some(player) => {
+                            let pos = player.get_pos();
+                            PlayerSnapshot::Track {
+                                wall_pos: pos.as_secs_f64(),
+                                pos_ms: pos.as_millis() as u64,
+                                playing: !player.is_paused(),
+                            }
+                        }
+                    }
+                };
+
+                match snapshot {
+                    PlayerSnapshot::NoPlayer => {}
+                    PlayerSnapshot::Empty => {
                         let suppress_ended = super::engine::now_ms()
                             < state.suppress_ended_until_ms.load(Ordering::Relaxed);
                         if !state.device_error.load(Ordering::Relaxed)
@@ -51,9 +81,12 @@ pub fn start_tick_emitter(app: &AppHandle) {
                         {
                             handle.emit("audio:ended", ()).ok();
                         }
-                    } else {
-                        let wall_pos = player.get_pos().as_secs_f64();
-
+                    }
+                    PlayerSnapshot::Track {
+                        wall_pos,
+                        pos_ms,
+                        playing,
+                    } => {
                         // Compute song-content position (accounts for playback speed).
                         // `player.get_pos()` returns wall-clock elapsed, not song time —
                         // at 2x speed it still advances at 1 real-second per second.
@@ -79,9 +112,6 @@ pub fn start_tick_emitter(app: &AppHandle) {
                         handle.emit("audio:tick", song_pos).ok();
                         timing::process_lyrics_timeline(&handle, &state, song_pos);
 
-                        let playing = !player.is_paused();
-                        // Stall detection uses wall-clock pos (independent of rate)
-                        let pos_ms = player.get_pos().as_millis() as u64;
                         let now = std::time::Instant::now();
 
                         if !playing {
@@ -116,7 +146,6 @@ pub fn start_tick_emitter(app: &AppHandle) {
                         if now.duration_since(last_progress_at).as_millis() as u64
                             > STALL_THRESHOLD_MS
                         {
-                            drop(player_guard);
                             diagnostics::log_native(
                                 &handle,
                                 "WARN",

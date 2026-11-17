@@ -151,7 +151,14 @@ export const ProgressSlider = React.memo(() => {
   // useEffect+useState instead of useSyncExternalStore — avoids React 19 "forceStoreRerender"
   // loop when audio:tick fires at 60 fps between render and commit phases.
   const [duration, setDuration] = useState(getDuration);
-  useEffect(() => subscribe(() => setDuration(getDuration())), []);
+  useEffect(
+    () =>
+      subscribe(() => {
+        const nextDuration = getDuration();
+        setDuration((prev) => (prev === nextDuration ? prev : nextDuration));
+      }),
+    [],
+  );
 
   const [dragging, setDragging] = useState(false);
   const [dragValue, setDragValue] = useState(0);
@@ -358,8 +365,12 @@ export const ProgressTime = React.memo(() => {
   useEffect(
     () =>
       subscribe(() => {
-        setCurrentSecond(getAudioSecond());
-        setDuration(getDuration());
+        // The tick arrives at 20 Hz but the text only changes once a second:
+        // keep the previous value so React bails out instead of re-rendering.
+        const second = getAudioSecond();
+        const nextDuration = getDuration();
+        setCurrentSecond((prev) => (prev === second ? prev : second));
+        setDuration((prev) => (prev === nextDuration ? prev : nextDuration));
       }),
     [],
   );

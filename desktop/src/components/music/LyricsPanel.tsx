@@ -714,21 +714,32 @@ const SyncedLyrics = React.memo(({ lines }: { lines: LyricLine[] }) => {
       sync();
       raf = requestAnimationFrame(frame);
     };
-    const applyPaused = (paused: boolean) => {
-      container.classList.toggle('lyrics-paused', paused);
+    // Only the word sweep needs frame-rate updates. Without word mode the 20 Hz
+    // position ticks are plenty, so the loop stays off; it also stops while the
+    // window is hidden.
+    const stopFrames = () => {
       cancelAnimationFrame(raf);
-      if (!paused) raf = requestAnimationFrame(frame);
+      raf = 0;
     };
-    applyPaused(!usePlayerStore.getState().isPlaying);
+    const applyState = () => {
+      const paused = !usePlayerStore.getState().isPlaying;
+      container.classList.toggle('lyrics-paused', paused);
+      stopFrames();
+      if (!paused && wordMode && !document.hidden) raf = requestAnimationFrame(frame);
+    };
+    applyState();
     const unsubPlayer = usePlayerStore.subscribe((s, prev) => {
-      if (s.isPlaying !== prev.isPlaying) applyPaused(!s.isPlaying);
+      if (s.isPlaying !== prev.isPlaying) applyState();
     });
+    const onVisibilityChange = () => applyState();
+    document.addEventListener('visibilitychange', onVisibilityChange);
 
     return () => {
       container.removeEventListener('wheel', markManual);
       container.removeEventListener('touchstart', markManual);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
       clearTimeout(manualTimer);
-      cancelAnimationFrame(raf);
+      stopFrames();
       void invoke('audio_clear_lyrics_timeline');
       unsubTime();
       syncRef.current = null;
@@ -939,7 +950,8 @@ const TimedCommentsRail = React.memo(({ trackUrn }: { trackUrn: string }) => {
     let id: ReturnType<typeof window.setInterval> | null = null;
 
     const startTick = () => {
-      if (id !== null) return;
+      // Nothing to sync while the window is hidden — don't burn a 4 Hz timer.
+      if (id !== null || document.hidden) return;
       id = window.setInterval(syncActiveIndex, 250);
     };
     const stopTick = () => {
@@ -962,7 +974,18 @@ const TimedCommentsRail = React.memo(({ trackUrn }: { trackUrn: string }) => {
       }
     });
 
+    const onVisibilityChange = () => {
+      if (document.hidden) {
+        stopTick();
+      } else {
+        syncActiveIndex();
+        if (usePlayerStore.getState().isPlaying) startTick();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
     return () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange);
       stopTick();
       unsub();
     };

@@ -155,10 +155,6 @@ export function dedupeByKey<T, K>(items: T[], getKey: (item: T) => K): T[] {
   return unique;
 }
 
-export function dedupeByUrn<T extends { urn: string }>(items: T[]): T[] {
-  return dedupeByKey(items, (item) => item.urn);
-}
-
 interface PagedQueryOptions<T> {
   queryKey: QueryKey;
   /** Builds the URL for a given page index. limit and page are appended automatically. */
@@ -277,52 +273,6 @@ export function useHistory(limit = 50) {
 
 /* ── Featured ─────────────────────────────────────────────────── */
 
-export interface FeaturedResponse {
-  type: 'track' | 'playlist' | 'user';
-  data: Record<string, unknown>;
-}
-
-export function useFeatured() {
-  return useQuery<FeaturedResponse | null>({
-    queryKey: ['featured'],
-    queryFn: () => api<FeaturedResponse | null>('/featured'),
-    staleTime: 5 * 60_000,
-  });
-}
-
-/* ── Local Likes ──────────────────────────────────────────────── */
-
-interface LocalLikesPage {
-  collection: Track[];
-  next_href: string | null;
-}
-
-export function useLocalLikes(limit = 50) {
-  const query = useInfiniteQuery({
-    queryKey: ['local-likes'],
-    queryFn: async ({ pageParam }) => {
-      const params = new URLSearchParams({ limit: String(limit) });
-      if (pageParam) params.set('cursor', pageParam as string);
-      return api<LocalLikesPage>(`/local-likes?${params}`);
-    },
-    initialPageParam: undefined as string | undefined,
-    getNextPageParam: (last) => {
-      if (!last.next_href) return undefined;
-      try {
-        const url = new URL(last.next_href, 'http://x');
-        return url.searchParams.get('cursor') || undefined;
-      } catch {
-        return undefined;
-      }
-    },
-    staleTime: 30_000,
-  });
-
-  const tracks = useMemo(() => flattenCollectionPages(query.data?.pages), [query.data]);
-
-  return { tracks, ...query };
-}
-
 /* ── Batch track hydration ─────────────────────────────────────── */
 
 /**
@@ -342,6 +292,9 @@ const _hydratedUrns = new Set<string>();
 
 export function useBatchTrackHydration(tracks: Track[]) {
   const qc = useQueryClient();
+  // The dependency is the URN list, not the array identity. Building the string once
+  // per `tracks` reference (instead of on every render) keeps re-renders O(1).
+  const urnsKey = useMemo(() => tracks.map((t) => t.urn).join(','), [tracks]);
   const needsHydration = useMemo(
     () =>
       tracks.filter(
@@ -351,7 +304,7 @@ export function useBatchTrackHydration(tracks: Track[]) {
           !t.enrichment?.primary_artist?.name,
       ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [tracks.map((t) => t.urn).join(',')],
+    [urnsKey],
   );
 
   useEffect(() => {
@@ -814,11 +767,6 @@ export function useUserWebProfiles(userUrn: string | undefined) {
     staleTime: MEDIUM_CACHE_MS,
     gcTime: INFINITE_GC_MS,
   });
-}
-
-export function useUserSubscription(_userUrn: string | undefined) {
-  // Star features are unlocked free for every profile.
-  return { data: true } as const;
 }
 
 /* ── My Library ────────────────────────────────────────────────── */

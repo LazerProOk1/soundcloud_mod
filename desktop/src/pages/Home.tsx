@@ -267,18 +267,19 @@ export function Home() {
   const likedTracksQuery = useLikedTracks(100);
   const followingQuery = useFollowingTracks(20);
 
-  // Hydrate full metadata for liked + following tracks (may lack publisher_metadata)
-  useBatchTrackHydration(likedTracksQuery.tracks ?? []);
-  useBatchTrackHydration(followingQuery.data?.collection ?? []);
-
+  // Stable array identities: the hydration hook compares URN lists, but a brand-new
+  // array on every render still rebuilds that comparison key.
+  const likedTracks = useMemo(() => likedTracksQuery.tracks ?? [], [likedTracksQuery.tracks]);
   const followingTracks = useMemo(
     () => followingQuery.data?.collection ?? [],
     [followingQuery.data],
   );
-  const likedShelfTracks = useMemo(
-    () => likedTracksQuery.tracks.slice(0, 50),
-    [likedTracksQuery.tracks],
-  );
+
+  // Hydrate full metadata for liked + following tracks (may lack publisher_metadata)
+  useBatchTrackHydration(likedTracks);
+  useBatchTrackHydration(followingTracks);
+
+  const likedShelfTracks = useMemo(() => likedTracks.slice(0, 50), [likedTracks]);
 
   return (
     <div className="page-enter">

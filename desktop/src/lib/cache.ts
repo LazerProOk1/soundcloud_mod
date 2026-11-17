@@ -9,7 +9,10 @@ import { trackedInvoke as invoke } from './diagnostics';
 import { resolveWallpaperUrl } from './wallpapers';
 
 const WALLPAPERS_DIR = 'wallpapers';
-const CACHE_MAINTENANCE_INTERVAL_MS = 60 * 1000;
+// Enforcing the cache limit walks the whole audio directory in Rust (and it is a
+// synchronous command), so once a minute was far too often; a hidden window has
+// nothing to enforce either.
+const CACHE_MAINTENANCE_INTERVAL_MS = 10 * 60 * 1000;
 
 let cacheMaintenanceStarted = false;
 
@@ -161,6 +164,7 @@ export function setupCacheMaintenance() {
   });
 
   window.setInterval(() => {
+    if (document.hidden) return;
     void enforceAudioCacheLimit();
   }, CACHE_MAINTENANCE_INTERVAL_MS);
 }
