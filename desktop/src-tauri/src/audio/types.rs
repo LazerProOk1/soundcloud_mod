@@ -78,11 +78,3 @@ pub const STALL_COOLDOWN_MS: u64 = 10_000;
 pub struct LyricsTimingLine {
     pub time_secs: f64,
 }
-
-#[derive(Clone, serde::Deserialize, serde::Serialize)]
-pub struct FloatingCommentEvent {
-    pub id: i64,
-    pub body: String,
-    pub timestamp_ms: u64,
-    pub user_avatar_url: Option<String>,
-}

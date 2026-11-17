@@ -361,134 +361,6 @@ pub async fn load_stream(
     })
 }
 
-pub async fn load_url(
-    url: String,
-    session_id: Option<String>,
-    cache_path: Option<String>,
-    normalization_cache_dir: Option<PathBuf>,
-    normalization_cache_key: Option<String>,
-    start_paused: bool,
-    state: State<'_, AudioState>,
-) -> Result<AudioLoadResult, String> {
-    let generation = state.load_gen.fetch_add(1, Ordering::Relaxed) + 1;
-
-    // Use the shared client from AudioState — preserves the connection pool and TLS sessions
-    // across track loads, avoiding a new TLS handshake on every track.
-    let client = &state.http_client;
-    let retry_delays = [300u64, 800, 2000];
-    let mut last_err = String::new();
-    let mut bytes: Vec<u8> = Vec::new();
-    let mut success = false;
-
-    for attempt in 0..=retry_delays.len() {
-        if state.load_gen.load(Ordering::Relaxed) != generation {
-            return Ok(AudioLoadResult {
-                duration_secs: None,
-            });
-        }
-
-        let mut req = client.get(&url);
-        if let Some(sid) = &session_id {
-            req = req.header("x-session-id", sid);
-        }
-
-        match req.send().await {
-            Ok(resp) => {
-                let status = resp.status();
-                if status.is_success() {
-                    let content_length = resp.content_length().unwrap_or(0) as usize;
-                    match resp.bytes().await {
-                        Ok(b) => {
-                            if content_length > 0 && b.len() < content_length {
-                                last_err = format!(
-                                    "truncated response: got {} of {} bytes",
-                                    b.len(),
-                                    content_length
-                                );
-                            } else {
-                                bytes = b.to_vec();
-                                success = true;
-                                break;
-                            }
-                        }
-                        Err(e) => last_err = e.to_string(),
-                    }
-                } else if status.as_u16() == 429
-                    || (status.as_u16() >= 500 && status.as_u16() <= 599)
-                {
-                    last_err = format!("HTTP {}", status);
-                } else {
-                    return Err(format!("HTTP {}", status));
-                }
-            }
-            Err(e) => last_err = e.to_string(),
-        }
-
-        if attempt < retry_delays.len() {
-            tokio::time::sleep(std::time::Duration::from_millis(retry_delays[attempt])).await;
-            if state.load_gen.load(Ordering::Relaxed) != generation {
-                return Ok(AudioLoadResult {
-                    duration_secs: None,
-                });
-            }
-        }
-    }
-
-    if !success {
-        return Err(last_err);
-    }
-    let empty_result = AudioLoadResult {
-        duration_secs: None,
-    };
-
-    if state.load_gen.load(Ordering::Relaxed) != generation {
-        return Ok(empty_result);
-    }
-
-    let mixer = state.mixer.lock().unwrap().clone();
-    let vol = *state.volume.lock().unwrap();
-    let normalization_enabled = state.normalization_enabled.load(Ordering::Relaxed);
-    let bytes: Arc<[u8]> = Arc::from(bytes);
-    let (bytes, new_player, duration_secs, normalization_gain) = build_player_from_bytes(
-        bytes,
-        mixer,
-        vol,
-        normalization_enabled,
-        normalization_cache_dir,
-        normalization_cache_key,
-        start_paused,
-        state.eq_params.clone(),
-        state.analyser_buffer.clone(),
-    )
-    .await?;
-
-    if state.load_gen.load(Ordering::Relaxed) != generation {
-        new_player.stop();
-        return Ok(empty_result);
-    }
-
-    if let Some(path) = cache_path {
-        if bytes.len() >= 8192 {
-            let data = Arc::clone(&bytes);
-            tokio::spawn(async move {
-                let tmp = format!("{path}.tmp-{}", std::process::id());
-                if tokio::fs::write(&tmp, &*data).await.is_ok() {
-                    if tokio::fs::rename(&tmp, &path).await.is_err() {
-                        tokio::fs::remove_file(&tmp).await.ok();
-                    }
-                } else {
-                    tokio::fs::remove_file(&tmp).await.ok();
-                }
-            });
-        }
-    }
-
-    suppress_ended_temporarily(&state);
-    commit_loaded_track(&state, Some(bytes), new_player, normalization_gain);
-
-    Ok(AudioLoadResult { duration_secs })
-}
-
 pub fn play(state: State<'_, AudioState>) {
     // If the device errored (sleep/wake, headphone unplug), reconnect immediately
     // instead of waiting for stall detection (2s delay).
@@ -619,10 +491,6 @@ pub fn set_playback_rate(rate: f64, state: State<'_, AudioState>) {
     }
 }
 
-pub fn get_position(state: State<'_, AudioState>) -> f64 {
-    *state.song_pos_secs.lock().unwrap()
-}
-
 pub fn set_eq(enabled: bool, gains: Vec<f64>, state: State<'_, AudioState>) {
     if let Ok(mut params) = state.eq_params.write() {
         params.enabled = enabled;
@@ -636,16 +504,6 @@ pub fn set_normalization(enabled: bool, state: State<'_, AudioState>) {
     state
         .normalization_enabled
         .store(enabled, Ordering::Relaxed);
-}
-
-pub fn is_playing(state: State<'_, AudioState>) -> bool {
-    state
-        .player
-        .lock()
-        .unwrap()
-        .as_ref()
-        .map(|player| !player.is_paused() && !player.empty())
-        .unwrap_or(false)
 }
 
 pub fn set_metadata(

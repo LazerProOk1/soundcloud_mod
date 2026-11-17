@@ -75,16 +75,6 @@ pub async fn wave_ytm_radio(
 }
 
 #[tauri::command]
-pub fn track_is_cached(urn: String, state: State<'_, TrackCacheState>) -> bool {
-    state.is_cached(&urn)
-}
-
-#[tauri::command]
-pub fn track_get_cache_path(urn: String, state: State<'_, TrackCacheState>) -> Option<String> {
-    state.get_cache_path(&urn)
-}
-
-#[tauri::command]
 pub fn track_get_cache_info(
     urn: String,
     state: State<'_, TrackCacheState>,

@@ -914,11 +914,6 @@ impl TrackCacheState {
         self.resolve_path(urn).is_some()
     }
 
-    pub fn get_cache_path(&self, urn: &str) -> Option<String> {
-        self.resolve_path(urn)
-            .map(|p| p.to_string_lossy().into_owned())
-    }
-
     pub fn get_cache_entry(&self, urn: &str) -> Option<TrackCacheEntry> {
         let path = self.resolve_path(urn)?;
         Some(TrackCacheEntry::from_path_and_meta(

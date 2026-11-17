@@ -7,18 +7,11 @@ use rodio::Player;
 
 use crate::audio::analyser::AnalyserBuffer;
 use crate::audio::device::open_device_sink;
-use crate::audio::types::{
-    AudioThreadCmd, EqParams, FloatingCommentEvent, LyricsTimingLine, MediaCmd,
-};
+use crate::audio::types::{AudioThreadCmd, EqParams, LyricsTimingLine, MediaCmd};
 
 pub struct LyricsTimelineState {
     pub lines: Vec<LyricsTimingLine>,
     pub active_index: Option<usize>,
-}
-
-pub struct CommentsTimelineState {
-    pub comments: Vec<FloatingCommentEvent>,
-    pub next_index: usize,
 }
 
 pub struct AudioState {
@@ -55,7 +48,6 @@ pub struct AudioState {
     pub follow_default_output: AtomicBool,
     pub last_known_default_output: Mutex<Option<String>>,
     pub lyrics_timeline: Mutex<Option<LyricsTimelineState>>,
-    pub comments_timeline: Mutex<Option<CommentsTimelineState>>,
     pub analyser_buffer: Arc<AnalyserBuffer>,
     /// Shared HTTP client — reused across all track loads so the connection pool
     /// and TLS sessions are preserved between requests.
@@ -163,7 +155,6 @@ pub fn init() -> AudioState {
         follow_default_output: AtomicBool::new(true),
         last_known_default_output: Mutex::new(None),
         lyrics_timeline: Mutex::new(None),
-        comments_timeline: Mutex::new(None),
         analyser_buffer: AnalyserBuffer::new(),
         http_client,
     }

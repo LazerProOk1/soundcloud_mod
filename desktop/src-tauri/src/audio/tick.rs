@@ -78,7 +78,6 @@ pub fn start_tick_emitter(app: &AppHandle) {
 
                         handle.emit("audio:tick", song_pos).ok();
                         timing::process_lyrics_timeline(&handle, &state, song_pos);
-                        timing::process_comments_timeline(&handle, &state, song_pos);
 
                         let playing = !player.is_paused();
                         // Stall detection uses wall-clock pos (independent of rate)

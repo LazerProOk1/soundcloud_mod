@@ -21,14 +21,6 @@ export interface TrackCacheInfo {
   source: PlaybackSource | null;
 }
 
-export function isCached(urn: string): Promise<boolean> {
-  return invoke<boolean>('track_is_cached', { urn });
-}
-
-export function getCacheFilePath(urn: string): Promise<string | null> {
-  return invoke<string | null>('track_get_cache_path', { urn });
-}
-
 export function getCacheInfo(urn: string): Promise<TrackCacheInfo | null> {
   return invoke<TrackCacheInfo | null>('track_get_cache_info', { urn });
 }
