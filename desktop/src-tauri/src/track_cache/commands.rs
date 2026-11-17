@@ -110,6 +110,7 @@ pub async fn track_preload(
 
         tokio::spawn(async move {
             let _permit = permit;
+            #[cfg(debug_assertions)]
             println!("[TrackCache] preloading {urn}");
             if let Err(err) = state
                 .ensure_cached(

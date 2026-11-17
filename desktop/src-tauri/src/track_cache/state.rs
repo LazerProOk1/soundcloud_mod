@@ -981,6 +981,7 @@ impl TrackCacheState {
         }
         if let Some(path) = self.resolve_path(urn) {
             mark_used(&path);
+            #[cfg(debug_assertions)]
             println!("[TrackCache] hit: {urn}");
             return Ok(TrackCacheEntry::from_path_and_meta(
                 &path,
@@ -997,7 +998,8 @@ impl TrackCacheState {
         // Coalesce concurrent requests for the same URN
         let mut active = self.active.lock().await;
         if let Some(existing) = active.get(urn) {
-            println!("[TrackCache] coalescing request for {urn}");
+            #[cfg(debug_assertions)]
+        println!("[TrackCache] coalescing request for {urn}");
             let notify = existing.notify.clone();
             let result_slot = existing.result.clone();
             drop(active);

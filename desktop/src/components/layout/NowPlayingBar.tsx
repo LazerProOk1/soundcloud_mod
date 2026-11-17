@@ -804,12 +804,6 @@ export const PitchSlider = React.memo(() => {
 
 const SLEEP_PRESETS_MIN = [5, 10, 15, 30, 45, 60] as const;
 
-function fmtCountdown(secs: number) {
-  const m = Math.floor(secs / 60);
-  const s = secs % 60;
-  return `${m}:${s.toString().padStart(2, '0')}`;
-}
-
 const SleepTimerBtn = React.memo(() => {
   const { t } = useTranslation();
   const { endsAt, afterTrack, set, setAfterTrack, cancel } = useSleepTimer();
@@ -844,7 +838,7 @@ const SleepTimerBtn = React.memo(() => {
           <Moon size={15} />
           {isActive && (
             <span className="text-[10px] font-semibold tabular-nums leading-none">
-              {afterTrack ? '1x' : fmtCountdown(remaining ?? 0)}
+              {afterTrack ? '1x' : formatTime(remaining ?? 0)}
             </span>
           )}
         </button>
@@ -871,7 +865,7 @@ const SleepTimerBtn = React.memo(() => {
               </p>
               {isActive && (
                 <p className="text-[10px] text-accent">
-                  {afterTrack ? t('player.sleepAfterTrack') : fmtCountdown(remaining ?? 0)}
+                  {afterTrack ? t('player.sleepAfterTrack') : formatTime(remaining ?? 0)}
                 </p>
               )}
             </div>

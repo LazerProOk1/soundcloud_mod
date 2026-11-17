@@ -28,6 +28,7 @@ import {
   saveWallpaperFromBuffer,
 } from '../lib/cache';
 import { trackedInvoke } from '../lib/diagnostics';
+import { formatBytes } from '../lib/formatters';
 import { Download, Globe, Link, Loader2, Pipette, Trash2, Upload, X } from '../lib/icons';
 import { PRESET_WALLPAPERS } from '../lib/wallpapers';
 import { useAuthStore } from '../stores/auth';
@@ -37,14 +38,6 @@ import {
   THEME_PRESETS,
   useSettingsStore,
 } from '../stores/settings';
-
-function formatBytes(bytes: number): string {
-  if (bytes === 0) return '0 B';
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
-}
 
 const PRESET_COLORS = [
   '#ff5500',

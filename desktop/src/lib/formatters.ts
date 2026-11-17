@@ -13,10 +13,9 @@ export function fc(n?: number): string {
   return String(n);
 }
 
-/** Format duration from milliseconds: 185000 → "3:05" */
+/** Format duration from milliseconds: 185000 → "3:05" (adds hours past 60 min) */
 export function dur(ms: number): string {
-  const s = Math.floor(ms / 1000);
-  return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
+  return durLong(ms);
 }
 
 /** Format duration long: 3723000 → "1:02:03" */
@@ -35,6 +34,15 @@ export function formatTime(seconds: number): string {
   const m = Math.floor(seconds / 60);
   const s = Math.floor(seconds % 60);
   return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+/** Human readable size: 1536 → "1.5 KB" */
+export function formatBytes(bytes: number): string {
+  if (bytes === 0) return '0 B';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
 }
 
 /** Relative time: "2026-01-01T00:00:00Z" → "2mo" */

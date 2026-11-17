@@ -30,37 +30,14 @@ export class ApiError extends Error {
   }
 }
 
-// ─── Host resolution ────────────────────────────────────────
-
-const AUTH_PATHS = ['/auth/'];
-
-function isAuthPath(path: string): boolean {
-  return AUTH_PATHS.some((p) => path.startsWith(p));
-}
-
-function resolveApiBases(path: string): string[] {
-  // Auth paths: always try primary API first, BYPASS as fallback.
-  if (isAuthPath(path)) {
-    return [API_BASE];
-  }
-  return [API_BASE];
-}
-
 // ─── Helpers ────────────────────────────────────────────────
 
-// Bypass hosts (white.*) get a shorter probe timeout so a downed bypass
-// host doesn't block the entire app for 15 s before falling back.
-const BYPASS_TIMEOUT_MS = 4_000;
 const DEFAULT_TIMEOUT_MS = 15_000;
-
-function isBypassUrl(url: string): boolean {
-  return url.includes('white.');
-}
 
 function fetchWithTimeout(
   url: string,
   options: RequestInit,
-  timeoutMs: number = isBypassUrl(url) ? BYPASS_TIMEOUT_MS : DEFAULT_TIMEOUT_MS,
+  timeoutMs: number = DEFAULT_TIMEOUT_MS,
 ): Promise<Response> {
   const controller = new AbortController();
   const timer = setTimeout(
@@ -144,85 +121,66 @@ async function _apiRequestInner<T>(
   if (!headers.has('Content-Type') && fetchOptions.body)
     headers.set('Content-Type', 'application/json');
 
-  const bases = resolveApiBases(path);
   const method = fetchOptions.method ?? 'GET';
-  let lastError: unknown = null;
-
   const label = `${method.toUpperCase()} ${path}`;
+  const url = `${API_BASE}${path}`;
 
-  for (let i = 0; i < bases.length; i++) {
-    const base = bases[i];
-    const url = `${base}${path}`;
-    try {
-      const res = await trackAsync(
-        `http:${label}`,
-        fetchWithTimeout(url, { ...fetchOptions, headers }, timeoutMs),
-      );
+  try {
+    const res = await trackAsync(
+      `http:${label}`,
+      fetchWithTimeout(url, { ...fetchOptions, headers }, timeoutMs),
+    );
 
-      markHealthy(base);
-      useAppStatusStore.getState().setBackendReachable(true);
+    markHealthy(API_BASE);
+    useAppStatusStore.getState().setBackendReachable(true);
 
-      if (!res.ok) {
-        const body = await res.text();
-        const err = new ApiError(res.status, body);
-        logHttpError(label, res.status, url, body);
+    if (!res.ok) {
+      const body = await res.text();
+      const err = new ApiError(res.status, body);
+      logHttpError(label, res.status, url, body);
 
-        // 429: rate-limit — fail fast, auth-recovery counts hits and triggers
-        // silent renewal after 3+ events in 15 s. No toast, no retry.
-        if (res.status === 429) {
-          noteRateLimit();
-          console.warn(`[RateLimit] 429 on ${path} — failing fast`);
-          throw err;
-        }
+      // 429: rate-limit — fail fast, auth-recovery counts hits and triggers
+      // silent renewal after 3+ events in 15 s. No toast, no retry.
+      if (res.status === 429) {
+        noteRateLimit();
+        console.warn(`[RateLimit] 429 on ${path} — failing fast`);
+        throw err;
+      }
 
-        // 401: trigger auth-recovery orchestrator
-        if (res.status === 401) {
-          noteAuthGap();
-          console.error(`HTTP ERROR: url: ${path}, `, err);
-          throw err;
-        }
-
-        // 5xx with more bases to try → mark unhealthy, continue
-        if (res.status >= 500 && i < bases.length - 1) {
-          markUnhealthy(base);
-          lastError = err;
-          continue;
-        }
-
-        // Background loads (GET) fail quietly — the page shows its own empty/error state.
-        // Only user actions (POST/PUT/DELETE) get a toast.
-        if (!silent && method.toUpperCase() !== 'GET') handleApiError(err);
+      // 401: trigger auth-recovery orchestrator
+      if (res.status === 401) {
+        noteAuthGap();
         console.error(`HTTP ERROR: url: ${path}, `, err);
         throw err;
       }
 
-      noteSuccess();
-      const ct = res.headers.get('content-type');
-      const reply = await (ct?.includes('application/json') ? res.json() : (res.text() as T));
-
-      if (typeof reply === 'string') {
-        try {
-          return JSON.parse(reply) as T;
-        } catch {}
-      }
-
-      return reply;
-    } catch (error) {
-      // Already handled ApiError — rethrow
-      if (error instanceof ApiError) throw error;
-      // Network error — mark unhealthy, try next
-      logHttpFailure(label, url, error);
-      markUnhealthy(base);
-      lastError = error;
+      // Background loads (GET) fail quietly — the page shows its own empty/error state.
+      // Only user actions (POST/PUT/DELETE) get a toast.
+      if (!silent && method.toUpperCase() !== 'GET') handleApiError(err);
+      console.error(`HTTP ERROR: url: ${path}, `, err);
+      throw err;
     }
-  }
 
-  // Only mark the backend as unreachable for non-auth paths.
-  // Auth endpoints use a different host (BYPASS) that can be unavailable independently.
-  if (!isAuthPath(path)) {
+    noteSuccess();
+    const ct = res.headers.get('content-type');
+    const reply = await (ct?.includes('application/json') ? res.json() : (res.text() as T));
+
+    if (typeof reply === 'string') {
+      try {
+        return JSON.parse(reply) as T;
+      } catch {}
+    }
+
+    return reply;
+  } catch (error) {
+    // Already handled ApiError — rethrow
+    if (error instanceof ApiError) throw error;
+    // Network error / timeout — the only host is down
+    logHttpFailure(label, url, error);
+    markUnhealthy(API_BASE);
     useAppStatusStore.getState().setBackendReachable(false);
+    throw error;
   }
-  throw lastError ?? new Error('All API hosts unreachable');
 }
 
 // ─── Aliases ────────────────────────────────────────────────
