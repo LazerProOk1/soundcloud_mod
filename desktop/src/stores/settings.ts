@@ -123,7 +123,6 @@ export interface SettingsState {
   /** Liquid Glass (frosted-glass / backdrop-filter) UI effects */
   liquidGlass: boolean;
   setAccentColor: (color: string) => void;
-  setBgPrimary: (bg: string) => void;
   setThemePreset: (id: ThemePreset) => void;
   setBackgroundImage: (url: string) => void;
   setBackgroundOpacity: (opacity: number) => void;
@@ -212,7 +211,6 @@ export const useSettingsStore = create<SettingsState>()(
       setCustomCss: (customCss) => set({ customCss }),
       setCustomCssEnabled: (customCssEnabled) => set({ customCssEnabled }),
       setCustomFont: (customFontName, customFontFile) => set({ customFontName, customFontFile }),
-      setBgPrimary: (bgPrimary) => set({ bgPrimary, themePreset: 'custom' }),
       setThemePreset: (id) => {
         if (id === 'custom') {
           set({ themePreset: 'custom' });
