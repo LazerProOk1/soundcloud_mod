@@ -1,21 +1,13 @@
 use std::collections::HashSet;
 use std::sync::Arc;
 
-use chrono::{DateTime, NaiveDateTime, Utc};
-use serde::Serialize;
 use serde_json::Value;
 use sqlx::PgPool;
 
-use crate::error::{AppError, AppResult};
+use crate::error::AppResult;
 
 pub struct LocalLikesService {
     pg: PgPool,
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct FindAllResult {
-    pub collection: Vec<Value>,
-    pub next_href: Option<String>,
 }
 
 impl LocalLikesService {
@@ -51,58 +43,6 @@ impl LocalLikesService {
         Ok(())
     }
 
-    pub async fn find_all(
-        &self,
-        sc_user_id: &str,
-        limit: i64,
-        cursor: Option<&str>,
-    ) -> AppResult<FindAllResult> {
-        let cursor_dt = match cursor {
-            Some(s) => Some(parse_cursor(s)?),
-            None => None,
-        };
-
-        let rows: Vec<(Value, NaiveDateTime)> = if let Some(dt) = cursor_dt {
-            sqlx::query_as(
-                "SELECT track_data, created_at FROM local_likes \
-                 WHERE soundcloud_user_id = $1 AND created_at < $2 \
-                 ORDER BY created_at DESC LIMIT $3",
-            )
-            .bind(sc_user_id)
-            .bind(dt)
-            .bind(limit + 1)
-            .fetch_all(&self.pg)
-            .await?
-        } else {
-            sqlx::query_as(
-                "SELECT track_data, created_at FROM local_likes \
-                 WHERE soundcloud_user_id = $1 \
-                 ORDER BY created_at DESC LIMIT $2",
-            )
-            .bind(sc_user_id)
-            .bind(limit + 1)
-            .fetch_all(&self.pg)
-            .await?
-        };
-
-        let has_more = rows.len() as i64 > limit;
-        let slice: Vec<(Value, NaiveDateTime)> = rows.into_iter().take(limit as usize).collect();
-        let next_href = if has_more {
-            slice.last().map(|(_, dt)| {
-                let iso = DateTime::<Utc>::from_naive_utc_and_offset(*dt, Utc)
-                    .to_rfc3339_opts(chrono::SecondsFormat::Millis, true);
-                format!("?limit={limit}&cursor={iso}")
-            })
-        } else {
-            None
-        };
-        let collection = slice.into_iter().map(|(v, _)| v).collect();
-        Ok(FindAllResult {
-            collection,
-            next_href,
-        })
-    }
-
     pub async fn get_liked_track_ids(
         &self,
         sc_user_id: &str,
@@ -121,10 +61,4 @@ impl LocalLikesService {
         .await?;
         Ok(rows.into_iter().map(|(id,)| id).collect())
     }
-}
-
-fn parse_cursor(s: &str) -> AppResult<NaiveDateTime> {
-    DateTime::parse_from_rfc3339(s)
-        .map(|dt| dt.naive_utc())
-        .map_err(|e| AppError::bad_request(format!("invalid cursor: {e}")))
 }

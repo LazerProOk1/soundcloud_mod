@@ -9,17 +9,8 @@ use crate::state::AppState;
 
 pub fn router() -> Router<AppState> {
     Router::new()
-        .route("/pending-actions", get(list))
         .route("/pending-actions/stats", get(stats))
         .route("/pending-actions/sync", post(sync))
-}
-
-async fn list(State(st): State<AppState>, ctx: SessionCtx) -> AppResult<Json<Value>> {
-    let rows = st
-        .pending_actions
-        .get_for_session(&ctx.session_id.to_string())
-        .await?;
-    Ok(Json(json!(rows)))
 }
 
 async fn stats(State(st): State<AppState>, ctx: SessionCtx) -> AppResult<Json<Value>> {
