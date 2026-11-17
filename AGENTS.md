@@ -44,13 +44,14 @@ cargo clippy --all-targets
 ### Always
 - Run `pnpm biome ci src/`, `pnpm build`, and `node --experimental-strip-types --test src/lib/__tests__/*.test.ts` (plus `cargo test` when Rust crates change or toolchain is present) before finishing work.
 - Validate JSON files (`locales/*.json`, `tauri.conf.json`, `biome.json`) after editing.
-- Attribute every commit exclusively to `LazerProOk1 <139680797+LazerProOk1@users.noreply.github.com>`:
+- Author every commit as `LazerProOk1 <139680797+LazerProOk1@users.noreply.github.com>` (a `Co-Authored-By:` trailer is fine):
   `git commit --author="LazerProOk1 <139680797+LazerProOk1@users.noreply.github.com>" -m "..."`
 
 ### Ask First
 - Changing Tauri app identifier (`com.lazerprook1.soundcloudmod`), breaking persisted `tauriStorage` store schemas without migration, or modifying database SQL migrations in `backend/migrations/`.
 
 ### Never
-- Include AI assistant names, tool signatures, or `Co-Authored-By:` trailers in commits, PRs, code comments, or documentation.
+- Include AI assistant names or tool signatures in code comments or documentation.
+  (A `Co-Authored-By:` trailer in commit messages and an attribution line in PR descriptions are allowed.)
 - Add AI-generated UI screenshots or mockups pretending to show the running application to `docs/` or `README.md`.
 - Bypass path-traversal guards in wallpaper/cache path resolvers or break atomic cache writes (`.tmp` + rename).
