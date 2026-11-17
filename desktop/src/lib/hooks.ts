@@ -1064,7 +1064,6 @@ export function useDiscoverData(pool: RelatedPool | undefined, likedTracks: Trac
 
 /* ── Infinite scroll ───────────────────────────────────────────── */
 
-/** Always returns true — liquid glass toggle has been removed from Settings */
 /** Liquid Glass styling on/off (Settings → Interface). Off = classic flat look. */
 export function useLiquidGlass() {
   return useSettingsStore((s) => s.liquidGlass);

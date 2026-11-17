@@ -1,10 +1,7 @@
 /**
- * Discover / Каталог — страница открытия новой музыки.
+ * Discover — browsing page for new music.
  *
- * Разделы:
- *  1. Рекомендованные треки (ИИ, на основе лайков)
- *  2. Открывай по жанрам (фильтр-пилюли + карточки)
- *  3. Новые релизы подписок (Following)
+ * Sections: recommended tracks (from likes), genre pills, subscription releases.
  */
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';

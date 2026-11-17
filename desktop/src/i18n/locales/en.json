@@ -431,7 +431,6 @@
     "linkHint": "A playlist, album, track or artist link works:",
     "loadFailed": "Couldn't load this link",
     "untitled": "Imported",
-    "tracksCount": "{{count}} tracks",
     "textLabel": "One track per line: Artist - Title",
     "textHint": "{{count}} tracks recognised. Lists from VK or Apple Music can be pasted here.",
     "textPlaylist": "Imported list",

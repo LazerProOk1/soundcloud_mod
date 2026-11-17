@@ -147,7 +147,7 @@ export const TrackCard = React.memo(
             }}
           />
 
-          {/* Liquid overlay — opacity-only transition (120fps safe) */}
+          {/* Liquid overlay — opacity-only transition, no layout work */}
           <div
             className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ease-[var(--ease-spring)] ${
               isThisPlaying ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'

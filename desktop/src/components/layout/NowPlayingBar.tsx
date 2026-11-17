@@ -149,7 +149,7 @@ const tipClass =
 
 export const ProgressSlider = React.memo(() => {
   // useEffect+useState instead of useSyncExternalStore — avoids React 19 "forceStoreRerender"
-  // loop when audio:tick fires at 60 fps between render and commit phases.
+  // loop when audio:tick lands between the render and commit phases (20 Hz).
   const [duration, setDuration] = useState(getDuration);
   useEffect(
     () =>
@@ -195,7 +195,7 @@ export const ProgressSlider = React.memo(() => {
     }
   }, [currentUrn]);
 
-  // Direct DOM updates at 60fps — zero React re-renders during playback.
+  // Direct DOM updates at the 20 Hz tick — zero React re-renders during playback.
   // Also keeps syncedValue in sync so Radix computes correct delta on next drag start.
   useEffect(() => {
     return subscribe(() => {

@@ -48,7 +48,7 @@ export interface ArtistStar {
   aura: Aura;
 }
 
-// Star features & Aura field are unlocked free for all artist & album pages.
+// Star gating is gone: every artist/album page gets the same aura.
 export function useArtistStar(id: string | undefined): ArtistStar {
   return { hasStar: false, aura: artistAuraForId(id) };
 }

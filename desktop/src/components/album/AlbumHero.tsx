@@ -90,7 +90,7 @@ function AlbumHeroImpl({ album, hasStar, aura }: AlbumHeroProps) {
   }, [album.tracks, album.artists]);
 
   return (
-    <GlassHeroPanel hasStar={hasStar} aura={aura}>
+    <GlassHeroPanel>
       {album.cover_url && (
         <div
           className="absolute -top-10 left-6 md:left-10 w-[220px] h-[220px] md:w-[280px] md:h-[280px] pointer-events-none rounded-[3rem] overflow-hidden opacity-50"
