@@ -12,11 +12,6 @@
     "soundwave": "SoundWave"
   },
   "sidebar": {
-    "quickAccess": "Быстрый доступ",
-    "pinPlaylist": "Закрепить плейлист",
-    "unpinPlaylist": "Открепить плейлист",
-    "pinned": "Плейлист закреплён в сайдбаре",
-    "unpinned": "Плейлист убран из сайдбара",
     "myLibrary": "Моя медиатека",
     "waveSubtitle": "Поток под ваш вкус",
     "playlist": "Плейлист",
@@ -26,13 +21,10 @@
   "player": {
     "queue": "Очередь",
     "nowPlaying": "Сейчас играет",
-    "next": "Дальше",
     "upNext": "Далее",
     "clearUpcoming": "Очистить далее",
     "clearQueue": "Очистить очередь",
     "addToQueue": "Добавить в очередь",
-    "shuffle": "Перемешать",
-    "repeat": "Повтор",
     "qualityHQ": "HQ",
     "qualitySQ": "SQ",
     "qualityCDN": "CDN",
@@ -47,8 +39,7 @@
     "pitchModeManualShort": "Вручную",
     "sleepTimer": "Таймер сна",
     "sleepAfterTrack": "После текущего трека",
-    "sleepCancel": "Отменить таймер",
-    "miniPlayer": "Мини-плеер"
+    "sleepCancel": "Отменить таймер"
   },
   "auth": {
     "signIn": "Войти через SoundCloud",
@@ -121,14 +112,9 @@
       "reupload": "перезалив"
     },
     "notFoundOnSc": "не найдено на SoundCloud",
-    "wantedHint": "Трек известен, но ещё не залит на SC",
     "description": "Описание",
     "noComments": "Пока нет комментариев",
-    "postComment": "Отправить",
     "favoriters": "Понравилось",
-    "reposters": "Репосты",
-    "tags": "Теги",
-    "commentAt": "на",
     "lyrics": "Текст песни",
     "lyricsNotFound": "Текст не найден",
     "lyricsNotFoundHint": "Попробуйте поиск с другим артистом или названием.",
@@ -153,13 +139,6 @@
     "openTrackPage": "Страница трека"
   },
   "playlist": {
-    "playAll": "Воспроизвести",
-    "shuffle": "Перемешать",
-    "tracks_one": "{{count}} трек",
-    "tracks_few": "{{count}} трека",
-    "tracks_many": "{{count}} треков",
-    "by": "от",
-    "noTracks": "В этом плейлисте нет треков",
     "removeTrack": "Удалить из плейлиста",
     "trackRemoved": "Трек удалён",
     "reordered": "Порядок треков сохранён",
@@ -168,7 +147,6 @@
     "alreadyAdded": "Уже добавлено",
     "containsSome": "Есть часть треков",
     "alreadyInPlaylist": "Уже в плейлисте",
-    "selectPlaylist": "Выбрать плейлист",
     "noPlaylists": "Плейлисты не найдены",
     "newPlaylist": "Новый плейлист",
     "playlistName": "Название плейлиста",
@@ -189,13 +167,8 @@
     "playlists": "Плейлисты",
     "likes": "Лайки",
     "follow": "Подписаться",
-    "unfollow": "Отписаться",
     "noFollowers": "Подписчиков пока нет.",
     "noFollowings": "Подписок пока нет.",
-    "publicProfile": "Так выглядит ваш публичный профиль",
-    "about": "О себе",
-    "memberSince": "В SoundCloud с",
-    "links": "Ссылки",
     "verifiedArtist": "Верифицированный артист",
     "starBadge": "Star",
     "starProfile": "Star · Профиль",
@@ -206,8 +179,6 @@
     "likedTracks": "Любимые треки",
     "likedPlaylists": "Любимые плейлисты",
     "yourPlaylists": "Ваши плейлисты",
-    "localLikes": "Локальные",
-    "noLocalLikes": "Нет локальных лайков",
     "history": "История",
     "historyEmpty": "История прослушивания пуста",
     "clearHistory": "Очистить историю",
@@ -227,61 +198,21 @@
     "resetOrder": "Сбросить свой порядок"
   },
   "home": {
-    "goodMorning": "Доброе утро",
-    "goodAfternoon": "Добрый день",
-    "goodEvening": "Добрый вечер",
-    "goodNight": "Доброй ночи",
-    "yourFeed": "Ваш фид",
     "freshReleases": "Свежие релизы",
     "recentlyPlayed": "Недавно прослушанные",
-    "reposted": "Репост",
-    "endOfFeed": "Вы всё посмотрели",
     "recommended": "Рекомендации для вас",
-    "discover": "Открывайте новое",
-    "startListening": "Начните слушать",
-    "startLikingTitle": "Лайкайте треки — здесь появится больше музыки",
-    "startLikingDesc": "Чем больше лайков, тем точнее рекомендации и насыщеннее главная страница"
+    "discover": "Открывайте новое"
   },
   "soundwave": {
     "tagline": "Твоя личная волна — подобрали под тебя",
     "myWave": "Моя волна",
     "updateWave": "Обновить волну",
-    "fullscreen": "Поток",
-    "openFullscreen": "Открыть SoundWave на весь экран",
     "startWave": "Запустить волну",
     "nowPlayingOther": "Сейчас играет: {{title}}",
     "statusLive": "В эфире",
     "statusStandby": "Готово",
-    "upNext": "Далее в волне",
-    "tips": [
-      "SoundWave подбирает треки именно под твой вкус",
-      "Волна учится — чем больше слушаешь, тем точнее подбор",
-      "Свайпай и пропускай треки, чтобы быстрее настроить настроение",
-      "Выбери языки и скроешь уже лайкнутые треки — останется только свежее"
-    ],
-    "playAll": "Слушать всё",
-    "refresh": "Обновить",
-    "languages": "Языки",
-    "allLanguages": "Все языки",
-    "langShort": "яз",
-    "clear": "Сбросить",
-    "idleTitle": "Жми play — поймай волну",
-    "idleSub": "Следующий трек — думаем, тебе зайдёт",
     "coldTitle": "Волна ещё настраивается",
     "coldDesc": "Лайкни пару треков — настроим волну под твой вкус",
-    "searchPlaceholder": "Опиши вайб — например «грустное пиано под дождём»",
-    "searchAction": "Найти",
-    "searchClear": "Очистить",
-    "searchReset": "К волне",
-    "searchResultsFor": "Результаты по «{{q}}»",
-    "searchResultsCount_one": "{{count}} трек",
-    "searchResultsCount_few": "{{count}} трека",
-    "searchResultsCount_many": "{{count}} треков",
-    "searchEmptyTitle": "Под этот вайб ничего не нашлось",
-    "searchEmptyDesc": "Попробуй другие слова — настроение, инструменты или сцену",
-    "hideLikedLabel": "Скрыть лайки",
-    "hideLikedOn": "Лайкнутые треки не попадают в волну",
-    "hideLikedOff": "В волне водятся лайки",
     "modeLabel": "Характер волны",
     "modes": {
       "similar": "Знакомое",
@@ -294,26 +225,6 @@
       "chill": "Чилл",
       "night": "Ночь",
       "workout": "Тренировка"
-    },
-    "home": {
-      "waveTitle": "Волна",
-      "waveDesc": "Бесконечный микс по графу вкуса — фавориты, соседи, свежак, без скипов.",
-      "cluster": {
-        "wave": "Волна",
-        "waveDesc": "Бесконечный микс — последние лайки, сетка артистов и ИИ-реки от треков. Чем больше слушаешь — тем точнее.",
-        "for_you": "Для тебя",
-        "for_youDesc": "Главный матч по вкусу — то, что точно зайдёт.",
-        "top_artists": "От любимых",
-        "top_artistsDesc": "Артисты, которых ставишь чаще всего — по одному свежему треку.",
-        "adjacent": "Близкие миры",
-        "adjacentDesc": "Кого ставят рядом с твоими любимыми.",
-        "fresh_drops": "Свежее",
-        "fresh_dropsDesc": "Недавно появилось у артистов, которых ты слушаешь.",
-        "same_vibe": "Тот же вайб",
-        "same_vibeDesc": "Звук в твоём эмоциональном спектре.",
-        "deep_cuts": "Глубже",
-        "deep_cutsDesc": "Не на слуху, но в твоём ключе — за горизонтом."
-      }
     },
     "similar": {
       "title": "Похожее",
@@ -334,7 +245,6 @@
         "fans_alsoDesc": "Что ещё слушают фанаты этого трека."
       }
     },
-    "settings": "Настроить",
     "notThis": "Не то",
     "moreLikeThis": "Ещё такого",
     "moreLikeThisDone": "Учтём — будет больше такого"
@@ -345,15 +255,8 @@
     "offlineTitle": "Оффлайн",
     "readyTitle": "Локальная медиатека",
     "tryOnline": "Попробовать онлайн",
-    "statsLikes": "Лайки",
-    "statsPlayableLikes": "Оффлайн",
-    "statsCached": "Кэш",
     "likesTitle": "Лайки",
-    "likesEmpty": "Лайки ещё не успели закэшироваться на этом устройстве.",
     "cachedTitle": "Кэш",
-    "cachedEmpty": "Кэш пока пуст.",
-    "cached": "В кэше",
-    "notCached": "Не скачан",
     "pendingCount_one": "{{count}} ожидает",
     "pendingCount_few": "{{count}} ожидают",
     "pendingCount_many": "{{count}} ожидают",
@@ -361,8 +264,6 @@
     "failedCount_few": "{{count}} ошибки",
     "failedCount_many": "{{count}} ошибок",
     "syncNow": "Синхронизировать",
-    "searchPlaceholder": "Поиск по названию или артисту",
-    "searchEmpty": "Ничего не нашлось",
     "cachedBadge": "Доступно офлайн"
   },
   "settings": {
@@ -408,14 +309,8 @@
     "account": "Аккаунт",
     "language": "Язык",
     "audioDevice": "Аудиовыход",
-    "audioDeviceDefault": "Системный по умолчанию",
     "audioDeviceSwitched": "Аудиоустройство переключено",
     "themePreset": "Тема",
-    "theme_soundcloud": "SoundCloud",
-    "theme_dark": "Тёмная",
-    "theme_neon": "Неон",
-    "theme_forest": "Лес",
-    "theme_crimson": "Малиновая",
     "themeCustom": "Своя",
     "startup": "Запуск",
     "startupPageDesc": "Какая страница должна открываться при старте приложения",
@@ -434,10 +329,6 @@
     "normalizeVolumeDesc": "Выравнивает тихие и громкие треки до более ровного уровня",
     "highQualityStreaming": "Высокое качество стрима",
     "highQualityStreamingDesc": "Стараться воспроизводить треки в максимально доступном качестве",
-    "bypassWhitelist": "Обход белых списков",
-    "bypassWhitelistDesc": "Альтернативная маршрутизация при блокировках и отключениях интернета",
-    "import": "Импорт",
-    "importYandex": "Импорт из Yandex Music",
     "interface": "Интерфейс",
     "liquidGlass": "Эффекты Liquid Glass",
     "liquidGlassDesc": "Полупрозрачное матовое стекло и преломление света (отключите для максимального FPS)",
@@ -478,17 +369,12 @@
     "sources": "Источники музыки",
     "sourcesDesc": "Откуда скачиваются треки, сверху вниз. Если в источнике трека нет, берётся следующий. SoundCloud — лайки и плейлисты, остальные ищут по исполнителю и названию.",
     "sourceUp": "Выше",
-    "sourceDown": "Ниже",
-    "primarySource": "Главный источник музыки",
-    "primarySourceDesc": "Откуда треки грузятся в первую очередь. Если там нет — ищем в остальных (SoundCloud, Зайцев.нет, YouTube)."
+    "sourceDown": "Ниже"
   },
   "eq": {
     "title": "Эквалайзер",
-    "enabled": "Включён",
     "preset": "Пресет",
-    "reset": "Сброс",
-    "custom": "Свой",
-    "streamingNote": "EQ работает с кэшированными треками (Web Audio)"
+    "custom": "Свой"
   },
   "kb": {
     "title": "Горячие клавиши",
@@ -518,7 +404,6 @@
   "commandPalette": {
     "title": "Палитра команд",
     "description": "Быстрый поиск треков, переходы по страницам и управление плеером",
-    "trigger": "Поиск или команда...",
     "placeholder": "Поиск по SoundCloud, команды, EQ, темы...",
     "empty": "Ничего не найдено",
     "groupNavigation": "Навигация",
@@ -536,19 +421,10 @@
     "hintRun": "выполнить"
   },
   "ym": {
-    "instructions": "Как получить токен Yandex Music:",
     "step1": "Установите расширение: Chrome — «Yandex Music Token», Firefox — «Yandex Music Token»",
     "step2": "Откройте music.yandex.ru и нажмите на иконку расширения",
     "step3": "Скопируйте OAuth-токен из расширения",
-    "tokenPlaceholder": "Вставьте токен Yandex Music...",
-    "start": "Начать импорт",
-    "stop": "Остановить",
-    "hide": "Свернуть",
-    "found": "Найдено",
-    "notFound": "Не найдено",
-    "done": "Импорт завершён!",
-    "savingPlaylist": "Сохраняем плейлист...",
-    "backgroundHint": "Импорт идет в фоне, окно можно закрыть"
+    "tokenPlaceholder": "Вставьте токен Yandex Music..."
   },
   "import": {
     "title": "Перенос музыки",
@@ -639,58 +515,6 @@
     "scrollPrev": "Листать влево",
     "scrollNext": "Листать вправо"
   },
-  "star": {
-    "title": "Подписка Star",
-    "active": "Активна",
-    "getIt": "Узнать больше",
-    "modalTitle": "Star",
-    "modalSub": "Поддержи проект — получи бонусы",
-    "perkGoPlus": "Доступ к GO+ трекам",
-    "perkServer": "Выделенный сервер стриминга",
-    "perkHQ": "Больше HQ треков",
-    "bypassWhitelist": "Обход белых списков и лучшая доступность",
-    "perkSupport": "Ну и просто поддержать проект монеткой.\nКоличество бонусов будет увеличиваться!",
-    "howTo": "Как получить",
-    "step1": "Перейдите на Boosty",
-    "step2": "Привяжите Discord к своему Boosty",
-    "step3": "Зайдите на наш Discord-сервер",
-    "step4": "Купите подписку на Boosty",
-    "step5": "В нашем Discord-сервере привяжите SoundCloud командой /sc-link",
-    "goBoosty": "Boosty",
-    "goDiscord": "Discord"
-  },
-  "soundwaveLock": {
-    "wordmark": "САУНД ВОЛНА",
-    "badge": "Эксклюзив Star",
-    "title": "Доступно только по подписке",
-    "subtitle": "SoundWave будет доступна бесплатно через",
-    "cta": "Купить подписку",
-    "days": "дн",
-    "hours": "ч",
-    "minutes": "мин",
-    "seconds": "сек"
-  },
-  "news": {
-    "dismissOnce": "Закрыть",
-    "dismissForever": "Больше не показывать",
-    "discord": {
-      "title": "У нас появился Discord!",
-      "description": "Присоединяйся — обсуждения, предложения, баг-репорты",
-      "body": "Мы запустили официальный Discord-сервер SoundCloud Desktop!\n\nЗаходи, чтобы общаться с другими пользователями, предлагать фичи, сообщать о багах и быть в курсе последних новостей.\n\nhttps://discord.gg/xQcGBP8fGG"
-    }
-  },
-  "call": {
-    "title": "Сеть пользователей",
-    "enable": "Включить",
-    "disable": "Выключить",
-    "status": {
-      "disabled": "выкл",
-      "connecting": "подключение",
-      "provisioning": "регистрация",
-      "active": "активен",
-      "failed": "ошибка"
-    }
-  },
   "artist": {
     "title": "Артист",
     "tracks": "Треки",
@@ -769,41 +593,7 @@
     "comingSoon": "Скоро"
   },
   "discover": {
-    "title": "Каталог",
-    "subtitle": "Музыка, подобранная по вашему вкусу",
-    "surpriseMe": "Удиви меня",
-    "statArtists": "Артистов",
-    "statAlbums": "Альбомов",
-    "statFresh": "Новых",
-    "metaArtists_one": "{{count}} артист",
-    "metaArtists_few": "{{count}} артиста",
-    "metaArtists_many": "{{count}} артистов",
-    "metaArtists_other": "{{count}} артистов",
-    "metaAlbums_one": "{{count}} альбом",
-    "metaAlbums_few": "{{count}} альбома",
-    "metaAlbums_many": "{{count}} альбомов",
-    "metaAlbums_other": "{{count}} альбомов",
-    "metaFresh_one": "{{count}} новый",
-    "metaFresh_few": "{{count}} новых",
-    "metaFresh_many": "{{count}} новых",
-    "metaFresh_other": "{{count}} новых",
-    "spotlightTitle": "В центре внимания",
-    "tabAlbums": "Альбомы",
-    "tabArtists": "Артисты",
-    "allKinds": "Все",
-    "allTags": "Все теги",
-    "sortRecent": "Свежие",
-    "sortPopular": "Популярные",
-    "sortAz": "А → Я",
-    "sortTracks": "Треков",
-    "sortTrending": "В тренде",
-    "sortListeners": "Слушатели",
-    "sortStar": "Сначала Star",
-    "searchPlaceholder": "Поиск по названию или артисту",
-    "trendValue": "↑ {{value}}",
-    "noAlbums": "Альбомов пока нет",
-    "noArtists": "Артистов пока нет",
-    "noMatches": "Ничего не нашлось по «{{query}}»"
+    "subtitle": "Музыка, подобранная по вашему вкусу"
   },
   "trackMenu": {
     "menuLabel": "Действия с треком",
