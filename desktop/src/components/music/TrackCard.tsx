@@ -386,5 +386,6 @@ export const TrackCard = React.memo(
     prev.track.user_favorite === next.track.user_favorite &&
     prev.track.enrichment?.primary_artist?.name === next.track.enrichment?.primary_artist?.name &&
     prev.track.enrichment?.upload_kind === next.track.enrichment?.upload_kind &&
-    prev.track.enrichment?.availability === next.track.enrichment?.availability,
+    prev.track.enrichment?.availability === next.track.enrichment?.availability &&
+    prev.queue === next.queue,
 );

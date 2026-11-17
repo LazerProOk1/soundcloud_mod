@@ -164,7 +164,11 @@ const LibraryTrackRow = React.memo(
       </div>
     );
   },
-  (prev, next) => prev.track.urn === next.track.urn && prev.index === next.index,
+  (prev, next) =>
+    prev.track.urn === next.track.urn &&
+    prev.index === next.index &&
+    prev.track.user_favorite === next.track.user_favorite &&
+    prev.queue === next.queue,
 );
 
 /* ── Isolated Hero ────────────────────────────────────────── */

@@ -378,7 +378,7 @@ const RelatedRow = React.memo(
       </div>
     );
   },
-  (prev, next) => prev.track.urn === next.track.urn,
+  (prev, next) => prev.track.urn === next.track.urn && prev.queue === next.queue,
 );
 
 /* ── Download — icon-only in the rail ───────────────────── */

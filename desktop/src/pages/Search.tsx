@@ -123,7 +123,9 @@ const TrackRow = React.memo(
     );
   },
   (prev, next) =>
-    prev.track.urn === next.track.urn && prev.track.user_favorite === next.track.user_favorite,
+    prev.track.urn === next.track.urn &&
+    prev.track.user_favorite === next.track.user_favorite &&
+    prev.queue === next.queue,
 );
 
 /* ── URL Detection ───────────────────────────────────────── */
