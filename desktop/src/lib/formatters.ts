@@ -63,6 +63,14 @@ export function ago(dateStr: string): string {
   return `${Math.floor(dd / 365)}y`;
 }
 
+/** Год и месяц: "2026-01-01" → «январь 2026 г.»; null для пустых/битых дат */
+export function monthYear(dateStr: string | null | undefined): string | null {
+  if (!dateStr) return null;
+  const d = new Date(dateStr.replace(/\//g, '-').replace(' +0000', 'Z'));
+  if (Number.isNaN(d.getTime()) || d.getFullYear() <= 1970) return null;
+  return d.toLocaleDateString(undefined, { year: 'numeric', month: 'long' });
+}
+
 /** Formatted date: "2026-01-01" → "Jan 1, 2026" */
 export function dateFormatted(dateStr: string): string {
   const d = new Date(dateStr.replace(/\//g, '-').replace(' +0000', 'Z'));

@@ -1,4 +1,3 @@
-import { openUrl } from '@tauri-apps/plugin-opener';
 import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -11,17 +10,10 @@ import {
 } from '../../lib/constants';
 import { isHealthy, markHealthy } from '../../lib/host-health';
 import { ExternalLink, Info, Loader2, RefreshCw, Sparkles, Wifi } from '../../lib/icons';
+import { openExternalUrl } from '../../lib/open-external';
 import { checkForAppUpdate, type GithubRelease } from '../../lib/update-check';
 import { useCachedUrnsStore } from '../../stores/cached-urns';
 import { UpdateChecker } from '../UpdateChecker';
-
-function openExternalUrl(url: string) {
-  if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
-    void openUrl(url).catch(() => window.open(url, '_blank', 'noopener,noreferrer'));
-    return;
-  }
-  window.open(url, '_blank', 'noopener,noreferrer');
-}
 
 const STREAM_HOSTS = [
   { id: 'premium', label: 'Stream Premium', url: STREAMING_PREMIUM_BASE },

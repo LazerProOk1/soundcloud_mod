@@ -1,3 +1,8 @@
+import { darkenRgb, hexToRgbTriplet, lightenRgb, type Rgb, rgbToHex } from './color.ts';
+
+/** Строгий вариант: только полный `#rrggbb` (как было в aura). */
+export const hexToRgb = (hex: string): Rgb | null => hexToRgbTriplet(hex, false);
+
 export type AuraId =
   | 'aurora'
   | 'magma'
@@ -87,27 +92,8 @@ const luminance = ([r, g, b]: [number, number, number]) =>
 
 export const isLight = (a: Aura) => luminance(a.accent) > 0.78;
 
-export const hexToRgb = (hex: string): [number, number, number] | null => {
-  const m = hex.replace('#', '').match(/^([0-9a-f]{6})$/i);
-  if (!m) return null;
-  const v = parseInt(m[1], 16);
-  return [(v >> 16) & 0xff, (v >> 8) & 0xff, v & 0xff];
-};
-
-const rgbToHex = ([r, g, b]: [number, number, number]) =>
-  `#${[r, g, b].map((n) => n.toString(16).padStart(2, '0')).join('')}`;
-
-const lighten = ([r, g, b]: [number, number, number], amt: number): [number, number, number] => [
-  Math.min(255, Math.round(r + (255 - r) * amt)),
-  Math.min(255, Math.round(g + (255 - g) * amt)),
-  Math.min(255, Math.round(b + (255 - b) * amt)),
-];
-
-const darken = ([r, g, b]: [number, number, number], amt: number): [number, number, number] => [
-  Math.round(r * (1 - amt)),
-  Math.round(g * (1 - amt)),
-  Math.round(b * (1 - amt)),
-];
+const lighten = lightenRgb;
+const darken = darkenRgb;
 
 export const auraFromHex = (hex: string): Aura | null => {
   const rgb = hexToRgb(hex);

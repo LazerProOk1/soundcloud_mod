@@ -1,14 +1,9 @@
 import { useEffect } from 'react';
+import { hexToRgbTriplet } from '../lib/color';
 import { applyInterfaceFont } from '../lib/interface-font';
 import { useSettingsStore } from '../stores/settings';
 
-function hexToRgb(hex: string): string {
-  const h = hex.replace('#', '');
-  const r = Number.parseInt(h.substring(0, 2), 16);
-  const g = Number.parseInt(h.substring(2, 4), 16);
-  const b = Number.parseInt(h.substring(4, 6), 16);
-  return `${r}, ${g}, ${b}`;
-}
+const DEFAULT_ACCENT: [number, number, number] = [255, 85, 0];
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const accentColor = useSettingsStore((s) => s.accentColor);
@@ -16,11 +11,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const root = document.documentElement;
-    const rgb = hexToRgb(accentColor);
+    const [r, g, b] = hexToRgbTriplet(accentColor) ?? DEFAULT_ACCENT;
+    const rgb = `${r}, ${g}, ${b}`;
     root.style.setProperty('--color-accent', accentColor);
-    const r = Number.parseInt(accentColor.slice(1, 3), 16);
-    const g = Number.parseInt(accentColor.slice(3, 5), 16);
-    const b = Number.parseInt(accentColor.slice(5, 7), 16);
     const hover = `rgb(${Math.min(255, r + 26)}, ${Math.min(255, g + 26)}, ${Math.min(255, b + 26)})`;
     root.style.setProperty('--color-accent-hover', hover);
     root.style.setProperty('--color-accent-glow', `rgba(${rgb}, 0.2)`);
@@ -33,7 +26,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const root = document.documentElement;
     root.style.setProperty('--bg-primary', bgPrimary);
-    const bgRgb = hexToRgb(bgPrimary);
+    const bgRgb = (hexToRgbTriplet(bgPrimary) ?? DEFAULT_ACCENT).join(', ');
     root.style.setProperty('--bg-titlebar', `rgba(${bgRgb}, 0.95)`);
     root.style.backgroundColor = bgPrimary;
   }, [bgPrimary]);

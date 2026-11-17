@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { type Aura, auraRgba } from '../../lib/aura';
+import { monthYear } from '../../lib/formatters';
 import { Calendar, Globe } from '../../lib/icons';
 import { CopyLinkButton } from '../ui/CopyLinkButton';
 import { GlassHeroPanel } from '../ui/GlassHeroPanel';
@@ -8,13 +9,6 @@ import { AvatarArtifact } from './AvatarArtifact';
 import { FollowBtn } from './FollowBtn';
 import { StatOrb } from './StatOrb';
 import { getWebIcon, InfoChip, ProChip, StarChip, VerifiedBadge } from './UserChips';
-
-function dateFormattedLong(dateStr: string | null | undefined) {
-  if (!dateStr) return null;
-  const d = new Date(dateStr.replace(/\//g, '-').replace(' +0000', 'Z'));
-  if (Number.isNaN(d.getTime()) || d.getFullYear() <= 1970) return null;
-  return d.toLocaleDateString(undefined, { year: 'numeric', month: 'long' });
-}
 
 interface IdentityHubProps {
   user: {
@@ -56,7 +50,7 @@ export function IdentityHub({
   onPickCustom,
 }: IdentityHubProps) {
   const { t } = useTranslation();
-  const formattedDate = dateFormattedLong(user.created_at);
+  const formattedDate = monthYear(user.created_at);
   const country = [user.city, user.country_code].filter(Boolean).join(', ');
 
   return (

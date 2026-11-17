@@ -2,26 +2,10 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TrackListPage } from '../components/music/TrackListPage';
 import { api } from '../lib/api';
-import { type HistoryEntry, useHistory, useInfiniteScroll } from '../lib/hooks';
+import { historyEntryToTrack } from '../lib/history';
+import { useHistory, useInfiniteScroll } from '../lib/hooks';
 import { Clock, Loader2, Trash2 } from '../lib/icons';
 import type { Track } from '../stores/player';
-
-function entryToTrack(entry: HistoryEntry): Track {
-  return {
-    id: 0,
-    urn: entry.scTrackId,
-    title: entry.title,
-    duration: entry.duration,
-    artwork_url: entry.artworkUrl,
-    user: {
-      id: 0,
-      urn: entry.artistUrn || '',
-      username: entry.artistName,
-      avatar_url: '',
-      permalink_url: '',
-    },
-  };
-}
 
 /** Listening history as a regular track list (latest first, each track once). */
 export function HistoryPage() {
@@ -38,7 +22,7 @@ export function HistoryPage() {
     for (const entry of history.entries) {
       if (seen.has(entry.scTrackId)) continue;
       seen.add(entry.scTrackId);
-      out.push(entryToTrack(entry));
+      out.push(historyEntryToTrack(entry));
     }
     return out;
   }, [history.entries]);

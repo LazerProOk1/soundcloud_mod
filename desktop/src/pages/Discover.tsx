@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { TrackCard } from '../components/music/TrackCard';
 import { HorizontalScroll } from '../components/ui/HorizontalScroll';
+import { ShelfSkeleton } from '../components/ui/ShelfSkeleton';
 import { Skeleton } from '../components/ui/Skeleton';
 import {
   useBatchTrackHydration,
@@ -54,20 +55,6 @@ function SectionHeader({
         </button>
       )}
     </div>
-  );
-}
-
-function ShelfSkeleton({ count = 8 }: { count?: number }) {
-  return (
-    <>
-      {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="w-[180px] shrink-0">
-          <Skeleton className="aspect-square w-full" rounded="lg" />
-          <Skeleton className="h-4 w-3/4 mt-2.5" rounded="sm" />
-          <Skeleton className="h-3 w-1/2 mt-1.5" rounded="sm" />
-        </div>
-      ))}
-    </>
   );
 }
 

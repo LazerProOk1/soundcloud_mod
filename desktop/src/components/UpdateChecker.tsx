@@ -1,22 +1,10 @@
-import { openUrl } from '@tauri-apps/plugin-opener';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { proxiedAssetUrl } from '../lib/asset-url';
 import { APP_VERSION } from '../lib/constants';
 import { AlertCircle, ExternalLink, Sparkles, X } from '../lib/icons';
-import type { GithubRelease } from '../lib/update-check';
-
-function stripLeadingV(version: string) {
-  return version.replace(/^v/, '');
-}
-
-function openExternalUrl(url: string) {
-  if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
-    void openUrl(url).catch(() => window.open(url, '_blank', 'noopener,noreferrer'));
-    return;
-  }
-  window.open(url, '_blank', 'noopener,noreferrer');
-}
+import { openExternalUrl } from '../lib/open-external';
+import { type GithubRelease, stripLeadingV } from '../lib/update-check';
 
 function renderInlineMarkdown(text: string, keyPrefix: string) {
   const parts: React.ReactNode[] = [];

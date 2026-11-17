@@ -8,14 +8,15 @@ import { PlaylistCard } from '../components/music/PlaylistCard';
 import { TrackTitleArtist } from '../components/music/TrackTitleArtist';
 import { VirtualGrid } from '../components/ui/VirtualGrid';
 import { VirtualList } from '../components/ui/VirtualList';
+import { UserCard } from '../components/user/UserCard';
 import { api } from '../lib/api';
 import { preloadTrack } from '../lib/audio';
 import { toggleDislike } from '../lib/dislikes';
 import { art, dur, fc } from '../lib/formatters';
+import { historyDateLabel, historyEntryToTrack } from '../lib/history';
 import {
   fetchAllLikedTracks,
   type HistoryEntry,
-  type SCUser,
   useHistory,
   useInfiniteScroll,
   useLikedTracks,
@@ -35,7 +36,6 @@ import {
   playBlack20ml1,
   playWhite14,
   Search as SearchIcon,
-  User,
   Users,
   X,
 } from '../lib/icons';
@@ -166,45 +166,6 @@ const LibraryTrackRow = React.memo(
   },
   (prev, next) => prev.track.urn === next.track.urn && prev.index === next.index,
 );
-
-const UserCard = React.memo(({ user }: { user: SCUser }) => {
-  const navigate = useNavigate();
-  const avatar = art(user.avatar_url, 't300x300');
-
-  return (
-    <div
-      className="group flex flex-col items-center gap-4 p-5 rounded-3xl bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.04] hover:border-white/[0.08] transition-all duration-300 cursor-pointer"
-      onClick={() => navigate(`/user/${encodeURIComponent(user.urn)}`)}
-    >
-      <div className="relative w-24 h-24 rounded-full shadow-xl overflow-hidden ring-2 ring-white/[0.05] group-hover:ring-white/[0.15] group-hover:scale-105 transition-all duration-500">
-        {avatar ? (
-          <img
-            src={avatar}
-            alt={user.username}
-            className="w-full h-full object-cover"
-            decoding="async"
-          />
-        ) : (
-          <div className="w-full h-full bg-white/5 flex items-center justify-center">
-            <User size={32} className="text-white/20" />
-          </div>
-        )}
-      </div>
-
-      <div className="text-center w-full">
-        <p className="text-[15px] font-bold text-white/90 truncate group-hover:text-white transition-colors">
-          {user.username}
-        </p>
-        <div className="flex items-center justify-center gap-3 mt-2 text-[11px] text-white/30 font-medium">
-          <span className="uppercase tracking-wider flex items-center gap-1">
-            <Users size={10} />
-            {fc(user.followers_count)}
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-});
 
 /* ── Isolated Hero ────────────────────────────────────────── */
 
@@ -790,33 +751,6 @@ const PlaylistsTab = React.memo(function PlaylistsTab({ filter }: { filter: stri
 
 /* ── History Tab ──────────────────────────────────────────── */
 
-function formatHistoryDate(dateStr: string, t: (k: string) => string): string {
-  const d = new Date(dateStr);
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const yesterday = new Date(today.getTime() - 86400000);
-  if (d >= today) return t('library.today');
-  if (d >= yesterday) return t('library.yesterday');
-  return t('library.earlier');
-}
-
-function historyEntryToTrack(entry: HistoryEntry): Track {
-  return {
-    id: 0,
-    urn: entry.scTrackId,
-    title: entry.title,
-    duration: entry.duration,
-    artwork_url: entry.artworkUrl,
-    user: {
-      id: 0,
-      urn: entry.artistUrn || '',
-      username: entry.artistName,
-      avatar_url: '',
-      permalink_url: '',
-    },
-  };
-}
-
 const HistoryTab = React.memo(function HistoryTab() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -842,7 +776,7 @@ const HistoryTab = React.memo(function HistoryTab() {
     let currentLabel = '';
 
     for (const entry of entries) {
-      const label = formatHistoryDate(entry.playedAt, t);
+      const label = historyDateLabel(entry.playedAt, t);
       if (label !== currentLabel) {
         currentLabel = label;
         flat.push({ type: 'header', id: `header:${label}`, label });

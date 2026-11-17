@@ -6,6 +6,7 @@ import { AboutSection } from '../components/settings/AboutSection';
 import { InterfaceSection } from '../components/settings/InterfaceSection';
 import { TransitionsSection } from '../components/settings/TransitionsSection';
 import { LiquidSwitch } from '../components/ui/LiquidSwitch.tsx';
+import { RANGE_CLS } from '../components/ui/rangeClass';
 import { Skeleton } from '../components/ui/Skeleton.tsx';
 import { changeAppLanguage } from '../i18n';
 import { switchAudioDevice } from '../lib/audio';
@@ -473,7 +474,7 @@ const CacheSection = React.memo(function CacheSection() {
           step={256}
           value={audioCacheLimitMB}
           onChange={(e) => setAudioCacheLimitMB(Number(e.target.value))}
-          className="w-full accent-[var(--color-accent)] h-1 bg-white/10 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-lg"
+          className={RANGE_CLS}
         />
       </div>
 
@@ -1011,7 +1012,7 @@ const ThemeSection = React.memo(function ThemeSection() {
             step={0.01}
             value={backgroundOpacity}
             onChange={(e) => setBackgroundOpacity(Number(e.target.value))}
-            className="w-full accent-[var(--color-accent)] h-1 bg-white/10 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-lg"
+            className={RANGE_CLS}
           />
         </div>
       )}
@@ -1029,7 +1030,7 @@ const ThemeSection = React.memo(function ThemeSection() {
             step={1}
             value={backgroundBlur}
             onChange={(e) => setBackgroundBlur(Number(e.target.value))}
-            className="w-full accent-[var(--color-accent)] h-1 bg-white/10 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-lg"
+            className={RANGE_CLS}
           />
         </div>
       )}

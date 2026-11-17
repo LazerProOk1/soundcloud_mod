@@ -1,26 +1,12 @@
 import { useQueryClient } from '@tanstack/react-query';
 import React, { useEffect, useRef, useState } from 'react';
 import { api } from '../../lib/api';
+import { hexToRgba } from '../../lib/color';
 import { invalidateAllLikesCache } from '../../lib/hooks';
 import { Heart } from '../../lib/icons';
 import { optimisticToggleLike, setLikedUrn, useLiked } from '../../lib/likes';
 import type { Track } from '../../stores/player';
 import { useSettingsStore } from '../../stores/settings';
-
-function hexToRgba(hex: string, alpha: number): string {
-  const h = hex.replace('#', '');
-  const full =
-    h.length === 3
-      ? h
-          .split('')
-          .map((c) => c + c)
-          .join('')
-      : h;
-  const r = parseInt(full.slice(0, 2), 16);
-  const g = parseInt(full.slice(2, 4), 16);
-  const b = parseInt(full.slice(4, 6), 16);
-  return `rgba(${r},${g},${b},${alpha})`;
-}
 
 export const LikeButton = React.memo(function LikeButton({
   track,

@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { AddToPlaylistDialog } from '../components/music/AddToPlaylistDialog';
 import { SoundWaveSimilarBlock } from '../components/music/soundwave';
 import { TrackTitleArtist } from '../components/music/TrackTitleArtist';
+import { CopyIconAction } from '../components/ui/CopyIconAction';
 import { api } from '../lib/api';
 import { getCurrentTime, preloadTrack } from '../lib/audio';
 import { downloadTrack } from '../lib/cache';
@@ -21,7 +22,6 @@ import {
 } from '../lib/hooks';
 import {
   Calendar,
-  Check,
   ChevronDown,
   ChevronUp,
   Clock,
@@ -29,7 +29,6 @@ import {
   Hash,
   Headphones,
   Heart,
-  LinkIcon,
   ListPlus,
   Loader2,
   MessageCircle,
@@ -242,45 +241,6 @@ const IconAction = React.memo(function IconAction({
 });
 
 /* ── Copy-link icon button (inline, so it fits the rail) ── */
-
-const CopyIconAction = React.memo(function CopyIconAction({ url }: { url: string | undefined }) {
-  const { t } = useTranslation();
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = () => {
-    if (!url) return;
-    try {
-      const u = new URL(url);
-      u.searchParams.delete('utm_medium');
-      u.searchParams.delete('utm_campaign');
-      u.searchParams.delete('utm_source');
-      const clean = u.toString().replace(/\?$/, '');
-      navigator.clipboard.writeText(clean);
-    } catch {
-      navigator.clipboard.writeText(url);
-    }
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1600);
-  };
-
-  if (!url) return null;
-
-  return (
-    <button
-      type="button"
-      onClick={handleCopy}
-      title={copied ? t('auth.copied') : t('auth.copyLink')}
-      aria-label={copied ? t('auth.copied') : t('auth.copyLink')}
-      className={`inline-flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-200 ease-[var(--ease-apple)] cursor-pointer ${
-        copied
-          ? 'text-emerald-400 bg-emerald-500/12'
-          : 'text-white/60 hover:text-white/95 hover:bg-white/[0.07]'
-      }`}
-    >
-      {copied ? <Check size={16} /> : <LinkIcon size={16} />}
-    </button>
-  );
-});
 
 /* ── Comment Item ────────────────────────────────────────── */
 

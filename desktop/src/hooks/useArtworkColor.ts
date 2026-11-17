@@ -244,8 +244,5 @@ export function useArtworkColor(artworkUrl: string | null | undefined): ArtworkC
   return colors;
 }
 
-/** Format an RGB tuple as a CSS colour string */
-export function rgbToCss(rgb: [number, number, number], alpha = 1): string {
-  if (alpha === 1) return `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
-  return `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${alpha})`;
-}
+/** Re-export: единая реализация в lib/color. */
+export { rgbToCss } from '../lib/color';

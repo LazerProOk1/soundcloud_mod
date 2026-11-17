@@ -11,7 +11,7 @@ export interface GithubRelease {
   published_at: string;
 }
 
-function stripLeadingV(version: string) {
+export function stripLeadingV(version: string) {
   return version.replace(/^v/, '');
 }
 
