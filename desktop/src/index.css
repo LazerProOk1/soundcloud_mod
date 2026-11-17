@@ -48,22 +48,13 @@
 
   /* ── Border-radius scale ───────────────────────────────── */
   --radius-panel: 40px; /* major panels, dialogs                 */
-  --radius-card: 40px; /* content cards                         */
   --radius-artwork: 32px; /* track/album artwork                   */
 
   /* Differential lighting (inset box-shadow layers):
      Light source: upper-left. Bright top/left edge, dark bottom/right edge. */
   --liquid-hi: rgba(255, 255, 255, 0.28); /* top glint — stronger specularity */
-  --liquid-hi-side: rgba(255, 255, 255, 0.16); /* left glint */
   --liquid-lo: rgba(0, 0, 0, 0.45); /* bottom shadow */
-  --liquid-lo-side: rgba(0, 0, 0, 0.24); /* right shadow */
 
-  /* ── Shadow stack tokens (soft floating layers) ─────────── */
-  /* near-occlusion → mid-volume → far-float → ambient glow    */
-  --shadow-near: 0 2px 6px rgba(0, 0, 0, 0.08);
-  --shadow-mid: 0 10px 24px rgba(0, 0, 0, 0.14);
-  --shadow-far: 0 28px 56px rgba(0, 0, 0, 0.2);
-  --shadow-ambient: 0 0 80px rgba(255, 255, 255, 0.012);
 }
 
 *,
@@ -1090,7 +1081,7 @@ a:focus-visible,
 
 /* ══════════════════════════════════════════════════════════════
    MOTION — spring curves (damped oscillation, sampled for linear()).
-   bouncy ≈ slight overshoot, soft ≈ barely any, smooth ≈ critically damped.
+   bouncy ≈ slight overshoot, soft ≈ barely any.
    ══════════════════════════════════════════════════════════════ */
 :root {
   --spring-bouncy: linear(
@@ -1177,49 +1168,6 @@ a:focus-visible,
     1.004,
     1.003,
     1.002,
-    1
-  );
-  --spring-smooth: linear(
-    0,
-    0.022,
-    0.075,
-    0.147,
-    0.228,
-    0.31,
-    0.391,
-    0.467,
-    0.537,
-    0.601,
-    0.657,
-    0.708,
-    0.751,
-    0.789,
-    0.822,
-    0.85,
-    0.874,
-    0.895,
-    0.912,
-    0.927,
-    0.939,
-    0.949,
-    0.958,
-    0.965,
-    0.971,
-    0.976,
-    0.98,
-    0.984,
-    0.987,
-    0.989,
-    0.991,
-    0.993,
-    0.994,
-    0.995,
-    0.996,
-    0.997,
-    0.997,
-    0.998,
-    0.998,
-    0.998,
     1
   );
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
