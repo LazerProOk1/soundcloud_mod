@@ -618,7 +618,7 @@ export function SoundWavePage() {
                 <button
                   type="button"
                   onClick={() => navigate(`/track/${encodeURIComponent(displayTrack.urn)}`)}
-                  className="block mx-auto max-w-full truncate text-white leading-[1.05] tracking-tight font-extrabold hover:opacity-85 cursor-pointer"
+                  className="block mx-auto max-w-full truncate text-white leading-[1.2] tracking-tight font-extrabold hover:opacity-85 cursor-pointer"
                   style={{ fontSize: 'clamp(30px, 4.6vw, 54px)' }}
                 >
                   {displayTitle}

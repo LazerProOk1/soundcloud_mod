@@ -99,7 +99,7 @@ export const TrackListPage = React.memo(function TrackListPage({
         </div>
         <div className="min-w-0 pb-2">
           <p className="text-[13px] font-semibold text-white/90">{kind}</p>
-          <h1 className="text-[clamp(32px,6vw,84px)] font-black tracking-tight leading-[1.02] text-white truncate">
+          <h1 className="text-[clamp(32px,6vw,84px)] font-black tracking-tight leading-[1.15] text-white truncate">
             {title}
           </h1>
           {subtitle && <div className="mt-3 text-[14px] text-white">{subtitle}</div>}

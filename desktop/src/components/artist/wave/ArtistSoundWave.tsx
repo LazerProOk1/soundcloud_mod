@@ -217,7 +217,7 @@ export const ArtistSoundWave = React.memo(function ArtistSoundWave({
           <div className="flex-1 min-w-0 flex flex-col gap-[3px]">
             <div className="flex items-center gap-2 min-w-0">
               <span
-                className="text-[14px] font-black tracking-tight text-white truncate leading-none"
+                className="text-[14px] font-black tracking-tight text-white truncate leading-tight"
                 style={{ textShadow: `0 0 18px ${auraRgba(aura, 0.45)}` }}
               >
                 {t('artist.wave.title')}
