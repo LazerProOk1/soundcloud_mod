@@ -49,7 +49,7 @@ pub struct ImageResult {
     pub data: Vec<u8>,
 }
 
-fn cache_key(url: &str) -> String {
+pub(crate) fn cache_key(url: &str) -> String {
     hex::encode(Sha256::digest(url.as_bytes()))
 }
 
@@ -57,7 +57,8 @@ fn cache_path(dir: &Path, key: &str) -> PathBuf {
     dir.join(&key[..2]).join(key)
 }
 
-fn sniff_content_type(data: &[u8]) -> &'static str {
+/// Sniff the content type from the leading bytes, so no sidecar .meta file is needed.
+pub(crate) fn sniff_content_type(data: &[u8]) -> &'static str {
     if data.len() >= 3 && data[..3] == [0xFF, 0xD8, 0xFF] {
         "image/jpeg"
     } else if data.len() >= 8 && data[..8] == [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A] {

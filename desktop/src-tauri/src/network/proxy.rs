@@ -2,9 +2,9 @@ use std::path::PathBuf;
 use std::sync::OnceLock;
 
 use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
-use sha2::{Digest, Sha256};
 use tokio::fs;
 
+use crate::network::image_cache::{cache_key, sniff_content_type};
 use crate::shared::constants::is_domain_whitelisted;
 
 pub struct State {
@@ -19,35 +19,6 @@ pub struct ProxyResult {
     pub status: u16,
     pub content_type: String,
     pub data: Vec<u8>,
-}
-
-fn cache_key(url: &str) -> String {
-    hex::encode(Sha256::digest(url.as_bytes()))
-}
-
-/// Sniff the content type from the leading bytes. Single source of truth so we
-/// don't need a sidecar .meta file on disk.
-fn sniff_content_type(data: &[u8]) -> &'static str {
-    if data.len() >= 3 && data[..3] == [0xFF, 0xD8, 0xFF] {
-        "image/jpeg"
-    } else if data.len() >= 8 && data[..8] == [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A] {
-        "image/png"
-    } else if data.len() >= 12 && &data[..4] == b"RIFF" && &data[8..12] == b"WEBP" {
-        "image/webp"
-    } else if data.len() >= 6 && (&data[..6] == b"GIF87a" || &data[..6] == b"GIF89a") {
-        "image/gif"
-    } else if data.len() >= 12
-        && &data[4..8] == b"ftyp"
-        && (&data[8..12] == b"avif" || &data[8..12] == b"avis")
-    {
-        "image/avif"
-    } else if data.len() >= 4 && data[..4] == [0x00, 0x00, 0x01, 0x00] {
-        "image/x-icon"
-    } else if data.len() >= 5 && (&data[..5] == b"<?xml" || &data[..4] == b"<svg") {
-        "image/svg+xml"
-    } else {
-        "application/octet-stream"
-    }
 }
 
 async fn write_cached_asset(cache_path: PathBuf, data: Vec<u8>) {
