@@ -139,7 +139,6 @@ pub fn run() {
                 .ok();
 
             let (static_port, proxy_port) = rt.block_on(network::server::start_all(wallpapers_dir));
-            let rt_handle = rt.handle().clone();
 
             std::thread::spawn(move || {
                 rt.block_on(std::future::pending::<()>());
@@ -169,10 +168,6 @@ pub fn run() {
 
             app::tray::setup_tray(app).expect("failed to setup tray");
 
-            let call_state = network::call::CallState::init(data_dir.clone(), rt_handle);
-            network::call::manage_state(app.handle(), call_state.clone());
-            network::call::maybe_autostart(app.handle(), call_state);
-
             Ok(())
         })
         .on_window_event(|window, event| {
@@ -190,7 +185,6 @@ pub fn run() {
             discord::discord_set_activity,
             discord::discord_clear_activity,
             audio::audio_load_file,
-            audio::audio_load_url,
             audio::audio_load_stream,
             audio::audio_play,
             audio::audio_pause,
@@ -201,10 +195,8 @@ pub fn run() {
             audio::audio_analyze_track,
             audio::audio_set_analyser,
             audio::audio_set_playback_rate,
-            audio::audio_get_position,
             audio::audio_set_eq,
             audio::audio_set_normalization,
-            audio::audio_is_playing,
             audio::audio_set_metadata,
             audio::audio_set_playback_state,
             audio::audio_set_media_position,
@@ -213,14 +205,10 @@ pub fn run() {
             audio::audio_set_follow_default_output,
             audio::audio_set_lyrics_timeline,
             audio::audio_clear_lyrics_timeline,
-            audio::audio_set_comments_timeline,
-            audio::audio_clear_comments_timeline,
             audio::save_track_to_path,
             import::import_fetch_link,
             import::import_fetch_yandex_likes,
             track_cache::track_ensure_cached,
-            track_cache::track_is_cached,
-            track_cache::track_get_cache_path,
             track_cache::track_get_cache_info,
             track_cache::track_preload,
             track_cache::track_cache_size,
@@ -238,9 +226,6 @@ pub fn run() {
             track_cache::track_cancel_cache_likes,
             network::image_cache::image_cache_size,
             network::image_cache::image_cache_clear,
-            network::call::call_set_enabled,
-            network::call::call_is_enabled,
-            network::call::call_status,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

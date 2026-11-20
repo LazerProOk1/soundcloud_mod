@@ -26,7 +26,7 @@ cargo clippy --all-targets
 
 - `desktop/src/pages/` — Top-level routes (`Home.tsx`, `SoundWavePage.tsx`, `Discover.tsx`, `Search.tsx`, `Library.tsx`, `OfflinePage.tsx`, `UserPage.tsx`, `ArtistPage.tsx`, `AlbumPage.tsx`, `TrackPage.tsx`, `Settings.tsx`).
 - `desktop/src/components/` — Liquid Glass UI (`layout/`, `ui/`, `music/soundwave/`, `user/`, `artist/`, `album/`).
-- `desktop/src/lib/` — Audio bridge (`audio.ts`), disk/offline cache (`cache.ts`, `offline-index.ts`), streaming (`streaming.ts`), preset wallpapers (`wallpapers.ts`), JSON backup (`backup.ts`), Star/aura helpers (`aura.ts`, `subscription.ts`), React Query hooks (`hooks.ts`).
+- `desktop/src/lib/` — Audio bridge (`audio.ts`), disk/offline cache (`cache.ts`, `offline-index.ts`), streaming (`streaming.ts`), preset wallpapers (`wallpapers.ts`), JSON backup (`backup.ts`), aura helpers (`aura.ts`, `color.ts`), React Query hooks (`hooks.ts`).
 - `desktop/src/stores/` — Zustand stores (`auth.ts`, `player.ts`, `settings.ts`, `app-status.ts`).
 - `desktop/src-tauri/src/` — Native Rust engine: `audio/` (`rodio`, Symphonia/Opus, 10-band EQ, ReplayGain, FFT), `track_cache/` (LRU + protected likes + HLS/progressive downloader), `network/` (image cache), `discord_rpc.rs`.
 - `backend/src/modules/` — Axum handlers & services (`recommendations/`, `tracks/`, `auras/`, `subscriptions/`, `enrich/`, `lyrics/`).
@@ -37,7 +37,7 @@ cargo clippy --all-targets
 - **Design system:** Preserve the Liquid Glass aesthetic (`backdrop-filter` glass layers, specular hairline borders, dynamic artwork color ambiance) while supporting `.no-glass` fallback and `prefers-reduced-motion`.
 - **i18n:** Every user-visible string belongs in both `desktop/src/i18n/locales/en.json` and `ru.json`; never hardcode UI copy.
 - **Formatting:** Biome enforces single quotes, trailing commas, semicolons, 2-space indent, and `lineWidth: 100` in `desktop/src/`.
-- **Star & Wallpapers:** Star subscription features (Aura picker, StarField, prismatic titles) are free for all users; built-in wallpapers live under `desktop/public/wallpapers/` and resolve safely via `preset:<file>`.
+- **Auras & Wallpapers:** Star gating is gone — every artist/album page gets a deterministic aura from `aura.ts` (`auraFromHex`, `artistAuraForId`). Built-in wallpapers live under `desktop/public/wallpapers/` and resolve safely via `preset:<file>`.
 
 ## Boundaries
 

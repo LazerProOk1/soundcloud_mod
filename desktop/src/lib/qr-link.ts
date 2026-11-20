@@ -22,22 +22,10 @@ export interface LinkStatusResponse {
   error?: string;
 }
 
-export interface ClaimLinkResponse {
-  sessionId: string;
-  mode: 'pull' | 'push';
-}
-
 export async function createLinkRequest(mode: 'pull' | 'push'): Promise<CreateLinkResponse> {
   return fetchWithAuthFallback<CreateLinkResponse>('/auth/link/create', {
     method: 'POST',
     body: JSON.stringify({ mode }),
-  });
-}
-
-export async function claimLinkRequest(claimToken: string): Promise<ClaimLinkResponse> {
-  return fetchWithAuthFallback<ClaimLinkResponse>('/auth/link/claim', {
-    method: 'POST',
-    body: JSON.stringify({ claimToken }),
   });
 }
 

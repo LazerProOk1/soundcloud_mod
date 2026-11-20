@@ -1,11 +1,9 @@
 /**
- * SoundWavePage — полноэкранный иммерсивный плеер SoundWave в стиле Liquid Glass.
+ * SoundWavePage — immersive full-screen SoundWave player.
  *
- * Особенности:
- *   – Мягкий многослойный фон из доминирующих цветов обложки без резких полос
- *   – Панель управления: фильтр языков, скрытие лайкнутых и обновление волны
- *   – Центральная стеклянная сцена: обложка, имя артиста, прогресс-бар и элементы управления
- *   – Лента «Далее в волне» с быстрым переходом к любому следующему треку
+ * Layers: a soft background built from the artwork's dominant colours, the glass
+ * stage (cover, artist, progress, transport), the wave tuning dialog (languages,
+ * hide-liked, refresh) and the "Next in the wave" strip.
  */
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -521,7 +519,7 @@ export function SoundWavePage() {
                 >
                   <span
                     className={`w-1.5 h-1.5 rounded-full ${
-                      isPlaying && !!currentTrack ? 'animate-pulse' : ''
+                      isPlaying && currentTrack ? 'animate-pulse' : ''
                     }`}
                     style={{
                       background: isWaveTrack ? 'var(--color-accent)' : 'rgba(255,255,255,0.35)',
@@ -682,9 +680,9 @@ export function SoundWavePage() {
               aria-label={isPlaying ? 'Pause' : 'Play'}
               className="play-fab relative w-16 h-16 rounded-full bg-white text-black flex items-center justify-center shadow-[0_8px_24px_rgba(0,0,0,0.4)] cursor-pointer disabled:opacity-40"
             >
-              {isBuffering && !!currentTrack ? (
+              {isBuffering && currentTrack ? (
                 <Loader2 size={24} className="animate-spin" />
-              ) : isPlaying && !!currentTrack ? (
+              ) : isPlaying && currentTrack ? (
                 <Pause size={24} fill="currentColor" strokeWidth={0} />
               ) : (
                 <Play size={24} fill="currentColor" strokeWidth={0} className="ml-0.5" />

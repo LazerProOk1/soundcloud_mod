@@ -1,5 +1,5 @@
 import { useVirtualizer } from '@tanstack/react-virtual';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 interface VirtualListProps<T> {
   items: T[];
@@ -27,11 +27,33 @@ export function VirtualList<T>({
     setScrollElement((containerRef.current?.closest('main') as HTMLElement | null) ?? null);
   }, []);
 
+  // Where the list starts inside the scroll container. Without it the virtualizer assumes
+  // the list sits at the very top, so with a page header above it the first rows of the
+  // viewport were never rendered (blank rows while scrolling).
+  const [scrollMargin, setScrollMargin] = useState(0);
+  useLayoutEffect(() => {
+    const el = containerRef.current;
+    if (!el || !scrollElement) return;
+    const measure = () => {
+      const top =
+        el.getBoundingClientRect().top -
+        scrollElement.getBoundingClientRect().top +
+        scrollElement.scrollTop;
+      setScrollMargin((prev) => (Math.abs(prev - top) > 0.5 ? top : prev));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(scrollElement);
+    if (scrollElement.firstElementChild) ro.observe(scrollElement.firstElementChild);
+    return () => ro.disconnect();
+  }, [scrollElement]);
+
   const virtualizer = useVirtualizer({
     count: items.length,
     getScrollElement: () => scrollElement,
     estimateSize: () => rowHeight,
     overscan,
+    scrollMargin,
   });
 
   if (disabled) {
@@ -65,7 +87,7 @@ export function VirtualList<T>({
               left: 0,
               width: '100%',
               height: virtualItem.size,
-              transform: `translateY(${virtualItem.start}px)`,
+              transform: `translateY(${virtualItem.start - scrollMargin}px)`,
             }}
           >
             {renderItem(item, virtualItem.index)}

@@ -148,6 +148,7 @@ const areEqual = (prev: ThemedTrackRowProps, next: ThemedTrackRowProps) =>
   prev.aura.accent[0] === next.aura.accent[0] &&
   prev.aura.accent[1] === next.aura.accent[1] &&
   prev.aura.accent[2] === next.aura.accent[2] &&
-  prev.track.user_favorite === next.track.user_favorite;
+  prev.track.user_favorite === next.track.user_favorite &&
+  prev.queue === next.queue;
 
 export const ThemedTrackRow = React.memo(ThemedTrackRowImpl, areEqual);

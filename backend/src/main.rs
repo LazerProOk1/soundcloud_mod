@@ -165,7 +165,7 @@ async fn main() {
     let reposts = RepostsService::new(sc.clone(), pending_actions.clone());
     let resolve = ResolveService::new(sc.clone(), pg.clone());
     let history = HistoryService::new(pg.clone());
-    let featured = FeaturedService::new(pg.clone(), sc.clone(), auth.clone(), local_likes.clone());
+    let featured = FeaturedService::new(pg.clone());
     let centroids = CentroidService::new(qdrant.clone());
     let user_taste = UserTasteService::new(qdrant.clone());
     let transcode = TranscodeTriggerService::new(http_client.clone(), config.clone(), nats.clone());

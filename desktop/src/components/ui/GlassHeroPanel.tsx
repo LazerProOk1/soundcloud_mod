@@ -1,10 +1,7 @@
 import type React from 'react';
 import { memo } from 'react';
-import type { Aura } from '../../lib/aura';
 
 interface GlassHeroPanelProps {
-  hasStar: boolean;
-  aura: Aura;
   className?: string;
   children: React.ReactNode;
 }
@@ -12,7 +9,6 @@ interface GlassHeroPanelProps {
 /**
  * Hero block for profile / artist / album pages. Flat on the page (no glass card,
  * frame or glow), like the list pages; only a gentle rise when it appears.
- * `hasStar` / `aura` are kept for callers but no longer decorate anything.
  */
 function GlassHeroPanelImpl({ className, children }: GlassHeroPanelProps) {
   return (

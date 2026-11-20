@@ -21,18 +21,6 @@ export function LiquidGlassDefs() {
       }}
     >
       <defs>
-        {/* Waveform gooey: subtle organic merge at bar tips */}
-        <filter id="waveform-gooey" x="-20%" y="-40%" width="140%" height="180%">
-          <feGaussianBlur in="SourceGraphic" stdDeviation="1.8" result="blur" />
-          <feColorMatrix
-            in="blur"
-            type="matrix"
-            values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 12 -4"
-            result="gooey"
-          />
-          <feBlend in="SourceGraphic" in2="gooey" mode="normal" />
-        </filter>
-
         {/* Tight gooey merge: LiquidSwitch mercury thumb */}
         <filter id="liquid-gooey-switch" x="-40%" y="-40%" width="180%" height="180%">
           <feGaussianBlur in="SourceGraphic" stdDeviation="3" result="blur" />

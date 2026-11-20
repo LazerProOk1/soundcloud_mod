@@ -25,16 +25,6 @@ export function isUrnDisliked(urn: string): boolean {
   return _dislikedUrns.has(urn);
 }
 
-export function useDisliked(urn: string): boolean {
-  return useSyncExternalStore(
-    (cb) => {
-      _listeners.add(cb);
-      return () => _listeners.delete(cb);
-    },
-    () => _dislikedUrns.has(urn),
-  );
-}
-
 const _inflightStatus = new Map<string, Promise<boolean>>();
 
 /** Fetch dislike status once per URN session-wide. Result is cached in the global store. */

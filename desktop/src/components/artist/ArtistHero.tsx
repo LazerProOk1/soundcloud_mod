@@ -69,7 +69,7 @@ function ArtistHeroImpl({ artist, hasStar, aura }: ArtistHeroProps) {
   const accent = auraRgba(aura, 0.18);
 
   return (
-    <GlassHeroPanel hasStar={hasStar} aura={aura}>
+    <GlassHeroPanel>
       <div className="relative p-6 md:p-10 flex flex-col lg:flex-row gap-8 lg:gap-10 items-center lg:items-stretch">
         <AvatarArtifact
           username={artist.name}

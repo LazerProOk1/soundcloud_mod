@@ -1,7 +1,6 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use serde::Serialize;
 use serde_json::{json, Value};
 use sqlx::PgPool;
 use tokio_util::sync::CancellationToken;
@@ -18,12 +17,6 @@ use crate::modules::transcode::TranscodeTriggerService;
 const REAP_INTERVAL: Duration = Duration::from_secs(5 * 60);
 const REAP_AGE: Duration = Duration::from_secs(5 * 60);
 const REAP_BATCH: i64 = 50;
-
-#[derive(Debug, Clone, Serialize)]
-pub struct IndexingStats {
-    pub indexed: i64,
-    pub pending: i64,
-}
 
 pub struct IndexingService {
     pg: PgPool,
@@ -147,21 +140,6 @@ impl IndexingService {
         }
         self.trigger.trigger(&id);
         Ok(())
-    }
-
-    pub async fn get_stats(&self) -> AppResult<IndexingStats> {
-        let total: (i64,) = sqlx::query_as("SELECT COUNT(*)::int8 FROM indexed_tracks")
-            .fetch_one(&self.pg)
-            .await?;
-        let indexed: (i64,) = sqlx::query_as(
-            "SELECT COUNT(*)::int8 FROM indexed_tracks WHERE indexed_at IS NOT NULL",
-        )
-        .fetch_one(&self.pg)
-        .await?;
-        Ok(IndexingStats {
-            indexed: indexed.0,
-            pending: total.0 - indexed.0,
-        })
     }
 
     fn subscribe_storage_uploaded(self: &Arc<Self>) {

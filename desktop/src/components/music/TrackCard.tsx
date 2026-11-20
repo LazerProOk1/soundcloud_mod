@@ -147,7 +147,7 @@ export const TrackCard = React.memo(
             }}
           />
 
-          {/* Liquid overlay — opacity-only transition (120fps safe) */}
+          {/* Liquid overlay — opacity-only transition, no layout work */}
           <div
             className={`absolute inset-0 flex items-center justify-center transition-opacity duration-300 ease-[var(--ease-spring)] ${
               isThisPlaying ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
@@ -386,5 +386,6 @@ export const TrackCard = React.memo(
     prev.track.user_favorite === next.track.user_favorite &&
     prev.track.enrichment?.primary_artist?.name === next.track.enrichment?.primary_artist?.name &&
     prev.track.enrichment?.upload_kind === next.track.enrichment?.upload_kind &&
-    prev.track.enrichment?.availability === next.track.enrichment?.availability,
+    prev.track.enrichment?.availability === next.track.enrichment?.availability &&
+    prev.queue === next.queue,
 );

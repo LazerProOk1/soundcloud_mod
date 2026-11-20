@@ -184,11 +184,6 @@ export async function getOfflineTracksByUrns(urns: string[]) {
     .filter((track): track is Track => Boolean(track));
 }
 
-export async function getOfflineIndexUpdatedAt() {
-  const index = await loadIndex();
-  return index.updatedAt;
-}
-
 export async function rememberFollowingTracks(tracks: Track[]) {
   if (tracks.length === 0) return;
   const index = await loadIndex();

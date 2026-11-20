@@ -12,9 +12,8 @@ import {
 import { UI_SCALE_MAX, UI_SCALE_MIN, UI_SCALE_STEP } from '../../lib/ui-scale';
 import { type MusicSourceId, useSettingsStore } from '../../stores/settings';
 import { LiquidSwitch } from '../ui/LiquidSwitch';
+import { RANGE_CLS } from '../ui/rangeClass';
 
-const rangeCls =
-  'w-full accent-[var(--color-accent)] h-1 bg-white/10 rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:shadow-lg';
 const btnCls =
   'px-3 py-1.5 rounded-lg text-[12px] font-medium text-white/70 bg-white/[0.05] border border-white/[0.08] hover:bg-white/[0.09] hover:text-white transition-colors cursor-pointer';
 const inputCls =
@@ -55,7 +54,7 @@ const ScaleRow = React.memo(function ScaleRow() {
         step={UI_SCALE_STEP}
         value={uiScale}
         onChange={(e) => setUiScale(Number(e.target.value))}
-        className={rangeCls}
+        className={RANGE_CLS}
       />
     </div>
   );

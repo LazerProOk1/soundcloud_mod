@@ -12,4 +12,4 @@ export type {
   ClusterNeighborDto,
   ClusterResponseDto,
 } from './types';
-export { fetchAndHydrate as fetchAndHydrateClusters, useClusterWave } from './useClusterWave';
+export { useClusterWave } from './useClusterWave';

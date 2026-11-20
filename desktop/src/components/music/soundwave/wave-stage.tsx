@@ -55,8 +55,16 @@ export const WaveStage = React.memo(function WaveStage({
     let kick = 0;
     let phase = 0;
     let last = performance.now();
+    let visible = true;
+
+    const schedule = () => {
+      if (!raf) raf = requestAnimationFrame(draw);
+    };
 
     const draw = (now: number) => {
+      raf = 0;
+      // Offscreen (scrolled past the stage) — keep the frame budget for something else.
+      if (!visible) return;
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
       const dpr = window.devicePixelRatio || 1;
@@ -124,10 +132,25 @@ export const WaveStage = React.memo(function WaveStage({
         // Slow float with the music; the cover sways a little.
         target.style.setProperty('--sway', (Math.sin(phase * 0.6) * (2 + amp * 6)).toFixed(2));
       }
-      if (!reduced || active) raf = requestAnimationFrame(draw);
+      if (!reduced || active) schedule();
     };
-    raf = requestAnimationFrame(draw);
-    return () => cancelAnimationFrame(raf);
+
+    const io = new IntersectionObserver((entries) => {
+      const next = entries[0]?.isIntersecting ?? true;
+      if (next === visible) return;
+      visible = next;
+      if (next) {
+        last = performance.now();
+        schedule();
+      }
+    });
+    io.observe(canvas);
+    schedule();
+
+    return () => {
+      io.disconnect();
+      if (raf) cancelAnimationFrame(raf);
+    };
   }, [active, pulseTarget]);
 
   return (

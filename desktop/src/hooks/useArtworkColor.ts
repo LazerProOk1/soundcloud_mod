@@ -7,8 +7,8 @@
  * Design notes:
  *  - Works entirely in the browser — no Rust image crate needed.
  *  - Uses `crossOrigin = 'anonymous'` so SoundCloud CDN images are readable.
- *  - 50×50 sample canvas → fast enough for 120fps paint budget.
- *  - LRU-style Map cache (max 40 entries) prevents re-extraction on re-renders.
+ *  - 50×50 sample canvas (2500 px) → k-means finishes well inside one frame.
+ *  - LRU Map cache (max 40 entries) prevents re-extraction on re-renders.
  *  - Returns null while loading / on error so callers can fallback gracefully.
  */
 
@@ -38,9 +38,18 @@ const cache = new Map<string, ArtworkColors | null>();
 
 function pruneCache(): void {
   if (cache.size <= CACHE_MAX) return;
-  // Delete oldest entry
+  // Map keeps insertion order, so the first key is the least recently used one.
   const firstKey = cache.keys().next().value;
   if (firstKey !== undefined) cache.delete(firstKey);
+}
+
+/** Reading refreshes recency, so a track that stays in rotation is never evicted. */
+function cacheGet(url: string): ArtworkColors | null | undefined {
+  if (!cache.has(url)) return undefined;
+  const value = cache.get(url) ?? null;
+  cache.delete(url);
+  cache.set(url, value);
+  return value;
 }
 
 /* ── Colour math ────────────────────────────────────────────── */
@@ -222,8 +231,9 @@ export function useArtworkColor(artworkUrl: string | null | undefined): ArtworkC
     }
 
     // Cache hit
-    if (cache.has(artworkUrl)) {
-      setColors(cache.get(artworkUrl) ?? null);
+    const cached = cacheGet(artworkUrl);
+    if (cached !== undefined) {
+      setColors(cached);
       return;
     }
 
@@ -244,8 +254,5 @@ export function useArtworkColor(artworkUrl: string | null | undefined): ArtworkC
   return colors;
 }
 
-/** Format an RGB tuple as a CSS colour string */
-export function rgbToCss(rgb: [number, number, number], alpha = 1): string {
-  if (alpha === 1) return `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
-  return `rgba(${rgb[0]},${rgb[1]},${rgb[2]},${alpha})`;
-}
+/** Re-export: единая реализация в lib/color. */
+export { rgbToCss } from '../lib/color';

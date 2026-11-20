@@ -6,14 +6,12 @@ use serde::Deserialize;
 use serde_json::{json, Value};
 
 use crate::common::admin::AdminAuth;
-use crate::common::session::SessionCtx;
 use crate::error::AppResult;
-use crate::modules::featured::service::{FeaturedItem, FeaturedResult};
+use crate::modules::featured::service::FeaturedItem;
 use crate::state::AppState;
 
 pub fn router() -> Router<AppState> {
     Router::new()
-        .route("/featured", get(pick))
         .route("/admin/featured", get(find_all).post(create))
         .route("/admin/featured/{id}", patch(update).delete(remove))
 }
@@ -40,17 +38,6 @@ struct UpdateFeaturedDto {
     weight: Option<i32>,
     #[serde(default)]
     active: Option<bool>,
-}
-
-async fn pick(
-    State(st): State<AppState>,
-    ctx: SessionCtx,
-) -> AppResult<Json<Option<FeaturedResult>>> {
-    Ok(Json(
-        st.featured
-            .pick(&ctx.session_id.to_string(), &ctx.sc_user_id)
-            .await?,
-    ))
 }
 
 async fn find_all(_: AdminAuth, State(st): State<AppState>) -> AppResult<Json<Vec<FeaturedItem>>> {

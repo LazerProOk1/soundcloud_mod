@@ -1,6 +1,7 @@
 import QRCodeStyling, { type Options } from 'qr-code-styling';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import scLogoUrl from '../../assets/sc-logo.png';
+import { hexToRgba, lightenHex } from '../../lib/color';
 import { useSettingsStore } from '../../stores/settings';
 import './qr-code.css';
 
@@ -10,21 +11,6 @@ interface QrCodeProps {
 }
 
 const LOGO_PX = 256; // 2× для retina-чёткости
-
-function lighten(hex: string, amount: number): string {
-  const m = hex.replace('#', '').match(/.{2}/g);
-  if (!m) return hex;
-  const [r, g, b] = m.map((h) => Number.parseInt(h, 16));
-  const mix = (c: number) => Math.round(c + (255 - c) * amount);
-  return `#${[mix(r), mix(g), mix(b)].map((v) => v.toString(16).padStart(2, '0')).join('')}`;
-}
-
-function hexToRgba(hex: string, alpha: number): string {
-  const m = hex.replace('#', '').match(/.{2}/g);
-  if (!m) return `rgba(255,255,255,${alpha})`;
-  const [r, g, b] = m.map((h) => Number.parseInt(h, 16));
-  return `rgba(${r},${g},${b},${alpha})`;
-}
 
 let logoImg: HTMLImageElement | null = null;
 function loadLogo(): Promise<HTMLImageElement> {
@@ -112,7 +98,7 @@ export const QrCode = React.memo(({ payload, size = 280 }: QrCodeProps) => {
   const qrRef = useRef<QRCodeStyling | null>(null);
   const [logoBadge, setLogoBadge] = useState<string | null>(null);
 
-  const accentLight = useMemo(() => lighten(accent, 0.35), [accent]);
+  const accentLight = useMemo(() => lightenHex(accent, 0.35), [accent]);
   const accentSoft = useMemo(() => hexToRgba(accent, 0.55), [accent]);
   const accentGlow = useMemo(() => hexToRgba(accent, 0.45), [accent]);
 

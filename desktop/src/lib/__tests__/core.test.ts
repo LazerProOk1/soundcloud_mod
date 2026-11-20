@@ -188,14 +188,7 @@ test('en and ru locale files stay structurally valid and aligned on updated sect
     assert.ok(en.home[key], `Missing en.home.${key}`);
     assert.ok(ru.home[key], `Missing ru.home.${key}`);
   }
-  for (const key of [
-    'fullscreen',
-    'startWave',
-    'statusLive',
-    'statusStandby',
-    'upNext',
-    'modeLabel',
-  ]) {
+  for (const key of ['startWave', 'statusLive', 'statusStandby', 'modeLabel']) {
     assert.ok(en.soundwave[key], `Missing en.soundwave.${key}`);
     assert.ok(ru.soundwave[key], `Missing ru.soundwave.${key}`);
   }
@@ -211,8 +204,6 @@ test('en and ru locale files stay structurally valid and aligned on updated sect
   assert.ok(en.settings.liquidGlassDesc);
   assert.ok(ru.settings.liquidGlass);
   assert.ok(ru.settings.liquidGlassDesc);
-  assert.equal(Array.isArray(en.soundwave.tips) && en.soundwave.tips.length > 0, true);
-  assert.equal(Array.isArray(ru.soundwave.tips) && ru.soundwave.tips.length > 0, true);
 
   assert.ok(en.offline.cachedBadge);
   assert.ok(ru.offline.cachedBadge);

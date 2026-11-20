@@ -217,8 +217,6 @@ export const Youtube = memo(({ size, className }: { size?: number; className?: s
 // Play / Pause (filled, black)
 export const playBlack11 = <_Play size={11} fill="black" strokeWidth={0} className="ml-px" />;
 export const pauseBlack11 = <_Pause size={11} fill="black" strokeWidth={0} />;
-export const playBlack12 = <_Play size={12} fill="black" strokeWidth={0} className="ml-px" />;
-export const pauseBlack12 = <_Pause size={12} fill="black" strokeWidth={0} />;
 export const playBlack14 = <_Play size={14} fill="black" strokeWidth={0} className="ml-px" />;
 export const pauseBlack14 = <_Pause size={14} fill="black" strokeWidth={0} />;
 export const playBlack18 = <_Play size={18} fill="black" strokeWidth={0} className="ml-0.5" />;
@@ -228,18 +226,10 @@ export const pauseBlack20 = <_Pause size={20} fill="black" strokeWidth={0} />;
 export const playBlack22 = <_Play size={22} fill="black" strokeWidth={0} className="ml-0.5" />;
 export const pauseBlack22 = <_Pause size={22} fill="black" strokeWidth={0} />;
 
-// Play / Pause (filled, inherits color via currentColor — use text-accent-contrast on parent)
-export const playWhite12 = (
-  <_Play size={12} fill="currentColor" strokeWidth={0} className="ml-px" />
-);
-export const pauseWhite12 = <_Pause size={12} fill="currentColor" strokeWidth={0} />;
 export const playWhite14 = (
   <_Play size={14} fill="currentColor" strokeWidth={0} className="ml-0.5" />
 );
 export const pauseWhite14 = <_Pause size={14} fill="currentColor" strokeWidth={0} />;
-export const playWhite16 = (
-  <_Play size={16} fill="currentColor" strokeWidth={0} className="ml-0.5" />
-);
 
 // Play / Pause (filled, currentColor)
 export const playCurrent16 = <_Play size={16} fill="currentColor" strokeWidth={0} />;
@@ -262,17 +252,10 @@ export const volumeXIcon16 = <_VolumeX size={16} />;
 export const volume1Icon16 = <_Volume1 size={16} />;
 export const volume2Icon16 = <_Volume2 size={16} />;
 
-// Info icons (small, for stats)
-export const headphones9 = <_Headphones size={9} />;
 export const headphones11 = <_Headphones size={11} className="text-white/20" />;
-export const heart9 = <_Heart size={9} />;
 export const heart11 = <_Heart size={11} className="text-white/20" />;
-export const listMusic8 = <_ListMusic size={8} />;
-export const listMusic9 = <_ListMusic size={9} />;
 export const listMusic16 = <_ListMusic size={16} />;
-export const musicIcon12 = <_Music size={12} className="text-white/15" />;
 export const musicIcon14 = <_Music size={14} className="text-white/15" />;
-export const musicIcon22 = <_Music size={22} className="text-white/15" />;
 export const musicIcon20 = <_Music size={16} className="text-white/20" />;
 export const audioLines16 = <_AudioLines size={16} />;
 export const slidersHorizontal16 = <_SlidersHorizontal size={16} />;

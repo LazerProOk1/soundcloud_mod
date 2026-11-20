@@ -13,10 +13,9 @@ export function fc(n?: number): string {
   return String(n);
 }
 
-/** Format duration from milliseconds: 185000 → "3:05" */
+/** Format duration from milliseconds: 185000 → "3:05" (adds hours past 60 min) */
 export function dur(ms: number): string {
-  const s = Math.floor(ms / 1000);
-  return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`;
+  return durLong(ms);
 }
 
 /** Format duration long: 3723000 → "1:02:03" */
@@ -37,6 +36,15 @@ export function formatTime(seconds: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+/** Human readable size: 1536 → "1.5 KB" */
+export function formatBytes(bytes: number): string {
+  if (bytes === 0) return '0 B';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+}
+
 /** Relative time: "2026-01-01T00:00:00Z" → "2mo" */
 export function ago(dateStr: string): string {
   const d = new Date(dateStr.replace(/\//g, '-').replace(' +0000', 'Z'));
@@ -53,6 +61,14 @@ export function ago(dateStr: string): string {
   const mo = Math.floor(dd / 30);
   if (mo < 12) return `${mo}mo`;
   return `${Math.floor(dd / 365)}y`;
+}
+
+/** Год и месяц: "2026-01-01" → «январь 2026 г.»; null для пустых/битых дат */
+export function monthYear(dateStr: string | null | undefined): string | null {
+  if (!dateStr) return null;
+  const d = new Date(dateStr.replace(/\//g, '-').replace(' +0000', 'Z'));
+  if (Number.isNaN(d.getTime()) || d.getFullYear() <= 1970) return null;
+  return d.toLocaleDateString(undefined, { year: 'numeric', month: 'long' });
 }
 
 /** Formatted date: "2026-01-01" → "Jan 1, 2026" */

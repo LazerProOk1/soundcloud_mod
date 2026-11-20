@@ -149,9 +149,16 @@ const tipClass =
 
 export const ProgressSlider = React.memo(() => {
   // useEffect+useState instead of useSyncExternalStore — avoids React 19 "forceStoreRerender"
-  // loop when audio:tick fires at 60 fps between render and commit phases.
+  // loop when audio:tick lands between the render and commit phases (20 Hz).
   const [duration, setDuration] = useState(getDuration);
-  useEffect(() => subscribe(() => setDuration(getDuration())), []);
+  useEffect(
+    () =>
+      subscribe(() => {
+        const nextDuration = getDuration();
+        setDuration((prev) => (prev === nextDuration ? prev : nextDuration));
+      }),
+    [],
+  );
 
   const [dragging, setDragging] = useState(false);
   const [dragValue, setDragValue] = useState(0);
@@ -188,7 +195,7 @@ export const ProgressSlider = React.memo(() => {
     }
   }, [currentUrn]);
 
-  // Direct DOM updates at 60fps — zero React re-renders during playback.
+  // Direct DOM updates at the 20 Hz tick — zero React re-renders during playback.
   // Also keeps syncedValue in sync so Radix computes correct delta on next drag start.
   useEffect(() => {
     return subscribe(() => {
@@ -358,8 +365,12 @@ export const ProgressTime = React.memo(() => {
   useEffect(
     () =>
       subscribe(() => {
-        setCurrentSecond(getAudioSecond());
-        setDuration(getDuration());
+        // The tick arrives at 20 Hz but the text only changes once a second:
+        // keep the previous value so React bails out instead of re-rendering.
+        const second = getAudioSecond();
+        const nextDuration = getDuration();
+        setCurrentSecond((prev) => (prev === second ? prev : second));
+        setDuration((prev) => (prev === nextDuration ? prev : nextDuration));
       }),
     [],
   );
@@ -793,12 +804,6 @@ export const PitchSlider = React.memo(() => {
 
 const SLEEP_PRESETS_MIN = [5, 10, 15, 30, 45, 60] as const;
 
-function fmtCountdown(secs: number) {
-  const m = Math.floor(secs / 60);
-  const s = secs % 60;
-  return `${m}:${s.toString().padStart(2, '0')}`;
-}
-
 const SleepTimerBtn = React.memo(() => {
   const { t } = useTranslation();
   const { endsAt, afterTrack, set, setAfterTrack, cancel } = useSleepTimer();
@@ -833,7 +838,7 @@ const SleepTimerBtn = React.memo(() => {
           <Moon size={15} />
           {isActive && (
             <span className="text-[10px] font-semibold tabular-nums leading-none">
-              {afterTrack ? '1x' : fmtCountdown(remaining ?? 0)}
+              {afterTrack ? '1x' : formatTime(remaining ?? 0)}
             </span>
           )}
         </button>
@@ -860,7 +865,7 @@ const SleepTimerBtn = React.memo(() => {
               </p>
               {isActive && (
                 <p className="text-[10px] text-accent">
-                  {afterTrack ? t('player.sleepAfterTrack') : fmtCountdown(remaining ?? 0)}
+                  {afterTrack ? t('player.sleepAfterTrack') : formatTime(remaining ?? 0)}
                 </p>
               )}
             </div>

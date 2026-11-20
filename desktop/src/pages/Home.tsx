@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { TrackCard } from '../components/music/TrackCard';
 import { HorizontalScroll } from '../components/ui/HorizontalScroll';
-import { Skeleton } from '../components/ui/Skeleton';
+import { ShelfSkeleton } from '../components/ui/ShelfSkeleton';
 import { art } from '../lib/formatters';
 import {
   useBatchTrackHydration,
@@ -113,20 +113,6 @@ const QuickTiles = React.memo(function QuickTiles() {
 });
 
 /* ── Skeletons ────────────────────────────────────────────── */
-
-function ShelfSkeleton({ count = 8 }: { count?: number }) {
-  return (
-    <>
-      {Array.from({ length: count }).map((_, i) => (
-        <div key={i} className="w-[180px] shrink-0">
-          <Skeleton className="aspect-square w-full" rounded="lg" />
-          <Skeleton className="h-4 w-3/4 mt-2.5" rounded="sm" />
-          <Skeleton className="h-3 w-1/2 mt-1.5" rounded="sm" />
-        </div>
-      ))}
-    </>
-  );
-}
 
 /* ── Recently played ──────────────────────────────────────── */
 
@@ -267,18 +253,19 @@ export function Home() {
   const likedTracksQuery = useLikedTracks(100);
   const followingQuery = useFollowingTracks(20);
 
-  // Hydrate full metadata for liked + following tracks (may lack publisher_metadata)
-  useBatchTrackHydration(likedTracksQuery.tracks ?? []);
-  useBatchTrackHydration(followingQuery.data?.collection ?? []);
-
+  // Stable array identities: the hydration hook compares URN lists, but a brand-new
+  // array on every render still rebuilds that comparison key.
+  const likedTracks = useMemo(() => likedTracksQuery.tracks ?? [], [likedTracksQuery.tracks]);
   const followingTracks = useMemo(
     () => followingQuery.data?.collection ?? [],
     [followingQuery.data],
   );
-  const likedShelfTracks = useMemo(
-    () => likedTracksQuery.tracks.slice(0, 50),
-    [likedTracksQuery.tracks],
-  );
+
+  // Hydrate full metadata for liked + following tracks (may lack publisher_metadata)
+  useBatchTrackHydration(likedTracks);
+  useBatchTrackHydration(followingTracks);
+
+  const likedShelfTracks = useMemo(() => likedTracks.slice(0, 50), [likedTracks]);
 
   return (
     <div className="page-enter">

@@ -17,6 +17,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { TrackListPage } from '../components/music/TrackListPage';
 import { TrackTableRow } from '../components/music/TrackTableRow';
+import { CopyIconAction } from '../components/ui/CopyIconAction';
 import { api } from '../lib/api';
 import { art, dateFormatted, fc } from '../lib/formatters';
 import {
@@ -26,7 +27,7 @@ import {
   usePlaylistTracks,
   useUpdatePlaylistTracks,
 } from '../lib/hooks';
-import { AlertCircle, Check, Heart, LinkIcon, ListMusic, Loader2, Trash2, X } from '../lib/icons';
+import { AlertCircle, Heart, ListMusic, Loader2, Trash2, X } from '../lib/icons';
 import { useAuthStore } from '../stores/auth';
 import type { Track } from '../stores/player';
 
@@ -92,43 +93,6 @@ const PlaylistLikeBtn = React.memo(
 );
 
 /* ── Copy-link icon button (inline for the rail) ────────── */
-
-const CopyIconAction = React.memo(function CopyIconAction({ url }: { url: string | undefined }) {
-  const { t } = useTranslation();
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = () => {
-    if (!url) return;
-    try {
-      const u = new URL(url);
-      u.searchParams.delete('utm_medium');
-      u.searchParams.delete('utm_campaign');
-      u.searchParams.delete('utm_source');
-      const clean = u.toString().replace(/\?$/, '');
-      navigator.clipboard.writeText(clean);
-    } catch {
-      navigator.clipboard.writeText(url);
-    }
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1600);
-  };
-
-  if (!url) return null;
-
-  return (
-    <button
-      type="button"
-      onClick={handleCopy}
-      title={copied ? t('auth.copied') : t('auth.copyLink')}
-      aria-label={copied ? t('auth.copied') : t('auth.copyLink')}
-      className={`w-10 h-10 rounded-full flex items-center justify-center cursor-pointer transition-colors ${
-        copied ? 'text-emerald-400' : 'text-white/60 hover:text-white'
-      }`}
-    >
-      {copied ? <Check size={20} /> : <LinkIcon size={20} />}
-    </button>
-  );
-});
 
 /* ── Sortable row for own playlists (drag anywhere on the row) ── */
 
@@ -330,7 +294,7 @@ export const PlaylistPage = React.memo(() => {
         actions={
           <>
             <PlaylistLikeBtn playlistUrn={playlist.urn} count={playlist.likes_count} />
-            <CopyIconAction url={playlist.permalink_url} />
+            <CopyIconAction url={playlist.permalink_url} variant="round" />
             {isOwner && (
               <button
                 type="button"

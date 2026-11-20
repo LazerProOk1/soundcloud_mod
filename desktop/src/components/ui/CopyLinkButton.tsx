@@ -1,19 +1,7 @@
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Check, LinkIcon as Link } from '../../lib/icons';
-
-function cleanPermalink(url: string): string {
-  try {
-    const u = new URL(url);
-    u.searchParams.delete('utm_medium');
-    u.searchParams.delete('utm_campaign');
-    u.searchParams.delete('utm_source');
-    const clean = u.toString();
-    return clean.endsWith('?') ? clean.slice(0, -1) : clean;
-  } catch {
-    return url;
-  }
-}
+import { cleanPermalink } from '../../lib/permalink';
 
 export function CopyLinkButton({
   url,

@@ -3,10 +3,6 @@ import { useLocation, useNavigationType } from 'react-router-dom';
 
 const RESTORE_TRIES = 20;
 
-export function scrollMainToTop() {
-  document.querySelector('[data-ui="main"]')?.scrollTo({ top: 0 });
-}
-
 export function ScrollReset({ target }: { target: RefObject<HTMLElement | null> }) {
   const { key, pathname } = useLocation();
   const type = useNavigationType();

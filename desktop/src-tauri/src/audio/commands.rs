@@ -80,33 +80,6 @@ pub async fn audio_load_stream(
 }
 
 #[tauri::command]
-pub async fn audio_load_url(
-    url: String,
-    session_id: Option<String>,
-    cache_path: Option<String>,
-    cache_key: Option<String>,
-    start_paused: bool,
-    app: AppHandle,
-    state: State<'_, AudioState>,
-) -> Result<AudioLoadResult, String> {
-    let normalization_cache_dir = app
-        .path()
-        .app_cache_dir()
-        .ok()
-        .map(|dir| dir.join("audio-normalization"));
-    engine::load_url(
-        url,
-        session_id,
-        cache_path,
-        normalization_cache_dir,
-        cache_key,
-        start_paused,
-        state,
-    )
-    .await
-}
-
-#[tauri::command]
 pub fn audio_play(state: State<'_, AudioState>) {
     engine::play(state);
 }
@@ -156,11 +129,6 @@ pub fn audio_set_playback_rate(rate: f64, state: State<'_, AudioState>) {
 }
 
 #[tauri::command]
-pub fn audio_get_position(state: State<'_, AudioState>) -> f64 {
-    engine::get_position(state)
-}
-
-#[tauri::command]
 pub fn audio_set_eq(enabled: bool, gains: Vec<f64>, state: State<'_, AudioState>) {
     engine::set_eq(enabled, gains, state);
 }
@@ -168,11 +136,6 @@ pub fn audio_set_eq(enabled: bool, gains: Vec<f64>, state: State<'_, AudioState>
 #[tauri::command]
 pub fn audio_set_normalization(enabled: bool, state: State<'_, AudioState>) {
     engine::set_normalization(enabled, state);
-}
-
-#[tauri::command]
-pub fn audio_is_playing(state: State<'_, AudioState>) -> bool {
-    engine::is_playing(state)
 }
 
 #[tauri::command]
@@ -232,15 +195,3 @@ pub fn audio_clear_lyrics_timeline(state: State<'_, AudioState>) {
     timing::audio_clear_lyrics_timeline(state);
 }
 
-#[tauri::command]
-pub fn audio_set_comments_timeline(
-    comments: Vec<crate::audio::types::FloatingCommentEvent>,
-    state: State<'_, AudioState>,
-) {
-    timing::audio_set_comments_timeline(comments, state);
-}
-
-#[tauri::command]
-pub fn audio_clear_comments_timeline(state: State<'_, AudioState>) {
-    timing::audio_clear_comments_timeline(state);
-}

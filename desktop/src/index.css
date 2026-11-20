@@ -19,14 +19,8 @@
 }
 
 @theme {
-  --color-bg-primary: rgba(10, 10, 12, 0.95);
-  --color-bg-glass: rgba(255, 255, 255, 0.03);
-  --color-bg-glass-hover: rgba(255, 255, 255, 0.06);
   --color-bg-glass-active: rgba(255, 255, 255, 0.09);
-  --color-border-glass: rgba(255, 255, 255, 0.06);
-  --color-border-glass-hi: rgba(255, 255, 255, 0.12);
   --color-text-primary: rgba(255, 255, 255, 0.92);
-  --color-text-secondary: rgba(255, 255, 255, 0.55);
   --color-text-tertiary: rgba(255, 255, 255, 0.25);
 
   /* ── Brand accent (SoundCloud orange — play, waveform, likes) */
@@ -37,9 +31,6 @@
   --color-accent-contrast: #ffffff;
 
   /* ── UI accent (noble indigo — active nav, focus rings, UI chrome) */
-  --color-ui-accent: #6366f1;
-  --color-ui-accent-dim: rgba(99, 102, 241, 0.18);
-  --color-ui-accent-glow: rgba(99, 102, 241, 0.35);
 
   --font-sans:
     "Manrope", "Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
@@ -54,32 +45,15 @@
 
   /* ── Liquid Glass v2 physics tokens ─────────────────────── */
   /* Blur core calibrated per Apple HIG / GPU perf guardrails (20–30px) */
-  --liquid-blur: 24px;
-  --liquid-blur-heavy: 28px;
-  --liquid-saturate: 185%;
-  --liquid-contrast: 104%;
-  --liquid-brightness: 104%;
 
   /* ── Border-radius scale ───────────────────────────────── */
   --radius-panel: 40px; /* major panels, dialogs                 */
-  --radius-card: 40px; /* content cards                         */
   --radius-artwork: 32px; /* track/album artwork                   */
-  --radius-row: 20px; /* list rows                             */
-  --radius-chip: 9999px; /* pills, badges, small interactive items */
 
   /* Differential lighting (inset box-shadow layers):
      Light source: upper-left. Bright top/left edge, dark bottom/right edge. */
   --liquid-hi: rgba(255, 255, 255, 0.28); /* top glint — stronger specularity */
-  --liquid-hi-side: rgba(255, 255, 255, 0.16); /* left glint */
   --liquid-lo: rgba(0, 0, 0, 0.45); /* bottom shadow */
-  --liquid-lo-side: rgba(0, 0, 0, 0.24); /* right shadow */
-
-  /* ── Shadow stack tokens (soft floating layers) ─────────── */
-  /* near-occlusion → mid-volume → far-float → ambient glow    */
-  --shadow-near: 0 2px 6px rgba(0, 0, 0, 0.08);
-  --shadow-mid: 0 10px 24px rgba(0, 0, 0, 0.14);
-  --shadow-far: 0 28px 56px rgba(0, 0, 0, 0.2);
-  --shadow-ambient: 0 0 80px rgba(255, 255, 255, 0.012);
 }
 
 *,
@@ -122,29 +96,10 @@ img {
 }
 
 /* Section headings */
-.section-title {
-  font-size: 15px;
-  font-weight: 600;
-  letter-spacing: -0.015em;
-  color: rgba(255, 255, 255, 0.88);
-}
 
 /* Track title (large, ~13-15px) — tight */
-.track-title {
-  font-size: 13px;
-  font-weight: 500;
-  letter-spacing: -0.01em;
-  color: rgba(255, 255, 255, 0.9);
-}
 
 /* Artist name / caption (small, 10-12px) — airy */
-.track-artist,
-.track-caption {
-  font-size: 11px;
-  font-weight: 400;
-  letter-spacing: 0.01em;
-  color: rgba(255, 255, 255, 0.45);
-}
 
 /* Page animations */
 @keyframes page-enter {
@@ -212,11 +167,6 @@ body,
   backdrop-filter: blur(20px) saturate(180%) brightness(1.04);
   -webkit-backdrop-filter: blur(20px) saturate(180%) brightness(1.04);
   border: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-.glass-hover:hover {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .glass-flat {
@@ -310,10 +260,6 @@ body,
   animation: fadeInScale 0.4s var(--ease-apple) both;
 }
 
-.hero-greeting {
-  color: rgba(255, 255, 255, 0.96);
-}
-
 /* ── Dialog animations (Radix data-state) ────────────────── */
 @keyframes dialogOverlayIn {
   from {
@@ -389,7 +335,7 @@ body,
 /* Note: global glass grain is provided once by #root::after so nested/scrollable
    panels never stack multiple feTurbulence overlays or clip mid-scroll. */
 
-/* Dynamic cursor spotlight for glass-featured panels (same as .liquid-panel::after) */
+/* Dynamic cursor spotlight for glass-featured panels — soft radial highlight on hover */
 .glass-featured::after {
   content: "";
   position: absolute;
@@ -424,60 +370,8 @@ body,
 }
 
 /* ── Generic glass card ───────────────────────────────────── */
-.glass-card {
-  position: relative;
-  background: rgba(10, 10, 14, 0.4);
-  backdrop-filter: blur(20px) saturate(180%) brightness(1.04);
-  -webkit-backdrop-filter: blur(20px) saturate(180%) brightness(1.04);
-  border-radius: var(--radius-card, 40px);
-  /* Differential inset — top/left bright, bottom/right dark (thickness illusion) */
-  box-shadow:
-    0 1px 0 0 rgba(255, 255, 255, 0.22) inset,
-    0 3px 8px -2px rgba(255, 255, 255, 0.06) inset,
-    1px 0 0 0 rgba(255, 255, 255, 0.12) inset,
-    0 -1px 0 0 rgba(0, 0, 0, 0.42) inset,
-    -1px 0 0 0 rgba(0, 0, 0, 0.2) inset,
-    /* Frosted halo — dissolves harsh outline into background */
-    0 0 0 0.5px rgba(255, 255, 255, 0.07),
-    /* 3-layer soft floating shadow stack */
-    var(--shadow-near),
-    var(--shadow-mid),
-    var(--shadow-far),
-    var(--shadow-ambient);
-  transition: background 0.28s var(--ease-spring);
-  overflow: hidden;
-}
 
 /* Top glass shine on cards */
-.glass-card::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.065) 0%,
-    rgba(255, 255, 255, 0.018) 28%,
-    transparent 55%
-  );
-  z-index: 1;
-}
-
-.glass-card:hover {
-  background: rgba(255, 255, 255, 0.042);
-  box-shadow:
-    0 1px 0 0 rgba(255, 255, 255, 0.3) inset,
-    0 3px 8px -2px rgba(255, 255, 255, 0.08) inset,
-    1px 0 0 0 rgba(255, 255, 255, 0.16) inset,
-    0 -1px 0 0 rgba(0, 0, 0, 0.46) inset,
-    -1px 0 0 0 rgba(0, 0, 0, 0.22) inset,
-    0 0 0 0.5px rgba(255, 255, 255, 0.1),
-    0 2px 6px rgba(0, 0, 0, 0.1),
-    0 14px 32px rgba(0, 0, 0, 0.2),
-    0 36px 72px rgba(0, 0, 0, 0.26),
-    var(--shadow-ambient);
-}
 
 /* ── Glass artwork container — strong liquid glass treatment ── */
 /* Apply to the artwork wrapper div in track/album cards */
@@ -539,14 +433,12 @@ body,
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
-  /* White inset glint: top-left light source */
+  /* White inset glint: top-left light source; then frosted halo + depth drop */
   box-shadow:
     0 1px 0 0 rgba(255, 255, 255, 0.3) inset,
     1px 0 0 0 rgba(255, 255, 255, 0.16) inset,
     0 -1px 0 0 rgba(0, 0, 0, 0.3) inset,
-    /* Frosted halo */
     0 0 0 0.5px rgba(255, 255, 255, 0.1),
-    /* Depth */
     0 4px 16px rgba(0, 0, 0, 0.28);
   cursor: pointer;
   /* Only transform animates — 120fps safe */
@@ -570,52 +462,6 @@ body,
 /* ── Liquid Glass v2 — Глубокая физика стекла ─────────────── */
 
 /**
- * .liquid-panel
- *
- * Анатомия:
- *  1. backdrop-filter: blur + saturate(210%) + contrast(110%) + brightness(95%)
- *     → стекло «засасывает» цвет фона, делая его густым и сочным
- *  2. background: нейтральный тёмный базовый слой (не агрессивно окрашен)
- *  3. box-shadow: направленный свет сверху-слева (яркий блик top/left,
- *     тёмная тень bottom/right) + frosted halo + depth drop shadow
- *  4. ::before: SVG-шум (fractalNoise) для органической текстуры поверхности
- *
- * Используй с rounded-* utilities и position: relative.
- */
-.liquid-panel {
-  position: relative;
-  isolation: isolate;
-  border-radius: var(--radius-panel, 40px);
-  background: rgba(10, 10, 14, 0.38);
-  /* Calibrated 24px blur + saturate + brightness — rich glass at high FPS */
-  backdrop-filter: blur(24px) saturate(185%) brightness(1.04);
-  -webkit-backdrop-filter: blur(24px) saturate(185%) brightness(1.04);
-  /* ── Inset differential borders (glass thickness illusion) ─── */
-  /* top: яркий глянцевый блик — primary specular hit */
-  box-shadow:
-    0 1px 0 0 var(--liquid-hi) inset,
-    /* top: secondary soft glow band */
-    0 3px 10px -2px rgba(255, 255, 255, 0.07) inset,
-    /* left: боковой блик */
-    1px 0 0 0 var(--liquid-hi-side) inset,
-    /* bottom: тёмная грань — underside of glass */
-    0 -1px 0 0 var(--liquid-lo) inset,
-    /* right: боковая тень */
-    -1px 0 0 0 var(--liquid-lo-side) inset,
-    /* ── Outer shadow stack (3 layers = occlusion + volume + float) ─── */
-    /* frosted halo — dissolves element edge against dark BG */
-    0 0 0 0.5px rgba(255, 255, 255, 0.09),
-    /* near-occlusion — crisp contact shadow */
-    0 4px 6px rgba(0, 0, 0, 0.08),
-    /* mid-volume — soft spatial volume */
-    0 12px 28px rgba(0, 0, 0, 0.16),
-    /* far-float — long, soft "parting light" */
-    0 32px 64px rgba(0, 0, 0, 0.22),
-    /* ambient white diffusion — rims dissolve into BG, no harsh edge */
-    0 0 90px rgba(255, 255, 255, 0.014);
-}
-
-/**
  * .liquid-panel-heavy
  *
  * Для закреплённого хрома (sidebar, player bar):
@@ -630,59 +476,15 @@ body,
   /* Heavy chrome (sidebar, player bar): calibrated 28px blur + rich saturation */
   backdrop-filter: blur(28px) saturate(185%);
   -webkit-backdrop-filter: blur(28px) saturate(185%);
-  /* Differential inset — same physics as .liquid-panel, stronger contrast */
+  /* Differential inset, then a subtle ambient rim diffusion outside */
   box-shadow:
     0 1px 0 0 rgba(255, 255, 255, 0.26) inset,
     0 4px 10px -2px rgba(255, 255, 255, 0.05) inset,
     1px 0 0 0 rgba(255, 255, 255, 0.11) inset,
     0 -1px 0 0 rgba(0, 0, 0, 0.68) inset,
     -1px 0 0 0 rgba(0, 0, 0, 0.3) inset,
-    /* Outer: subtle ambient rim diffusion */
     0 0 0 0.5px rgba(255, 255, 255, 0.06),
     0 0 60px rgba(255, 255, 255, 0.01);
-}
-
-/**
- * .liquid-interactive
- *
- * Добавляй к .liquid-panel для плавных hover/active transition.
- * 120fps rule: only background + transform in transition.
- * box-shadow снаппится мгновенно на hover (нет анимационного бюджета).
- */
-.liquid-interactive {
-  transition:
-    background 0.38s var(--ease-spring),
-    transform 0.38s var(--ease-spring);
-  cursor: pointer;
-}
-
-.liquid-interactive:hover {
-  background: rgba(255, 255, 255, 0.048);
-  /* Amplified specular on hover — glass catches more light */
-  box-shadow:
-    0 1px 0 0 rgba(255, 255, 255, 0.34) inset,
-    0 3px 10px -2px rgba(255, 255, 255, 0.08) inset,
-    1px 0 0 0 rgba(255, 255, 255, 0.18) inset,
-    0 -1px 0 0 rgba(0, 0, 0, 0.48) inset,
-    -1px 0 0 0 rgba(0, 0, 0, 0.26) inset,
-    0 0 0 0.5px rgba(255, 255, 255, 0.13),
-    0 4px 6px rgba(0, 0, 0, 0.1),
-    0 14px 32px rgba(0, 0, 0, 0.22),
-    0 36px 72px rgba(0, 0, 0, 0.28),
-    0 0 90px rgba(255, 255, 255, 0.016);
-}
-
-.liquid-interactive:active {
-  background: rgba(255, 255, 255, 0.038);
-  box-shadow:
-    0 1px 0 0 rgba(255, 255, 255, 0.18) inset,
-    1px 0 0 0 rgba(255, 255, 255, 0.1) inset,
-    0 -1px 0 0 rgba(0, 0, 0, 0.5) inset,
-    -1px 0 0 0 rgba(0, 0, 0, 0.2) inset,
-    0 0 0 0.5px rgba(255, 255, 255, 0.05),
-    0 8px 24px rgba(0, 0, 0, 0.35),
-    0 2px 8px rgba(0, 0, 0, 0.2);
-  transform: scale(0.982);
 }
 
 /* ── Synced lyrics lines ─────────────────────────────────── */
@@ -829,92 +631,6 @@ body,
   }
 }
 
-/* ── Lyrics pause marker (♪♪♪) ─────────────────────────── */
-.lyric-pause {
-  cursor: default;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-.lyric-pause-track {
-  margin-top: 10px;
-  height: 3px;
-  width: 96px;
-  border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.08);
-  overflow: hidden;
-}
-
-.lyric-pause-bar {
-  height: 100%;
-  width: 0%;
-  border-radius: 9999px;
-  background: rgba(255, 255, 255, 0.7);
-  transition: none;
-}
-
-.lyric-pause-bar[data-state="active"] {
-  width: 100%;
-  transition: width var(--pause-duration, 2s) linear;
-}
-
-.lyric-pause-bar[data-state="past"] {
-  width: 100%;
-}
-
-@keyframes noteGradientFlow {
-  0% {
-    background-position: 0 50%;
-  }
-  100% {
-    background-position: 144px 50%;
-  }
-}
-
-.note-gradient-text {
-  display: inline-block;
-  color: rgba(255, 255, 255, 0.32);
-  background-image: none;
-  background-size: 144px 100%;
-  background-repeat: repeat-x;
-  font-size: 28px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  transition:
-    color 0.3s var(--ease-apple),
-    filter 0.3s var(--ease-apple);
-  will-change: background-position, color;
-}
-
-.lyric-line[data-state="active"] .note-gradient-text {
-  color: transparent;
-  -webkit-text-fill-color: transparent;
-  -webkit-background-clip: text;
-  background-clip: text;
-  background-image: linear-gradient(
-    90deg,
-    rgba(255, 255, 255, 0.06) 0px,
-    rgba(255, 255, 255, 0.06) 16px,
-    rgba(255, 255, 255, 0.18) 32px,
-    rgba(255, 255, 255, 0.45) 50px,
-    rgba(255, 255, 255, 0.95) 72px,
-    rgba(255, 255, 255, 0.45) 94px,
-    rgba(255, 255, 255, 0.18) 112px,
-    rgba(255, 255, 255, 0.06) 128px,
-    rgba(255, 255, 255, 0.06) 144px
-  );
-  filter: drop-shadow(0 0 18px rgba(255, 255, 255, 0.38));
-  animation: noteGradientFlow 3.2s linear infinite both;
-}
-
-.lyric-line[data-state="past"] .note-gradient-text,
-.lyric-line[data-state="past-near"] .note-gradient-text {
-  color: rgba(255, 255, 255, 0.92);
-  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.08));
-}
-
 /* ── Active-line karaoke fill — driven by --lyric-progress (rAF) ── */
 .lyric-fill {
   position: relative;
@@ -926,51 +642,18 @@ body,
 }
 
 /* A "word" wrapper just keeps characters from breaking mid-word. */
-.lyric-word {
-  display: inline-block;
-  white-space: nowrap;
-}
 
 /* Per-character animated highlight driven by rAF.
    --char-progress 0..1 sweeps left-to-right across the active line.
    NO CSS transitions here — the JS smoothing already interpolates the value
    every frame. Adding transitions on top would create overlapping interrupted
    animations (stutter) since rAF updates arrive faster than any CSS duration. */
-.lyric-char {
-  display: inline-block;
-  position: relative;
-  color: rgba(255, 255, 255, calc(0.26 + 0.74 * var(--char-progress, 0)));
-  text-shadow:
-    0 0 calc(10px * var(--char-progress, 0))
-    rgba(255, 255, 255, calc(0.18 * var(--char-progress, 0))),
-    0 0 calc(24px * var(--char-progress, 0))
-    rgba(255, 255, 255, calc(0.1 * var(--char-progress, 0)));
-  transform: translateY(calc(-1.5px * var(--char-progress, 0)))
-    scale(calc(1 + 0.022 * var(--char-progress, 0)));
-  transform-origin: center 80%;
-  will-change: color, text-shadow, transform;
-}
 
 /* Past line — all chars fully lit */
-.lyric-line[data-state="past"] .lyric-char,
-.lyric-line[data-state="past-near"] .lyric-char {
-  color: rgba(255, 255, 255, 1);
-  text-shadow: 0 0 22px rgba(255, 255, 255, 0.18);
-  transform: none;
-}
 
 /* Next line — fully dim */
-.lyric-line[data-state="next"] .lyric-char,
-.lyric-line[data-state="next-near"] .lyric-char {
-  color: rgba(255, 255, 255, 0.3);
-  text-shadow: none;
-  transform: none;
-}
 
 /* Pause: keep chars visually frozen (no-op now since transitions removed, kept for clarity) */
-.lyrics-paused .lyric-line[data-state="active"] .lyric-char {
-  transition-duration: 0ms;
-}
 
 /* ── Artwork zoom-in modal ─────────────────────────────────── */
 @keyframes zoomIn {
@@ -989,58 +672,10 @@ body,
 }
 
 /* ── Star modal scroll ──────────────────────────────────────── */
-.star-scroll {
-  mask-image: linear-gradient(
-    to bottom,
-    transparent 0%,
-    black 16px,
-    black calc(100% - 16px),
-    transparent 100%
-  );
-  -webkit-mask-image: linear-gradient(
-    to bottom,
-    transparent 0%,
-    black 16px,
-    black calc(100% - 16px),
-    transparent 100%
-  );
-}
-
-.star-scroll::-webkit-scrollbar {
-  width: 3px;
-}
-
-.star-scroll::-webkit-scrollbar-thumb {
-  background: rgba(168, 85, 247, 0.2);
-  border-radius: 10px;
-}
-
-.star-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(168, 85, 247, 0.4);
-}
 
 /* ── Star subscription particles ────────────────────────────── */
-@keyframes star-float {
-  from {
-    transform: translateY(0) scale(1);
-    opacity: 0.3;
-  }
-  to {
-    transform: translateY(-6px) scale(1.3);
-    opacity: 0.7;
-  }
-}
 
 /* ── SoundWave hero block ──────────────────────────────────── */
-@keyframes sw-bar {
-  0%,
-  100% {
-    transform: scaleY(0.22);
-  }
-  50% {
-    transform: scaleY(1);
-  }
-}
 
 /* Particle drift — translate+opacity only (no scale). Scale on ~20 elements
    forces relayout of their composite rect every frame; pure translate stays
@@ -1070,70 +705,6 @@ body,
   50% {
     transform: translate3d(3%, -1.5%, 0);
   }
-}
-
-@keyframes sw-shine {
-  0% {
-    transform: translateX(-120%);
-  }
-  100% {
-    transform: translateX(220%);
-  }
-}
-
-@keyframes sw-pulse-ring {
-  0% {
-    transform: scale(0.9);
-    opacity: 0.75;
-  }
-  100% {
-    transform: scale(1.35);
-    opacity: 0;
-  }
-}
-
-.soundwave-bar {
-  transform-origin: center;
-  animation: sw-bar 1.4s ease-in-out infinite;
-  will-change: transform;
-}
-
-/* Progress-based waveform: two stacked bar layers, the accent one clipped
-   by --sw-progress (0%–100%). Only the clip-path changes at runtime — GPU
-   composite-only, zero layout, zero React re-renders during playback. */
-.sw-bars {
-  --sw-progress: 0%;
-  /* Ambient glow around the whole waveform — makes bars "float" */
-  filter: drop-shadow(0 0 18px rgba(99, 102, 241, 0.32))
-    drop-shadow(0 0 6px rgba(34, 211, 238, 0.18));
-}
-
-.sw-bar {
-  /* Thicker + rounder — more organic, less barcode */
-  min-height: 4px;
-  border-radius: 3px;
-  opacity: 0.82;
-}
-
-.sw-layer-muted .sw-bar {
-  background: rgba(255, 255, 255, 0.28);
-}
-
-.sw-layer-accent {
-  clip-path: inset(0 calc(100% - var(--sw-progress)) 0 0);
-  -webkit-clip-path: inset(0 calc(100% - var(--sw-progress)) 0 0);
-  transition:
-    clip-path 0.12s linear,
-    -webkit-clip-path 0.12s linear;
-  will-change: clip-path;
-}
-
-.sw-layer-accent .sw-bar {
-  /* Indigo → cyan gradient — noble UI palette, matches the active nav accent */
-  background: linear-gradient(to bottom, rgba(129, 140, 248, 1) 0%, rgba(34, 211, 238, 0.88) 100%);
-  box-shadow:
-    0 0 8px rgba(99, 102, 241, 0.42),
-    0 0 3px rgba(34, 211, 238, 0.22);
 }
 
 /* ── Syne ExtraBold utility — apply to any display/brand title ─ */
@@ -1186,16 +757,14 @@ body,
   /* Critical vertical centring fix — without this the thumb floats above the track */
   margin-top: -6px;
   background: linear-gradient(165deg, rgba(255, 255, 255, 0.98) 0%, rgba(215, 215, 238, 0.94) 100%);
-  /* Differential frosted metal border */
+  /* Differential frosted metal border, depth drop and frosted halo */
   box-shadow:
     0 1px 0 0 rgba(255, 255, 255, 1) inset,
     0 -1px 0 0 rgba(0, 0, 0, 0.2) inset,
     1px 0 0 0 rgba(255, 255, 255, 0.7) inset,
     -1px 0 0 0 rgba(0, 0, 0, 0.08) inset,
-    /* Depth drop */
     0 3px 8px rgba(0, 0, 0, 0.42),
     0 1px 3px rgba(0, 0, 0, 0.24),
-    /* Frosted halo */
     0 0 0 0.5px rgba(255, 255, 255, 0.55);
   cursor: grab;
   transition:
@@ -1214,8 +783,7 @@ body,
     0 4px 12px rgba(0, 0, 0, 0.5),
     0 2px 4px rgba(0, 0, 0, 0.28),
     0 0 0 0.5px rgba(255, 255, 255, 0.55),
-    /* Indigo halo on press — subtle link to UI accent */
-    0 0 16px rgba(99, 102, 241, 0.28);
+    0 0 16px rgba(99, 102, 241, 0.28); /* indigo halo on press — links to UI accent */
 }
 
 /* Firefox */
@@ -1238,37 +806,7 @@ body,
   box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.45);
 }
 
-/* ── Dynamic cursor spotlight ────────────────────────────────
-   .liquid-panel::after reads --light-x / --light-y injected by
-   useLiquidLight() hook. Creates a soft radial highlight that
-   follows the cursor — simulates angled reflection on curved glass.
-   opacity: 0 at rest → 1 on hover, CSS transition handles the fade. */
-.liquid-panel::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  background: radial-gradient(
-    circle 180px at var(--light-x, 50%) var(--light-y, 50%),
-    rgba(255, 255, 255, 0.055) 0%,
-    transparent 70%
-  );
-  opacity: 0;
-  transition: opacity 0.35s ease;
-  z-index: 2;
-}
-
-.liquid-panel:hover::after {
-  opacity: 1;
-}
-
 /* ── Text readability utility for glass surfaces ────────────── */
-.text-glass {
-  text-shadow:
-    0 1px 10px rgba(0, 0, 0, 0.45),
-    0 0.5px 2px rgba(0, 0, 0, 0.28);
-}
 
 /* ── Liquid Reveal — global card/list entry animation ────────
    VisionOS-style: items bloom up from slightly below and in scale.
@@ -1299,59 +837,6 @@ body,
   .animate-liquid-reveal {
     animation: none;
   }
-}
-
-/* ── Liquid Row Hover — track list items ─────────────────────
-   Apply to any track row `<div>` for a subtle slide+glass on hover.
-   120fps rule: only transform + opacity in transition. box-shadow is
-   STATIC on hover (snaps instantly — no animation budget cost).     */
-.liquid-row-hover {
-  transition:
-    background 0.22s var(--ease-apple),
-    transform 0.22s var(--ease-apple);
-  border-radius: 20px;
-}
-
-.liquid-row-hover:hover {
-  background: rgba(255, 255, 255, 0.045);
-  transform: translate3d(4px, 0, 0);
-  box-shadow:
-    0 1px 0 0 rgba(255, 255, 255, 0.1) inset,
-    0 -1px 0 0 rgba(0, 0, 0, 0.2) inset,
-    0 4px 16px rgba(0, 0, 0, 0.14);
-}
-
-/* ── Mini-player marquee ─────────────────────────────────────── */
-@keyframes marquee {
-  0% {
-    transform: translateX(0);
-  }
-  100% {
-    transform: translateX(-50%);
-  }
-}
-
-.animate-marquee {
-  animation: marquee 8s linear infinite;
-  display: inline-block;
-  /* pause on hover so the user can read the title */
-}
-
-/* ── Liquid MiniPlayer — floating pill ───────────────────────────
-   Used by the redesigned Tauri mini-window (MiniPlayer.tsx).      */
-.miniplayer-root {
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
-  user-select: none;
-  -webkit-user-select: none;
-  font-family: var(--font-sans);
-  -webkit-font-smoothing: antialiased;
-  background: rgba(8, 8, 12, 0.92);
-  backdrop-filter: blur(28px) saturate(185%);
-  -webkit-backdrop-filter: blur(28px) saturate(185%);
-  display: flex;
-  flex-direction: column;
 }
 
 /* ── Waveform seek cursor ─────────────────────────────────────── */
@@ -1471,39 +956,17 @@ body,
   animation: db-drift-3 29s ease-in-out infinite;
 }
 
-/* ── Tactile Like spring pop ───────────────────────────────── */
-@keyframes like-pop {
-  0% {
-    transform: scale(0.76);
-  }
-  45% {
-    transform: scale(1.26);
-  }
-  75% {
-    transform: scale(0.94);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-.animate-like-pop {
-  animation: like-pop 0.36s cubic-bezier(0.22, 1.4, 0.36, 1) both;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .eq-bar {
     animation: none !important;
     transform: scaleY(0.6);
   }
-  .animate-like-pop,
   .animate-spin-slow,
   .animate-panel-slide-in,
   .animate-fade-in-up,
   .animate-fade-in-scale,
   .animate-zoom-in,
   .page-enter,
-  .animate-marquee,
   .dynamic-bg-blob-1,
   .dynamic-bg-blob-2,
   .dynamic-bg-blob-3 {
@@ -1533,7 +996,6 @@ body,
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }
-.no-glass .liquid-panel,
 .no-glass .liquid-panel-heavy,
 .no-glass [data-ui="sidebar"],
 .no-glass [data-ui="main"],
@@ -1542,7 +1004,6 @@ body,
   box-shadow: none !important;
   border-color: transparent !important;
 }
-.no-glass .glass-card,
 .no-glass .glass-featured,
 .no-glass .glass,
 .no-glass .glass-flat {
@@ -1554,15 +1015,8 @@ body,
   background: var(--classic-elev-2) !important;
   box-shadow: none !important;
 }
-.no-glass .liquid-interactive:hover {
-  background: var(--classic-elev-2);
-  box-shadow: none;
-}
 .no-glass .glass-artwork::before,
 .no-glass .glass-artwork::after,
-.no-glass .glass-card::before,
-.no-glass .liquid-panel::before,
-.no-glass .liquid-panel::after,
 .no-glass .liquid-panel-heavy::before,
 .no-glass .liquid-panel-heavy::after,
 .no-glass .glass-featured::after {
@@ -1571,9 +1025,6 @@ body,
 /* No colour blobs behind the UI in classic mode — only the subtle cover tint. */
 .no-glass .ambient-mesh {
   display: none;
-}
-.no-glass .miniplayer-root {
-  background: rgba(18, 18, 18, 0.96);
 }
 .no-glass [class*="bg-[#101012]"] {
   background: rgba(18, 18, 18, 0.96) !important;
@@ -1621,31 +1072,9 @@ a:focus-visible,
   outline-offset: 2px;
 }
 
-/* ── Track switch: new cover/title glide in ───────────────────── */
-@keyframes track-swap-in {
-  from {
-    opacity: 0;
-    transform: translateY(6px) scale(0.96);
-    filter: blur(3px);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-    filter: none;
-  }
-}
-.track-swap-in {
-  animation: track-swap-in 0.38s cubic-bezier(0.22, 1, 0.36, 1);
-}
-@media (prefers-reduced-motion: reduce) {
-  .track-swap-in {
-    animation: none;
-  }
-}
-
 /* ══════════════════════════════════════════════════════════════
    MOTION — spring curves (damped oscillation, sampled for linear()).
-   bouncy ≈ slight overshoot, soft ≈ barely any, smooth ≈ critically damped.
+   bouncy ≈ slight overshoot, soft ≈ barely any.
    ══════════════════════════════════════════════════════════════ */
 :root {
   --spring-bouncy: linear(
@@ -1732,49 +1161,6 @@ a:focus-visible,
     1.004,
     1.003,
     1.002,
-    1
-  );
-  --spring-smooth: linear(
-    0,
-    0.022,
-    0.075,
-    0.147,
-    0.228,
-    0.31,
-    0.391,
-    0.467,
-    0.537,
-    0.601,
-    0.657,
-    0.708,
-    0.751,
-    0.789,
-    0.822,
-    0.85,
-    0.874,
-    0.895,
-    0.912,
-    0.927,
-    0.939,
-    0.949,
-    0.958,
-    0.965,
-    0.971,
-    0.976,
-    0.98,
-    0.984,
-    0.987,
-    0.989,
-    0.991,
-    0.993,
-    0.994,
-    0.995,
-    0.996,
-    0.997,
-    0.997,
-    0.998,
-    0.998,
-    0.998,
     1
   );
   --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
