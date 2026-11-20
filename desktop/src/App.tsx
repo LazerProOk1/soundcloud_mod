@@ -465,19 +465,19 @@ function AppLoadingScreen({ fullscreen = false }: { fullscreen?: boolean }) {
 
   return (
     <div
-      className={`flex items-center justify-center px-6 py-8 ${fullscreen ? 'h-screen' : 'min-h-[42vh]'}`}
+      role="status"
+      className={`flex flex-col items-center justify-center gap-4 px-6 py-8 ${fullscreen ? 'h-screen' : 'min-h-[42vh]'}`}
     >
-      <div className="flex items-center gap-3 rounded-[24px] border border-white/8 bg-white/[0.035] px-4 py-3 shadow-[0_18px_44px_rgba(0,0,0,0.24)] backdrop-blur-[28px]">
-        <div className="flex size-10 items-center justify-center rounded-[16px] border border-accent/18 bg-accent/[0.10]">
-          <div className="size-4 rounded-full border-2 border-accent border-t-transparent animate-spin" />
-        </div>
-        <div className="min-w-0">
-          <div className="text-[10px] font-semibold uppercase tracking-[0.22em] text-white/28">
-            SoundCloud
-          </div>
-          <div className="mt-0.5 text-[13px] font-medium text-white/62">{t('common.loading')}</div>
-        </div>
-      </div>
+      {fullscreen && (
+        <p className="text-[22px] font-bold tracking-tight text-white">SoundCloud Mod</p>
+      )}
+      {/* Same bouncing bars as the "now playing" marker in track lists. */}
+      <span className="flex h-6 items-end gap-[3px]" aria-hidden>
+        <span className="eq-bar h-full w-[4px] rounded-sm bg-accent" />
+        <span className="eq-bar h-full w-[4px] rounded-sm bg-accent" />
+        <span className="eq-bar h-full w-[4px] rounded-sm bg-accent" />
+      </span>
+      <p className="text-[13px] font-medium text-white/45">{t('common.loading')}</p>
     </div>
   );
 }

@@ -39,6 +39,8 @@
     "pitchModeManualShort": "Manual",
     "sleepTimer": "Sleep timer",
     "sleepAfterTrack": "After current track",
+    "sleepAfterTrackShort": "after track",
+    "sleepMinutes": "{{count}} min",
     "sleepCancel": "Cancel timer"
   },
   "auth": {
@@ -208,6 +210,7 @@
     "discover": "Discover"
   },
   "soundwave": {
+    "next": "Next",
     "tagline": "Your personal radio — picked just for you",
     "myWave": "My Wave",
     "updateWave": "Update wave",
@@ -256,8 +259,6 @@
   "offline": {
     "offlineBadge": "No network",
     "readyBadge": "Local library",
-    "offlineTitle": "Offline",
-    "readyTitle": "Local library",
     "tryOnline": "Try online again",
     "likesTitle": "Likes",
     "cachedTitle": "Cache",
@@ -360,11 +361,11 @@
     "hostsReset": "Streaming host health reset",
     "whatsNewTitle": "What's new in v{{version}}",
     "whatsNewItems": [
-      "Liquid Glass UI with 4 built-in preset wallpapers and live dynamic mesh",
-      "Free Star profile badges and customizable Aura gradients",
-      "Global Command Palette (Ctrl+K / ⌘K) for instant search, EQ presets, and themes",
-      "SoundWave fullscreen discovery mode & local offline cache badges",
-      "JSON backup & restore for settings, equalizer, and local library"
+      "Wave from YouTube Music radio: endless, and it learns from “Not this” and “More like this”",
+      "Import likes from Yandex Music, Spotify and plain track lists",
+      "Real crossfade, silence trimming and transition settings",
+      "Lyrics stay in sync after seeking, at any playback speed",
+      "Downloaded-track badges, an offline library and playlist covers on Home"
     ],
     "sources": "Music sources",
     "sourcesDesc": "Where tracks are downloaded from, top first. If a source has no song, the next one is tried. SoundCloud keeps likes and playlists; the rest search by artist and title.",
@@ -374,7 +375,8 @@
   "eq": {
     "title": "Equalizer",
     "preset": "Preset",
-    "custom": "Custom"
+    "custom": "Custom",
+    "reset": "Reset"
   },
   "kb": {
     "title": "Keyboard Shortcuts",
