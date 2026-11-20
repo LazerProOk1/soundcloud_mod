@@ -9,15 +9,6 @@
   font-display: swap;
 }
 
-/* ── Syne Variable Font (titles only — use weight 800 ExtraBold) */
-@font-face {
-  font-family: "Syne";
-  src: url("/fonts/Syne-Variable.ttf") format("truetype");
-  font-weight: 400 800;
-  font-style: normal;
-  font-display: swap;
-}
-
 @theme {
   --color-bg-glass-active: rgba(255, 255, 255, 0.09);
   --color-text-primary: rgba(255, 255, 255, 0.92);
@@ -35,8 +26,8 @@
   --font-sans:
     "Manrope", "Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 
-  /* Syne ExtraBold — for display titles (SoundWave, SoundCloud, section headers) */
-  --font-display: "Syne", "Manrope", system-ui, sans-serif;
+  /* Display titles use the UI font at ExtraBold, so they look the same in every language. */
+  --font-display: "Manrope", system-ui, sans-serif;
 
   /* ── Easing ──────────────────────────────────────────────── */
   --ease-apple: cubic-bezier(0.16, 1, 0.3, 1);
@@ -224,7 +215,13 @@ body,
 .press:active {
   transform: scale(0.86);
 }
-
+/* Big tiles (themes, wallpapers): a squeeze that size reads as a jump, so keep it subtle. */
+.press-soft {
+  transition: transform 160ms ease;
+}
+.press-soft:active {
+  transform: scale(0.98);
+}
 @keyframes icon-pop {
   0% {
     transform: scale(0.55);
@@ -753,11 +750,11 @@ textarea:focus-visible {
   }
 }
 
-/* ── Syne ExtraBold utility — apply to any display/brand title ─ */
+/* ── Display title utility (ExtraBold, tight) ───────────────── */
 .syne {
   font-family: var(--font-display) !important;
   font-weight: 800 !important;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.025em;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -1514,4 +1511,31 @@ svg.lucide:not([stroke-width="0"]) {
 .no-glass .bar-control {
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
+}
+
+/* ── Accent hue strip (settings colour picker) ──────────────── */
+.hue-range {
+  appearance: none;
+  height: 12px;
+  border-radius: 999px;
+  cursor: pointer;
+  background: linear-gradient(
+    90deg,
+    hsl(0 90% 55%),
+    hsl(60 90% 55%),
+    hsl(120 90% 55%),
+    hsl(180 90% 55%),
+    hsl(240 90% 55%),
+    hsl(300 90% 55%),
+    hsl(360 90% 55%)
+  );
+}
+.hue-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }

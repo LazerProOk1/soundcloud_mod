@@ -82,7 +82,7 @@ const PlaylistLikeBtn = React.memo(
         }`}
       >
         <Heart
-          size={24}
+          size={22}
           fill={liked ? 'currentColor' : 'none'}
           className={liked ? 'heart-pop' : ''}
         />
@@ -303,7 +303,7 @@ export const PlaylistPage = React.memo(() => {
                 aria-label={t('playlist.delete')}
                 className={`${iconBtn} text-white/60 hover:text-red-400`}
               >
-                <Trash2 size={20} />
+                <Trash2 size={22} />
               </button>
             )}
           </>
