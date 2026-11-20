@@ -10,7 +10,7 @@ use sqlx::PgPool;
 use tracing::debug;
 
 use crate::error::AppResult;
-use crate::qdrant::{collections, QdrantService};
+use crate::qdrant::{collections, numeric_id, QdrantService};
 
 const TTL: Duration = Duration::from_secs(5 * 60);
 const DIM_RECHECK: Duration = Duration::from_secs(60);
@@ -219,11 +219,5 @@ impl CollabVectorService {
         if let Ok(mut g) = self.dim.write() {
             *g = DimCache::default();
         }
-    }
-}
-
-pub fn numeric_id(id: u64) -> PointId {
-    PointId {
-        point_id_options: Some(PointIdOptions::Num(id)),
     }
 }

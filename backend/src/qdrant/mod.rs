@@ -1,12 +1,19 @@
 use std::sync::Arc;
 
 use qdrant_client::config::QdrantConfig;
-use qdrant_client::qdrant::{Distance, VectorParamsBuilder};
+use qdrant_client::qdrant::{point_id::PointIdOptions, Distance, PointId, VectorParamsBuilder};
 use qdrant_client::Qdrant;
 use tracing::{info, warn};
 
 use crate::config::QdrantCfg;
 use crate::error::{AppError, AppResult};
+
+/// Qdrant point id for a numeric SoundCloud track id.
+pub fn numeric_id(id: u64) -> PointId {
+    PointId {
+        point_id_options: Some(PointIdOptions::Num(id)),
+    }
+}
 
 pub mod collections {
     pub const TRACKS_MERT: &str = "tracks_mert";

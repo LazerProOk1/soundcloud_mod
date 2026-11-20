@@ -1,9 +1,8 @@
 use std::sync::Arc;
 
 use qdrant_client::qdrant::{
-    point_id::PointIdOptions, vector_output::Vector as VectorVariant,
-    vectors_output::VectorsOptions, GetPointsBuilder, PointId, PointStruct, UpsertPointsBuilder,
-    Value as QValue,
+    vector_output::Vector as VectorVariant, vectors_output::VectorsOptions, GetPointsBuilder,
+    PointStruct, UpsertPointsBuilder, Value as QValue,
 };
 use std::collections::HashMap;
 use tracing::debug;
@@ -11,7 +10,7 @@ use tracing::debug;
 use crate::common::sc_ids::normalize_sc_track_id;
 use crate::common::user_id::user_id_to_qdrant_id;
 use crate::error::AppResult;
-use crate::qdrant::{collections, QdrantService};
+use crate::qdrant::{collections, numeric_id, QdrantService};
 
 const EMA_ALPHA: f32 = 0.25;
 
@@ -189,12 +188,6 @@ impl UserTasteService {
             .and_then(|v| extract_int(v))
             .unwrap_or(0) as u64;
         Ok(Some((vec, event_count)))
-    }
-}
-
-pub fn numeric_id(id: u64) -> PointId {
-    PointId {
-        point_id_options: Some(PointIdOptions::Num(id)),
     }
 }
 

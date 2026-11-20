@@ -7,8 +7,9 @@ use std::collections::HashMap;
 use tracing::debug;
 
 use super::types::RecommendResult;
-use super::util::{numeric_id, payload_to_map, point_id_to_value};
+use super::util::{payload_to_map, point_id_to_value};
 use super::RecommendationsService;
+use crate::qdrant::numeric_id;
 
 impl RecommendationsService {
     pub(crate) async fn search_by_vector(

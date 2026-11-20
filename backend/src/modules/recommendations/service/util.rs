@@ -14,12 +14,6 @@ pub(crate) fn parse_id_or_null(raw: &str) -> Option<u64> {
     last.parse::<u64>().ok()
 }
 
-pub(crate) fn numeric_id(id: u64) -> PointId {
-    PointId {
-        point_id_options: Some(PointIdOptions::Num(id)),
-    }
-}
-
 pub(crate) fn point_id_to_value(id: Option<PointId>) -> Value {
     match id.and_then(|id| id.point_id_options) {
         Some(PointIdOptions::Num(n)) => json!(n),

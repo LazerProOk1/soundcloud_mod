@@ -19,7 +19,7 @@ use crate::error::AppResult;
 use crate::modules::centroids::{cosine, CentroidService};
 use crate::modules::collab::CollabVectorService;
 use crate::modules::ltr::service::{LtrExample, LtrService, LTR_FEATURE_COUNT};
-use crate::qdrant::{collections, QdrantService};
+use crate::qdrant::{collections, numeric_id, QdrantService};
 
 const TRAIN_WINDOW_DAYS: i64 = 30;
 const MIN_POSITIVE_PER_USER: i64 = 10;
@@ -457,12 +457,6 @@ fn whitened_cos(a: &[f32], b: &[f32], centroid: Option<&[f32]>) -> f32 {
             }
             cosine(&aw, &bw)
         }
-    }
-}
-
-fn numeric_id(id: u64) -> PointId {
-    PointId {
-        point_id_options: Some(PointIdOptions::Num(id)),
     }
 }
 
