@@ -190,7 +190,6 @@ const SOURCE_META: Record<MusicSourceId, { label: string; dot: string }> = {
   soundcloud: { label: 'SoundCloud', dot: '#ff5500' },
   zaycev: { label: 'Зайцев.нет', dot: '#3b82f6' },
   youtube: { label: 'YouTube Music', dot: '#ef4444' },
-  audius: { label: 'Audius', dot: '#c026d3' },
 };
 
 /** Ordered list of download sources: arrows change the priority, switches turn them off. */

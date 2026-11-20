@@ -48,7 +48,7 @@ export const THEME_PRESETS: Record<Exclude<ThemePreset, 'custom'>, ThemePresetDe
 };
 
 export type CrossfadeCurve = 'equal' | 'linear' | 'scurve';
-export type MusicSourceId = 'soundcloud' | 'zaycev' | 'youtube' | 'audius';
+export type MusicSourceId = 'soundcloud' | 'zaycev' | 'youtube';
 export interface MusicSource {
   id: MusicSourceId;
   enabled: boolean;
@@ -57,7 +57,6 @@ export const DEFAULT_MUSIC_SOURCES: MusicSource[] = [
   { id: 'soundcloud', enabled: true },
   { id: 'zaycev', enabled: true },
   { id: 'youtube', enabled: true },
-  { id: 'audius', enabled: true },
 ];
 
 export interface SettingsState {
@@ -268,14 +267,16 @@ export const useSettingsStore = create<SettingsState>()(
     {
       name: 'sc-settings',
       storage: createJSONStorage(() => tauriStorage),
-      version: 19,
+      version: 20,
       migrate: (persistedState) => {
         const prev = (persistedState ?? {}) as Partial<SettingsState> & {
           soundwaveDiversity?: number;
           primarySource?: 'soundcloud' | 'zaycev';
         };
         // v18 → v19: single "primary source" → ordered source list.
-        const musicSources =
+        // v19 → v20: Audius removed — drop sources that no longer exist.
+        const known = new Set(DEFAULT_MUSIC_SOURCES.map((s) => s.id));
+        const musicSources = (
           prev.musicSources ??
           (prev.primarySource === 'zaycev'
             ? [
@@ -283,7 +284,8 @@ export const useSettingsStore = create<SettingsState>()(
                 DEFAULT_MUSIC_SOURCES[0],
                 ...DEFAULT_MUSIC_SOURCES.slice(2),
               ]
-            : DEFAULT_MUSIC_SOURCES);
+            : DEFAULT_MUSIC_SOURCES)
+        ).filter((s) => known.has(s.id));
         // v13 → v14: diversity-slider (0..1) → toggle ('similar' | 'diverse').
         // > 0.5 трактуем как 'diverse', иначе 'similar'.
         const inferredMode: 'similar' | 'diverse' =

@@ -280,7 +280,6 @@ pub enum DownloadSource {
     Api,
     Youtube,
     Zaycev,
-    Audius,
 }
 
 impl DownloadSource {
@@ -291,7 +290,6 @@ impl DownloadSource {
             Self::Api => "api",
             Self::Youtube => "youtube",
             Self::Zaycev => "zaycev",
-            Self::Audius => "audius",
         }
     }
 }
@@ -1103,9 +1101,6 @@ impl TrackCacheState {
                 "zaycev" => super::zaycev::find_audio_url(&self.client, artist, title, secs)
                     .await
                     .map(|u| (u, DownloadSource::Zaycev, "zaycev")),
-                "audius" => super::audius::find_audio_url(&self.client, artist, title, secs)
-                    .await
-                    .map(|u| (u, DownloadSource::Audius, "audius")),
                 "youtube" => {
                     let bin_dir = self
                         .audio_dir

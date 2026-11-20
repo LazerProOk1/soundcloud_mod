@@ -1,4 +1,3 @@
-mod audius;
 mod commands;
 pub mod live;
 mod sc_anon;
