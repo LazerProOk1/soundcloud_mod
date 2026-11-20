@@ -16,6 +16,7 @@ import { toggleDislike } from '../lib/dislikes';
 import { art, dur, fc } from '../lib/formatters';
 import { historyDateLabel, historyEntryToTrack } from '../lib/history';
 import {
+  ALL_LIKES_PAGE_SIZE,
   fetchAllLikedTracks,
   type HistoryEntry,
   useHistory,
@@ -368,7 +369,7 @@ const LocalTracksTab = React.memo(function LocalTracksTab({
 
 const LikesTab = React.memo(function LikesTab({ filter }: { filter: string }) {
   const { t } = useTranslation();
-  const likesQuery = useLikedTracks();
+  const likesQuery = useLikedTracks(ALL_LIKES_PAGE_SIZE, true);
   const { tracks: likedTracks, isLoading } = likesQuery;
   const [offlineTracks, setOfflineTracks] = useState<Track[]>([]);
 
@@ -389,19 +390,6 @@ const LikesTab = React.memo(function LikesTab({ filter }: { filter: string }) {
     [serverTracks, likesTop, likesBottom],
   );
   const customOrder = likesTop.length > 0 || likesBottom.length > 0;
-
-  const sentinelRef = useInfiniteScroll(
-    !!likesQuery.hasNextPage,
-    !!likesQuery.isFetchingNextPage,
-    likesQuery.fetchNextPage,
-  );
-
-  // Auto-fetch remaining pages when filtering
-  useEffect(() => {
-    if (filter && likesQuery.hasNextPage && !likesQuery.isFetchingNextPage) {
-      likesQuery.fetchNextPage();
-    }
-  }, [filter, likesQuery.hasNextPage, likesQuery.isFetchingNextPage]);
 
   const filtered = useMemo(() => {
     if (!filter) return tracks;
@@ -461,7 +449,7 @@ const LikesTab = React.memo(function LikesTab({ filter }: { filter: string }) {
         )}
       </div>
       {!filter ? (
-        <div ref={sentinelRef} className="h-12 flex items-center justify-center mt-4">
+        <div className="h-12 flex items-center justify-center mt-4">
           {likesQuery.isFetchingNextPage && (
             <Loader2 size={20} className="text-white/15 animate-spin" />
           )}

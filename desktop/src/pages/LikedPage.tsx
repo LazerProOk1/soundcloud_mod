@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { TrackListPage } from '../components/music/TrackListPage';
 import { downloadAllLikes } from '../lib/cache';
-import { useInfiniteScroll, useLikedTracks } from '../lib/hooks';
+import { ALL_LIKES_PAGE_SIZE, useLikedTracks } from '../lib/hooks';
 import { Heart, Loader2 } from '../lib/icons';
 import { useAuthStore } from '../stores/auth';
 import { orderLikes, useLibraryLocalStore } from '../stores/library-local';
@@ -11,17 +11,13 @@ import { orderLikes, useLibraryLocalStore } from '../stores/library-local';
 export function LikedPage() {
   const { t } = useTranslation();
   const total = useAuthStore((s) => s.user?.public_favorites_count);
-  const likes = useLikedTracks(50);
+  // Every page loads in the background: shuffle covers all likes and scrolling never waits.
+  const likes = useLikedTracks(ALL_LIKES_PAGE_SIZE, true);
   const likesTop = useLibraryLocalStore((s) => s.likesTop);
   const likesBottom = useLibraryLocalStore((s) => s.likesBottom);
   const tracks = useMemo(
     () => orderLikes(likes.tracks, likesTop, likesBottom),
     [likes.tracks, likesTop, likesBottom],
-  );
-  const sentinelRef = useInfiniteScroll(
-    !!likes.hasNextPage,
-    !!likes.isFetchingNextPage,
-    likes.fetchNextPage,
   );
 
   return (
@@ -51,7 +47,7 @@ export function LikedPage() {
           .catch((e) => toast.error(String(e)));
       }}
       footer={
-        <div ref={sentinelRef} className="h-12 flex items-center justify-center">
+        <div className="h-12 flex items-center justify-center">
           {likes.isFetchingNextPage && <Loader2 size={20} className="text-white/30 animate-spin" />}
         </div>
       }

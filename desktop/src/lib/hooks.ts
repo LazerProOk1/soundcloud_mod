@@ -416,12 +416,20 @@ export function useCurrentTrackHydration() {
 
 /* ── Liked tracks ──────────────────────────────────────────────── */
 
-export function useLikedTracks(limit = 30) {
+/** Page size for screens that show every like (pages are fetched in the background). */
+export const ALL_LIKES_PAGE_SIZE = 200;
+
+/**
+ * Liked tracks, newest first. With `all`, every page is fetched right away in the background,
+ * so shuffle covers the whole list and scrolling never waits for the next page.
+ */
+export function useLikedTracks(limit = 30, all = false) {
   const query = usePagedQuery<Track>({
     queryKey: ['me', 'likes', 'tracks', limit],
     url: (page, l) => pagedUrl('/me/likes/tracks', page, l),
     limit,
     staleTime: SHORT_CACHE_MS,
+    autoFetchAll: all,
   });
 
   const tracks = query.items;
