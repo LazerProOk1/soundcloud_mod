@@ -33,6 +33,17 @@ fn volume_to_rodio(v: f64) -> f32 {
     (v / 100.0).clamp(0.0, 2.0) as f32
 }
 
+/// Seeks to a position in the song. rodio's `Speed` source multiplies seek targets by its
+/// speed factor (it treats them as wall-clock time), so at 1.15x a seek to 60 s used to land
+/// at 69 s while the lyrics and the progress bar showed 60 s. Divide the factor back out.
+/// Returns the value `get_pos()` reports right after the seek (wall-clock, not song time).
+fn seek_song_pos(player: &rodio::Player, song_pos: f64) -> Result<f64, rodio::source::SeekError> {
+    let wall_pos = song_pos / f64::from(player.speed().max(0.01));
+    player
+        .try_seek(Duration::from_secs_f64(wall_pos))
+        .map(|()| wall_pos)
+}
+
 fn apply_current_rate(state: &AudioState, player: &rodio::Player) {
     let rate = *state.playback_rate.lock().unwrap();
     if (rate - 1.0).abs() > f32::EPSILON {
@@ -188,12 +199,15 @@ pub fn reload_current_track(state: &AudioState) -> Result<(), String> {
         state.eq_params.clone(),
         state.analyser_buffer.clone(),
     )?;
-    if song_pos > 0.0 {
-        new_player.try_seek(position).ok();
-    }
+    // Seek before applying the rate: the new player is still at 1x, so wall time == song time.
+    let wall_pos = if song_pos > 0.0 {
+        seek_song_pos(&new_player, song_pos).unwrap_or(0.0)
+    } else {
+        0.0
+    };
     apply_current_rate(state, &new_player);
     // After reload+seek, reset wall-clock base to match the new player's get_pos().
-    *state.last_wall_pos_secs.lock().unwrap() = song_pos;
+    *state.last_wall_pos_secs.lock().unwrap() = wall_pos;
 
     let mut player = state.player.lock().unwrap();
     if let Some(old) = player.take() {
@@ -401,7 +415,6 @@ pub fn stop(state: State<'_, AudioState>) {
 
 pub fn seek(position: f64, state: State<'_, AudioState>) -> Result<(), String> {
     suppress_ended_temporarily(&state);
-    let target = Duration::from_secs_f64(position);
     let was_paused = state
         .player
         .lock()
@@ -416,12 +429,11 @@ pub fn seek(position: f64, state: State<'_, AudioState>) -> Result<(), String> {
     if position > 0.0 || streaming {
         let player = state.player.lock().unwrap();
         if let Some(ref player) = *player {
-            if player.try_seek(target).is_ok() {
+            if let Ok(wall_pos) = seek_song_pos(player, position) {
                 state.ended_notified.store(false, Ordering::Relaxed);
-                // Reset song-position trackers: after try_seek, get_pos() returns `position`,
-                // so set last_wall_pos to that value and song_pos to the seek target.
+                // Re-anchor the song-position tracker: get_pos() now reports `wall_pos`.
                 *state.song_pos_secs.lock().unwrap() = position;
-                *state.last_wall_pos_secs.lock().unwrap() = position;
+                *state.last_wall_pos_secs.lock().unwrap() = wall_pos;
                 return Ok(());
             }
         }
@@ -448,13 +460,16 @@ pub fn seek(position: f64, state: State<'_, AudioState>) -> Result<(), String> {
         state.eq_params.clone(),
         state.analyser_buffer.clone(),
     )?;
-    if position > 0.0 {
-        new_player.try_seek(target).ok();
-    }
+    // Still at 1x here (the rate is applied below), so wall time == song time.
+    let wall_pos = if position > 0.0 {
+        seek_song_pos(&new_player, position).map_err(|e| format!("Seek failed: {e}"))?
+    } else {
+        0.0
+    };
     apply_current_rate(&state, &new_player);
     // Reset song-position trackers for the rebuilt player.
     *state.song_pos_secs.lock().unwrap() = position;
-    *state.last_wall_pos_secs.lock().unwrap() = position;
+    *state.last_wall_pos_secs.lock().unwrap() = wall_pos;
 
     let mut player = state.player.lock().unwrap();
     if let Some(old) = player.take() {
