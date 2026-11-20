@@ -41,6 +41,9 @@ Rust-сервис (axum 0.8) за десктопным клиентом. Смо�
 | `POST|DELETE /reposts/playlists/{urn}` + оба метода сервиса | клиент репостит только треки (`TrackPage.tsx:188`); плейлистные методы вызывались только этими обработчиками | 51 + 36 |
 | `GET /pending-actions` (список) | клиент дёргает только `/pending-actions/stats` и `/sync` (`OfflinePage.tsx:199,238`) | 9 |
 
+> Поправка 2026-11-20: `LocalLikesService::find_all`, `FindAllResult` и `parse_cursor` возвращены —
+> их вызывает `me/service.rs:254`, без них бэкенд бы не собрался. Удалены только HTTP-обработчики.
+
 ## 3. Что осознанно оставлено
 
 - **23 маршрута `/admin/*`** — операционная поверхность, защищена `x-admin-token` (`common/admin.rs`, пустой токен = 401).

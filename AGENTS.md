@@ -22,6 +22,26 @@ cargo test
 cargo clippy --all-targets
 ```
 
+### Environment gotchas
+
+- **Backend does not build from this repo alone:** `backend/Cargo.toml` path-depends on `../tls-common` and
+  `../call/relay`, which are not checked in. CI skips the backend step until they exist. Backend edits can only be
+  checked statically here — say so explicitly when you finish.
+- **The UI only runs inside Tauri.** Opening `http://localhost:1420` in a normal browser gives a black screen
+  (`invoke` is undefined). To drive the real window, start `tauri dev` with
+  `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9333` (Windows) and attach over CDP.
+- **First `tauri dev` build is slow** (tens of minutes for the Rust crate); run it in the background.
+- **In a git worktree** whose `node_modules` is a symlink, `pnpm <script>` tries to reinstall and aborts.
+  Call binaries directly (`node_modules/.bin/biome`, `tsc`, `vite`) or override `beforeDevCommand` with
+  `--config '{"build":{"beforeDevCommand":"node node_modules/vite/bin/vite.js"}}'`.
+
+## Docs
+
+- `PLAN.md` (repo root, local only — excluded via `.git/info/exclude`) — the live backlog, if present. Read it
+  before picking up work; remove finished items and add new findings as you go.
+- `docs/audit-2026-11-17.md`, `docs/backend-audit-2026-11-17.md` — audit reports with file:line evidence
+  (historical; not kept up to date).
+
 ## Architecture & Directory Map
 
 - `desktop/src/pages/` — Top-level routes (`Home.tsx`, `SoundWavePage.tsx`, `Discover.tsx`, `Search.tsx`, `Library.tsx`, `OfflinePage.tsx`, `UserPage.tsx`, `ArtistPage.tsx`, `AlbumPage.tsx`, `TrackPage.tsx`, `Settings.tsx`).
@@ -37,18 +57,50 @@ cargo clippy --all-targets
 - **Design system:** Preserve the Liquid Glass aesthetic (`backdrop-filter` glass layers, specular hairline borders, dynamic artwork color ambiance) while supporting `.no-glass` fallback and `prefers-reduced-motion`.
 - **i18n:** Every user-visible string belongs in both `desktop/src/i18n/locales/en.json` and `ru.json`; never hardcode UI copy.
 - **Formatting:** Biome enforces single quotes, trailing commas, semicolons, 2-space indent, and `lineWidth: 100` in `desktop/src/`.
+- **Comments in English.** Code comments and doc-comments are English only. When you edit a file that still has
+  Russian comments, translate the ones in the code you touch (or the whole file if it is small) as part of the same
+  change. Do not translate user-visible strings — those live in the locale files. Docs under `docs/` may stay
+  in Russian.
 - **Auras & Wallpapers:** Star gating is gone — every artist/album page gets a deterministic aura from `aura.ts` (`auraFromHex`, `artistAuraForId`). Built-in wallpapers live under `desktop/public/wallpapers/` and resolve safely via `preset:<file>`.
+
+## Commits
+
+[Conventional Commits](https://www.conventionalcommits.org/): `<type>(<scope>): <subject>`, a blank line, an
+optional body, an optional footer.
+
+- **type:** `feat` · `fix` · `perf` · `refactor` · `style` (formatting only) · `test` · `docs` · `build` ·
+  `ci` · `chore` · `revert`.
+- **scope** (optional, one word): `player`, `wave`, `library`, `search`, `settings`, `lyrics`, `offline`,
+  `ui`, `i18n`, `cache`, `audio`, `tauri`, `backend`, `deps`, `docs`, `ci`.
+- **subject:** English, imperative, lowercase, no trailing period, ≤ 72 characters
+  (`fix(library): use plural forms for track counts`, not `Fixed plurals.`).
+- **body:** what changed and *why*; wrap at 100 columns. Skip it for trivial changes.
+- **footer:** `BREAKING CHANGE: <what breaks>` for incompatible changes (persisted store schema, backend API,
+  removed setting); `Co-Authored-By:` trailers go last.
+- One logical change per commit; do not mix a refactor with a behaviour change.
+- Author every commit as `LazerProOk1 <139680797+LazerProOk1@users.noreply.github.com>`:
+  `git commit --author="LazerProOk1 <139680797+LazerProOk1@users.noreply.github.com>" -m "..."`
+
+## Definition of Done
+
+1. `pnpm biome ci src/`, `pnpm build` and the unit tests pass (plus `cargo test` / `cargo clippy` for the Rust
+   crate you touched, when the toolchain can build it).
+2. Edited JSON (`locales/*.json`, `tauri.conf.json`, `biome.json`) parses, and both locales have the same keys.
+3. UI changes were looked at in the running app, or the summary says they were not.
+4. `PLAN.md` (when present) reflects what was finished or found.
+5. The summary lists anything that was not verified.
 
 ## Boundaries
 
 ### Always
-- Run `pnpm biome ci src/`, `pnpm build`, and `node --experimental-strip-types --test src/lib/__tests__/*.test.ts` (plus `cargo test` when Rust crates change or toolchain is present) before finishing work.
-- Validate JSON files (`locales/*.json`, `tauri.conf.json`, `biome.json`) after editing.
-- Author every commit as `LazerProOk1 <139680797+LazerProOk1@users.noreply.github.com>` (a `Co-Authored-By:` trailer is fine):
-  `git commit --author="LazerProOk1 <139680797+LazerProOk1@users.noreply.github.com>" -m "..."`
+- Meet the Definition of Done before reporting work as finished.
+- When blocked (missing toolchain, failing check you did not cause, unclear requirement), stop and report it
+  instead of working around it.
 
 ### Ask First
 - Changing Tauri app identifier (`com.lazerprook1.soundcloudmod`), breaking persisted `tauriStorage` store schemas without migration, or modifying database SQL migrations in `backend/migrations/`.
+- Adding a new npm or Cargo dependency.
+- Removing a user-facing feature, route or setting (even if it looks unused).
 
 ### Never
 - Include AI assistant names or tool signatures in code comments or documentation.
