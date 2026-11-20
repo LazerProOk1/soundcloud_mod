@@ -6,6 +6,7 @@ import { AddToPlaylistDialog } from '../components/music/AddToPlaylistDialog';
 import { LikeButton } from '../components/music/LikeButton';
 import { PlaylistCard } from '../components/music/PlaylistCard';
 import { TrackTitleArtist } from '../components/music/TrackTitleArtist';
+import { Segmented } from '../components/ui/Segmented';
 import { VirtualGrid } from '../components/ui/VirtualGrid';
 import { VirtualList } from '../components/ui/VirtualList';
 import { UserCard } from '../components/user/UserCard';
@@ -229,210 +230,80 @@ const LibraryHero = React.memo(function LibraryHero({
 
   if (!user) return null;
 
-  /* Shared liquid-glass card style */
-  const cardStyle: React.CSSProperties = {
-    position: 'relative',
-    height: 240,
-    borderRadius: 32,
-    overflow: 'hidden',
-    padding: 32,
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'space-between',
-    cursor: 'pointer',
-    transition: 'transform 0.2s var(--ease-apple)',
-    background: 'rgba(10,10,14,0.38)',
-    backdropFilter: 'blur(32px) saturate(180%)',
-    WebkitBackdropFilter: 'blur(32px) saturate(180%)',
-    boxShadow: `
-      0 1px 0 0 rgba(255,255,255,0.20) inset,
-      1px 0 0 0 rgba(255,255,255,0.10) inset,
-      0 -1px 0 0 rgba(0,0,0,0.40) inset,
-      -1px 0 0 0 rgba(0,0,0,0.16) inset,
-      0 0 0 0.5px rgba(255,255,255,0.07),
-      0 8px 32px rgba(0,0,0,0.28),
-      0 24px 64px rgba(0,0,0,0.20)
-    `,
-  };
-
-  /* Liquid-glass icon pill */
-  const iconPillStyle: React.CSSProperties = {
-    width: 48,
-    height: 48,
-    borderRadius: 18,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-    background: 'linear-gradient(145deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.04) 100%)',
-    boxShadow: `
-      0 1px 0 0 rgba(255,255,255,0.30) inset,
-      0 -1px 0 0 rgba(0,0,0,0.20) inset,
-      0 0 0 0.5px var(--color-accent),
-      0 4px 14px rgba(0,0,0,0.22)
-    `,
-    border: '1px solid rgba(255,255,255,0.12)',
-    color: 'var(--color-accent)',
-  };
-
   return (
-    <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      {/* ── Liked Tracks Card ───────────────────────────────── */}
+    <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
+      {/* Liked tracks: same indigo tile as on Home and in the sidebar */}
       <div
-        style={cardStyle}
+        role="button"
+        tabIndex={0}
         onClick={onTabLikes}
-        onMouseEnter={(e) => {
-          (e.currentTarget as HTMLDivElement).style.transform = 'scale(1.01)';
-        }}
-        onMouseLeave={(e) => {
-          (e.currentTarget as HTMLDivElement).style.transform = '';
-        }}
+        onKeyDown={(e) => e.key === 'Enter' && onTabLikes()}
+        className="group relative flex h-[200px] cursor-pointer flex-col justify-between overflow-hidden rounded-2xl p-6 transition-[filter] duration-200 hover:brightness-110"
+        style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #818cf8 60%, #a5b4fc 100%)' }}
       >
-        {/* Accent radial glow — top-left */}
-        <div
-          aria-hidden
-          style={{
-            position: 'absolute',
-            inset: 0,
-            pointerEvents: 'none',
-            background:
-              'radial-gradient(ellipse 70% 60% at 10% 10%, var(--color-accent-glow, rgba(255,85,0,0.18)) 0%, transparent 70%)',
-          }}
-        />
-        {/* Top glass shine */}
-        <div
-          aria-hidden
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 80,
-            pointerEvents: 'none',
-            background: 'linear-gradient(180deg, rgba(255,255,255,0.06) 0%, transparent 100%)',
-            borderRadius: '32px 32px 0 0',
-          }}
-        />
-
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <div style={iconPillStyle}>
-            <Heart size={22} fill="var(--color-accent)" stroke="none" />
-          </div>
-          <h2 className="syne text-3xl text-white">{t('library.likedTracks')}</h2>
-          <p className="text-white/50 font-medium mt-1">
+        <div>
+          <Heart size={26} fill="white" stroke="none" />
+          <h2 className="mt-4 text-[28px] font-bold leading-tight tracking-tight text-white">
+            {t('library.likedTracks')}
+          </h2>
+          <p className="mt-1 text-[14px] font-medium text-white/80">
             {t('library.tracksCount', {
               count: user.public_favorites_count ?? 0,
               value: fc(user.public_favorites_count),
             })}
           </p>
         </div>
-
-        <div
-          style={{ position: 'relative', zIndex: 1 }}
-          className="flex items-center justify-between mt-auto"
-        >
-          <div className="flex -space-x-3">
+        <div className="flex items-center justify-between">
+          <div className="flex -space-x-2.5">
             {likedTracks.slice(0, 4).map((track) => (
-              <div
+              <img
                 key={track.id}
-                className="w-10 h-10 rounded-full bg-neutral-800 overflow-hidden"
-                style={{ boxShadow: '0 0 0 2px rgba(0,0,0,0.55), 0 2px 8px rgba(0,0,0,0.40)' }}
-              >
-                <img
-                  src={art(track.artwork_url, 'small') || ''}
-                  className="w-full h-full object-cover"
-                  alt=""
-                />
-              </div>
+                src={art(track.artwork_url, 'small') || ''}
+                alt=""
+                className="h-9 w-9 rounded-full object-cover ring-2 ring-[#5b54e8]"
+              />
             ))}
           </div>
           <button
+            type="button"
             onClick={handleShuffleLikes}
             disabled={shuffleLoading}
-            className="w-12 h-12 rounded-full flex items-center justify-center hover:scale-110 active:scale-95 transition-transform disabled:opacity-60 cursor-pointer"
-            style={{
-              background:
-                'linear-gradient(160deg, rgba(255,255,255,0.97) 0%, rgba(210,210,235,0.92) 100%)',
-              boxShadow: `
-                0 1px 0 0 rgba(255,255,255,1) inset,
-                0 -1px 0 0 rgba(0,0,0,0.20) inset,
-                0 0 0 0.5px rgba(255,255,255,0.40),
-                0 4px 16px rgba(0,0,0,0.30),
-                0 0 24px var(--color-accent-glow, rgba(255,85,0,0.15))
-              `,
-              color: '#16162a',
-            }}
+            className="press flex h-12 w-12 items-center justify-center rounded-full bg-white text-black shadow-lg hover:scale-105 disabled:opacity-60 cursor-pointer"
           >
             {shuffleLoading ? <Loader2 size={20} className="animate-spin" /> : playBlack20ml1}
           </button>
         </div>
       </div>
 
-      {/* ── Following Card ──────────────────────────────────── */}
+      {/* Following */}
       <div
-        style={cardStyle}
+        role="button"
+        tabIndex={0}
         onClick={onTabFollowing}
-        onMouseEnter={(e) => {
-          (e.currentTarget as HTMLDivElement).style.transform = 'scale(1.01)';
-        }}
-        onMouseLeave={(e) => {
-          (e.currentTarget as HTMLDivElement).style.transform = '';
-        }}
+        onKeyDown={(e) => e.key === 'Enter' && onTabFollowing()}
+        className="relative flex h-[200px] cursor-pointer flex-col justify-between overflow-hidden rounded-2xl bg-white/[0.06] p-6 transition-colors duration-200 hover:bg-white/[0.09]"
       >
-        {/* Accent radial glow — top-left */}
-        <div
-          aria-hidden
-          style={{
-            position: 'absolute',
-            inset: 0,
-            pointerEvents: 'none',
-            background:
-              'radial-gradient(ellipse 70% 60% at 10% 10%, var(--color-accent-glow, rgba(255,85,0,0.12)) 0%, transparent 70%)',
-          }}
-        />
-        <div
-          aria-hidden
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 80,
-            pointerEvents: 'none',
-            background: 'linear-gradient(180deg, rgba(255,255,255,0.06) 0%, transparent 100%)',
-            borderRadius: '32px 32px 0 0',
-          }}
-        />
-
-        <div style={{ position: 'relative', zIndex: 1 }}>
-          <div style={iconPillStyle}>
-            <Users size={22} style={{ color: 'var(--color-accent)' }} />
-          </div>
-          <h2 className="syne text-3xl text-white">{t('nav.following')}</h2>
-          <p className="text-white/50 font-medium mt-1">
+        <div>
+          <Users size={26} className="text-white/80" />
+          <h2 className="mt-4 text-[28px] font-bold leading-tight tracking-tight text-white">
+            {t('nav.following')}
+          </h2>
+          <p className="mt-1 text-[14px] font-medium text-white/55">
             {t('library.usersCount', {
               count: user.followings_count ?? 0,
               value: fc(user.followings_count),
             })}
           </p>
         </div>
-
-        <div style={{ position: 'relative', zIndex: 1 }} className="mt-auto">
-          <div className="flex -space-x-4 overflow-hidden py-2 pl-1">
-            {followings.slice(0, 7).map((u) => (
-              <div
-                key={u.id}
-                className="w-14 h-14 rounded-full bg-neutral-800 overflow-hidden shadow-lg"
-                style={{ boxShadow: '0 0 0 3px rgba(0,0,0,0.55), 0 3px 10px rgba(0,0,0,0.40)' }}
-              >
-                <img
-                  src={art(u.avatar_url, 'small') || ''}
-                  className="w-full h-full object-cover"
-                  alt=""
-                />
-              </div>
-            ))}
-          </div>
+        <div className="flex -space-x-3">
+          {followings.slice(0, 7).map((u) => (
+            <img
+              key={u.id}
+              src={art(u.avatar_url, 'small') || ''}
+              alt=""
+              className="h-11 w-11 rounded-full bg-neutral-800 object-cover ring-2 ring-[#1c1c20]"
+            />
+          ))}
         </div>
       </div>
     </section>
@@ -943,41 +814,14 @@ export const Library = React.memo(() => {
 
       {/* Tabs + Search */}
       <div className="flex items-center gap-4 flex-wrap">
-        <div className="flex items-center gap-1.5 p-1.5 bg-white/[0.02] border border-white/[0.05] rounded-2xl w-fit backdrop-blur-2xl shadow-lg">
-          {tabs.map((tab) => {
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => {
-                  setActiveTab(tab.id as any);
-                  setFilter('');
-                }}
-                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-300 ease-[var(--ease-apple)] ${
-                  isActive
-                    ? 'text-white/92'
-                    : 'text-white/40 hover:text-white/75 hover:bg-white/[0.04] border border-transparent'
-                }`}
-                style={
-                  isActive
-                    ? {
-                        background: 'rgba(255,255,255,0.09)',
-                        border: '1px solid var(--color-accent)',
-                        boxShadow: `
-                    0 1px 0 0 rgba(255,255,255,0.18) inset,
-                    0 -1px 0 0 rgba(0,0,0,0.18) inset,
-                    0 0 10px var(--color-accent-glow, rgba(255,85,0,0.12)),
-                    0 2px 8px rgba(0,0,0,0.15)
-                  `,
-                      }
-                    : undefined
-                }
-              >
-                {tab.label}
-              </button>
-            );
-          })}
-        </div>
+        <Segmented
+          value={activeTab}
+          options={tabs.map((tab) => ({ id: tab.id, label: tab.label }))}
+          onChange={(id) => {
+            setActiveTab(id);
+            setFilter('');
+          }}
+        />
 
         <div className="relative flex-1 min-w-[200px] max-w-[320px]">
           <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
@@ -988,17 +832,7 @@ export const Library = React.memo(() => {
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             placeholder={t('library.filter')}
-            className="w-full bg-white/[0.04] hover:bg-white/[0.06] focus:bg-white/[0.07] text-white/80 placeholder:text-white/25 text-[13px] py-2.5 pl-9 pr-8 rounded-xl outline-none transition-all duration-200"
-            style={{ border: '1px solid rgba(255,255,255,0.07)' }}
-            onFocus={(e) => {
-              e.currentTarget.style.border = '1px solid var(--color-accent)';
-              e.currentTarget.style.boxShadow =
-                '0 0 0 3px var(--color-accent-glow,rgba(255,85,0,0.10))';
-            }}
-            onBlur={(e) => {
-              e.currentTarget.style.border = '1px solid rgba(255,255,255,0.07)';
-              e.currentTarget.style.boxShadow = '';
-            }}
+            className="h-10 w-full rounded-full border border-transparent bg-white/[0.06] pl-9 pr-8 text-[13px] text-white/85 outline-none transition-colors placeholder:text-white/35 hover:bg-white/[0.08] focus:border-white/25 focus:bg-white/[0.08]"
           />
           {filter && (
             <button

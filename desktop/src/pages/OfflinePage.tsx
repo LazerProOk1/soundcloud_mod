@@ -5,7 +5,7 @@ import { TrackListPage } from '../components/music/TrackListPage';
 import { api } from '../lib/api';
 import { listCachedUrns } from '../lib/cache';
 import { fetchAllLikedTracks } from '../lib/hooks';
-import { Clock, Download, Globe, Heart, RefreshCw, RotateCcw } from '../lib/icons';
+import { Clock, Download, Heart, RefreshCw, RotateCcw } from '../lib/icons';
 import { getOfflineLikedTracks, getOfflineTracksByUrns } from '../lib/offline-index';
 import { useAppStatusStore } from '../stores/app-status';
 import type { Track } from '../stores/player';
@@ -44,32 +44,12 @@ const StatusBadge = React.memo(function StatusBadge() {
   const isOffline = mode === 'offline';
 
   return (
-    <div
-      className="inline-flex items-center gap-1.5 rounded-full px-3 py-1"
-      style={{
-        background: isOffline
-          ? 'rgba(255,255,255,0.06)'
-          : 'color-mix(in srgb, var(--color-accent) 12%, transparent)',
-        border: isOffline
-          ? '0.5px solid rgba(255,255,255,0.12)'
-          : '0.5px solid color-mix(in srgb, var(--color-accent) 30%, transparent)',
-        boxShadow: isOffline
-          ? 'inset 0 1px 0 rgba(255,255,255,0.08)'
-          : 'inset 0 1px 0 rgba(255,255,255,0.12), 0 0 16px color-mix(in srgb, var(--color-accent) 10%, transparent)',
-      }}
-    >
-      {isOffline ? (
-        <Globe size={11} className="text-white/40" />
-      ) : (
-        <Download size={11} style={{ color: 'var(--color-accent)' }} />
-      )}
+    <span className="inline-flex h-7 items-center gap-2 rounded-full bg-white/[0.07] px-3 text-[12px] font-medium text-white/80">
       <span
-        className="text-[11px] font-medium"
-        style={{ color: isOffline ? 'rgba(255,255,255,0.45)' : 'var(--color-accent)' }}
-      >
-        {isOffline ? t('offline.offlineBadge') : t('offline.readyBadge')}
-      </span>
-    </div>
+        className={`h-1.5 w-1.5 rounded-full ${isOffline ? 'bg-white/40' : 'bg-emerald-400'}`}
+      />
+      {isOffline ? t('offline.offlineBadge') : t('offline.readyBadge')}
+    </span>
   );
 });
 
@@ -254,8 +234,6 @@ export const OfflinePage = React.memo(() => {
   );
   const tracks = activeSection === 'likes' ? likedPlayable : state.cachedTracks;
 
-  const statusTitle = appMode === 'offline' ? t('offline.offlineTitle') : t('offline.readyTitle');
-
   const chip = (key: OfflineSectionKey, label: string, count: number) => (
     <button
       type="button"
@@ -290,7 +268,6 @@ export const OfflinePage = React.memo(() => {
       subtitle={
         <div className="flex flex-wrap items-center gap-2">
           <StatusBadge />
-          <span className="text-white/70">{statusTitle}</span>
           <PendingBadge stats={pendingStats} syncing={syncing} onSync={handleSync} />
           {appMode === 'offline' && (
             <button
