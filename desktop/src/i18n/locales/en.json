@@ -88,6 +88,7 @@
   },
   "search": {
     "placeholder": "Search tracks, playlists, users...",
+    "pressEnterToOpen": "Press Enter to open the link",
     "tracks": "Tracks",
     "playlists": "Playlists",
     "users": "Users",
@@ -116,6 +117,7 @@
     "notFoundOnSc": "not found on SoundCloud",
     "description": "Description",
     "noComments": "No comments yet",
+    "commentsSoon": "Comments will appear here as the track plays",
     "favoriters": "Liked by",
     "lyrics": "Lyrics",
     "lyricsNotFound": "Lyrics not found",
@@ -296,6 +298,7 @@
     "backupInvalid": "Invalid backup file format",
     "appearance": "Appearance",
     "accentColor": "Accent color",
+    "accentPick": "Pick a colour",
     "backgroundImage": "Background image",
     "none": "None",
     "addFile": "File",
@@ -331,8 +334,8 @@
     "highQualityStreaming": "High quality streaming",
     "highQualityStreamingDesc": "Prefer the highest available quality during playback",
     "interface": "Interface",
-    "liquidGlass": "Liquid Glass effects",
-    "liquidGlassDesc": "Translucent frosted panels and light refraction (disable for maximum FPS)",
+    "liquidGlass": "Gloss",
+    "liquidGlassDesc": "Frosted translucent panels with soft highlights. Turn off for flat panels and the most FPS",
     "uiScale": "Interface scale",
     "uiScaleDesc": "Also Ctrl + mouse wheel and Ctrl +/−/0",
     "uiScaleToast": "Scale {{value}}%",
@@ -345,9 +348,6 @@
     "fontNotFound": "Font “{{name}}” isn't installed",
     "fontFileFailed": "Couldn't load the font file",
     "reset": "Reset",
-    "customCss": "Custom CSS",
-    "customCssDesc": "Styles applied on top of the app after you save",
-    "customCssApply": "Save",
     "searchPlaceholder": "Search settings…",
     "searchEmpty": "Nothing found",
     "envDesktop": "Tauri Native Desktop",
@@ -641,6 +641,7 @@
     "album": "Album",
     "empty": "Nothing here yet",
     "download": "Download for offline",
-    "downloadStarted": "Downloading {{count}} tracks — see Offline for progress"
+    "allDownloaded": "All {{count}} tracks are already downloaded",
+    "downloadStarted": "Downloading {{count}} new, {{done}} already on disk — progress in Offline"
   }
 }

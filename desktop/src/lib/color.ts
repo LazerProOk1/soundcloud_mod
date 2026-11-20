@@ -1,8 +1,8 @@
-/** Цветовые хелперы: единственная точка парсинга/сборки CSS-цветов. */
+/** Colour helpers: the single place that parses and builds CSS colours. */
 
 export type Rgb = [number, number, number];
 
-/** "#abc" или "#aabbcc" → [r, g, b]; null, если формат не распознан. */
+/** "#abc" or "#aabbcc" → [r, g, b]; null when the format is not recognised. */
 export function hexToRgbTriplet(hex: string, allowShort = true): Rgb | null {
   const h = hex.trim().replace('#', '');
   const full = allowShort && h.length === 3 ? h.replace(/./g, '$&$&') : h;
@@ -39,4 +39,28 @@ export function darkenRgb([r, g, b]: Rgb, amount: number): Rgb {
 export function lightenHex(hex: string, amount: number): string {
   const rgb = hexToRgbTriplet(hex);
   return rgb ? rgbToHex(lightenRgb(rgb, amount)) : hex;
+}
+
+/** HSL (h 0..360, s and l 0..100) → "#rrggbb". */
+export function hslToHex(h: number, s: number, l: number): string {
+  const sat = s / 100;
+  const lig = l / 100;
+  const a = sat * Math.min(lig, 1 - lig);
+  const f = (n: number) => {
+    const k = (n + h / 30) % 12;
+    return Math.round(255 * (lig - a * Math.max(-1, Math.min(k - 3, 9 - k, 1))));
+  };
+  return rgbToHex([f(0), f(8), f(4)]);
+}
+
+/** Hue (0..360) of a hex colour; 0 for greys and unparsable input. */
+export function hueOfHex(hex: string): number {
+  const rgb = hexToRgbTriplet(hex);
+  if (!rgb) return 0;
+  const [r, g, b] = rgb.map((c) => c / 255);
+  const max = Math.max(r, g, b);
+  const d = max - Math.min(r, g, b);
+  if (d === 0) return 0;
+  const h = max === r ? ((g - b) / d) % 6 : max === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return Math.round((h * 60 + 360) % 360);
 }

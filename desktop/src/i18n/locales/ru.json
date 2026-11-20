@@ -88,6 +88,7 @@
   },
   "search": {
     "placeholder": "Треки, плейлисты, пользователи...",
+    "pressEnterToOpen": "Нажмите Enter, чтобы открыть ссылку",
     "tracks": "Треки",
     "playlists": "Плейлисты",
     "users": "Пользователи",
@@ -116,6 +117,7 @@
     "notFoundOnSc": "не найдено на SoundCloud",
     "description": "Описание",
     "noComments": "Пока нет комментариев",
+    "commentsSoon": "Комментарии появятся здесь по ходу трека",
     "favoriters": "Понравилось",
     "lyrics": "Текст песни",
     "lyricsNotFound": "Текст не найден",
@@ -304,6 +306,7 @@
     "backupInvalid": "Неверный формат файла резервной копии",
     "appearance": "Оформление",
     "accentColor": "Цвет акцента",
+    "accentPick": "Выбрать цвет",
     "backgroundImage": "Фоновое изображение",
     "none": "Нет",
     "addFile": "Файл",
@@ -339,8 +342,8 @@
     "highQualityStreaming": "Высокое качество стрима",
     "highQualityStreamingDesc": "Стараться воспроизводить треки в максимально доступном качестве",
     "interface": "Интерфейс",
-    "liquidGlass": "Эффекты Liquid Glass",
-    "liquidGlassDesc": "Полупрозрачное матовое стекло и преломление света (отключите для максимального FPS)",
+    "liquidGlass": "Глянец",
+    "liquidGlassDesc": "Полупрозрачные матовые панели с мягкими бликами. Выключите для плоских панелей и максимального FPS",
     "uiScale": "Масштаб интерфейса",
     "uiScaleDesc": "Также Ctrl + колесо мыши и Ctrl +/−/0",
     "uiScaleToast": "Масштаб {{value}}%",
@@ -353,9 +356,6 @@
     "fontNotFound": "Шрифт «{{name}}» не найден в системе",
     "fontFileFailed": "Не удалось загрузить файл шрифта",
     "reset": "Сбросить",
-    "customCss": "Свой CSS",
-    "customCssDesc": "Стили поверх приложения, применяются после сохранения",
-    "customCssApply": "Сохранить",
     "searchPlaceholder": "Поиск по настройкам…",
     "searchEmpty": "Ничего не нашлось",
     "envDesktop": "Нативный клиент (Tauri)",
@@ -653,6 +653,7 @@
     "album": "Альбом",
     "empty": "Здесь пока пусто",
     "download": "Скачать для офлайна",
-    "downloadStarted": "Скачиваем {{count}} треков — прогресс в «Офлайн»"
+    "allDownloaded": "Все {{count}} треков уже скачаны",
+    "downloadStarted": "Скачиваем {{count}} новых, ещё {{done}} уже на диске — прогресс в «Офлайн»"
   }
 }

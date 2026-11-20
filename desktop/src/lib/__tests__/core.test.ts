@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 import { hasCachedTrack } from '../../stores/cached-urns.ts';
+import { hslToHex, hueOfHex } from '../color.ts';
 import {
   AURAS,
   artistAuraForId,
@@ -381,4 +382,13 @@ test('backup-schema includes soundwaveVibe and soundwaveMode', () => {
   assert.equal(parsed.settings.soundwaveVibe, 'night');
   assert.equal(parsed.settings.soundwaveMode, 'diverse');
   assert.equal(parsed.settings.liquidGlass, false);
+});
+
+test('accent picker colour round trip', () => {
+  assert.equal(hslToHex(0, 100, 50), '#ff0000');
+  assert.equal(hslToHex(120, 100, 50), '#00ff00');
+  assert.equal(hueOfHex('#0000ff'), 240);
+  assert.equal(hueOfHex('#ff5500'), 20);
+  assert.equal(hueOfHex('#808080'), 0);
+  assert.equal(hueOfHex(hslToHex(200, 90, 55)), 200);
 });

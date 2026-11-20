@@ -68,10 +68,6 @@ export interface SettingsState {
   setNowPlayingPanel: (open: boolean) => void;
   uiScale: number;
   setUiScale: (scale: number) => void;
-  customCss: string;
-  setCustomCss: (css: string) => void;
-  customCssEnabled: boolean;
-  setCustomCssEnabled: (v: boolean) => void;
   customFontName: string;
   customFontFile: string;
   setCustomFont: (name: string, file: string) => void;
@@ -164,8 +160,6 @@ const DEFAULTS = {
   uiScale: 100,
   musicSources: DEFAULT_MUSIC_SOURCES,
   nowPlayingPanel: true,
-  customCss: '',
-  customCssEnabled: true,
   customFontName: '',
   customFontFile: '',
   audioCacheLimitMB: 1024,
@@ -207,8 +201,6 @@ export const useSettingsStore = create<SettingsState>()(
       setUiScale: (uiScale) => set({ uiScale }),
       setMusicSources: (musicSources) => set({ musicSources }),
       setNowPlayingPanel: (nowPlayingPanel) => set({ nowPlayingPanel }),
-      setCustomCss: (customCss) => set({ customCss }),
-      setCustomCssEnabled: (customCssEnabled) => set({ customCssEnabled }),
       setCustomFont: (customFontName, customFontFile) => set({ customFontName, customFontFile }),
       setThemePreset: (id) => {
         if (id === 'custom') {
@@ -303,8 +295,6 @@ export const useSettingsStore = create<SettingsState>()(
         uiScale: s.uiScale,
         musicSources: s.musicSources,
         nowPlayingPanel: s.nowPlayingPanel,
-        customCss: s.customCss,
-        customCssEnabled: s.customCssEnabled,
         customFontName: s.customFontName,
         customFontFile: s.customFontFile,
         accentColor: s.accentColor,

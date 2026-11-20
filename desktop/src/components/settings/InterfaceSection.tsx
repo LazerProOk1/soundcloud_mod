@@ -137,55 +137,6 @@ const FontRow = React.memo(function FontRow() {
   );
 });
 
-const CSS_PLACEHOLDER = ':root {\n  --color-accent: #8b5cf6;\n}';
-
-const CssRow = React.memo(function CssRow() {
-  const { t } = useTranslation();
-  const css = useSettingsStore((s) => s.customCss);
-  const enabled = useSettingsStore((s) => s.customCssEnabled);
-  const setCss = useSettingsStore((s) => s.setCustomCss);
-  const setEnabled = useSettingsStore((s) => s.setCustomCssEnabled);
-  const [draft, setDraft] = useState(css);
-  const dirty = draft !== css;
-
-  return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-[13px] text-white/70 font-medium">{t('settings.customCss')}</p>
-          <p className="text-[11px] text-white/30 mt-0.5">{t('settings.customCssDesc')}</p>
-        </div>
-        <LiquidSwitch checked={enabled} onChange={setEnabled} />
-      </div>
-      <textarea
-        value={draft}
-        onChange={(e) => setDraft(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 's' && (e.ctrlKey || e.metaKey)) {
-            e.preventDefault();
-            setCss(draft);
-          }
-        }}
-        spellCheck={false}
-        rows={8}
-        placeholder={CSS_PLACEHOLDER}
-        className="w-full px-3 py-2.5 rounded-xl font-mono text-[12px] leading-relaxed text-white/85 bg-black/30 border border-white/[0.08] outline-none focus:border-white/25 resize-y"
-      />
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          disabled={!dirty}
-          onClick={() => setCss(draft)}
-          className={`${btnCls} disabled:opacity-40 disabled:cursor-default`}
-        >
-          {t('settings.customCssApply')}
-        </button>
-        <span className="text-[11px] text-white/30">Ctrl+S</span>
-      </div>
-    </div>
-  );
-});
-
 const SOURCE_META: Record<MusicSourceId, { label: string; dot: string }> = {
   soundcloud: { label: 'SoundCloud', dot: '#ff5500' },
   zaycev: { label: 'Зайцев.нет', dot: '#3b82f6' },
@@ -286,7 +237,6 @@ export const InterfaceSection = React.memo(function InterfaceSection() {
       <SourceRow />
       <ScaleRow />
       <FontRow />
-      <CssRow />
     </section>
   );
 });

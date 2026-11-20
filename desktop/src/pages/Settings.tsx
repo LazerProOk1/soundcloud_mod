@@ -1,3 +1,4 @@
+import * as Popover from '@radix-ui/react-popover';
 import { listen } from '@tauri-apps/api/event';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -29,6 +30,7 @@ import {
   removeWallpaper,
   saveWallpaperFromBuffer,
 } from '../lib/cache';
+import { hslToHex, hueOfHex } from '../lib/color';
 import { trackedInvoke } from '../lib/diagnostics';
 import { formatBytes } from '../lib/formatters';
 import { Check, Download, Link, Loader2, Pipette, Trash2, Upload, X } from '../lib/icons';
@@ -50,8 +52,6 @@ const PRESET_COLORS = [
   '#10b981',
   '#eab308',
   '#ef4444',
-  '#f97316',
-  '#8b5cf6',
 ];
 
 const LANGUAGES = [
@@ -550,7 +550,7 @@ const WallpaperPicker = React.memo(function WallpaperPicker() {
         <button
           type="button"
           onClick={() => setBackgroundImage('')}
-          className={`press relative flex aspect-video items-center justify-center rounded-xl bg-white/[0.04] cursor-pointer ${optionRing(!backgroundImage)}`}
+          className={`press-soft relative flex aspect-video items-center justify-center rounded-xl bg-white/[0.04] cursor-pointer ${optionRing(!backgroundImage)}`}
         >
           <span className="text-[12px] font-semibold text-white/60">{t('settings.none')}</span>
           {!backgroundImage && <SelectedCheck />}
@@ -566,7 +566,7 @@ const WallpaperPicker = React.memo(function WallpaperPicker() {
               type="button"
               title={t(preset.labelKey, preset.fallbackLabel)}
               onClick={() => handleSelect(preset.id)}
-              className={`press relative aspect-video overflow-hidden rounded-xl cursor-pointer ${optionRing(selected)}`}
+              className={`press-soft relative aspect-video overflow-hidden rounded-xl cursor-pointer ${optionRing(selected)}`}
             >
               {url && <img src={url} alt="" className="h-full w-full object-cover" />}
               {selected && <SelectedCheck />}
@@ -581,7 +581,7 @@ const WallpaperPicker = React.memo(function WallpaperPicker() {
           return (
             <div
               key={name}
-              className={`press group relative aspect-video overflow-hidden rounded-xl cursor-pointer ${optionRing(selected)}`}
+              className={`press-soft group relative aspect-video overflow-hidden rounded-xl cursor-pointer ${optionRing(selected)}`}
               onClick={() => handleSelect(name)}
             >
               {url && <img src={url} alt="" className="h-full w-full object-cover" />}
@@ -808,6 +808,57 @@ function SelectedCheck() {
   );
 }
 
+/** Light in-app colour picker: a hue strip plus a hex field (the native one is a white OS box). */
+function AccentPicker({ value, onChange }: { value: string; onChange: (hex: string) => void }) {
+  const { t } = useTranslation();
+  const [draft, setDraft] = useState(value);
+  useEffect(() => setDraft(value), [value]);
+  return (
+    <Popover.Root>
+      <Popover.Trigger asChild>
+        <button
+          type="button"
+          title={t('settings.accentPick')}
+          className="press flex h-7 w-7 items-center justify-center rounded-full bg-white/[0.08] text-white/70 hover:bg-white/[0.14] hover:text-white cursor-pointer"
+        >
+          <Pipette size={13} />
+        </button>
+      </Popover.Trigger>
+      <Popover.Portal>
+        <Popover.Content
+          side="top"
+          align="start"
+          sideOffset={8}
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          className="z-[200] w-[240px] space-y-3 rounded-2xl border border-white/[0.08] bg-[#141416]/95 p-3 shadow-[0_24px_64px_rgba(0,0,0,0.5)] backdrop-blur-xl outline-none data-[state=open]:animate-fade-in-up"
+        >
+          <input
+            type="range"
+            min={0}
+            max={359}
+            value={hueOfHex(value)}
+            onChange={(e) => onChange(hslToHex(Number(e.target.value), 90, 55))}
+            aria-label={t('settings.accentPick')}
+            className="hue-range w-full"
+          />
+          <div className="flex items-center gap-2">
+            <span className="h-8 w-8 shrink-0 rounded-full" style={{ background: value }} />
+            <input
+              value={draft}
+              spellCheck={false}
+              onChange={(e) => {
+                setDraft(e.target.value);
+                if (/^#[0-9a-f]{6}$/i.test(e.target.value)) onChange(e.target.value.toLowerCase());
+              }}
+              className="h-8 min-w-0 flex-1 rounded-full border border-transparent bg-white/[0.06] px-3 text-[13px] tabular-nums text-white outline-none focus:border-white/25"
+            />
+          </div>
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
+  );
+}
+
 /* ── Theme Section ──────────────────────────────────────── */
 
 const THEME_PRESET_KEYS = ['soundcloud', 'dark', 'neon', 'forest', 'crimson'] as const;
@@ -825,8 +876,6 @@ const ThemeSection = React.memo(function ThemeSection() {
   const setBackgroundBlur = useSettingsStore((s) => s.setBackgroundBlur);
   const resetTheme = useSettingsStore((s) => s.resetTheme);
 
-  const colorInputRef = useRef<HTMLInputElement>(null);
-
   return (
     <section className="settings-section space-y-6">
       <div className="flex items-center justify-between">
@@ -841,10 +890,10 @@ const ThemeSection = React.memo(function ThemeSection() {
         </button>
       </div>
 
-      {/* Theme Presets */}
+      {/* Theme: compact chips with the theme's background and accent. */}
       <div className="space-y-3">
         <label className="text-[13px] text-white/50 font-medium">{t('settings.themePreset')}</label>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="flex flex-wrap gap-2">
           {THEME_PRESET_KEYS.map((id) => {
             const def = THEME_PRESETS[id];
             const isActive = themePreset === id;
@@ -853,122 +902,50 @@ const ThemeSection = React.memo(function ThemeSection() {
                 key={id}
                 type="button"
                 onClick={() => setThemePreset(id)}
-                className={`press relative overflow-hidden rounded-2xl text-left cursor-pointer ${optionRing(isActive)}`}
+                className={`press flex h-10 items-center gap-2.5 rounded-full pl-2 pr-4 text-[13px] font-semibold cursor-pointer ${
+                  isActive
+                    ? 'bg-white text-black'
+                    : 'bg-white/[0.06] text-white/80 hover:bg-white/[0.10] hover:text-white'
+                }`}
               >
-                {/* Mini app mock in the theme's colours: sidebar, accent heading, content. */}
-                <div className="flex h-20 gap-2 p-3" style={{ backgroundColor: def.preview[1] }}>
-                  <div className="w-5 rounded-md" style={{ backgroundColor: def.preview[2] }} />
-                  <div className="flex flex-1 flex-col gap-1.5">
-                    <div
-                      className="h-2 w-2/3 rounded-full"
-                      style={{ backgroundColor: def.preview[0] }}
-                    />
-                    <div
-                      className="flex-1 rounded-md"
-                      style={{ backgroundColor: def.preview[2] }}
-                    />
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 bg-white/[0.04] px-3 py-2.5">
+                <span
+                  className="relative h-6 w-6 rounded-full shadow-[inset_0_0_0_1px_rgba(255,255,255,0.15)]"
+                  style={{ backgroundColor: def.preview[1] }}
+                >
                   <span
-                    className="h-2.5 w-2.5 rounded-full"
+                    className="absolute inset-[6px] rounded-full"
                     style={{ backgroundColor: def.preview[0] }}
                   />
-                  <span className="text-[13px] font-semibold text-white/90">{def.name}</span>
-                </div>
-                {isActive && <SelectedCheck />}
+                </span>
+                {def.name}
               </button>
             );
           })}
-          <button
-            type="button"
-            onClick={() => {
-              setThemePreset('custom');
-              colorInputRef.current?.click();
-            }}
-            className={`press relative overflow-hidden rounded-2xl text-left cursor-pointer ${optionRing(themePreset === 'custom')}`}
-          >
-            <div className="flex h-20 items-center justify-center bg-white/[0.03]">
-              <span
-                className="h-9 w-9 rounded-full"
-                style={{
-                  background:
-                    'conic-gradient(#ff5500, #f5c518, #22c55e, #38bdf8, #a855f7, #ff2d55, #ff5500)',
-                }}
-              />
-            </div>
-            <div className="flex items-center gap-2 bg-white/[0.04] px-3 py-2.5">
-              <Pipette size={12} className="text-white/60" />
-              <span className="text-[13px] font-semibold text-white/90">
-                {t('settings.themeCustom')}
-              </span>
-            </div>
-            {themePreset === 'custom' && <SelectedCheck />}
-          </button>
         </div>
       </div>
 
-      {/* Accent Color (for custom) */}
-      {themePreset === 'custom' && (
-        <div className="space-y-3">
-          <label className="text-[13px] text-white/50 font-medium">
-            {t('settings.accentColor')}
-          </label>
-          <div
-            className="flex items-center gap-2 flex-wrap p-3 rounded-2xl"
-            style={{
-              background: 'rgba(255,255,255,0.03)',
-              border: '1px solid rgba(255,255,255,0.06)',
-              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.07)',
-            }}
-          >
-            {PRESET_COLORS.map((color) => {
-              const isActive = accentColor === color;
-              return (
-                <button
-                  key={color}
-                  onClick={() => setAccentColor(color)}
-                  className="relative transition-all duration-200 cursor-pointer active:scale-90"
-                  style={{
-                    width: 32,
-                    height: 32,
-                    borderRadius: '50%',
-                    background: color,
-                    transform: isActive ? 'scale(1.15)' : undefined,
-                    boxShadow: isActive
-                      ? `0 0 0 2px rgba(255,255,255,0.9), 0 0 16px ${color}80, inset 0 1px 0 rgba(255,255,255,0.35)`
-                      : `0 2px 8px ${color}50, inset 0 1px 0 rgba(255,255,255,0.25), 0 0 0 1px rgba(0,0,0,0.15)`,
-                  }}
-                />
-              );
-            })}
-            <button
-              onClick={() => colorInputRef.current?.click()}
-              title="Custom color"
-              className="flex items-center justify-center transition-all duration-200 cursor-pointer hover:scale-110 active:scale-90"
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: '50%',
-                background:
-                  'linear-gradient(135deg, rgba(255,255,255,0.13) 0%, rgba(255,255,255,0.04) 100%)',
-                border: '1px solid rgba(255,255,255,0.18)',
-                color: 'rgba(255,255,255,0.65)',
-                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.22), 0 2px 8px rgba(0,0,0,0.22)',
-              }}
-            >
-              <Pipette size={13} />
-            </button>
-          </div>
+      {/* Accent: picking a colour switches to the custom theme. */}
+      <div className="space-y-3">
+        <label className="text-[13px] text-white/50 font-medium">{t('settings.accentColor')}</label>
+        <div className="flex flex-wrap items-center gap-2.5">
+          {PRESET_COLORS.map((color) => {
+            const isActive = themePreset === 'custom' && accentColor.toLowerCase() === color;
+            return (
+              <button
+                key={color}
+                type="button"
+                title={color}
+                onClick={() => setAccentColor(color)}
+                className={`press h-7 w-7 rounded-full cursor-pointer ${
+                  isActive ? 'ring-2 ring-white ring-offset-2 ring-offset-[#121214]' : ''
+                }`}
+                style={{ background: color }}
+              />
+            );
+          })}
+          <AccentPicker value={accentColor} onChange={setAccentColor} />
         </div>
-      )}
-      <input
-        ref={colorInputRef}
-        type="color"
-        value={accentColor}
-        onChange={(e) => setAccentColor(e.target.value)}
-        className="sr-only"
-      />
+      </div>
 
       {/* Extract accent from background */}
       {backgroundImage && themePreset === 'custom' && (

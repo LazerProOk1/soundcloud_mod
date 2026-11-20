@@ -4,8 +4,6 @@ export const BACKUP_VERSION = 1 as const;
 export const SETTINGS_BACKUP_KEYS = [
   'nowPlayingPanel',
   'uiScale',
-  'customCss',
-  'customCssEnabled',
   'customFontName',
   'customFontFile',
   'accentColor',
