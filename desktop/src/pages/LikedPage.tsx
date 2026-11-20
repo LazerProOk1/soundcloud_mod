@@ -41,7 +41,13 @@ export function LikedPage() {
       isLoading={likes.isLoading}
       onDownload={() => {
         downloadAllLikes()
-          .then((n) => toast.success(t('trackList.downloadStarted', { count: n })))
+          .then(({ total, pending }) =>
+            pending === 0
+              ? toast.success(t('trackList.allDownloaded', { count: total }))
+              : toast.success(
+                  t('trackList.downloadStarted', { count: pending, done: total - pending }),
+                ),
+          )
           .catch((e) => toast.error(String(e)));
       }}
       footer={
