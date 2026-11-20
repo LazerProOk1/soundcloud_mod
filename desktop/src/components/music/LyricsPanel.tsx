@@ -11,7 +11,7 @@ import { api } from '../../lib/api';
 import { getCurrentTime, handlePrev, seek, subscribe } from '../../lib/audio';
 import { FFT_BIN_COUNT, readAccentRgb, subscribeAudioFft } from '../../lib/audio-fft';
 import { toggleDislike, useDislikeStatus } from '../../lib/dislikes';
-import { ago, art, durLong } from '../../lib/formatters';
+import { art, durLong } from '../../lib/formatters';
 import {
   type Comment,
   invalidateAllLikesCache,
@@ -847,68 +847,53 @@ const PanelTabButton = React.memo(
 
 /* ── Timed comments rail ──────────────────────────────────── */
 
-const TimedCommentCard = React.memo(
-  ({
-    comment,
-    state,
-    onSeek,
-  }: {
-    comment: Comment;
-    state: 'past' | 'active' | 'future';
-    onSeek: (seconds: number) => void;
-  }) => {
-    const avatar = art(comment.user.avatar_url, 'small');
-    const commentTime = comment.timestamp != null ? comment.timestamp / 1000 : 0;
-
-    return (
-      <button
-        type="button"
-        onClick={() => onSeek(commentTime)}
-        className={`w-full text-left rounded-[28px] border px-4 py-3 transition-all duration-300 cursor-pointer ${
-          state === 'active'
-            ? 'bg-gradient-to-br from-white/[0.14] to-white/[0.08] border-white/14 ring-1 ring-accent/25 shadow-[0_16px_36px_rgba(0,0,0,0.26)]'
-            : state === 'past'
-              ? 'bg-white/[0.025] border-white/[0.035] hover:bg-white/[0.04]'
-              : 'bg-white/[0.045] border-white/[0.05] hover:bg-white/[0.06]'
-        }`}
-      >
-        <div className="flex items-start gap-3">
-          <img
-            src={avatar ?? ''}
-            alt=""
-            className="w-9 h-9 rounded-full shrink-0 ring-1 ring-white/[0.08]"
-          />
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <span className="text-[12px] font-medium text-white/78 truncate">
-                {comment.user.username}
-              </span>
-              <span
-                className={`text-[10px] tabular-nums shrink-0 ${
-                  state === 'active' ? 'text-accent' : 'text-white/30'
-                }`}
-              >
-                {durLong(comment.timestamp ?? 0)}
-              </span>
-              <span className="text-[10px] text-white/18 ml-auto shrink-0">
-                {ago(comment.created_at)}
-              </span>
-            </div>
-            <p className="mt-1 text-[13px] leading-relaxed text-white/58 break-words">
-              {comment.body}
-            </p>
-          </div>
+/** One chat line: avatar, name, the moment in the track (click to jump there) and the text. */
+const TimedCommentRow = React.memo(({ comment }: { comment: Comment }) => {
+  const avatar = art(comment.user.avatar_url, 'small');
+  return (
+    <div className="flex items-start gap-3 rounded-xl px-3 py-2 animate-fade-in-up hover:bg-white/[0.04]">
+      <img
+        src={avatar ?? ''}
+        alt=""
+        className="mt-0.5 h-8 w-8 shrink-0 rounded-full bg-white/[0.06]"
+      />
+      <div className="min-w-0 flex-1">
+        <div className="flex items-baseline gap-2">
+          <span className="truncate text-[13px] font-semibold text-white/85">
+            {comment.user.username}
+          </span>
+          <button
+            type="button"
+            onClick={() => seek((comment.timestamp ?? 0) / 1000)}
+            className="shrink-0 text-[12px] tabular-nums text-white/40 hover:text-accent cursor-pointer"
+          >
+            {durLong(comment.timestamp ?? 0)}
+          </button>
         </div>
-      </button>
-    );
-  },
-);
+        <p className="mt-0.5 break-words text-[14px] leading-snug text-white/75">{comment.body}</p>
+      </div>
+    </div>
+  );
+});
 
+/** How many past comments stay in the chat; older ones are dropped to keep the DOM small. */
+const COMMENT_CHAT_LIMIT = 80;
+/** At most one new line per this interval, so each one can be read. */
+const COMMENT_REVEAL_MS = 1800;
+/** If more than this many are waiting, the oldest waiting ones are skipped to stay in sync. */
+const COMMENT_MAX_BACKLOG = 6;
+
+/**
+ * Timed comments as a live chat: a comment appears once playback reaches its moment, at the
+ * bottom, and stays put so it can be read. The list sticks to the bottom unless the user has
+ * scrolled up to read older ones.
+ */
 const TimedCommentsRail = React.memo(({ trackUrn }: { trackUrn: string }) => {
   const { t } = useTranslation();
   const containerRef = useRef<HTMLDivElement>(null);
-  const itemRefs = useRef(new Map<number, HTMLDivElement>());
-  const [activeIndex, setActiveIndex] = useState(-1);
+  const stickRef = useRef(true);
+  const hoverRef = useRef(false);
+  const [shownCount, setShownCount] = useState(0);
   const { comments, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } =
     useTrackComments(trackUrn);
 
@@ -925,87 +910,39 @@ const TimedCommentsRail = React.memo(({ trackUrn }: { trackUrn: string }) => {
     void fetchNextPage();
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
+  // Number of comments whose moment playback has reached (binary search on the sorted list).
   useEffect(() => {
-    const getIndexForTime = (timeMs: number) => {
-      if (timedComments.length === 0) return -1;
+    const countUpTo = (timeMs: number) => {
       let lo = 0;
-      let hi = timedComments.length - 1;
-      let best = -1;
-      while (lo <= hi) {
+      let hi = timedComments.length;
+      while (lo < hi) {
         const mid = (lo + hi) >> 1;
-        const timestamp = timedComments[mid].timestamp ?? 0;
-        if (timestamp <= timeMs) {
-          best = mid;
-          lo = mid + 1;
-        } else {
-          hi = mid - 1;
-        }
+        if ((timedComments[mid].timestamp ?? 0) <= timeMs) lo = mid + 1;
+        else hi = mid;
       }
-      return best;
+      return lo;
     };
-
-    const syncActiveIndex = () => {
-      const nextIndex = getIndexForTime(Math.max(0, getCurrentTime()) * 1000);
-      setActiveIndex((prev) => (prev === nextIndex ? prev : nextIndex));
+    // Reveal one line per tick; jump back instantly after a seek backwards; skip a long backlog.
+    const step = () => {
+      const target = countUpTo(Math.max(0, getCurrentTime()) * 1000);
+      setShownCount((shown) => {
+        if (target <= shown) return target;
+        if (hoverRef.current) return shown;
+        return Math.max(shown, target - COMMENT_MAX_BACKLOG) + 1;
+      });
     };
-
-    syncActiveIndex();
-
-    // Only tick while playing — pause the interval when audio is paused to save CPU.
-    let id: ReturnType<typeof window.setInterval> | null = null;
-
-    const startTick = () => {
-      // Nothing to sync while the window is hidden — don't burn a 4 Hz timer.
-      if (id !== null || document.hidden) return;
-      id = window.setInterval(syncActiveIndex, 250);
-    };
-    const stopTick = () => {
-      if (id === null) return;
-      window.clearInterval(id);
-      id = null;
-    };
-
-    if (usePlayerStore.getState().isPlaying) startTick();
-    else syncActiveIndex(); // sync once so position is correct even while paused
-
-    const unsub = usePlayerStore.subscribe((s, prev) => {
-      if (s.isPlaying === prev.isPlaying) return;
-      if (s.isPlaying) {
-        syncActiveIndex();
-        startTick();
-      } else {
-        stopTick();
-        syncActiveIndex();
-      }
-    });
-
-    const onVisibilityChange = () => {
-      if (document.hidden) {
-        stopTick();
-      } else {
-        syncActiveIndex();
-        if (usePlayerStore.getState().isPlaying) startTick();
-      }
-    };
-    document.addEventListener('visibilitychange', onVisibilityChange);
-
-    return () => {
-      document.removeEventListener('visibilitychange', onVisibilityChange);
-      stopTick();
-      unsub();
-    };
+    setShownCount(0);
+    step();
+    const id = window.setInterval(step, COMMENT_REVEAL_MS);
+    return () => window.clearInterval(id);
   }, [timedComments]);
 
-  const focusIndex = activeIndex >= 0 ? activeIndex : timedComments.length > 0 ? 0 : -1;
-
+  // Keep the newest line in view while the user is at the bottom.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: re-run when lines are added
   useEffect(() => {
-    if (focusIndex < 0) return;
-    const container = containerRef.current;
-    const item = itemRefs.current.get(timedComments[focusIndex]?.id ?? -1);
-    if (!container || !item) return;
-    const top = item.offsetTop - container.clientHeight / 2 + item.clientHeight / 2;
-    container.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
-  }, [focusIndex, timedComments]);
+    const el = containerRef.current;
+    if (el && stickRef.current) el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+  }, [shownCount]);
 
   if (isLoading && timedComments.length === 0) {
     return (
@@ -1025,44 +962,31 @@ const TimedCommentsRail = React.memo(({ trackUrn }: { trackUrn: string }) => {
     );
   }
 
+  const shown = timedComments.slice(Math.max(0, shownCount - COMMENT_CHAT_LIMIT), shownCount);
+
   return (
     <div className="flex-1 min-h-0 px-8 pb-8">
       <div
         ref={containerRef}
-        className="h-full overflow-y-auto scrollbar-hide px-4 py-[32vh] space-y-3 relative"
-        style={{
-          maskImage: 'linear-gradient(transparent 0%, black 12%, black 88%, transparent 100%)',
+        onScroll={(e) => {
+          const el = e.currentTarget;
+          stickRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 48;
         }}
+        onMouseEnter={() => {
+          hoverRef.current = true;
+        }}
+        onMouseLeave={() => {
+          hoverRef.current = false;
+        }}
+        className="flex h-full flex-col overflow-y-auto scrollbar-hide px-2 pb-32"
+        style={{ maskImage: 'linear-gradient(transparent 0%, black 10%)' }}
       >
-        {timedComments.map((comment, index) => {
-          const state = index < activeIndex ? 'past' : index === activeIndex ? 'active' : 'future';
-          const distance = Math.abs(index - focusIndex);
-          const scale = Math.max(0.9, 1 - distance * 0.035);
-          const opacity =
-            state === 'active' ? 1 : Math.max(0.28, distance === 0 ? 0.94 : 1 - distance * 0.15);
-
-          return (
-            <div
-              key={comment.id}
-              ref={(node) => {
-                if (node) itemRefs.current.set(comment.id, node);
-                else itemRefs.current.delete(comment.id);
-              }}
-              className="relative"
-              style={{
-                transform: `scale(${scale}) translateZ(0)`,
-                opacity,
-                filter: distance >= 4 ? 'blur(1.5px)' : distance >= 2 ? 'blur(0.6px)' : 'none',
-              }}
-            >
-              <TimedCommentCard
-                comment={comment}
-                state={state}
-                onSeek={(seconds) => seek(seconds)}
-              />
-            </div>
-          );
-        })}
+        <div className="flex-1" />
+        {shown.length === 0 ? (
+          <p className="py-6 text-center text-[13px] text-white/35">{t('track.commentsSoon')}</p>
+        ) : (
+          shown.map((comment) => <TimedCommentRow key={comment.id} comment={comment} />)
+        )}
       </div>
     </div>
   );
@@ -1212,24 +1136,12 @@ const SplitDivider = React.memo(
           }
         }}
       >
+        {/* Invisible until hovered: a short pill that brightens while dragging. */}
         <div
-          className={`absolute left-1/2 top-0 bottom-0 w-px -translate-x-1/2 transition-colors duration-150 ${
-            active ? 'bg-white/20' : 'bg-white/[0.04] group-hover/splitter:bg-white/10'
+          className={`absolute left-1/2 top-1/2 h-12 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full transition-colors duration-150 ${
+            active ? 'bg-white/60' : 'bg-transparent group-hover/splitter:bg-white/25'
           }`}
         />
-        <div
-          className={`absolute left-1/2 top-1/2 flex h-14 w-3 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border transition-all duration-150 ${
-            active
-              ? 'border-white/18 bg-white/[0.12]'
-              : 'border-white/[0.08] bg-white/[0.04] group-hover/splitter:border-white/14 group-hover/splitter:bg-white/[0.08]'
-          }`}
-        >
-          <div className="flex flex-col gap-1.5">
-            <span className="block h-1 w-[2px] rounded-full bg-white/35" />
-            <span className="block h-1 w-[2px] rounded-full bg-white/35" />
-            <span className="block h-1 w-[2px] rounded-full bg-white/35" />
-          </div>
-        </div>
       </div>
     );
   },
