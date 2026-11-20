@@ -176,6 +176,10 @@
     "auraCustom": "Custom"
   },
   "library": {
+    "tracksCount_one": "{{value}} track",
+    "tracksCount_other": "{{value}} tracks",
+    "usersCount_one": "{{value}} user",
+    "usersCount_other": "{{value}} users",
     "likedTracks": "Liked Tracks",
     "likedPlaylists": "Liked Playlists",
     "yourPlaylists": "Your Playlists",

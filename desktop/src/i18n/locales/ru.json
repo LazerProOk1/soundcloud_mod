@@ -176,6 +176,14 @@
     "auraCustom": "Свой цвет"
   },
   "library": {
+    "tracksCount_one": "{{value}} трек",
+    "tracksCount_few": "{{value}} трека",
+    "tracksCount_many": "{{value}} треков",
+    "tracksCount_other": "{{value}} треков",
+    "usersCount_one": "{{value}} пользователь",
+    "usersCount_few": "{{value}} пользователя",
+    "usersCount_many": "{{value}} пользователей",
+    "usersCount_other": "{{value}} пользователей",
     "likedTracks": "Любимые треки",
     "likedPlaylists": "Любимые плейлисты",
     "yourPlaylists": "Ваши плейлисты",

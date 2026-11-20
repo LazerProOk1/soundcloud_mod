@@ -320,7 +320,10 @@ const LibraryHero = React.memo(function LibraryHero({
           </div>
           <h2 className="syne text-3xl text-white">{t('library.likedTracks')}</h2>
           <p className="text-white/50 font-medium mt-1">
-            {fc(user.public_favorites_count)} {t('search.tracks').toLowerCase()}
+            {t('library.tracksCount', {
+              count: user.public_favorites_count ?? 0,
+              value: fc(user.public_favorites_count),
+            })}
           </p>
         </div>
 
@@ -407,7 +410,10 @@ const LibraryHero = React.memo(function LibraryHero({
           </div>
           <h2 className="syne text-3xl text-white">{t('nav.following')}</h2>
           <p className="text-white/50 font-medium mt-1">
-            {fc(user.followings_count)} {t('search.users').toLowerCase()}
+            {t('library.usersCount', {
+              count: user.followings_count ?? 0,
+              value: fc(user.followings_count),
+            })}
           </p>
         </div>
 
