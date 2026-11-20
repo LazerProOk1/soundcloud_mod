@@ -1,132 +1,22 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { AddToPlaylistDialog } from '../components/music/AddToPlaylistDialog';
-import { LikeButton } from '../components/music/LikeButton';
 import { PlaylistCard } from '../components/music/PlaylistCard';
-import { TrackTitleArtist } from '../components/music/TrackTitleArtist';
+import { TrackTableRow } from '../components/music/TrackTableRow';
+import { Segmented } from '../components/ui/Segmented';
 import { VirtualList } from '../components/ui/VirtualList';
 import { UserCard } from '../components/user/UserCard';
 import { api } from '../lib/api';
-import { preloadTrack } from '../lib/audio';
-import { art, dur, fc } from '../lib/formatters';
 import {
   useInfiniteScroll,
   useSearchPlaylists,
   useSearchTracks,
   useSearchUsers,
 } from '../lib/hooks';
-import {
-  Clock,
-  ExternalLink,
-  headphones11,
-  heart11,
-  ListPlus,
-  Loader2,
-  musicIcon20,
-  Pause,
-  Play,
-  Search as SearchIcon,
-  Trash2,
-  X,
-} from '../lib/icons';
-import { openTrackMenu } from '../lib/useTrackContextMenu';
-import { useTrackPlay } from '../lib/useTrackPlay';
-import type { Track } from '../stores/player';
+import { Clock, ExternalLink, Loader2, Search as SearchIcon, Trash2, X } from '../lib/icons';
 import { useSearchHistoryStore } from '../stores/searchHistory';
 
 /* ── Components ───────────────────────────────────────────── */
-
-const TrackRow = React.memo(
-  function TrackRow({ track, queue }: { track: Track; queue: Track[] }) {
-    const { t } = useTranslation();
-    const { isThis, isThisPlaying, togglePlay } = useTrackPlay(track, queue);
-    const cover = art(track.artwork_url, 't200x200');
-
-    return (
-      <div
-        onContextMenu={(e) => openTrackMenu(e, track)}
-        className={`group flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-300 ease-[var(--ease-apple)] ${
-          isThis
-            ? 'bg-accent/[0.06] ring-1 ring-accent/20 shadow-[inset_0_0_20px_rgba(255,85,0,0.05)]'
-            : 'hover:bg-white/[0.04]'
-        }`}
-        onMouseEnter={() => preloadTrack(track.urn)}
-      >
-        <div
-          className="w-10 h-10 flex items-center justify-center shrink-0 cursor-pointer"
-          onClick={togglePlay}
-        >
-          {isThisPlaying ? (
-            <div className="w-9 h-9 rounded-full bg-accent text-accent-contrast flex items-center justify-center scale-100 animate-fade-in-up">
-              <Pause size={16} fill="currentColor" strokeWidth={0} />
-            </div>
-          ) : (
-            <div className="w-9 h-9 rounded-full bg-white/[0.06] group-hover:bg-white/10 flex items-center justify-center transition-all">
-              <Play
-                size={16}
-                fill="white"
-                strokeWidth={0}
-                className="ml-0.5 opacity-60 group-hover:opacity-100"
-              />
-            </div>
-          )}
-        </div>
-
-        <div className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0 ring-1 ring-white/[0.08] shadow-md">
-          {cover ? (
-            <img src={cover} alt="" className="w-full h-full object-cover" decoding="async" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-white/[0.05] to-transparent">
-              {musicIcon20}
-            </div>
-          )}
-        </div>
-
-        <TrackTitleArtist
-          track={track}
-          highlight={isThis}
-          size="md"
-          className="flex flex-col justify-center"
-        />
-
-        <div className="hidden md:flex items-center gap-4 shrink-0 pr-4">
-          {track.playback_count != null && (
-            <span className="text-[11px] text-white/30 tabular-nums flex items-center gap-1.5 w-16">
-              {headphones11}
-              {fc(track.playback_count)}
-            </span>
-          )}
-          <span className="text-[11px] text-white/30 tabular-nums flex items-center gap-1.5 w-14">
-            {heart11}
-            {fc(track.favoritings_count ?? track.likes_count)}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-0.5 shrink-0">
-          <LikeButton track={track} />
-          <AddToPlaylistDialog trackUrns={[track.urn]}>
-            <button
-              type="button"
-              className="cursor-pointer w-8 h-8 rounded-lg flex items-center justify-center text-white/20 hover:text-white/50 opacity-0 group-hover:opacity-100 transition-all duration-200"
-              title={t('playlist.addToPlaylist')}
-            >
-              <ListPlus size={14} />
-            </button>
-          </AddToPlaylistDialog>
-        </div>
-
-        <span className="text-[12px] text-white/30 tabular-nums font-medium shrink-0 w-12 text-right">
-          {dur(track.duration)}
-        </span>
-      </div>
-    );
-  },
-  (prev, next) =>
-    prev.track.urn === next.track.urn &&
-    prev.track.user_favorite === next.track.user_favorite &&
-    prev.queue === next.queue,
-);
 
 /* ── URL Detection ───────────────────────────────────────── */
 
@@ -284,12 +174,13 @@ const SearchTracksTab = React.memo(function SearchTracksTab({ query }: { query: 
       ) : (
         <VirtualList
           items={tracksQuery.tracks}
-          rowHeight={68}
+          rowHeight={56}
           overscan={8}
-          className="flex flex-col gap-1"
           disabled={tracksQuery.tracks.length < 40}
           getItemKey={(track) => track.urn}
-          renderItem={(track) => <TrackRow track={track} queue={tracksQuery.tracks} />}
+          renderItem={(track, index) => (
+            <TrackTableRow track={track} index={index} queue={tracksQuery.tracks} />
+          )}
         />
       )}
       <div ref={sentinelRef} className="h-20 flex items-center justify-center mt-6">
@@ -490,30 +381,9 @@ export const Search = React.memo(() => {
           onKeyDown={handleKeyDown}
           onPaste={handlePaste}
           placeholder={t('search.placeholder')}
-          className={`w-full bg-white/[0.04] hover:bg-white/[0.06] focus:bg-white/[0.08] text-white placeholder:text-white/30 text-[16px] py-4 pl-12 pr-12 rounded-[20px] outline-none transition-all duration-300 shadow-xl backdrop-blur-md ${
-            isUrl ? '' : ''
+          className={`h-12 w-full rounded-full border bg-white/[0.07] pl-12 pr-12 text-[16px] text-white outline-none transition-colors placeholder:text-white/35 hover:bg-white/[0.09] focus:bg-white/[0.09] ${
+            isUrl ? 'border-[var(--color-accent)]' : 'border-transparent focus:border-white/25'
           }`}
-          style={{
-            border: isUrl ? '1px solid var(--color-accent)' : '1px solid rgba(255,255,255,0.07)',
-            boxShadow: isUrl
-              ? `0 0 0 3px var(--color-accent-glow, rgba(255,85,0,0.12)), 0 1px 0 0 rgba(255,255,255,0.12) inset, 0 8px 24px rgba(0,0,0,0.22)`
-              : '0 1px 0 0 rgba(255,255,255,0.08) inset, 0 8px 24px rgba(0,0,0,0.20)',
-          }}
-          onFocus={(e) => {
-            if (!isUrl) {
-              (e.currentTarget as HTMLInputElement).style.border = '1px solid var(--color-accent)';
-              (e.currentTarget as HTMLInputElement).style.boxShadow =
-                '0 0 0 3px var(--color-accent-glow, rgba(255,85,0,0.12)), 0 1px 0 0 rgba(255,255,255,0.12) inset, 0 8px 24px rgba(0,0,0,0.22)';
-            }
-          }}
-          onBlur={(e) => {
-            if (!isUrl) {
-              (e.currentTarget as HTMLInputElement).style.border =
-                '1px solid rgba(255,255,255,0.07)';
-              (e.currentTarget as HTMLInputElement).style.boxShadow =
-                '0 1px 0 0 rgba(255,255,255,0.08) inset, 0 8px 24px rgba(0,0,0,0.20)';
-            }
-          }}
           autoFocus
         />
         {inputValue && (
@@ -531,30 +401,15 @@ export const Search = React.memo(() => {
         {isUrl && !resolveUrl && (
           <div className="absolute -bottom-7 left-0 text-[11px] text-accent/60 flex items-center gap-1.5">
             <ExternalLink size={10} />
-            Press Enter to open link
+            {t('search.pressEnterToOpen')}
           </div>
         )}
       </div>
 
       {/* Tabs */}
       {debouncedQuery && (
-        <div className="flex items-center justify-center gap-1.5 p-1.5 bg-white/[0.02] border border-white/[0.05] rounded-2xl w-fit backdrop-blur-2xl shadow-lg mx-auto">
-          {tabs.map((tab) => {
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-[13px] font-semibold transition-all duration-300 ease-[var(--ease-apple)] ${
-                  isActive
-                    ? 'bg-white/[0.12] text-white shadow-md border border-white/[0.05]'
-                    : 'text-white/40 hover:text-white/80 hover:bg-white/[0.04] border border-transparent'
-                }`}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
+        <div className="flex justify-center">
+          <Segmented value={activeTab} options={[...tabs]} onChange={setActiveTab} />
         </div>
       )}
 
