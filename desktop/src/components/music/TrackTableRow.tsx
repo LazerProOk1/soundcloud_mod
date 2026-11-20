@@ -1,12 +1,11 @@
 import React from 'react';
-import { useTranslation } from 'react-i18next';
 import { art, dur } from '../../lib/formatters';
-import { CheckCircle2, Music, Trash2 } from '../../lib/icons';
+import { Music, Trash2 } from '../../lib/icons';
 import { useArtistDisplay, useDisplayTitle } from '../../lib/track-display';
 import { openTrackMenu } from '../../lib/useTrackContextMenu';
 import { useTrackPlay } from '../../lib/useTrackPlay';
-import { useCachedUrnsStore } from '../../stores/cached-urns';
 import type { Track } from '../../stores/player';
+import { CacheBadge } from './CacheBadge';
 import { LikeButton } from './LikeButton';
 
 /** One row of a Spotify-style track table: #, cover + title/artist, album, like, length. */
@@ -24,9 +23,7 @@ export const TrackTableRow = React.memo(function TrackTableRow({
   onRemove?: (track: Track) => void;
   removeLabel?: string;
 }) {
-  const { t } = useTranslation();
   const { isThis, isThisPlaying, togglePlay } = useTrackPlay(track, queue);
-  const isCached = useCachedUrnsStore((s) => s.urns.has(track.urn));
   const title = useDisplayTitle(track);
   const artist = useArtistDisplay(track);
   const cover = art(track.artwork_url, 't67x67');
@@ -87,14 +84,7 @@ export const TrackTableRow = React.memo(function TrackTableRow({
         <div className="min-w-0">
           <p className={`truncate text-[15px] ${isThis ? 'text-accent' : 'text-white'}`}>{title}</p>
           <p className="flex items-center gap-1.5 text-[13px] text-white/55">
-            {isCached && (
-              <span
-                title={t('offline.cachedBadge')}
-                className="inline-flex shrink-0 text-emerald-400/85"
-              >
-                <CheckCircle2 size={12} />
-              </span>
-            )}
+            <CacheBadge urn={track.urn} />
             <span className="truncate">{artist.primary}</span>
           </p>
         </div>

@@ -275,7 +275,8 @@
     "failedCount_few": "{{count}} ошибки",
     "failedCount_many": "{{count}} ошибок",
     "syncNow": "Синхронизировать",
-    "cachedBadge": "Доступно офлайн"
+    "cachedBadge": "Сохранён с лайками — останется на диске",
+    "tempCachedBadge": "Во временном кэше — удалится при превышении лимита"
   },
   "settings": {
     "title": "Настройки",

@@ -5,18 +5,11 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useShallow } from 'zustand/shallow';
 import { art, dur, durLong } from '../../lib/formatters';
-import {
-  CheckCircle2,
-  GripVertical,
-  pauseTextWhite12,
-  playIcon32,
-  Trash2,
-  X,
-} from '../../lib/icons';
+import { GripVertical, pauseTextWhite12, playIcon32, Trash2, X } from '../../lib/icons';
 import { getArtistDisplay, useArtistDisplay, useDisplayTitle } from '../../lib/track-display';
 import { openTrackMenu } from '../../lib/useTrackContextMenu';
-import { useCachedUrnsStore } from '../../stores/cached-urns';
 import { usePlayerStore } from '../../stores/player';
+import { CacheBadge } from './CacheBadge';
 import { UploadKindDot } from './UploadKindDot';
 
 /* ── Now Playing (single, non-draggable) ─────────────────────────── */
@@ -173,10 +166,8 @@ const QueueTrackRowBody = React.memo(function QueueTrackRowBody({
   isCurrent: boolean;
   onClick: () => void;
 }) {
-  const { t } = useTranslation();
   const artistDisplay = useArtistDisplay(track);
   const displayTitle = useDisplayTitle(track);
-  const isCachedOffline = useCachedUrnsStore((s) => s.urns.has(track.urn));
   return (
     <div className="flex-1 min-w-0 cursor-pointer" onClick={onClick}>
       <p
@@ -187,14 +178,7 @@ const QueueTrackRowBody = React.memo(function QueueTrackRowBody({
       <p className="text-[12.5px] text-white/55 truncate mt-0.5 flex items-center gap-1">
         <UploadKindDot kind={artistDisplay.uploadKind} />
         <span className="truncate">{artistDisplay.primary}</span>
-        {isCachedOffline && (
-          <span
-            title={t('offline.cachedBadge')}
-            className="inline-flex items-center text-emerald-400/80 shrink-0"
-          >
-            <CheckCircle2 size={10} />
-          </span>
-        )}
+        <CacheBadge urn={track.urn} size={10} />
       </p>
     </div>
   );

@@ -267,7 +267,8 @@
     "pendingCount": "{{count}} pending",
     "failedCount": "{{count}} failed",
     "syncNow": "Sync now",
-    "cachedBadge": "Available offline"
+    "cachedBadge": "Saved with likes — stays on disk",
+    "tempCachedBadge": "In the temporary cache — cleared when the cache limit is reached"
   },
   "settings": {
     "title": "Settings",
