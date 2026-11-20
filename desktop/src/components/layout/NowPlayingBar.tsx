@@ -849,77 +849,64 @@ const SleepTimerBtn = React.memo(() => {
           align="end"
           sideOffset={10}
           collisionPadding={12}
-          className="z-[200] w-[220px] origin-bottom-right rounded-[28px] border border-white/[0.10] bg-[#101012]/96 p-3 shadow-[0_18px_60px_rgba(0,0,0,0.55)] backdrop-blur-xl outline-none data-[state=open]:animate-fade-in-up"
+          onOpenAutoFocus={(e) => e.preventDefault()}
+          className="z-[200] w-[248px] origin-bottom-right rounded-2xl border border-white/[0.08] bg-[#141416]/95 p-3 shadow-[0_24px_64px_rgba(0,0,0,0.5)] backdrop-blur-xl outline-none data-[state=open]:animate-fade-in-up"
         >
-          {/* top gradient sheen */}
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-12 rounded-t-[18px] bg-gradient-to-b from-white/[0.05] to-transparent" />
-
-          {/* header */}
-          <div className="relative flex items-center gap-2 px-1 pb-2.5">
-            <div className="flex h-7 w-7 items-center justify-center rounded-full border border-white/[0.08] bg-white/[0.04] text-white/55">
-              <Moon size={14} />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-white/65">
-                {t('player.sleepTimer')}
-              </p>
-              {isActive && (
-                <p className="text-[10px] text-accent">
-                  {afterTrack ? t('player.sleepAfterTrack') : formatTime(remaining ?? 0)}
-                </p>
-              )}
-            </div>
+          <div className="flex items-center justify-between px-1 pb-3">
+            <p className="flex items-center gap-2 text-[14px] font-semibold text-white">
+              <Moon size={15} className="text-white/60" />
+              {t('player.sleepTimer')}
+            </p>
+            {isActive && (
+              <span className="text-[12px] font-semibold tabular-nums text-accent">
+                {afterTrack ? t('player.sleepAfterTrackShort') : formatTime(remaining ?? 0)}
+              </span>
+            )}
           </div>
 
-          <div className="relative space-y-1">
-            {/* active — cancel row */}
-            {isActive && (
-              <button
-                type="button"
-                onClick={cancel}
-                className="w-full rounded-[10px] bg-rose-500/[0.12] py-2 text-[12px] font-semibold text-rose-400 transition-colors hover:bg-rose-500/[0.20] cursor-pointer"
-              >
-                {t('player.sleepCancel')}
-              </button>
-            )}
+          <div className="grid grid-cols-3 gap-1.5">
+            {SLEEP_PRESETS_MIN.map((min) => {
+              const activeMins = endsAt !== null ? Math.round((endsAt - Date.now()) / 60000) : null;
+              const isSelected =
+                endsAt !== null && activeMins !== null && Math.abs(activeMins - min) <= 1;
+              return (
+                <button
+                  key={min}
+                  type="button"
+                  onClick={() => set(min)}
+                  className={`press h-10 rounded-xl text-[13px] font-semibold tabular-nums cursor-pointer ${
+                    isSelected
+                      ? 'bg-accent text-white'
+                      : 'bg-white/[0.06] text-white/80 hover:bg-white/[0.11] hover:text-white'
+                  }`}
+                >
+                  {t('player.sleepMinutes', { count: min })}
+                </button>
+              );
+            })}
+          </div>
 
-            {/* preset minutes */}
-            <div className="grid grid-cols-3 gap-1">
-              {SLEEP_PRESETS_MIN.map((min) => {
-                const activeMins =
-                  endsAt !== null ? Math.round((endsAt - Date.now()) / 60000) : null;
-                const isSelected =
-                  endsAt !== null && activeMins !== null && Math.abs(activeMins - min) <= 1;
-                return (
-                  <button
-                    key={min}
-                    type="button"
-                    onClick={() => set(min)}
-                    className={`rounded-[10px] py-2 text-[12px] font-semibold transition-all cursor-pointer ${
-                      isSelected
-                        ? 'bg-accent/[0.18] text-accent'
-                        : 'bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white/90'
-                    }`}
-                  >
-                    {min}m
-                  </button>
-                );
-              })}
-            </div>
+          <button
+            type="button"
+            onClick={setAfterTrack}
+            className={`press mt-1.5 h-10 w-full rounded-xl text-[13px] font-semibold cursor-pointer ${
+              afterTrack
+                ? 'bg-accent text-white'
+                : 'bg-white/[0.06] text-white/80 hover:bg-white/[0.11] hover:text-white'
+            }`}
+          >
+            {t('player.sleepAfterTrack')}
+          </button>
 
-            {/* after-track option */}
+          {isActive && (
             <button
               type="button"
-              onClick={setAfterTrack}
-              className={`w-full rounded-[10px] py-2 text-[12px] font-semibold transition-all cursor-pointer ${
-                afterTrack
-                  ? 'bg-accent/[0.18] text-accent'
-                  : 'bg-white/[0.04] text-white/60 hover:bg-white/[0.08] hover:text-white/90'
-              }`}
+              onClick={cancel}
+              className="press mt-1.5 h-10 w-full rounded-xl text-[13px] font-semibold text-white/55 hover:bg-white/[0.06] hover:text-white cursor-pointer"
             >
-              {t('player.sleepAfterTrack')}
+              {t('player.sleepCancel')}
             </button>
-          </div>
+          )}
         </Popover.Content>
       </Popover.Portal>
     </Popover.Root>
