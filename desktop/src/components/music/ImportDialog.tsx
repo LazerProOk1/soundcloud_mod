@@ -136,7 +136,7 @@ export function ImportDialog({
                     onKeyDown={(e) => e.key === 'Enter' && void load()}
                     placeholder={t('ym.tokenPlaceholder')}
                     autoComplete="off"
-                    className="flex-1 min-w-0 h-12 px-4 rounded-md bg-[#3e3e3e] text-[15px] text-white placeholder:text-white/35 outline-none border border-transparent focus:border-white"
+                    className="flex-1 min-w-0 h-12 px-4 rounded-md bg-[#3e3e3e] text-[15px] text-white placeholder:text-white/35 outline-none border border-transparent focus:border-white/25"
                   />
                   <button
                     type="button"
@@ -166,7 +166,7 @@ export function ImportDialog({
                     onChange={(e) => setUrl(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && void load()}
                     placeholder="https://music.yandex.ru/users/…/playlists/…"
-                    className="flex-1 min-w-0 h-12 px-4 rounded-md bg-[#3e3e3e] text-[15px] text-white placeholder:text-white/35 outline-none border border-transparent focus:border-white"
+                    className="flex-1 min-w-0 h-12 px-4 rounded-md bg-[#3e3e3e] text-[15px] text-white placeholder:text-white/35 outline-none border border-transparent focus:border-white/25"
                   />
                   <button
                     type="button"
@@ -204,7 +204,7 @@ export function ImportDialog({
                   onChange={(e) => setText(e.target.value)}
                   rows={8}
                   placeholder={'kizaru - Bandana\nМонеточка - гори гори гори'}
-                  className="w-full px-4 py-3 rounded-md bg-[#3e3e3e] text-[14px] text-white placeholder:text-white/35 outline-none border border-transparent focus:border-white resize-none"
+                  className="w-full px-4 py-3 rounded-md bg-[#3e3e3e] text-[14px] text-white placeholder:text-white/35 outline-none border border-transparent focus:border-white/25 resize-none"
                 />
                 <p className="text-[13px] text-white/50">
                   {t('import.textHint', { count: items.length })}

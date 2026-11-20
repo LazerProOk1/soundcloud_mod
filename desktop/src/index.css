@@ -269,6 +269,12 @@ body,
   border-radius: 8px;
 }
 
+/* Text fields show focus with their own border; the accent ring on top read as a double frame. */
+input:focus-visible,
+textarea:focus-visible {
+  outline: none;
+}
+
 /* ── Feed animations ──────────────────────────────────────── */
 @keyframes fadeInUp {
   from {

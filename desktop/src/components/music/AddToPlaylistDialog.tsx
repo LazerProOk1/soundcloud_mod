@@ -110,7 +110,7 @@ const CreatePlaylistForm = React.memo(function CreatePlaylistForm({
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
           placeholder={t('playlist.playlistName')}
-          className="w-full bg-white/[0.04] text-[13px] text-white/90 placeholder:text-white/25 px-3 py-2 rounded-lg outline-none border border-white/[0.06] focus:border-accent/30 transition-colors"
+          className="w-full bg-white/[0.04] text-[13px] text-white/90 placeholder:text-white/25 px-3 py-2 rounded-lg outline-none border border-white/[0.06] focus:border-white/25 transition-colors"
           autoFocus
           disabled={createPlaylist.isPending}
         />

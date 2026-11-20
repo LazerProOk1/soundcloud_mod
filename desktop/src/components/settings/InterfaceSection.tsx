@@ -17,7 +17,7 @@ import { RANGE_CLS } from '../ui/rangeClass';
 const btnCls =
   'px-3 py-1.5 rounded-lg text-[12px] font-medium text-white/70 bg-white/[0.05] border border-white/[0.08] hover:bg-white/[0.09] hover:text-white transition-colors cursor-pointer';
 const inputCls =
-  'flex-1 min-w-0 px-3 py-1.5 rounded-lg text-[13px] text-white/85 bg-white/[0.04] border border-white/[0.08] outline-none focus:border-[var(--color-accent)]';
+  'flex-1 min-w-0 px-3 py-1.5 rounded-lg text-[13px] text-white/85 bg-white/[0.04] border border-white/[0.08] outline-none focus:border-white/25';
 
 const LiquidGlassRow = React.memo(function LiquidGlassRow() {
   const { t } = useTranslation();
@@ -169,7 +169,7 @@ const CssRow = React.memo(function CssRow() {
         spellCheck={false}
         rows={8}
         placeholder={CSS_PLACEHOLDER}
-        className="w-full px-3 py-2.5 rounded-xl font-mono text-[12px] leading-relaxed text-white/85 bg-black/30 border border-white/[0.08] outline-none focus:border-[var(--color-accent)] resize-y"
+        className="w-full px-3 py-2.5 rounded-xl font-mono text-[12px] leading-relaxed text-white/85 bg-black/30 border border-white/[0.08] outline-none focus:border-white/25 resize-y"
       />
       <div className="flex items-center gap-2">
         <button
