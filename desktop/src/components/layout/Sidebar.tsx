@@ -183,7 +183,7 @@ export const Sidebar = React.memo(() => {
 });
 
 /** Playlist artwork; playlists without their own cover use the first track's art. */
-function PlaylistTile({ urn, artwork }: { urn: string; artwork?: string | null }) {
+export function PlaylistTile({ urn, artwork }: { urn: string; artwork?: string | null }) {
   const cover = art(usePlaylistCover(urn, artwork), 't200x200');
   return cover ? (
     <img src={cover} alt="" className="w-full h-full object-cover" loading="lazy" />

@@ -1,17 +1,17 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import { PlaylistTile } from '../components/layout/Sidebar';
 import { TrackCard } from '../components/music/TrackCard';
 import { HorizontalScroll } from '../components/ui/HorizontalScroll';
 import { ShelfSkeleton } from '../components/ui/ShelfSkeleton';
-import { art } from '../lib/formatters';
 import {
   useBatchTrackHydration,
   useFollowingTracks,
   useLikedTracks,
   useMyPlaylists,
 } from '../lib/hooks';
-import { Clock, Headphones, Heart, ListMusic, Music } from '../lib/icons';
+import { Clock, Headphones, Heart, Music } from '../lib/icons';
 import {
   getOfflineFollowingTracks,
   getOfflineLikedTracks,
@@ -70,21 +70,12 @@ const QuickTiles = React.memo(function QuickTiles() {
       to: '/liked',
       tile: gradient('#4f46e5', '#a5b4fc', <Heart size={22} fill="currentColor" />),
     },
-    ...playlists.slice(0, 4).map((p) => {
-      const cover = art(p.artwork_url ?? p.tracks?.[0]?.artwork_url, 't200x200');
-      return {
-        key: p.urn,
-        title: p.title,
-        to: `/playlist/${encodeURIComponent(p.urn)}`,
-        tile: cover ? (
-          <img src={cover} alt="" className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center bg-white/[0.08] text-white/50">
-            <ListMusic size={22} />
-          </div>
-        ),
-      };
-    }),
+    ...playlists.slice(0, 4).map((p) => ({
+      key: p.urn,
+      title: p.title,
+      to: `/playlist/${encodeURIComponent(p.urn)}`,
+      tile: <PlaylistTile urn={p.urn} artwork={p.artwork_url ?? p.tracks?.[0]?.artwork_url} />,
+    })),
     {
       key: 'history',
       title: t('home.recentlyPlayed', 'Recently Played'),

@@ -212,6 +212,46 @@ body,
   scrollbar-width: none;
 }
 
+/* ── Button feedback ───────────────────────────────────────── */
+/* `.press`: quick squeeze while held. `.icon-pop`: the icon springs when its state flips
+   (see components/ui/PopIcon.tsx, which re-keys the span so the animation replays). */
+.press {
+  transition:
+    transform 160ms cubic-bezier(0.2, 0.9, 0.3, 1.4),
+    color 150ms ease,
+    background-color 150ms ease;
+}
+.press:active {
+  transform: scale(0.86);
+}
+
+@keyframes icon-pop {
+  0% {
+    transform: scale(0.55);
+  }
+  55% {
+    transform: scale(1.22);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.icon-pop {
+  display: inline-flex;
+  animation: icon-pop 340ms cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .press,
+  .press:active {
+    transition: none;
+    transform: none;
+  }
+  .icon-pop {
+    animation: none;
+  }
+}
+
 /* ── Selection ─────────────────────────────────────────────── */
 ::selection {
   background: var(--color-accent-selection);

@@ -68,6 +68,7 @@ import {
   VolumeLabel,
   VolumeSlider,
 } from '../layout/NowPlayingBar';
+import { PopIcon } from '../ui/PopIcon';
 import { AddToPlaylistDialog } from './AddToPlaylistDialog';
 
 /* ── Source labels ────────────────────────────────────────── */
@@ -142,11 +143,13 @@ const FullscreenLikeButton = React.memo(({ track }: { track: Track }) => {
     <button
       type="button"
       onClick={toggle}
-      className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer hover:bg-white/[0.06] outline-none ${
+      className={`press w-11 h-11 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/[0.06] outline-none ${
         liked ? 'text-accent' : 'text-white/30 hover:text-white/60'
       }`}
     >
-      <Heart size={20} fill={liked ? 'currentColor' : 'none'} />
+      <PopIcon on={liked}>
+        <Heart size={20} fill={liked ? 'currentColor' : 'none'} />
+      </PopIcon>
     </button>
   );
 });
@@ -177,11 +180,13 @@ const FullscreenDislikeButton = React.memo(({ track }: { track: Track }) => {
       type="button"
       onClick={toggle}
       title={disliked ? t('track.removeDislike') : t('track.dislike')}
-      className={`w-11 h-11 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer hover:bg-white/[0.06] outline-none ${
+      className={`press w-11 h-11 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/[0.06] outline-none ${
         disliked ? 'text-rose-400' : 'text-white/30 hover:text-white/60'
       }`}
     >
-      <ThumbsDown size={18} fill={disliked ? 'currentColor' : 'none'} />
+      <PopIcon on={disliked}>
+        <ThumbsDown size={18} fill={disliked ? 'currentColor' : 'none'} />
+      </PopIcon>
     </button>
   );
 });
@@ -200,7 +205,7 @@ const FullscreenOpenTrackButton = React.memo(({ track }: { track: Track }) => {
         navigate(`/track/${encodeURIComponent(track.urn)}`);
       }}
       title={t('track.openTrackPage')}
-      className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-150 cursor-pointer hover:bg-white/[0.06] text-white/30 hover:text-white/60 outline-none"
+      className="press w-10 h-10 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/[0.06] text-white/30 hover:text-white/60 outline-none"
     >
       <ExternalLink size={18} />
     </button>
@@ -224,9 +229,9 @@ const Controls = React.memo(({ track }: { track: Track }) => {
     );
 
   const ctrl =
-    'w-10 h-10 rounded-full flex items-center justify-center transition-all duration-150 cursor-pointer hover:bg-white/[0.06] outline-none';
+    'press w-10 h-10 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/[0.06] outline-none';
   const small =
-    'w-9 h-9 rounded-full flex items-center justify-center transition-all duration-150 cursor-pointer hover:bg-white/[0.06] outline-none';
+    'press w-9 h-9 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/[0.06] outline-none';
 
   return (
     <div className="flex items-center justify-center gap-2">
@@ -241,7 +246,7 @@ const Controls = React.memo(({ track }: { track: Track }) => {
         onClick={toggleShuffle}
         className={`${small} ${shuffle ? 'text-accent' : 'text-white/35 hover:text-white/60'}`}
       >
-        {shuffleIcon16}
+        <PopIcon on={shuffle}>{shuffleIcon16}</PopIcon>
       </button>
       <button
         type="button"
@@ -253,9 +258,9 @@ const Controls = React.memo(({ track }: { track: Track }) => {
       <button
         type="button"
         onClick={togglePlay}
-        className="w-14 h-14 rounded-full bg-white flex items-center justify-center hover:scale-105 active:scale-95 transition-all duration-200 cursor-pointer shadow-lg outline-none"
+        className="w-14 h-14 rounded-full bg-white flex items-center justify-center hover:scale-105 active:scale-90 transition-all duration-200 cursor-pointer shadow-lg outline-none"
       >
-        {isPlaying ? pauseBlack18 : playBlack18}
+        <PopIcon on={isPlaying}>{isPlaying ? pauseBlack18 : playBlack18}</PopIcon>
       </button>
       <button type="button" onClick={next} className={`${ctrl} text-white/60 hover:text-white`}>
         <SkipForward size={20} fill="currentColor" />
@@ -265,7 +270,7 @@ const Controls = React.memo(({ track }: { track: Track }) => {
         onClick={toggleRepeat}
         className={`${small} ${repeat !== 'off' ? 'text-accent' : 'text-white/35 hover:text-white/60'}`}
       >
-        {repeat === 'one' ? repeat1Icon16 : repeatIcon16}
+        <PopIcon on={repeat}>{repeat === 'one' ? repeat1Icon16 : repeatIcon16}</PopIcon>
       </button>
       <FullscreenDislikeButton track={track} />
       <FullscreenOpenTrackButton track={track} />
