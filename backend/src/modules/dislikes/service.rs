@@ -5,8 +5,9 @@ use serde::Serialize;
 use serde_json::Value;
 use sqlx::PgPool;
 
+use crate::common::pagination::parse_cursor;
 use crate::common::sc_ids::normalize_sc_track_id;
-use crate::error::{AppError, AppResult};
+use crate::error::AppResult;
 use crate::modules::events::EventsService;
 
 pub struct DislikesService {
@@ -172,10 +173,4 @@ impl DislikesService {
             next_href,
         })
     }
-}
-
-fn parse_cursor(s: &str) -> AppResult<NaiveDateTime> {
-    DateTime::parse_from_rfc3339(s)
-        .map(|dt| dt.naive_utc())
-        .map_err(|e| AppError::bad_request(format!("invalid cursor: {e}")))
 }

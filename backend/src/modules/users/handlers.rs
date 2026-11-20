@@ -1,5 +1,4 @@
 use axum::extract::{Path, Query, State};
-use axum::http::StatusCode;
 use axum::response::Response;
 use axum::routing::get;
 use axum::{Json, Router};
@@ -9,9 +8,9 @@ use serde_json::Value;
 use crate::cache::cache_service::CacheScope;
 use crate::cache::ListPageResult;
 use crate::common::pagination::PaginationQuery;
-use crate::common::response::json_response;
+use crate::common::response::cached_or_fetch;
 use crate::common::session::SessionCtx;
-use crate::error::{AppError, AppResult};
+use crate::error::AppResult;
 use crate::modules::enrich::dto as enrich_dto;
 use crate::modules::me::service::premium_response;
 use crate::state::AppState;
@@ -279,32 +278,4 @@ async fn get_web_profiles(
         },
     )
     .await
-}
-
-async fn cached_or_fetch<F, Fut>(
-    st: &AppState,
-    method: &str,
-    url: &str,
-    scope: CacheScope,
-    session_id: Option<&str>,
-    ttl_sec: u64,
-    cache_key: Option<&str>,
-    fetch: F,
-) -> AppResult<Response>
-where
-    F: FnOnce() -> Fut,
-    Fut: std::future::Future<Output = AppResult<Value>>,
-{
-    let key = st.cache.build_key(method, url, scope, session_id);
-    if let Ok(Some(raw)) = st.cache.get_raw(&key).await {
-        return Ok(json_response(StatusCode::OK, raw));
-    }
-    let v = fetch().await?;
-    let payload =
-        serde_json::to_string(&v).map_err(|e| AppError::internal(format!("json encode: {e}")))?;
-    let _ = st
-        .cache
-        .set_raw(&key, &payload, ttl_sec, cache_key, scope, session_id)
-        .await;
-    Ok(json_response(StatusCode::OK, payload))
 }

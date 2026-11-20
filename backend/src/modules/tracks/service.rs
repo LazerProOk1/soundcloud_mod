@@ -4,8 +4,8 @@ use serde_json::{json, Value};
 
 use crate::cache::cache_service::CacheScope;
 use crate::cache::{
-    build_list_cache_key, extract_sc_cursor, FetchChunkResult, GetPageOptions, ListCacheService,
-    ListPageResult,
+    as_pairs, build_list_cache_key, extract_sc_cursor, FetchChunkResult, GetPageOptions,
+    ListCacheService, ListPageResult,
 };
 use crate::error::{AppError, AppResult};
 use crate::modules::local_likes::LocalLikesService;
@@ -314,8 +314,4 @@ impl TracksService {
             .await?;
         Ok(result)
     }
-}
-
-fn as_pairs<'a>(v: &'a [(String, String)]) -> Vec<(&'a str, String)> {
-    v.iter().map(|(k, v)| (k.as_str(), v.clone())).collect()
 }

@@ -126,18 +126,6 @@ impl PendingActionsService {
         Ok(saved)
     }
 
-    pub async fn get_for_session(&self, session_id: &str) -> AppResult<Vec<PendingAction>> {
-        let rows = sqlx::query_as(
-            "SELECT * FROM pending_actions \
-             WHERE session_id = $1 AND status = 'pending' \
-             ORDER BY created_at ASC",
-        )
-        .bind(session_id)
-        .fetch_all(&self.pg)
-        .await?;
-        Ok(rows)
-    }
-
     pub async fn get_stats(&self, session_id: &str) -> AppResult<PendingStats> {
         let pending: (i64,) = sqlx::query_as(
             "SELECT COUNT(*) FROM pending_actions WHERE session_id = $1 AND status = 'pending'",

@@ -305,6 +305,11 @@ pub fn extract_sc_cursor(next_href: Option<&str>) -> Option<String> {
     None
 }
 
+/// Borrow owned query pairs in the shape `build_list_cache_key` expects.
+pub fn as_pairs<'a>(v: &'a [(String, String)]) -> Vec<(&'a str, String)> {
+    v.iter().map(|(k, v)| (k.as_str(), v.clone())).collect()
+}
+
 pub fn build_list_cache_key(prefix: &str, params: &[(&str, String)]) -> String {
     let mut parts: Vec<String> = params
         .iter()

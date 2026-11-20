@@ -4,8 +4,8 @@ use serde_json::Value;
 
 use crate::cache::cache_service::CacheScope;
 use crate::cache::{
-    build_list_cache_key, extract_sc_cursor, FetchChunkResult, GetPageOptions, ListCacheService,
-    ListPageResult,
+    as_pairs, build_list_cache_key, extract_sc_cursor, FetchChunkResult, GetPageOptions,
+    ListCacheService, ListPageResult,
 };
 use crate::error::{AppError, AppResult};
 use crate::modules::local_likes::LocalLikesService;
@@ -317,8 +317,4 @@ impl UsersService {
             .api_get_value(&format!("/users/{user_urn}/web-profiles"), token, None)
             .await
     }
-}
-
-fn as_pairs<'a>(v: &'a [(String, String)]) -> Vec<(&'a str, String)> {
-    v.iter().map(|(k, v)| (k.as_str(), v.clone())).collect()
 }

@@ -6,7 +6,8 @@ use serde::Serialize;
 use serde_json::Value;
 use sqlx::PgPool;
 
-use crate::error::{AppError, AppResult};
+use crate::common::pagination::parse_cursor;
+use crate::error::AppResult;
 
 pub struct LocalLikesService {
     pg: PgPool,
@@ -121,10 +122,4 @@ impl LocalLikesService {
         .await?;
         Ok(rows.into_iter().map(|(id,)| id).collect())
     }
-}
-
-fn parse_cursor(s: &str) -> AppResult<NaiveDateTime> {
-    DateTime::parse_from_rfc3339(s)
-        .map(|dt| dt.naive_utc())
-        .map_err(|e| AppError::bad_request(format!("invalid cursor: {e}")))
 }
