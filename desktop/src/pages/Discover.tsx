@@ -34,18 +34,16 @@ function SectionHeader({
 }) {
   const { t } = useTranslation();
   return (
-    <div className="flex items-center justify-between mb-5">
-      <div className="flex items-center gap-3">
-        <div className="glass-flat w-8 h-8 rounded-xl flex items-center justify-center shrink-0">
-          {icon}
-        </div>
-        <h2 className="text-[15px] font-semibold tracking-tight text-white/88">{title}</h2>
-      </div>
+    <div className="mb-4 flex items-end justify-between">
+      <h2 className="flex items-center gap-2.5 text-[24px] font-bold tracking-tight text-white">
+        {icon}
+        {title}
+      </h2>
       {onSeeAll && (
         <button
           type="button"
           onClick={onSeeAll}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-medium text-white/30 hover:text-white/65 bg-white/[0.02] hover:bg-white/[0.06] border border-white/[0.04] hover:border-white/[0.09] transition-all duration-200 cursor-pointer"
+          className="flex items-center gap-1 text-[13px] font-semibold text-white/55 hover:text-white cursor-pointer"
         >
           {t('common.seeAll')}
           <ChevronRight size={11} />
@@ -72,7 +70,7 @@ const RecommendedShelf = React.memo(function RecommendedShelf({
     <section>
       <SectionHeader
         title={t('home.recommended', 'Recommended For You')}
-        icon={<Sparkles size={15} className="text-amber-400/80" />}
+        icon={<Sparkles size={20} className="text-white/60" />}
       />
       <HorizontalScroll>
         {isLoading ? (
@@ -115,7 +113,7 @@ const GenreDiscover = React.memo(function GenreDiscover({ likedTracks }: { liked
     <section>
       <SectionHeader
         title={t('home.discover', 'Discover by Genre')}
-        icon={<Compass size={15} className="text-accent/85" />}
+        icon={<Compass size={20} className="text-white/60" />}
       />
 
       {/* Genre pills */}
@@ -131,19 +129,11 @@ const GenreDiscover = React.memo(function GenreDiscover({ likedTracks }: { liked
                   key={g}
                   type="button"
                   onClick={() => setActiveGenre(g)}
-                  className={`glass-pill px-4 py-1.5 text-[12px] font-medium capitalize cursor-pointer transition-all duration-200 ${
-                    active ? 'text-white' : 'text-white/50 hover:text-white/80'
-                  }`}
-                  style={
+                  className={`press h-8 rounded-full px-3.5 text-[13px] font-semibold capitalize cursor-pointer ${
                     active
-                      ? {
-                          background:
-                            'linear-gradient(135deg, var(--color-accent-glow), rgba(255,255,255,0.12))',
-                          borderColor: 'rgba(255,255,255,0.24)',
-                          boxShadow: '0 4px 16px var(--color-accent-glow)',
-                        }
-                      : undefined
-                  }
+                      ? 'bg-white text-black'
+                      : 'bg-white/[0.06] text-white/75 hover:bg-white/[0.11] hover:text-white'
+                  }`}
                 >
                   {g}
                 </button>
@@ -183,7 +173,7 @@ const FollowingShelf = React.memo(function FollowingShelf() {
     <section>
       <SectionHeader
         title={t('home.freshReleases', 'Fresh Releases')}
-        icon={<Music size={15} className="text-white/55" />}
+        icon={<Music size={20} className="text-white/60" />}
       />
       <HorizontalScroll>
         {isLoading ? (
@@ -211,42 +201,23 @@ function DiscoverHero() {
   const navigate = useNavigate();
 
   return (
-    <section className="pt-1 pb-2 animate-fade-in-scale">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <div
-            className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
-            style={{
-              background:
-                'linear-gradient(135deg, var(--color-accent-glow), rgba(99,102,241,0.18))',
-              border: '1px solid rgba(255,255,255,0.09)',
-              boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.16), 0 4px 16px rgba(0,0,0,0.25)',
-            }}
-          >
-            <Compass size={22} style={{ color: 'var(--color-accent)' }} />
-          </div>
-          <div>
-            <h1 className="syne text-2xl text-white/92 leading-tight">{t('nav.discover')}</h1>
-            <p className="text-[12px] text-white/40 mt-0.5">
-              {t('discover.subtitle', 'Explore music tailored to your taste')}
-            </p>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={() => navigate('/soundwave')}
-          className="glass-pill px-4 py-2 text-[12px] font-semibold text-white/85 hover:text-white inline-flex items-center gap-2 cursor-pointer"
-          style={{
-            background: 'linear-gradient(135deg, var(--color-accent-glow), rgba(255,255,255,0.06))',
-            borderColor: 'rgba(255,255,255,0.15)',
-          }}
-        >
-          <AudioLines size={14} style={{ color: 'var(--color-accent)' }} />
-          {t('nav.soundwave')}
-        </button>
+    <section className="flex flex-wrap items-end justify-between gap-4 pt-1">
+      <div>
+        <h1 className="text-[32px] font-extrabold leading-tight tracking-tight text-white">
+          {t('nav.discover')}
+        </h1>
+        <p className="mt-1 text-[14px] text-white/50">
+          {t('discover.subtitle', 'Explore music tailored to your taste')}
+        </p>
       </div>
-      <div className="mt-4 h-px bg-gradient-to-r from-white/[0.08] via-white/[0.03] to-transparent" />
+      <button
+        type="button"
+        onClick={() => navigate('/soundwave')}
+        className="press inline-flex h-10 items-center gap-2 rounded-full bg-white/[0.07] px-4 text-[13px] font-semibold text-white/85 hover:bg-white/[0.12] hover:text-white cursor-pointer"
+      >
+        <AudioLines size={16} style={{ color: 'var(--color-accent)' }} />
+        {t('nav.soundwave')}
+      </button>
     </section>
   );
 }
