@@ -2,6 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { type CrossfadeCurve, useSettingsStore } from '../../stores/settings';
 import { LiquidSwitch } from '../ui/LiquidSwitch';
+import { Segmented } from '../ui/Segmented';
 
 /** Same shapes as the audio engine: fade-in of the next track; the current one mirrors it. */
 function fadeIn(t: number, curve: CrossfadeCurve) {
@@ -61,33 +62,6 @@ const CurveGraph = React.memo(function CurveGraph({ curve }: { curve: CrossfadeC
     </div>
   );
 });
-
-function Segmented<T extends string>({
-  value,
-  options,
-  onChange,
-}: {
-  value: T;
-  options: { id: T; label: string }[];
-  onChange: (v: T) => void;
-}) {
-  return (
-    <div className="inline-flex p-1 rounded-full bg-black/30">
-      {options.map((o) => (
-        <button
-          key={o.id}
-          type="button"
-          onClick={() => onChange(o.id)}
-          className={`h-9 px-4 rounded-full text-[13px] font-semibold cursor-pointer transition-colors ${
-            value === o.id ? 'bg-white text-black' : 'text-white/75 hover:text-white'
-          }`}
-        >
-          {o.label}
-        </button>
-      ))}
-    </div>
-  );
-}
 
 function Row({
   title,

@@ -7,6 +7,7 @@ import { InterfaceSection } from '../components/settings/InterfaceSection';
 import { TransitionsSection } from '../components/settings/TransitionsSection';
 import { LiquidSwitch } from '../components/ui/LiquidSwitch.tsx';
 import { RANGE_CLS } from '../components/ui/rangeClass';
+import { Segmented } from '../components/ui/Segmented';
 import { Skeleton } from '../components/ui/Skeleton.tsx';
 import { changeAppLanguage } from '../i18n';
 import { switchAudioDevice } from '../lib/audio';
@@ -30,7 +31,7 @@ import {
 } from '../lib/cache';
 import { trackedInvoke } from '../lib/diagnostics';
 import { formatBytes } from '../lib/formatters';
-import { Download, Globe, Link, Loader2, Pipette, Trash2, Upload, X } from '../lib/icons';
+import { Check, Download, Link, Loader2, Pipette, Trash2, Upload, X } from '../lib/icons';
 import { PRESET_WALLPAPERS } from '../lib/wallpapers';
 import { useAuthStore } from '../stores/auth';
 import {
@@ -81,34 +82,11 @@ const LanguageSection = React.memo(function LanguageSection() {
       <h3 className="text-[22px] font-bold text-white tracking-tight mb-4">
         {t('settings.language')}
       </h3>
-      <div className="flex gap-2">
-        {LANGUAGES.map((lang) => (
-          <button
-            key={lang.code}
-            onClick={() => void changeAppLanguage(lang.code)}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-[14px] text-[13px] font-semibold transition-all duration-200 cursor-pointer ${
-              i18n.language === lang.code ? 'text-white/92' : 'text-white/45 hover:text-white/70'
-            }`}
-            style={
-              i18n.language === lang.code
-                ? {
-                    background: 'rgba(255,255,255,0.08)',
-                    border: '1px solid var(--color-accent)',
-                    boxShadow:
-                      '0 1px 0 0 rgba(255,255,255,0.20) inset, 0 -1px 0 0 rgba(0,0,0,0.20) inset, 0 0 10px var(--color-accent-glow, rgba(255,85,0,0.12))',
-                  }
-                : {
-                    background: 'rgba(255,255,255,0.03)',
-                    border: '1px solid rgba(255,255,255,0.07)',
-                    boxShadow: '0 1px 0 0 rgba(255,255,255,0.08) inset',
-                  }
-            }
-          >
-            <Globe size={14} strokeWidth={1.8} />
-            {lang.label}
-          </button>
-        ))}
-      </div>
+      <Segmented
+        value={i18n.language}
+        options={LANGUAGES.map((lang) => ({ id: lang.code, label: lang.label }))}
+        onChange={(code) => void changeAppLanguage(code)}
+      />
     </section>
   );
 });
@@ -146,9 +124,10 @@ function CacheRow({
         </div>
       </div>
       <button
+        type="button"
         onClick={onClear}
         disabled={clearing || size === 0}
-        className="flex items-center gap-2 px-4 py-2 rounded-xl text-[12px] font-semibold bg-accent/[0.10] text-accent hover:bg-accent/[0.18] border border-accent/[0.12] hover:border-accent/[0.22] transition-all duration-300 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"
+        className="press flex h-9 items-center gap-2 rounded-full bg-white/[0.07] px-4 text-[13px] font-semibold text-white/80 hover:bg-red-500/15 hover:text-red-300 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"
       >
         {clearing ? <Loader2 size={12} className="animate-spin" /> : <Trash2 size={12} />}
         {t('settings.clearCache')}
@@ -566,17 +545,15 @@ const WallpaperPicker = React.memo(function WallpaperPicker() {
       </label>
 
       {/* Wallpaper grid */}
-      <div className="flex flex-wrap gap-3">
+      <div className="grid grid-cols-4 gap-3">
         {/* "None" option */}
         <button
+          type="button"
           onClick={() => setBackgroundImage('')}
-          className={`w-20 h-14 rounded-xl border-2 transition-all duration-200 cursor-pointer flex items-center justify-center ${
-            !backgroundImage
-              ? 'border-white/40 bg-white/[0.08]'
-              : 'border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12]'
-          }`}
+          className={`press relative flex aspect-video items-center justify-center rounded-xl bg-white/[0.04] cursor-pointer ${optionRing(!backgroundImage)}`}
         >
-          <span className="text-[10px] text-white/40 font-semibold">{t('settings.none')}</span>
+          <span className="text-[12px] font-semibold text-white/60">{t('settings.none')}</span>
+          {!backgroundImage && <SelectedCheck />}
         </button>
 
         {/* Built-in Liquid Glass preset wallpapers */}
@@ -589,16 +566,10 @@ const WallpaperPicker = React.memo(function WallpaperPicker() {
               type="button"
               title={t(preset.labelKey, preset.fallbackLabel)}
               onClick={() => handleSelect(preset.id)}
-              className={`relative group w-20 h-14 rounded-xl overflow-hidden border-2 transition-all duration-200 cursor-pointer ${
-                selected ? 'border-white/45' : 'border-white/[0.06] hover:border-white/[0.18]'
-              }`}
+              className={`press relative aspect-video overflow-hidden rounded-xl cursor-pointer ${optionRing(selected)}`}
             >
-              {url && <img src={url} alt="" className="w-full h-full object-cover" />}
-              {selected && (
-                <div className="absolute inset-0 bg-white/10 flex items-center justify-center">
-                  <div className="w-4 h-4 rounded-full bg-white shadow-lg" />
-                </div>
-              )}
+              {url && <img src={url} alt="" className="h-full w-full object-cover" />}
+              {selected && <SelectedCheck />}
             </button>
           );
         })}
@@ -606,48 +577,43 @@ const WallpaperPicker = React.memo(function WallpaperPicker() {
         {/* Saved wallpapers */}
         {wallpapers.map((name) => {
           const url = getWallpaperUrl(name);
+          const selected = backgroundImage === name;
           return (
             <div
               key={name}
-              className={`relative group w-20 h-14 rounded-xl overflow-hidden border-2 transition-all duration-200 cursor-pointer ${
-                backgroundImage === name
-                  ? 'border-white/40'
-                  : 'border-white/[0.06] hover:border-white/[0.15]'
-              }`}
+              className={`press group relative aspect-video overflow-hidden rounded-xl cursor-pointer ${optionRing(selected)}`}
               onClick={() => handleSelect(name)}
             >
-              {url && <img src={url} alt="" className="w-full h-full object-cover" />}
+              {url && <img src={url} alt="" className="h-full w-full object-cover" />}
               <button
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   handleRemove(name);
                 }}
-                className="absolute top-0.5 right-0.5 w-4 h-4 rounded-full bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer hover:bg-red-500/80"
+                className="absolute left-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-red-500/80 cursor-pointer"
               >
-                <X size={8} className="text-white" />
+                <X size={10} className="text-white" />
               </button>
-              {backgroundImage === name && (
-                <div className="absolute inset-0 bg-white/10 flex items-center justify-center">
-                  <div className="w-4 h-4 rounded-full bg-white shadow-lg" />
-                </div>
-              )}
+              {selected && <SelectedCheck />}
             </div>
           );
         })}
 
         {loading && (
-          <div className="w-20 h-14 rounded-xl bg-white/[0.02] border border-white/[0.06] flex items-center justify-center">
-            <Loader2 size={14} className="animate-spin text-white/20" />
+          <div className="flex aspect-video items-center justify-center rounded-xl bg-white/[0.04]">
+            <Loader2 size={14} className="animate-spin text-white/30" />
           </div>
         )}
 
         {/* Add from file */}
         <button
+          type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="w-20 h-14 rounded-xl border-2 border-dashed border-white/[0.1] hover:border-white/[0.2] transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 hover:bg-white/[0.02]"
+          className="press flex aspect-video flex-col items-center justify-center gap-1 rounded-xl bg-white/[0.04] text-white/55 hover:bg-white/[0.08] hover:text-white cursor-pointer"
         >
-          <span className="text-[14px] text-white/30 font-light leading-none">+</span>
-          <span className="text-[9px] text-white/25 font-medium">{t('settings.addFile')}</span>
+          <Upload size={15} />
+          <span className="text-[11px] font-semibold">{t('settings.addFile')}</span>
         </button>
         <input
           ref={fileInputRef}
@@ -659,15 +625,16 @@ const WallpaperPicker = React.memo(function WallpaperPicker() {
 
         {/* Add from URL */}
         <button
+          type="button"
           onClick={() => setShowUrlInput(!showUrlInput)}
-          className={`w-20 h-14 rounded-xl border-2 border-dashed transition-all cursor-pointer flex flex-col items-center justify-center gap-0.5 ${
+          className={`press flex aspect-video flex-col items-center justify-center gap-1 rounded-xl cursor-pointer ${
             showUrlInput
-              ? 'border-white/[0.2] bg-white/[0.04]'
-              : 'border-white/[0.1] hover:border-white/[0.2] hover:bg-white/[0.02]'
+              ? 'bg-white/[0.10] text-white'
+              : 'bg-white/[0.04] text-white/55 hover:bg-white/[0.08] hover:text-white'
           }`}
         >
-          <Link size={12} className="text-white/30" />
-          <span className="text-[9px] text-white/25 font-medium">URL</span>
+          <Link size={15} />
+          <span className="text-[11px] font-semibold">URL</span>
         </button>
       </div>
 
@@ -824,6 +791,23 @@ function AccentFromWallpaperBtn({
   );
 }
 
+/* ── Option tiles (themes, wallpapers) ──────────────────── */
+
+/** Idle options get a hairline ring; the selected one an accent ring plus a check badge. */
+function optionRing(selected: boolean) {
+  return selected
+    ? 'ring-2 ring-[var(--color-accent)]'
+    : 'ring-1 ring-white/[0.08] hover:ring-white/25';
+}
+
+function SelectedCheck() {
+  return (
+    <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--color-accent)] text-white shadow-md">
+      <Check size={12} strokeWidth={3} />
+    </span>
+  );
+}
+
 /* ── Theme Section ──────────────────────────────────────── */
 
 const THEME_PRESET_KEYS = ['soundcloud', 'dark', 'neon', 'forest', 'crimson'] as const;
@@ -867,59 +851,59 @@ const ThemeSection = React.memo(function ThemeSection() {
             return (
               <button
                 key={id}
+                type="button"
                 onClick={() => setThemePreset(id)}
-                className={`group relative rounded-2xl overflow-hidden border transition-all duration-200 cursor-pointer hover:scale-[1.03] active:scale-[0.97] ${
-                  isActive
-                    ? 'border-white/30 ring-1 ring-white/20'
-                    : 'border-white/[0.06] hover:border-white/15'
-                }`}
+                className={`press relative overflow-hidden rounded-2xl text-left cursor-pointer ${optionRing(isActive)}`}
               >
-                <div
-                  className="relative h-16 overflow-hidden"
-                  style={{ backgroundColor: def.preview[1] }}
-                >
-                  <div
-                    className="absolute left-3 top-3 w-5 h-5 rounded-full"
+                {/* Mini app mock in the theme's colours: sidebar, accent heading, content. */}
+                <div className="flex h-20 gap-2 p-3" style={{ backgroundColor: def.preview[1] }}>
+                  <div className="w-5 rounded-md" style={{ backgroundColor: def.preview[2] }} />
+                  <div className="flex flex-1 flex-col gap-1.5">
+                    <div
+                      className="h-2 w-2/3 rounded-full"
+                      style={{ backgroundColor: def.preview[0] }}
+                    />
+                    <div
+                      className="flex-1 rounded-md"
+                      style={{ backgroundColor: def.preview[2] }}
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 bg-white/[0.04] px-3 py-2.5">
+                  <span
+                    className="h-2.5 w-2.5 rounded-full"
                     style={{ backgroundColor: def.preview[0] }}
                   />
-                  <div
-                    className="absolute right-3 bottom-2 left-3 h-6 rounded-lg"
-                    style={{ backgroundColor: def.preview[2] }}
-                  />
+                  <span className="text-[13px] font-semibold text-white/90">{def.name}</span>
                 </div>
-                <div className="px-3 py-2 bg-white/[0.03] text-center">
-                  <span
-                    className={`text-[12px] font-medium ${isActive ? 'text-white/90' : 'text-white/50'}`}
-                  >
-                    {def.name}
-                  </span>
-                </div>
+                {isActive && <SelectedCheck />}
               </button>
             );
           })}
           <button
+            type="button"
             onClick={() => {
               setThemePreset('custom');
               colorInputRef.current?.click();
             }}
-            className={`group relative rounded-2xl overflow-hidden border border-dashed transition-all duration-200 cursor-pointer hover:scale-[1.03] active:scale-[0.97] ${
-              themePreset === 'custom'
-                ? 'border-white/30 bg-white/[0.04]'
-                : 'border-white/[0.1] hover:border-white/20'
-            }`}
+            className={`press relative overflow-hidden rounded-2xl text-left cursor-pointer ${optionRing(themePreset === 'custom')}`}
           >
-            <div className="h-16 flex items-center justify-center">
-              <span className="text-[20px] text-white/30 group-hover:text-white/50 transition-colors">
-                +
-              </span>
-            </div>
-            <div className="px-3 py-2 bg-white/[0.02] text-center">
+            <div className="flex h-20 items-center justify-center bg-white/[0.03]">
               <span
-                className={`text-[12px] font-medium ${themePreset === 'custom' ? 'text-white/90' : 'text-white/40'}`}
-              >
+                className="h-9 w-9 rounded-full"
+                style={{
+                  background:
+                    'conic-gradient(#ff5500, #f5c518, #22c55e, #38bdf8, #a855f7, #ff2d55, #ff5500)',
+                }}
+              />
+            </div>
+            <div className="flex items-center gap-2 bg-white/[0.04] px-3 py-2.5">
+              <Pipette size={12} className="text-white/60" />
+              <span className="text-[13px] font-semibold text-white/90">
                 {t('settings.themeCustom')}
               </span>
             </div>
+            {themePreset === 'custom' && <SelectedCheck />}
           </button>
         </div>
       </div>
@@ -1134,24 +1118,11 @@ const StartupSection = React.memo(function StartupSection() {
         <h3 className="text-[22px] font-bold text-white tracking-tight">{t('settings.startup')}</h3>
         <p className="text-[12px] text-white/35 mt-1">{t('settings.startupPageDesc')}</p>
       </div>
-      <div className="grid grid-cols-2 gap-2">
-        {STARTUP_PAGES.map((page) => {
-          const active = startupPage === page.id;
-          return (
-            <button
-              key={page.id}
-              onClick={() => setStartupPage(page.id)}
-              className={`rounded-2xl border px-4 py-3 text-left transition-all duration-200 cursor-pointer ${
-                active
-                  ? 'border-white/[0.16] bg-white/[0.08] text-white/90'
-                  : 'border-white/[0.05] bg-white/[0.02] text-white/45 hover:bg-white/[0.05] hover:text-white/70'
-              }`}
-            >
-              <span className="text-[13px] font-semibold">{t(page.labelKey)}</span>
-            </button>
-          );
-        })}
-      </div>
+      <Segmented
+        value={startupPage}
+        options={STARTUP_PAGES.map((page) => ({ id: page.id, label: t(page.labelKey) }))}
+        onChange={setStartupPage}
+      />
     </section>
   );
 });
@@ -1230,24 +1201,14 @@ const PlaybackSection = React.memo(function PlaybackSection() {
               <p className="text-[13px] text-white/50 font-medium">
                 {t('settings.discordRpcMode')}
               </p>
-              <div className="grid grid-cols-3 gap-2">
-                {DISCORD_RPC_MODES.map((mode) => {
-                  const active = discordRpcMode === mode.id;
-                  return (
-                    <button
-                      key={mode.id}
-                      onClick={() => setDiscordRpcMode(mode.id)}
-                      className={`rounded-2xl border px-3 py-2.5 text-[12px] font-semibold transition-all duration-200 cursor-pointer ${
-                        active
-                          ? 'border-white/[0.16] bg-white/[0.08] text-white/90'
-                          : 'border-white/[0.05] bg-white/[0.02] text-white/45 hover:bg-white/[0.05] hover:text-white/70'
-                      }`}
-                    >
-                      {t(mode.labelKey)}
-                    </button>
-                  );
-                })}
-              </div>
+              <Segmented
+                value={discordRpcMode}
+                options={DISCORD_RPC_MODES.map((mode) => ({
+                  id: mode.id,
+                  label: t(mode.labelKey),
+                }))}
+                onChange={setDiscordRpcMode}
+              />
             </div>
 
             <div className="flex items-center justify-between">
@@ -1407,7 +1368,7 @@ export function Settings() {
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder={t('settings.searchPlaceholder')}
-        className="w-full px-4 py-2.5 rounded-xl text-[13px] text-white/85 bg-white/[0.04] border border-white/[0.08] outline-none focus:border-[var(--color-accent)]"
+        className="w-full px-4 py-2.5 rounded-xl text-[13px] text-white/85 bg-white/[0.04] border border-white/[0.08] outline-none focus:border-white/25"
       />
       {nothingFound && (
         <p className="py-10 text-center text-[13px] text-white/30">{t('settings.searchEmpty')}</p>
