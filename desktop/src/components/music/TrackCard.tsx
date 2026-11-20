@@ -116,8 +116,6 @@ export const TrackCard = React.memo(
             background: glass ? 'rgba(255,255,255,0.035)' : 'rgba(18,18,22,0.95)',
             /* --artwork-radius drives clip-path in .glass-artwork CSS class */
             ['--artwork-radius' as string]: '32px',
-            transform: 'translateZ(0)',
-            willChange: 'transform',
           }}
           onClick={togglePlay}
         >
@@ -126,9 +124,8 @@ export const TrackCard = React.memo(
               src={artwork}
               alt={track.title}
               className="w-full h-full object-cover transition-transform duration-500 ease-[var(--ease-spring)] group-hover:scale-[1.06]"
-              style={{ willChange: 'transform' }}
               decoding="async"
-              loading="eager"
+              loading="lazy"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-white/20">
