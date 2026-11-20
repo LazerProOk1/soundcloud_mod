@@ -180,7 +180,6 @@ pub fn reload_current_track(state: &AudioState) -> Result<(), String> {
         let song_pos = *state.song_pos_secs.lock().unwrap();
         (player.is_paused(), song_pos)
     };
-    let position = Duration::from_secs_f64(song_pos);
 
     let mixer = state.mixer.lock().unwrap().clone();
     let vol = *state.volume.lock().unwrap();
