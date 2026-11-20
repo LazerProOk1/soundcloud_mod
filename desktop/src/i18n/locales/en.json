@@ -435,6 +435,8 @@
     "textHint": "{{count}} tracks recognised. Lists from VK or Apple Music can be pasted here.",
     "textPlaylist": "Imported list",
     "ymToken": "Yandex Music token",
+    "tracksCount_one": "{{count}} track",
+    "tracksCount_other": "{{count}} tracks",
     "ymLikes": "Liked on Yandex Music",
     "run": "Import",
     "progress": "Searching {{done}}/{{total}} · found {{found}}",
