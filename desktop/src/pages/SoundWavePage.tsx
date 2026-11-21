@@ -438,7 +438,9 @@ export function SoundWavePage() {
     <div
       className="relative w-full flex flex-col overflow-hidden page-enter"
       style={{
-        minHeight: 'calc(100vh - 40px)',
+        // The visible area between the title bar and the player bar, so the wave card fits
+        // on screen at launch instead of pushing past the bottom edge.
+        minHeight: 'calc(100vh - 150px)',
         background: '#07070c',
       }}
     >
@@ -503,7 +505,7 @@ export function SoundWavePage() {
 
       {/* ═══════════════ CONTENT ═══════════════ */}
       <div
-        className="relative z-10 flex flex-col flex-1 justify-between max-w-[1040px] w-full mx-auto px-6 md:px-10 py-5 gap-4"
+        className="relative z-10 flex flex-col flex-1 justify-between max-w-[1040px] w-full mx-auto px-6 md:px-10 py-4 gap-3"
         style={{ isolation: 'isolate' }}
       >
         {/* ── Top Bar: Brand + Live Pill + Filters + Refresh ── */}
@@ -577,7 +579,7 @@ export function SoundWavePage() {
         {/* ── The wave card: title on top, cover on the living horizon with play on it,
              dotted spectrum, progress and the action row (old card + new stage). ── */}
         <section
-          className="wave-card relative my-auto flex w-full flex-col items-center gap-4 rounded-[32px] px-5 py-5 md:px-10 md:py-6"
+          className="wave-card relative my-auto flex w-full flex-col items-center gap-3 rounded-[32px] px-5 py-4 md:px-10 md:py-5"
           style={{
             background:
               'linear-gradient(165deg, rgba(255,255,255,0.075) 0%, rgba(255,255,255,0.025) 55%, rgba(8,8,12,0.4) 100%)',
@@ -595,13 +597,9 @@ export function SoundWavePage() {
                   type="button"
                   onClick={artistTarget ? () => navigate(artistTarget) : undefined}
                   disabled={!artistTarget}
-                  className="mx-auto block max-w-full truncate font-extrabold leading-[1.15] tracking-tight text-white hover:opacity-85 cursor-pointer disabled:cursor-default disabled:hover:opacity-100"
-                  style={{
-                    fontSize: 'clamp(28px, 4.2vw, 50px)',
-                    textShadow: dom
-                      ? `0 0 60px ${rgbToCss(dom, 0.4)}, 0 4px 24px rgba(0,0,0,0.45)`
-                      : '0 4px 24px rgba(0,0,0,0.45)',
-                  }}
+                  className="mx-auto block max-w-full truncate pb-[0.12em] font-extrabold leading-[1.2] tracking-tight text-white hover:opacity-85 cursor-pointer disabled:cursor-default disabled:hover:opacity-100"
+                  // No glow: `truncate` clips it into a visible box around the title.
+                  style={{ fontSize: 'clamp(24px, 3.4vw, 42px)' }}
                 >
                   {artistDisplay.primary}
                 </button>
@@ -694,7 +692,7 @@ export function SoundWavePage() {
                 e.currentTarget.style.setProperty('--tx', '0deg');
                 e.currentTarget.style.setProperty('--ty', '0deg');
               }}
-              className="np-cover-img group/art relative z-10 h-[196px] w-[196px] shrink-0 overflow-hidden rounded-3xl bg-white/[0.06] ring-1 ring-white/15 cursor-pointer disabled:cursor-default"
+              className="np-cover-img group/art relative z-10 size-[clamp(132px,calc(100vh-640px),220px)] shrink-0 overflow-hidden rounded-3xl bg-white/[0.06] ring-1 ring-white/15 cursor-pointer disabled:cursor-default"
             >
               {artworkUrl ? (
                 <img
@@ -740,8 +738,8 @@ export function SoundWavePage() {
 
           {/* Dotted spectrum, progress and actions */}
           {currentTrack && (
-            <div className="flex w-full max-w-2xl flex-col gap-2.5">
-              <LiveSpectrumCanvas active={isPlaying} bars={56} height={22} variant="dots" />
+            <div className="flex w-full max-w-2xl flex-col gap-2">
+              <LiveSpectrumCanvas active={isPlaying} bars={56} height={18} variant="dots" />
               <ProgressSlider />
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
