@@ -358,7 +358,7 @@
     "panelStyle_liquid": "Liquid Glass",
     "panelStyle_gloss": "Матовое стекло",
     "panelStyle_flat": "Просто",
-    "panelStyleDesc_liquid": "Прозрачное стекло с преломлением и бликами. Самый тяжёлый для видеокарты",
+    "panelStyleDesc_liquid": "Дымчатое стекло с бликами, подкрашенное цветами обложки",
     "panelStyleDesc_gloss": "Полупрозрачные панели с мягким матовым размытием",
     "panelStyleDesc_flat": "Полностью плотные панели — самый быстрый",
     "uiScale": "Масштаб интерфейса",
