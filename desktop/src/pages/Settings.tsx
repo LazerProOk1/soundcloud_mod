@@ -15,7 +15,6 @@ import { changeAppLanguage } from '../i18n';
 import { switchAudioDevice } from '../lib/audio';
 import { downloadProfileBackup, restoreProfileBackupFromText } from '../lib/backup';
 import {
-  cacheLikedTracks,
   cancelCacheLikes,
   clearCache,
   clearImageCache,
@@ -26,14 +25,13 @@ import {
   getLikedCacheSize,
   getWallpaperUrl,
   isCacheLikesRunning,
-  type LikeCacheEntry,
   listWallpapers,
   removeWallpaper,
   saveWallpaperFromBuffer,
 } from '../lib/cache';
 import { hslToHex, hueOfHex } from '../lib/color';
 import { trackedInvoke } from '../lib/diagnostics';
-import { isDownloadable } from '../lib/offline-download';
+import { downloadTracksForOffline, isDownloadable } from '../lib/offline-download';
 import { formatBytes } from '../lib/formatters';
 import {
   Check,
@@ -302,33 +300,17 @@ const CacheSection = React.memo(function CacheSection() {
   const handleCacheLikes = useCallback(async () => {
     setCachingLikes(true);
     try {
-      const [
-        { fetchAllLikedTracks },
-        { buildStorageUrls, streamFallbackUrls, getSessionId },
-        { cacheLyricsForTracks },
-      ] = await Promise.all([
-        import('../lib/hooks'),
-        import('../lib/api'),
-        import('../lib/lyrics-fetch'),
-      ]);
-      const hq = useSettingsStore.getState().highQualityStreaming;
-      const sessionId = getSessionId();
+      const { fetchAllLikedTracks } = await import('../lib/hooks');
       // Previews and blocked tracks can't be downloaded: leaving them in kept the run at N-1 of N.
       const tracks = (await fetchAllLikedTracks(200)).filter(isDownloadable);
-      const entries: LikeCacheEntry[] = tracks.map((track) => ({
-        urn: track.urn,
-        urls: streamFallbackUrls(track.urn, hq),
-        storageUrls: buildStorageUrls(track.urn),
-        sessionId,
-      }));
-      if (entries.length === 0) {
+      if (tracks.length === 0) {
         setCachingLikes(false);
         toast(t('settings.cacheLikesEmpty'));
         return;
       }
-      // Start audio caching (Rust) and lyrics caching (TS) in parallel
-      void cacheLyricsForTracks(tracks, 3);
-      await cacheLikedTracks(entries);
+      // Same path as the list buttons: protected folder, then fallback sources for tracks
+      // SoundCloud no longer serves. Progress comes back through the engine events.
+      await downloadTracksForOffline(tracks);
     } catch (err) {
       setCachingLikes(false);
       setProgress(null);
