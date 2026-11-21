@@ -1,8 +1,6 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'sonner';
 import { TrackListPage } from '../components/music/TrackListPage';
-import { downloadAllLikes } from '../lib/cache';
 import { ALL_LIKES_PAGE_SIZE, useLikedTracks } from '../lib/hooks';
 import { Heart, Loader2 } from '../lib/icons';
 import { useAuthStore } from '../stores/auth';
@@ -35,17 +33,7 @@ export function LikedPage() {
       tracks={tracks}
       totalCount={total}
       isLoading={likes.isLoading}
-      onDownload={() => {
-        downloadAllLikes()
-          .then(({ total, pending }) =>
-            pending === 0
-              ? toast.success(t('trackList.allDownloaded', { count: total }))
-              : toast.success(
-                  t('trackList.downloadStarted', { count: pending, done: total - pending }),
-                ),
-          )
-          .catch((e) => toast.error(String(e)));
-      }}
+      downloadable
       footer={
         <div className="h-12 flex items-center justify-center">
           {likes.isFetchingNextPage && <Loader2 size={20} className="text-white/30 animate-spin" />}

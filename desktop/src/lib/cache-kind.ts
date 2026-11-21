@@ -20,6 +20,13 @@ function lookup(urn: string): Promise<CacheKind | null> {
   return kind;
 }
 
+/** How many of these tracks are not yet in the protected likes folder. */
+export async function countNotProtected(urns: string[]): Promise<number> {
+  const onDisk = useCachedUrnsStore.getState().urns;
+  const kinds = await Promise.all(urns.map((u) => (onDisk.has(u) ? lookup(u) : null)));
+  return kinds.filter((k) => k !== 'liked').length;
+}
+
 /** Cache kind of a track, or null when it is not on disk. One lookup per track. */
 export function useCacheKind(urn: string): CacheKind | null {
   const cached = useCachedUrnsStore((s) => s.urns.has(urn));

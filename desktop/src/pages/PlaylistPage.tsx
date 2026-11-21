@@ -147,6 +147,8 @@ export const PlaylistPage = React.memo(() => {
   const {
     tracks: playlistTracks,
     isLoading: tracksLoading,
+    isError: tracksFailed,
+    refetch: refetchTracks,
     hasNextPage,
     isFetchingNextPage,
     fetchNextPage,
@@ -291,6 +293,8 @@ export const PlaylistPage = React.memo(() => {
         description={playlist.description ?? undefined}
         tracks={tracks}
         totalCount={playlist.track_count ?? tracks.length}
+        onRetry={tracksFailed ? () => void refetchTracks() : undefined}
+        downloadable
         actions={
           <>
             <PlaylistLikeBtn playlistUrn={playlist.urn} count={playlist.likes_count} />

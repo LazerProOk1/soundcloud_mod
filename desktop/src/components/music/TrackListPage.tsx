@@ -2,9 +2,10 @@ import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useArtworkColor } from '../../hooks/useArtworkColor';
 import { durLong } from '../../lib/formatters';
-import { Clock, Download, Loader2, Search, Shuffle } from '../../lib/icons';
+import { Clock, Loader2, Search, Shuffle } from '../../lib/icons';
 import { type Track, usePlayerStore } from '../../stores/player';
 import { VirtualList } from '../ui/VirtualList';
+import { OfflineDownloadButton } from './OfflineDownloadButton';
 import { TrackTableRow } from './TrackTableRow';
 
 const fabIcon = (show: boolean) =>
@@ -24,8 +25,9 @@ export const TrackListPage = React.memo(function TrackListPage({
   tracks,
   totalCount,
   isLoading,
+  onRetry,
   footer,
-  onDownload,
+  downloadable,
   subtitle,
   description,
   actions,
@@ -40,10 +42,12 @@ export const TrackListPage = React.memo(function TrackListPage({
   tracks: Track[];
   totalCount?: number;
   isLoading?: boolean;
+  /** Set when loading failed: the empty state then offers a retry instead of "nothing here". */
+  onRetry?: () => void;
   /** e.g. an infinite-scroll sentinel */
   footer?: React.ReactNode;
-  /** Shows a "download for offline" button. */
-  onDownload?: () => void;
+  /** Shows a "save for offline" button for these tracks (kept in the protected likes folder). */
+  downloadable?: boolean;
   /** Line under the title (e.g. the owner). */
   subtitle?: React.ReactNode;
   description?: string;
@@ -122,7 +126,7 @@ export const TrackListPage = React.memo(function TrackListPage({
         >
           {/* Both icons stay mounted and morph (fade + rotate) into each other. */}
           <span className={fabIcon(!showPause)}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" className="ml-0.5">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
               <path d="M8 5v14l11-7z" />
             </svg>
           </span>
@@ -146,16 +150,7 @@ export const TrackListPage = React.memo(function TrackListPage({
           {shuffle && <span className="absolute bottom-0 w-1 h-1 rounded-full bg-accent" />}
         </button>
         {actions}
-        {onDownload && (
-          <button
-            type="button"
-            onClick={onDownload}
-            title={t('trackList.download', 'Download for offline')}
-            className="w-10 h-10 rounded-full flex items-center justify-center text-white/60 hover:text-white cursor-pointer"
-          >
-            <Download size={24} />
-          </button>
-        )}
+        {downloadable && <OfflineDownloadButton tracks={tracks} />}
         <div className="flex-1" />
         {searchOpen ? (
           <input
@@ -201,9 +196,22 @@ export const TrackListPage = React.memo(function TrackListPage({
             <Loader2 size={28} className="animate-spin" />
           </div>
         ) : shown.length === 0 ? (
-          <p className="py-16 text-center text-[14px] text-white/40">
-            {query ? t('library.noMatches') : t('trackList.empty', 'Nothing here yet')}
-          </p>
+          onRetry && !query ? (
+            <div className="flex flex-col items-center gap-3 py-16">
+              <p className="text-[14px] text-white/50">{t('trackList.loadFailed')}</p>
+              <button
+                type="button"
+                onClick={onRetry}
+                className="press h-9 rounded-full bg-white/[0.08] px-4 text-[13px] font-semibold text-white/85 hover:bg-white/[0.13] cursor-pointer"
+              >
+                {t('common.retry')}
+              </button>
+            </div>
+          ) : (
+            <p className="py-16 text-center text-[14px] text-white/40">
+              {query ? t('library.noMatches') : t('trackList.empty', 'Nothing here yet')}
+            </p>
+          )
         ) : renderRows ? (
           renderRows(shown)
         ) : (
