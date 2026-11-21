@@ -1,7 +1,11 @@
 import React from 'react';
 import { fc } from '../../lib/formatters';
 
-/** Flat stat tile: big number + small label. */
+/**
+ * One stat in a profile / artist header row: a big number with a small label under it,
+ * no box. Neighbours are split by a thin line. A stat with no value is left out instead of
+ * showing a dash.
+ */
 function StatOrbImpl({
   value,
   label,
@@ -11,13 +15,16 @@ function StatOrbImpl({
   label: string;
   icon?: React.ReactNode;
 }) {
+  if (value == null) return null;
   return (
-    <div className="inline-flex items-baseline gap-2 px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.06]">
-      {icon && <span className="self-center text-white/40">{icon}</span>}
-      <span className="text-[17px] font-bold tabular-nums text-white">
-        {value != null ? fc(value) : '—'}
+    <div className="flex flex-col gap-1 not-first:border-l not-first:border-white/10 not-first:pl-5">
+      <span className="text-[22px] font-extrabold leading-none tabular-nums text-white">
+        {fc(value)}
       </span>
-      <span className="text-[13px] text-white/50 lowercase">{label}</span>
+      <span className="flex items-center gap-1.5 text-[12px] font-medium text-white/50 lowercase">
+        {icon && <span className="text-white/35 [&>svg]:size-3">{icon}</span>}
+        {label}
+      </span>
     </div>
   );
 }
