@@ -539,12 +539,13 @@
     "sourceScDesc": "Only SoundCloud's own recommendations: always the exact tracks and faster, but a weaker guess at your taste. Not sure? Try both."
   },
   "update": {
-    "available": "Update available",
     "later": "Later",
     "download": "Download",
     "install": "Install and restart",
     "installing": "Downloading {{percent}}%",
-    "installFailed": "Couldn't install the update, opening the release page"
+    "installFailed": "Couldn't install the update, opening the release page",
+    "title": "Version {{version}} is out",
+    "current": "You have {{version}}"
   },
   "common": {
     "loading": "Loading...",

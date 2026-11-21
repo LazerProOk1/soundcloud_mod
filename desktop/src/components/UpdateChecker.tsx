@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { proxiedAssetUrl } from '../lib/asset-url';
 import { APP_VERSION } from '../lib/constants';
-import { AlertCircle, ExternalLink, Loader2, Sparkles, X } from '../lib/icons';
+import { ExternalLink, X } from '../lib/icons';
 import { openExternalUrl } from '../lib/open-external';
 import {
   canSelfUpdate,
@@ -12,145 +12,55 @@ import {
   stripLeadingV,
 } from '../lib/update-check';
 
-function renderInlineMarkdown(text: string, keyPrefix: string) {
+const IMAGE = /!\[[^\]]*\]\(([^)]+)\)/;
+
+/** **bold** and [links](url) inside one line of release notes. */
+function inline(text: string, key: string) {
   const parts: React.ReactNode[] = [];
-  const pattern = /!\[([^\]]*)\]\(([^)]+)\)|\[([^\]]+)\]\(([^)]+)\)/g;
-  let lastIndex = 0;
-  let match: RegExpExecArray | null = null;
-  let matchIndex = 0;
-
-  while ((match = pattern.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push(text.slice(lastIndex, match.index));
-    }
-
-    const [, imageAlt, imageUrl, linkLabel, linkUrl] = match;
-    if (imageUrl) {
+  const pattern = /\*\*([^*]+)\*\*|\[([^\]]+)\]\(([^)]+)\)/g;
+  let last = 0;
+  let m: RegExpExecArray | null = pattern.exec(text);
+  while (m !== null) {
+    if (m.index > last) parts.push(text.slice(last, m.index));
+    const [, bold, label, url] = m;
+    if (bold) {
       parts.push(
-        <img
-          key={`${keyPrefix}-img-${matchIndex}`}
-          src={proxiedAssetUrl(imageUrl) ?? imageUrl}
-          alt={imageAlt || ''}
-          loading="lazy"
-          decoding="async"
-          className="mt-2 rounded-lg border border-white/[0.08] max-w-full"
-        />,
+        <strong key={`${key}-${m.index}`} className="font-semibold text-white">
+          {bold}
+        </strong>,
       );
-    } else if (linkUrl) {
+    } else {
       parts.push(
         <button
-          key={`${keyPrefix}-link-${matchIndex}`}
+          key={`${key}-${m.index}`}
           type="button"
-          onClick={() => openExternalUrl(linkUrl)}
+          onClick={() => openExternalUrl(url)}
           className="inline text-accent hover:underline cursor-pointer"
         >
-          {linkLabel}
+          {label}
         </button>,
       );
     }
-
-    lastIndex = pattern.lastIndex;
-    matchIndex += 1;
+    last = pattern.lastIndex;
+    m = pattern.exec(text);
   }
-
-  if (lastIndex < text.length) {
-    parts.push(text.slice(lastIndex));
-  }
-
+  if (last < text.length) parts.push(text.slice(last));
   return parts;
 }
 
-function calloutTone(kind: string) {
-  switch (kind) {
-    case 'WARNING':
-    case 'CAUTION':
-      return 'border-amber-500/20 bg-amber-500/10 text-amber-100';
-    case 'IMPORTANT':
-      return 'border-accent/25 bg-accent/10 text-white/85';
-    case 'TIP':
-      return 'border-emerald-500/20 bg-emerald-500/10 text-emerald-100';
-    default:
-      return 'border-sky-500/20 bg-sky-500/10 text-sky-100';
-  }
-}
-
-function renderReleaseBody(body: string) {
-  const lines = body.split(/\r?\n/);
-  const nodes: React.ReactNode[] = [];
-
-  for (let index = 0; index < lines.length; index += 1) {
-    const line = lines[index];
-    const trimmed = line.trim();
-    if (!trimmed) {
-      nodes.push(<div key={index} className="h-3" />);
-      continue;
-    }
-    if (trimmed.startsWith('### ')) {
-      nodes.push(
-        <h4 key={index} className="text-[13px] font-semibold text-white/80 mt-3 first:mt-0">
-          {renderInlineMarkdown(trimmed.slice(4), `h4-${index}`)}
-        </h4>,
-      );
-      continue;
-    }
-    if (trimmed.startsWith('## ') || trimmed.startsWith('# ')) {
-      nodes.push(
-        <h3 key={index} className="text-[14px] font-semibold text-white/85 mt-3 first:mt-0">
-          {renderInlineMarkdown(trimmed.replace(/^#+\s*/, ''), `h3-${index}`)}
-        </h3>,
-      );
-      continue;
-    }
-    if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
-      nodes.push(
-        <p key={index} className="text-[12px] leading-relaxed text-white/60 pl-3">
-          {'\u2022'} {renderInlineMarkdown(trimmed.slice(2), `li-${index}`)}
-        </p>,
-      );
-      continue;
-    }
-
-    const calloutMatch = trimmed.match(/^>\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*(.*)$/);
-    if (calloutMatch) {
-      const [, kind, firstLine] = calloutMatch;
-      const bodyLines: string[] = [];
-      if (firstLine) bodyLines.push(firstLine);
-
-      while (index + 1 < lines.length) {
-        const nextLine = lines[index + 1];
-        if (!nextLine.trim().startsWith('>')) break;
-        index += 1;
-        bodyLines.push(nextLine.trim().replace(/^>\s?/, ''));
-      }
-
-      nodes.push(
-        <div key={index} className={`rounded-xl border px-3 py-2.5 mt-2 ${calloutTone(kind)}`}>
-          <div className="flex items-start gap-2">
-            <AlertCircle size={14} className="mt-0.5 shrink-0" />
-            <div className="min-w-0">
-              <p className="text-[11px] font-semibold uppercase tracking-wide opacity-80">{kind}</p>
-              <div className="mt-1 space-y-1 text-[12px] leading-relaxed opacity-90">
-                {bodyLines.map((calloutLine, calloutIndex) => (
-                  <p key={`${index}-${calloutIndex}`}>
-                    {renderInlineMarkdown(calloutLine, `callout-${index}-${calloutIndex}`)}
-                  </p>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>,
-      );
-      continue;
-    }
-
-    nodes.push(
-      <p key={index} className="text-[12px] leading-relaxed text-white/60 whitespace-pre-wrap">
-        {renderInlineMarkdown(trimmed, `p-${index}`)}
-      </p>,
-    );
-  }
-
-  return nodes;
+/**
+ * The release body is written for the GitHub page. In the app only "what's new" matters: the
+ * banner becomes the header picture, the title is the dialog's own, and the commit list and the
+ * "which file to download" section are dropped.
+ */
+function parseNotes(body: string) {
+  const banner = body.match(IMAGE)?.[1] ?? null;
+  const cut = body.search(/<details|^###\s+(Какой файл скачать|Which file)/im);
+  const lines = (cut >= 0 ? body.slice(0, cut) : body)
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter((l) => l && !IMAGE.test(l) && !/^#\s|^##\s/.test(l));
+  return { banner, lines };
 }
 
 export function UpdateChecker({
@@ -161,7 +71,7 @@ export function UpdateChecker({
   onDismiss: () => void;
 }) {
   const { t } = useTranslation();
-  const renderedNotes = useMemo(() => renderReleaseBody(release.body), [release.body]);
+  const { banner, lines } = useMemo(() => parseNotes(release.body ?? ''), [release.body]);
   const [selfUpdate, setSelfUpdate] = useState(false);
   // null = idle, otherwise download progress 0..1.
   const [progress, setProgress] = useState<number | null>(null);
@@ -183,53 +93,66 @@ export function UpdateChecker({
     }
   };
 
-  if (!release) return null;
+  const version = stripLeadingV(release.tag_name);
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="relative w-full max-w-md mx-4 rounded-2xl app-surface overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 pt-5 pb-3">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-accent/15 flex items-center justify-center">
-              <Sparkles size={16} className="text-accent" />
-            </div>
-            <div>
-              <h2 className="text-sm font-semibold">{t('update.available')}</h2>
-              <p className="text-[11px] text-white/30 mt-0.5">
-                {stripLeadingV(APP_VERSION)} → {stripLeadingV(release.tag_name)}
-              </p>
-            </div>
-          </div>
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/65">
+      <div className="relative w-[560px] max-w-[94vw] max-h-[88vh] flex flex-col rounded-2xl app-surface overflow-hidden">
+        {/* Positioned by a wrapper: Liquid Glass makes .ui-float `position: relative`. */}
+        <div className="absolute top-3 right-3 z-10">
           <button
             type="button"
             onClick={onDismiss}
-            className="ui-icon w-7 h-7 rounded-full flex items-center justify-center cursor-pointer"
+            aria-label={t('update.later')}
+            className="w-9 h-9 rounded-full flex items-center justify-center text-white/80 hover:text-white ui-float cursor-pointer"
           >
-            <X size={14} className="text-white/40" />
+            <X size={18} />
           </button>
         </div>
 
-        {/* Release title */}
-        {release.name && (
-          <div className="px-5 pb-2">
-            <p className="text-[13px] font-medium text-white/80">{release.name}</p>
+        {banner && (
+          <img
+            src={proxiedAssetUrl(banner) ?? banner}
+            alt=""
+            decoding="async"
+            className="w-full aspect-[2/1] object-cover shrink-0"
+          />
+        )}
+
+        <div className="px-7 pt-6 pb-2 shrink-0">
+          <h2 className="text-[24px] font-bold text-white tracking-tight">
+            {t('update.title', { version })}
+          </h2>
+          <p className="text-[14px] text-white/50 mt-1">
+            {t('update.current', { version: stripLeadingV(APP_VERSION) })}
+          </p>
+        </div>
+
+        {lines.length > 0 && (
+          <div className="px-7 py-3 overflow-y-auto min-h-0 space-y-2 text-[14px] leading-relaxed text-white/70">
+            {lines.map((line, i) =>
+              line.startsWith('### ') ? (
+                <h3 key={i} className="pt-2 text-[15px] font-semibold text-white">
+                  {line.slice(4)}
+                </h3>
+              ) : line.startsWith('- ') || line.startsWith('* ') ? (
+                <p key={i} className="relative pl-4">
+                  <span className="absolute left-0 text-accent">•</span>
+                  {inline(line.slice(2), `l${i}`)}
+                </p>
+              ) : (
+                <p key={i}>{inline(line, `p${i}`)}</p>
+              ),
+            )}
           </div>
         )}
 
-        {/* Release notes */}
-        {release.body && (
-          <div className="mx-5 mb-4 max-h-60 overflow-y-auto rounded-xl ui-card p-4 space-y-1">
-            {renderedNotes}
-          </div>
-        )}
-
-        {/* Actions */}
-        <div className="flex gap-2 px-5 pb-5">
+        <div className="flex items-center justify-end gap-4 px-7 pt-4 pb-6 shrink-0">
           <button
             type="button"
             onClick={onDismiss}
-            className="flex-1 py-2.5 rounded-xl bar-control text-[13px] text-white/50 font-medium cursor-pointer"
+            disabled={progress !== null}
+            className="text-[15px] font-bold text-white/70 hover:text-white cursor-pointer disabled:opacity-40"
           >
             {t('update.later')}
           </button>
@@ -237,21 +160,26 @@ export function UpdateChecker({
             type="button"
             disabled={progress !== null}
             onClick={() => (selfUpdate ? void install() : openExternalUrl(release.html_url))}
-            className="flex-1 py-2.5 rounded-xl bg-accent hover:bg-accent-hover text-[13px] text-accent-contrast font-semibold transition-colors cursor-pointer disabled:cursor-default flex items-center justify-center gap-1.5"
+            className="relative overflow-hidden h-12 min-w-[180px] px-7 rounded-full ui-accent text-[15px] font-bold cursor-pointer flex items-center justify-center gap-2"
           >
-            {progress !== null ? (
-              <>
-                <Loader2 size={13} className="animate-spin" />
-                {t('update.installing', { percent: Math.round(progress * 100) })}
-              </>
-            ) : selfUpdate ? (
-              t('update.install')
-            ) : (
-              <>
-                {t('update.download')}
-                <ExternalLink size={13} />
-              </>
+            {progress !== null && (
+              <span
+                className="absolute inset-y-0 left-0 bg-white/25 transition-[width] duration-300"
+                style={{ width: `${Math.round(progress * 100)}%` }}
+              />
             )}
+            <span className="relative flex items-center gap-2">
+              {progress !== null ? (
+                t('update.installing', { percent: Math.round(progress * 100) })
+              ) : selfUpdate ? (
+                t('update.install')
+              ) : (
+                <>
+                  {t('update.download')}
+                  <ExternalLink size={15} />
+                </>
+              )}
+            </span>
           </button>
         </div>
       </div>
