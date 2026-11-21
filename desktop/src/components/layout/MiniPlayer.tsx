@@ -6,11 +6,9 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { api } from '../../lib/api';
 import { getCurrentTime, getDuration, handlePrev, seek } from '../../lib/audio';
 import { art } from '../../lib/formatters';
-import { invalidateAllLikesCache } from '../../lib/hooks';
-import { optimisticToggleLike } from '../../lib/likes';
+import { setTrackLiked } from '../../lib/like-toggle';
 import { getArtistDisplay, getDisplayTitle } from '../../lib/track-display';
 import { useMiniPlayerStore } from '../../stores/mini-player';
 import type { Track } from '../../stores/player';
@@ -130,15 +128,7 @@ function useLocalLike(track: Track | null) {
     if (!track) return;
     const next = !isLiked;
     setLiked(next);
-    optimisticToggleLike(qc, track as Parameters<typeof optimisticToggleLike>[1], next);
-    invalidateAllLikesCache();
-    try {
-      await api(`/likes/tracks/${encodeURIComponent(track.urn)}`, {
-        method: next ? 'POST' : 'DELETE',
-      });
-    } catch {
-      setLiked(!next);
-    }
+    if (!(await setTrackLiked(qc, track, next))) setLiked(!next);
   };
 
   return { isLiked, toggle };

@@ -7,17 +7,11 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useShallow } from 'zustand/shallow';
 import { useArtworkColor } from '../../hooks/useArtworkColor';
-import { api } from '../../lib/api';
 import { getCurrentTime, handlePrev, seek, subscribe } from '../../lib/audio';
 import { FFT_BIN_COUNT, readAccentRgb, subscribeAudioFft } from '../../lib/audio-fft';
-import { toggleDislike, useDislikeStatus } from '../../lib/dislikes';
+import { useDislikeStatus } from '../../lib/dislikes';
 import { art, durLong } from '../../lib/formatters';
-import {
-  type Comment,
-  invalidateAllLikesCache,
-  useCurrentTrackHydration,
-  useTrackComments,
-} from '../../lib/hooks';
+import { type Comment, useCurrentTrackHydration, useTrackComments } from '../../lib/hooks';
 import {
   ExternalLink,
   Eye,
@@ -38,7 +32,8 @@ import {
   ThumbsDown,
   X,
 } from '../../lib/icons';
-import { optimisticToggleLike, useLiked } from '../../lib/likes';
+import { setTrackDisliked, setTrackLiked } from '../../lib/like-toggle';
+import { useLiked } from '../../lib/likes';
 import { lrclibGet, lrclibSearch } from '../../lib/lrclib';
 import {
   type LyricLine,
@@ -127,18 +122,7 @@ const FullscreenLikeButton = React.memo(({ track }: { track: Track }) => {
   const liked = useLiked(track.urn);
   const qc = useQueryClient();
 
-  const toggle = async () => {
-    const next = !liked;
-    optimisticToggleLike(qc, track, next);
-    invalidateAllLikesCache();
-    try {
-      await api(`/likes/tracks/${encodeURIComponent(track.urn)}`, {
-        method: next ? 'POST' : 'DELETE',
-      });
-    } catch {
-      optimisticToggleLike(qc, track, !next);
-    }
-  };
+  const toggle = () => void setTrackLiked(qc, track, !liked);
 
   return (
     <button
@@ -161,20 +145,8 @@ const FullscreenDislikeButton = React.memo(({ track }: { track: Track }) => {
   const { t } = useTranslation();
   const qc = useQueryClient();
   const disliked = useDislikeStatus(track.urn);
-  const next = usePlayerStore((s) => s.next);
 
-  const toggle = async () => {
-    const nowDisliked = !disliked;
-    if (nowDisliked && track.user_favorite) {
-      optimisticToggleLike(qc, track, false);
-      invalidateAllLikesCache();
-      api(`/likes/tracks/${encodeURIComponent(track.urn)}`, { method: 'DELETE' }).catch(() => {});
-    }
-    if (nowDisliked && usePlayerStore.getState().currentTrack?.urn === track.urn) {
-      next();
-    }
-    await toggleDislike(qc, track, nowDisliked);
-  };
+  const toggle = () => setTrackDisliked(qc, track, !disliked);
 
   return (
     <button

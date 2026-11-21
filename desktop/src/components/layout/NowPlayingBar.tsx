@@ -39,6 +39,7 @@ import {
   volumeXIcon16,
   X,
 } from '../../lib/icons';
+import { setTrackDisliked } from '../../lib/like-toggle';
 import { optimisticToggleLike } from '../../lib/likes';
 import { getSleepTimerRemaining, useSleepTimer } from '../../lib/sleep-timer';
 import { getArtistDisplay, useArtistDisplay, useDisplayTitle } from '../../lib/track-display';
@@ -492,21 +493,7 @@ export function NowBarDislikeButton({ trackUrn }: { trackUrn: string }) {
   const disliked = useDislikeStatus(trackUrn);
 
   const toggle = async () => {
-    if (!trackData) return;
-    const next = !disliked;
-
-    if (next && trackData.user_favorite) {
-      optimisticToggleLike(qc, trackData, false);
-      invalidateAllLikesCache();
-      api(`/likes/tracks/${encodeURIComponent(trackUrn)}`, { method: 'DELETE' }).catch(() => {});
-    }
-
-    if (next) {
-      const { currentTrack, next: skip } = usePlayerStore.getState();
-      if (currentTrack?.urn === trackUrn) skip();
-    }
-
-    await toggleDislike(qc, trackData, next);
+    if (trackData) await setTrackDisliked(qc, trackData, !disliked);
   };
 
   return (
