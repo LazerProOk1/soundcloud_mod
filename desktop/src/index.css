@@ -1472,6 +1472,7 @@ svg.lucide:not([stroke-width="0"]) {
 .ui-icon,
 .ui-primary,
 .ui-accent,
+.ui-destructive,
 .bar-control,
 .ui-track {
   transition:
@@ -1518,6 +1519,30 @@ svg.lucide:not([stroke-width="0"]) {
 }
 .liquid-glass .ui-accent:hover {
   background-color: color-mix(in srgb, var(--color-accent) 75%, transparent);
+}
+/* .ui-destructive: the confirm button of a delete (red), glass in Liquid Glass. */
+.ui-destructive {
+  background: #dc2626;
+  color: #fff;
+}
+.ui-destructive:hover {
+  background: #ef4444;
+}
+.ui-destructive:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.liquid-glass .ui-destructive {
+  background-color: rgba(220, 38, 38, 0.6);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.2), transparent 60%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.25),
+    0 0 0 0.5px rgba(252, 165, 165, 0.6),
+    0 6px 20px -4px rgba(220, 38, 38, 0.5);
+}
+.liquid-glass .ui-destructive:hover {
+  background-color: rgba(239, 68, 68, 0.72);
 }
 /* .ui-selected: the chosen chip / tab / segment. .ui-row-active: the current list row
    (sidebar). Both become lit glass in Liquid Glass. */

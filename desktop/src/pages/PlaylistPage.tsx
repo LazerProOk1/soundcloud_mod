@@ -27,7 +27,7 @@ import {
   usePlaylistTracks,
   useUpdatePlaylistTracks,
 } from '../lib/hooks';
-import { AlertCircle, Heart, ListMusic, Loader2, Trash2, X } from '../lib/icons';
+import { Heart, ListMusic, Loader2, Trash2, X } from '../lib/icons';
 import { getOfflinePlaylist, rememberPlaylist } from '../lib/offline-index';
 import { useAuthStore } from '../stores/auth';
 import type { Track } from '../stores/player';
@@ -370,31 +370,29 @@ export const PlaylistPage = React.memo(() => {
       {/* ── Delete confirmation ────────────────────── */}
       <Dialog.Root open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <Dialog.Portal>
-          <Dialog.Overlay className="fixed inset-0 bg-black/60 z-50 animate-fade-in" />
-          <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[380px] rounded-2xl app-surface  p-6 space-y-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-red-500/10 flex items-center justify-center shrink-0">
-                <AlertCircle size={20} className="text-red-400" />
-              </div>
-              <Dialog.Title className="text-[15px] font-bold text-white/90">
+          {/* Same frame as the other dialogs (Import, Tune wave): big title, round buttons. */}
+          <Dialog.Overlay className="fixed inset-0 z-[80] bg-black/65 animate-fade-in" />
+          <Dialog.Content className="fixed z-[80] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[460px] max-w-[94vw] rounded-2xl app-surface p-7 outline-none">
+            <div className="flex items-start justify-between gap-4 mb-3">
+              <Dialog.Title className="text-[24px] font-bold text-white tracking-tight">
                 {t('playlist.delete')}
               </Dialog.Title>
-              <Dialog.Close className="ml-auto w-7 h-7 rounded-lg flex items-center justify-center text-white/30 hover:text-white/70 ui-icon transition-all">
-                <X size={14} />
+              <Dialog.Close className="w-9 h-9 -mr-2 rounded-full flex items-center justify-center text-white/60 hover:text-white ui-icon cursor-pointer">
+                <X size={20} />
               </Dialog.Close>
             </div>
-            <p className="text-[13px] text-white/50 leading-relaxed">
+            <Dialog.Description className="text-[15px] text-white/65 leading-relaxed">
               {t('playlist.deleteConfirm', { title: playlist.title })}
-            </p>
-            <div className="flex items-center justify-end gap-2.5 pt-1">
-              <Dialog.Close className="px-4 py-2 rounded-xl text-[13px] font-medium text-white/50 hover:text-white/80 ui-icon transition-all cursor-pointer">
-                {t('common.cancel') ?? 'Cancel'}
+            </Dialog.Description>
+            <div className="flex items-center justify-end gap-4 mt-7">
+              <Dialog.Close className="text-[15px] font-bold text-white/70 hover:text-white cursor-pointer">
+                {t('common.cancel')}
               </Dialog.Close>
               <button
                 type="button"
                 onClick={handleDelete}
                 disabled={deletePlaylist.isPending}
-                className="px-4 py-2 rounded-xl text-[13px] font-semibold bg-red-500/15 text-red-400 hover:bg-red-500/25 border border-red-500/20 transition-all cursor-pointer disabled:opacity-50"
+                className="press h-12 px-7 rounded-full ui-destructive text-[15px] font-bold cursor-pointer"
               >
                 {deletePlaylist.isPending ? t('common.loading') : t('playlist.delete')}
               </button>
