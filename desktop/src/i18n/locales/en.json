@@ -350,7 +350,7 @@
     "panelStyle_liquid": "Liquid Glass",
     "panelStyle_gloss": "Frosted glass",
     "panelStyle_flat": "Plain",
-    "panelStyleDesc_liquid": "See-through glass with refraction and highlights. The heaviest on the GPU",
+    "panelStyleDesc_liquid": "Smoky glass with highlights, tinted by the artwork colours",
     "panelStyleDesc_gloss": "Semi-transparent panels with a soft matte blur",
     "panelStyleDesc_flat": "Fully opaque panels — the fastest",
     "uiScale": "Interface scale",

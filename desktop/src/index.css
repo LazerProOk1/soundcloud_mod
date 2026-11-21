@@ -1463,8 +1463,8 @@ svg.lucide:not([stroke-width="0"]) {
      .ui-icon      icon-only or text-only button: no fill until hover
      .ui-primary   the main white button of a screen (Play, Start wave)
      .ui-card      tile / info box / panel inside a page (stats, cards, sections)
-   Gloss and Plain: flat fills, no rim, no highlight, no blur. Liquid Glass: see-through
-   glass with a light rim (below).
+   Gloss and Plain: flat fills, no rim, no highlight. Liquid Glass: a lit glass rim and
+   halo, but no blur of its own (the panel underneath already blurs).
    ══════════════════════════════════════════════════════════════ */
 /* Kit classes come after .press and Tailwind's transition utilities, so their transition
    must keep the press squeeze (transform), scale and fades animated too. */
@@ -1511,8 +1511,8 @@ svg.lucide:not([stroke-width="0"]) {
   background: rgba(255, 255, 255, 0.04);
 }
 /* .ui-float: a box that floats over moving art (visualizer, artwork) and must stay readable:
-   matte frosted glass in Gloss (colour shows through, details don't), solid in Plain, clear
-   glass in Liquid Glass. */
+   matte frosted glass in Gloss (colour shows through, details don't), solid in Plain, smoky
+   lit glass in Liquid Glass. */
 .ui-float {
   background: rgba(40, 40, 48, 0.38);
   backdrop-filter: blur(28px) saturate(140%);
@@ -1525,21 +1525,25 @@ svg.lucide:not([stroke-width="0"]) {
   -webkit-backdrop-filter: none;
 }
 .liquid-glass .ui-float {
-  background: rgba(20, 20, 26, 0.45);
-  backdrop-filter: url(#lg-refract) blur(18px) saturate(170%);
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  background: rgba(10, 10, 14, 0.42);
+  backdrop-filter: var(--lg-filter);
+  -webkit-backdrop-filter: var(--lg-filter);
+  box-shadow: var(--lg-rim);
 }
+/* Inside Liquid Glass, tiles and chips sit on glass that is already blurred: they get
+   the lighting (rim + halo) but no backdrop filter of their own. */
 .liquid-glass .ui-card,
 .liquid-glass .glass,
 .liquid-glass .glass-flat {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(18px) saturate(170%);
-  -webkit-backdrop-filter: blur(18px) saturate(170%);
+  background: rgba(255, 255, 255, 0.045);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.16);
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    inset 1px 0 0 rgba(255, 255, 255, 0.09),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.35),
+    inset -1px 0 0 rgba(0, 0, 0, 0.18),
+    0 0 0 0.5px rgba(255, 255, 255, 0.07);
 }
 
 .bar-control,
@@ -1555,11 +1559,13 @@ svg.lucide:not([stroke-width="0"]) {
 .liquid-glass .bar-control,
 .liquid-glass .ui-track {
   background: rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(14px) saturate(170%);
-  -webkit-backdrop-filter: blur(14px) saturate(170%);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    inset 1px 0 0 rgba(255, 255, 255, 0.14),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+    0 0 0 0.5px rgba(255, 255, 255, 0.1);
 }
 .liquid-glass .bar-control:hover {
   background: rgba(255, 255, 255, 0.11);
@@ -1618,27 +1624,43 @@ svg.lucide:not([stroke-width="0"]) {
 
 /* ══════════════════════════════════════════════════════════════
    LIQUID GLASS — html.liquid-glass (Settings → Interface → Panel style)
-   See-through panels: the wallpaper / cover colours behind are blurred and bent by
-   #lg-refract, with a bright rim on top. The plain blur line comes first so engines
-   without url() backdrop filters still get glass.
+   The v1.3.1 look: smoky dark glass over a saturated blur, lit from the upper left
+   (bright top/left hairline, dark bottom/right edge), a 0.5px frosted halo and a soft
+   float shadow. The artwork-tinted ambiance behind shows through the saturation.
+
+   GPU budget (backdrop-filter cost ≈ blurred area × layers × repaints):
+   - only the large surfaces (sidebar, player bar, now-playing, dialogs, .ui-float) blur;
+     buttons, chips and cards inside them get the lighting from box-shadow alone, so
+     backdrop filters are never nested (nested ones multiply the cost, badly on WebKitGTK);
+   - no SVG displacement filter: a url() backdrop filter is re-rasterised on every repaint;
+   - the ambiance blobs stop drifting, so the backdrop stays static and the compositor
+     reuses the blurred result instead of re-filtering every frame.
    ══════════════════════════════════════════════════════════════ */
+.liquid-glass {
+  --lg-filter: blur(24px) saturate(185%) brightness(1.04);
+  --lg-rim:
+    inset 0 1px 0 rgba(255, 255, 255, 0.26), inset 1px 0 0 rgba(255, 255, 255, 0.12),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.5), inset -1px 0 0 rgba(0, 0, 0, 0.26),
+    0 0 0 0.5px rgba(255, 255, 255, 0.08);
+}
 .liquid-glass .liquid-panel-heavy,
 .liquid-glass .app-surface,
 .liquid-glass [data-radix-popper-content-wrapper] > [role="dialog"] {
-  background: rgba(255, 255, 255, 0.055) !important;
-  border: 1px solid rgba(255, 255, 255, 0.14) !important;
-  backdrop-filter: blur(14px) saturate(180%);
-  -webkit-backdrop-filter: blur(14px) saturate(180%);
-  /* biome-ignore lint/suspicious/noDuplicateProperties: the plain blur above is the fallback for engines without url() filters */
-  backdrop-filter: url(#lg-refract) blur(14px) saturate(180%) brightness(1.06);
+  background: rgba(10, 10, 14, 0.42) !important;
+  border-color: transparent !important;
+  backdrop-filter: var(--lg-filter);
+  -webkit-backdrop-filter: var(--lg-filter);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.38),
-    inset 1px 0 0 rgba(255, 255, 255, 0.14),
-    inset -1px 0 0 rgba(255, 255, 255, 0.06),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.05),
-    0 18px 50px rgba(0, 0, 0, 0.4) !important;
+    var(--lg-rim),
+    inset 0 3px 10px -2px rgba(255, 255, 255, 0.06),
+    0 12px 28px rgba(0, 0, 0, 0.16),
+    0 32px 64px rgba(0, 0, 0, 0.22) !important;
 }
-/* A soft specular sweep along the top edge. */
+/* Fixed chrome is denser: several layers of glass thick. */
+.liquid-glass .liquid-panel-heavy {
+  background: rgba(8, 8, 12, 0.55) !important;
+}
+/* Top glass sheen. */
 .liquid-glass .liquid-panel-heavy::after,
 .liquid-glass .app-surface::after {
   content: "";
@@ -1648,16 +1670,22 @@ svg.lucide:not([stroke-width="0"]) {
   pointer-events: none;
   background: linear-gradient(
     180deg,
-    rgba(255, 255, 255, 0.16) 0%,
-    rgba(255, 255, 255, 0.03) 18%,
-    transparent 40%
+    rgba(255, 255, 255, 0.065) 0%,
+    rgba(255, 255, 255, 0.018) 28%,
+    transparent 55%
   );
+}
+.liquid-glass .dynamic-bg-blob {
+  animation: none;
+  will-change: auto;
 }
 @media (prefers-reduced-transparency: reduce) {
   .liquid-glass .liquid-panel-heavy,
-  .liquid-glass .app-surface {
+  .liquid-glass .app-surface,
+  .liquid-glass .ui-float {
     background: rgba(20, 20, 24, 0.94) !important;
     backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
 }
 
