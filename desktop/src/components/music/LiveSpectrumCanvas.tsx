@@ -6,6 +6,8 @@ interface LiveSpectrumCanvasProps {
   bars?: number;
   height?: number;
   className?: string;
+  /** `dots`: each column is a stack of round dots mirrored around the middle line. */
+  variant?: 'bars' | 'dots';
 }
 
 /**
@@ -18,6 +20,7 @@ export const LiveSpectrumCanvas = React.memo(function LiveSpectrumCanvas({
   bars = 32,
   height = 24,
   className = '',
+  variant = 'bars',
 }: LiveSpectrumCanvasProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -86,6 +89,30 @@ export const LiveSpectrumCanvas = React.memo(function LiveSpectrumCanvas({
       const radius = Math.min(barW / 2, 2.5);
       const minH = 3;
       const maxH = cssH - 2;
+
+      if (variant === 'dots') {
+        // Dot grid: the louder the band, the more dots light up away from the middle line.
+        const step = cssW / bars;
+        const dot = Math.max(1.5, Math.min(step * 0.32, 3));
+        const rows = Math.max(1, Math.floor(cssH / (dot * 3) / 2));
+        const mid = cssH / 2;
+        for (let i = 0; i < bars; i++) {
+          const v = Math.min(1, Math.max(0, display[i]));
+          const lit = v * rows;
+          const x = i * step + step / 2;
+          for (let k = 0; k <= rows; k++) {
+            const on = Math.min(1, Math.max(0, lit - k + 1));
+            const alpha = 0.3 + on * (0.7 - (k / (rows + 1)) * 0.3);
+            ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha.toFixed(3)})`;
+            for (const y of k === 0 ? [mid] : [mid - k * dot * 3, mid + k * dot * 3]) {
+              ctx.beginPath();
+              ctx.arc(x, y, dot, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+        }
+        return;
+      }
 
       for (let i = 0; i < bars; i++) {
         const v = Math.min(1, Math.max(0, display[i]));
@@ -182,7 +209,7 @@ export const LiveSpectrumCanvas = React.memo(function LiveSpectrumCanvas({
       ro.disconnect();
       if (rafId) cancelAnimationFrame(rafId);
     };
-  }, [bars, height]);
+  }, [bars, height, variant]);
 
   // Wake animation loop whenever `active` flips true after an idle pause
   useEffect(() => {

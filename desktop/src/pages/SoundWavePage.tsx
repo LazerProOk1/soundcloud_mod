@@ -13,7 +13,10 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useShallow } from 'zustand/shallow';
+import { ControlVolumeBtn, ProgressSlider } from '../components/layout/NowPlayingBar';
 import { useClusterWave } from '../components/music/cluster';
+import { LikeButton } from '../components/music/LikeButton';
+import { LiveSpectrumCanvas } from '../components/music/LiveSpectrumCanvas';
 import { useInfiniteWave } from '../components/music/soundwave/use-infinite-wave';
 import { VibeTuner } from '../components/music/soundwave/vibe-tuner';
 import { WaveStage } from '../components/music/soundwave/wave-stage';
@@ -23,11 +26,13 @@ import { api } from '../lib/api';
 import { handlePrev } from '../lib/audio';
 import { toggleDislike } from '../lib/dislikes';
 import { recordEvent } from '../lib/events';
-import { art } from '../lib/formatters';
+import { art, dur } from '../lib/formatters';
 import { useLikedTracks, useRecommendedTracks, useRelatedPool } from '../lib/hooks';
 import {
   AudioLines,
   Loader2,
+  MessageCircle,
+  MicVocal,
   Pause,
   Play,
   RefreshCw,
@@ -51,6 +56,7 @@ import { dedupeSongs, isVariant } from '../lib/track-variants';
 import { mixIn, rankWave } from '../lib/wave-rank';
 import { tuneWaveTracks } from '../lib/wave-vibes';
 import { useAuthStore } from '../stores/auth';
+import { useLyricsStore } from '../stores/lyrics';
 import { type Track, usePlayerStore } from '../stores/player';
 import { useSettingsStore } from '../stores/settings';
 import { useWaveTasteStore } from '../stores/wave-taste';
@@ -93,6 +99,7 @@ export function SoundWavePage() {
   const isBuffering = usePlayerStore((s) => s.isBuffering);
   const queue = usePlayerStore((s) => s.queue);
   const togglePlay = usePlayerStore((s) => s.togglePlay);
+  const openLyricsPanel = useLyricsStore((s) => s.openPanel);
   const playerNext = usePlayerStore((s) => s.next);
   const queryClient = useQueryClient();
   const [tuneOpen, setTuneOpen] = useState(false);
@@ -425,6 +432,7 @@ export function SoundWavePage() {
   if (!isAuthenticated) return null;
 
   const spinning = isRefreshing || isFetching || isLoading;
+  const playingHere = isPlaying && !!currentTrack;
 
   return (
     <div
@@ -566,23 +574,100 @@ export function SoundWavePage() {
           onModeChange={setWaveMode}
         />
 
-        {/* ── Central Liquid Glass Stage ────────────────────────── */}
-        <section className="relative p-2 md:p-4 flex flex-col items-center gap-6 my-auto">
-          {/* Cover on a living wave horizon */}
-          <div className="relative w-full flex justify-center">
+        {/* ── The wave card: title on top, cover on the living horizon with play on it,
+             dotted spectrum, progress and the action row (old card + new stage). ── */}
+        <section
+          className="wave-card relative my-auto flex w-full flex-col items-center gap-6 rounded-[32px] px-5 py-7 md:px-10 md:py-9"
+          style={{
+            background:
+              'linear-gradient(165deg, rgba(255,255,255,0.075) 0%, rgba(255,255,255,0.025) 55%, rgba(8,8,12,0.4) 100%)',
+            boxShadow: dom
+              ? `0 30px 90px rgba(0,0,0,0.45), 0 0 120px ${rgbToCss(dom, 0.16)}, inset 0 1px 0 rgba(255,255,255,0.14), inset 0 0 0 1px rgba(255,255,255,0.07)`
+              : '0 30px 90px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.14), inset 0 0 0 1px rgba(255,255,255,0.07)',
+            transition: 'box-shadow 1.2s ease-out',
+          }}
+        >
+          {/* Artist (headline) · title · length · why it's here */}
+          <div className="w-full max-w-3xl text-center">
+            {displayTrack ? (
+              <div key={displayTrack.urn} className="track-swap-text">
+                <button
+                  type="button"
+                  onClick={artistTarget ? () => navigate(artistTarget) : undefined}
+                  disabled={!artistTarget}
+                  className="mx-auto block max-w-full truncate font-extrabold leading-[1.15] tracking-tight text-white hover:opacity-85 cursor-pointer disabled:cursor-default disabled:hover:opacity-100"
+                  style={{
+                    fontSize: 'clamp(30px, 4.8vw, 58px)',
+                    textShadow: dom
+                      ? `0 0 60px ${rgbToCss(dom, 0.4)}, 0 4px 24px rgba(0,0,0,0.45)`
+                      : '0 4px 24px rgba(0,0,0,0.45)',
+                  }}
+                >
+                  {artistDisplay.primary}
+                </button>
+                <div className="mt-1.5 flex items-center justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/track/${encodeURIComponent(displayTrack.urn)}`)}
+                    className="max-w-xl truncate text-[17px] font-semibold text-white/75 hover:text-white cursor-pointer"
+                  >
+                    {displayTitle}
+                  </button>
+                  {displayTrack.duration > 0 && (
+                    <span className="shrink-0 text-[13px] tabular-nums text-white/35">
+                      · {dur(displayTrack.duration)}
+                    </span>
+                  )}
+                </div>
+                <p className="mt-2 flex items-center justify-center gap-1.5 text-[13px] text-white/45">
+                  <Sparkles size={13} />
+                  {isUrnLiked(displayTrack.urn) || displayTrack.user_favorite
+                    ? t('waveTune.reasonLiked')
+                    : t('waveTune.reasonNew')}
+                </p>
+              </div>
+            ) : isLoading ? (
+              <div className="flex flex-col items-center gap-3 py-2">
+                <div className="h-12 w-64 animate-pulse rounded-2xl bg-white/10" />
+                <div className="h-4 w-40 animate-pulse rounded-lg bg-white/[0.06]" />
+              </div>
+            ) : (
+              <div className="py-2">
+                <p className="text-[18px] font-semibold text-white/70">
+                  {t('soundwave.coldTitle')}
+                </p>
+                <p className="mt-1 text-[13px] text-white/40">{t('soundwave.coldDesc')}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Prev · cover with play on it · next, over the wave horizon */}
+          <div className="relative flex w-full items-center justify-center gap-6 md:gap-12">
             <WaveStage active={isPlaying && !!currentTrack} pulseTarget={coverRef} />
+            <button
+              type="button"
+              onClick={handlePrev}
+              disabled={!currentTrack}
+              aria-label={t('kb.prevTrack')}
+              className="press relative z-10 flex h-12 w-12 items-center justify-center rounded-full bg-white/[0.07] text-white/75 hover:bg-white/[0.14] hover:text-white cursor-pointer disabled:opacity-30 disabled:cursor-default"
+            >
+              <SkipBack size={20} fill="currentColor" />
+            </button>
             <button
               type="button"
               key={displayTrack?.urn ?? 'none'}
               onClick={handlePlayPause}
               disabled={allTracks.length === 0 && !isWaveTrack}
+              aria-label={isPlaying && currentTrack ? t('kb.playPause') : t('soundwave.startWave')}
               ref={coverRef}
               style={{
-                // Tilt toward the cursor (like the cards), an occasional idle tilt (CSS), bass pulse
-                // and a slow sway.
+                // Tilt toward the cursor, an occasional idle tilt (CSS), bass pulse and sway.
                 transform:
                   'perspective(700px) rotateY(calc(var(--tx, 0deg) + var(--idle-x, 0deg) + var(--bass, 0) * var(--dip-x, 12deg))) rotateX(calc(var(--ty, 0deg) + var(--idle-y, 0deg) + var(--bass, 0) * var(--dip-y, -12deg))) translateY(calc(var(--sway, 0) * 1px)) scale(calc(1 + var(--bass, 0) * 0.06))',
-                transition: 'transform 0.12s linear',
+                transition: 'transform 0.12s linear, box-shadow 1.2s ease-out',
+                boxShadow: dom
+                  ? `0 24px 64px ${rgbToCss(dom, 0.5)}, 0 8px 24px rgba(0,0,0,0.55)`
+                  : '0 24px 64px rgba(0,0,0,0.55)',
               }}
               onPointerMove={(e) => {
                 const r = e.currentTarget.getBoundingClientRect();
@@ -595,143 +680,126 @@ export function SoundWavePage() {
                 e.currentTarget.style.setProperty('--tx', '0deg');
                 e.currentTarget.style.setProperty('--ty', '0deg');
               }}
-              className="np-cover-img relative z-10 w-[200px] h-[200px] rounded-xl overflow-hidden bg-white/[0.06] shadow-[0_16px_40px_rgba(0,0,0,0.5)] cursor-pointer disabled:cursor-default"
+              className="np-cover-img group/art relative z-10 h-[232px] w-[232px] shrink-0 overflow-hidden rounded-3xl bg-white/[0.06] ring-1 ring-white/15 cursor-pointer disabled:cursor-default"
             >
               {artworkUrl ? (
                 <img
                   src={artworkUrl}
                   alt={displayTitle}
-                  className="w-full h-full object-cover"
+                  className="h-full w-full object-cover"
                   decoding="async"
                 />
               ) : (
-                <span className="w-full h-full flex items-center justify-center">
+                <span className="flex h-full w-full items-center justify-center">
                   <AudioLines size={40} className="text-white/25" />
                 </span>
               )}
+              {/* Play on the cover: always shown when paused, on hover while playing. */}
+              <span
+                className={`absolute inset-0 flex items-center justify-center transition-[background-color,opacity] duration-300 ${
+                  playingHere
+                    ? 'bg-black/0 opacity-0 group-hover/art:bg-black/30 group-hover/art:opacity-100'
+                    : 'bg-black/25 opacity-100'
+                }`}
+              >
+                <span className="play-fab flex h-16 w-16 items-center justify-center rounded-full bg-white text-black shadow-[0_8px_24px_rgba(0,0,0,0.45)] transition-transform duration-200 group-hover/art:scale-110">
+                  {isBuffering && currentTrack ? (
+                    <Loader2 size={24} className="animate-spin" />
+                  ) : playingHere ? (
+                    <Pause size={24} fill="currentColor" strokeWidth={0} />
+                  ) : (
+                    <Play size={24} fill="currentColor" strokeWidth={0} className="ml-0.5" />
+                  )}
+                </span>
+              </span>
             </button>
-          </div>
-
-          {/* Title · artist · why it's here */}
-          <div className="text-center max-w-3xl w-full">
-            {displayTrack ? (
-              <div key={displayTrack.urn} className="track-swap-text">
-                <button
-                  type="button"
-                  onClick={() => navigate(`/track/${encodeURIComponent(displayTrack.urn)}`)}
-                  className="block mx-auto max-w-full truncate text-white leading-[1.2] tracking-tight font-extrabold hover:opacity-85 cursor-pointer"
-                  style={{ fontSize: 'clamp(30px, 4.6vw, 54px)' }}
-                >
-                  {displayTitle}
-                </button>
-                <button
-                  type="button"
-                  onClick={artistTarget ? () => navigate(artistTarget) : undefined}
-                  disabled={!artistTarget}
-                  className="mt-2 text-[17px] font-semibold text-white/70 hover:text-white hover:underline cursor-pointer disabled:cursor-default disabled:no-underline"
-                >
-                  {artistDisplay.primary}
-                </button>
-                <p className="mt-2 flex items-center justify-center gap-1.5 text-[14px] text-white/50">
-                  <Sparkles size={14} />
-                  {isUrnLiked(displayTrack.urn) || displayTrack.user_favorite
-                    ? t('waveTune.reasonLiked')
-                    : t('waveTune.reasonNew')}
-                </p>
-              </div>
-            ) : isLoading ? (
-              <div className="flex flex-col items-center gap-3 py-2">
-                <div className="h-12 w-64 rounded-2xl bg-white/10 animate-pulse" />
-                <div className="h-4 w-40 rounded-lg bg-white/[0.06] animate-pulse" />
-              </div>
-            ) : (
-              <div className="py-2">
-                <p className="text-[18px] text-white/70 font-semibold">
-                  {t('soundwave.coldTitle')}
-                </p>
-                <p className="text-[13px] text-white/40 mt-1">{t('soundwave.coldDesc')}</p>
-              </div>
-            )}
-          </div>
-
-          {/* Not this · Play/Pause · More like this. Three equal columns keep play centred
-              (the side labels differ in width), right under the Start wave button. */}
-          <div className="grid w-full max-w-[640px] grid-cols-[1fr_auto_1fr] items-center gap-4">
-            <div className="flex items-center justify-end gap-4">
-              <button
-                type="button"
-                onClick={handleNotThis}
-                disabled={!displayTrack || !isWaveTrack}
-                className="flex items-center gap-2 h-11 px-5 rounded-full bg-white/[0.08] hover:bg-white/[0.14] border border-white/[0.08] text-[14px] font-semibold text-white cursor-pointer disabled:opacity-40 disabled:cursor-default"
-              >
-                <ThumbsDown size={17} />
-                {t('soundwave.notThis')}
-              </button>
-              <button
-                type="button"
-                onClick={handlePrev}
-                disabled={!currentTrack}
-                aria-label={t('kb.prevTrack')}
-                className="w-11 h-11 rounded-full flex items-center justify-center text-white/75 hover:text-white hover:bg-white/[0.1] cursor-pointer disabled:opacity-30 disabled:cursor-default"
-              >
-                <SkipBack size={22} fill="currentColor" />
-              </button>
-            </div>
             <button
               type="button"
-              onClick={handlePlayPause}
-              disabled={allTracks.length === 0 && !isWaveTrack}
-              aria-label={isPlaying ? 'Pause' : 'Play'}
-              className="play-fab relative w-16 h-16 rounded-full bg-white text-black flex items-center justify-center shadow-[0_8px_24px_rgba(0,0,0,0.4)] cursor-pointer disabled:opacity-40"
+              onClick={playerNext}
+              disabled={!currentTrack}
+              aria-label={t('kb.nextTrack')}
+              className="press relative z-10 flex h-12 w-12 items-center justify-center rounded-full bg-white/[0.07] text-white/75 hover:bg-white/[0.14] hover:text-white cursor-pointer disabled:opacity-30 disabled:cursor-default"
             >
-              {isBuffering && currentTrack ? (
-                <Loader2 size={24} className="animate-spin" />
-              ) : isPlaying && currentTrack ? (
-                <Pause size={24} fill="currentColor" strokeWidth={0} />
-              ) : (
-                <Play size={24} fill="currentColor" strokeWidth={0} />
-              )}
+              <SkipForward size={20} fill="currentColor" />
             </button>
-            <div className="flex items-center justify-start gap-4">
-              <button
-                type="button"
-                onClick={playerNext}
-                disabled={!currentTrack}
-                aria-label={t('kb.nextTrack')}
-                className="w-11 h-11 rounded-full flex items-center justify-center text-white/75 hover:text-white hover:bg-white/[0.1] cursor-pointer disabled:opacity-30 disabled:cursor-default"
-              >
-                <SkipForward size={22} fill="currentColor" />
-              </button>
-              <button
-                type="button"
-                onClick={handleMoreLikeThis}
-                disabled={!displayTrack || !isWaveTrack}
-                className="flex items-center gap-2 h-11 px-5 rounded-full bg-white/[0.08] hover:bg-white/[0.14] border border-white/[0.08] text-[14px] font-semibold text-white cursor-pointer disabled:opacity-40 disabled:cursor-default"
-              >
-                <ThumbsUp size={17} />
-                {t('soundwave.moreLikeThis')}
-              </button>
-            </div>
           </div>
 
-          {/* Start Wave CTA when listening outside the wave */}
+          {/* Start wave when something else is playing */}
           {!isWaveTrack && currentTrack && (
             <div className="flex flex-col items-center gap-1.5">
               <button
                 type="button"
                 onClick={handleStartWave}
                 disabled={allTracks.length === 0}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-full text-[13.5px] font-bold cursor-pointer bg-white text-black hover:scale-[1.04] active:scale-95 transition-transform disabled:opacity-40 select-none"
+                className="press flex select-none items-center gap-2 rounded-full bg-white px-5 py-2.5 text-[13.5px] font-bold text-black cursor-pointer disabled:opacity-40"
               >
                 <Play size={14} fill="currentColor" strokeWidth={0} />
                 {t('soundwave.startWave', 'Start wave')}
               </button>
-              <p className="text-[11px] text-white/40 truncate max-w-sm">
+              <p className="max-w-sm truncate text-[11px] text-white/40">
                 {t('soundwave.nowPlayingOther', {
                   defaultValue: 'Playing now: {{title}}',
                   title: currentTrack.title,
                 })}
               </p>
+            </div>
+          )}
+
+          {/* Dotted spectrum, progress and actions */}
+          {currentTrack && (
+            <div className="flex w-full max-w-2xl flex-col gap-3">
+              <LiveSpectrumCanvas active={isPlaying} bars={56} height={30} variant="dots" />
+              <ProgressSlider />
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                <div className="flex items-center gap-2">
+                  <ControlVolumeBtn size="sm" />
+                  <button
+                    type="button"
+                    onClick={handleNotThis}
+                    disabled={!isWaveTrack}
+                    className="press flex h-10 items-center gap-2 rounded-full bg-white/[0.07] px-4 text-[13px] font-semibold text-white/85 hover:bg-white/[0.14] hover:text-white cursor-pointer disabled:opacity-35 disabled:cursor-default"
+                  >
+                    <ThumbsDown size={15} />
+                    {t('soundwave.notThis')}
+                  </button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleMoreLikeThis}
+                    disabled={!isWaveTrack}
+                    className="press flex h-10 items-center gap-2 rounded-full bg-white/[0.07] px-4 text-[13px] font-semibold text-white/85 hover:bg-white/[0.14] hover:text-white cursor-pointer disabled:opacity-35 disabled:cursor-default"
+                  >
+                    <ThumbsUp size={15} />
+                    {t('soundwave.moreLikeThis')}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openLyricsPanel({ tab: 'lyrics', rightPanelOpen: true })}
+                    title={t('kb.lyrics')}
+                    aria-label={t('kb.lyrics')}
+                    className="flex h-10 w-10 items-center justify-center rounded-full text-white/60 hover:bg-white/[0.1] hover:text-white cursor-pointer"
+                  >
+                    <MicVocal size={17} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => openLyricsPanel({ tab: 'comments', rightPanelOpen: true })}
+                    title={t('track.comments')}
+                    aria-label={t('track.comments')}
+                    className="flex h-10 w-10 items-center justify-center rounded-full text-white/60 hover:bg-white/[0.1] hover:text-white cursor-pointer"
+                  >
+                    <MessageCircle size={17} />
+                  </button>
+                  <LikeButton
+                    key={currentTrack.urn}
+                    track={currentTrack}
+                    variant="always"
+                    size={18}
+                    className="h-10 w-10"
+                  />
+                </div>
+              </div>
             </div>
           )}
         </section>
