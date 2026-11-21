@@ -4,6 +4,7 @@ use std::fs::{FileTimes, Metadata, OpenOptions};
 use std::io::Read as _;
 use std::path::Path;
 use std::path::PathBuf;
+use std::sync::atomic::Ordering;
 use std::sync::Arc;
 use std::sync::Mutex as StdMutex;
 use std::time::{Duration, SystemTime, UNIX_EPOCH};
@@ -35,54 +36,13 @@ const PROGRESS_EMIT_STEP: f64 = 0.02;
 
 /// Magic-byte validation for audio files
 fn is_valid_audio(prefix: &[u8], total_size: u64) -> bool {
-    if total_size < MIN_AUDIO_SIZE {
-        return false;
-    }
-    // ID3 (MP3)
-    if prefix.len() >= 3 && prefix[0] == 0x49 && prefix[1] == 0x44 && prefix[2] == 0x33 {
-        return true;
-    }
-    // MPEG Sync (MP3 / ADTS AAC)
-    if prefix.len() >= 2 && prefix[0] == 0xff && (prefix[1] & 0xe0) == 0xe0 {
-        return true;
-    }
-    // ftyp (MP4/AAC)
-    if prefix.len() >= 8
-        && prefix[4] == 0x66
-        && prefix[5] == 0x74
-        && prefix[6] == 0x79
-        && prefix[7] == 0x70
-    {
-        return true;
-    }
-    // OggS
-    if prefix.len() >= 4
-        && prefix[0] == 0x4f
-        && prefix[1] == 0x67
-        && prefix[2] == 0x67
-        && prefix[3] == 0x53
-    {
-        return true;
-    }
-    // RIFF/WAV
-    if prefix.len() >= 4
-        && prefix[0] == 0x52
-        && prefix[1] == 0x49
-        && prefix[2] == 0x46
-        && prefix[3] == 0x46
-    {
-        return true;
-    }
-    // fLaC
-    if prefix.len() >= 4
-        && prefix[0] == 0x66
-        && prefix[1] == 0x4c
-        && prefix[2] == 0x61
-        && prefix[3] == 0x43
-    {
-        return true;
-    }
-    false
+    total_size >= MIN_AUDIO_SIZE
+        && (prefix.starts_with(b"ID3") // MP3
+            || (prefix.len() >= 2 && prefix[0] == 0xff && prefix[1] & 0xe0 == 0xe0) // MPEG sync / ADTS
+            || prefix.get(4..8) == Some(b"ftyp") // MP4/AAC
+            || prefix.starts_with(b"OggS")
+            || prefix.starts_with(b"RIFF")
+            || prefix.starts_with(b"fLaC"))
 }
 
 fn urn_to_filename(urn: &str) -> String {
@@ -237,10 +197,9 @@ impl super::sc_anon::Sink for AnonSink<'_> {
         let Some(app) = self.app else { return };
         let clamped = (0.05 + frac.clamp(0.0, 1.0) * 0.9).min(0.95);
         let pct = (clamped * 100.0) as u64;
-        let prev = self.last_pct.load(std::sync::atomic::Ordering::Relaxed);
+        let prev = self.last_pct.load(Ordering::Relaxed);
         if pct >= prev + 2 {
-            self.last_pct
-                .store(pct, std::sync::atomic::Ordering::Relaxed);
+            self.last_pct.store(pct, Ordering::Relaxed);
             let _ = app.emit(
                 "track:download-progress",
                 serde_json::json!({
@@ -690,6 +649,17 @@ async fn write_response_to_cache(
     // All bytes are on disk: streaming readers may now hit EOF normally.
     live.complete();
 
+    finalize_temp(temp_path, final_path, quality, source).await
+}
+
+/// Moves a fully written `.tmp` file into place next to its metadata, keeping an already valid
+/// cached copy if one appeared meanwhile.
+async fn finalize_temp(
+    temp_path: PathBuf,
+    final_path: PathBuf,
+    quality: PlaybackQuality,
+    source: DownloadSource,
+) -> Result<DownloadResult, DownloadError> {
     let cache_meta = TrackCacheMetadata {
         quality,
         source: Some(source),
@@ -769,38 +739,7 @@ async fn write_bytes_to_cache(
     }
     drop(writer);
 
-    let cache_meta = TrackCacheMetadata {
-        quality,
-        source: Some(source),
-    };
-
-    if is_valid_cached_file(&final_path) {
-        cleanup_temp_file(&temp_path).await;
-        return Ok(DownloadResult { path: final_path });
-    }
-
-    write_cache_metadata(&final_path, &cache_meta).await;
-    match tokio::fs::rename(&temp_path, &final_path).await {
-        Ok(()) => Ok(DownloadResult { path: final_path }),
-        Err(first_err) => {
-            if is_valid_cached_file(&final_path) {
-                cleanup_temp_file(&temp_path).await;
-                return Ok(DownloadResult { path: final_path });
-            }
-
-            tokio::fs::remove_file(&final_path).await.ok();
-            match tokio::fs::rename(&temp_path, &final_path).await {
-                Ok(()) => Ok(DownloadResult { path: final_path }),
-                Err(second_err) => {
-                    cleanup_temp_file(&temp_path).await;
-                    remove_cache_metadata(&final_path);
-                    Err(DownloadError::Fatal(format!(
-                        "Cache rename failed: {first_err}; {second_err}"
-                    )))
-                }
-            }
-        }
-    }
+    finalize_temp(temp_path, final_path, quality, source).await
 }
 
 /// Download a track from an API URL to cache.
@@ -997,7 +936,7 @@ impl TrackCacheState {
         let mut active = self.active.lock().await;
         if let Some(existing) = active.get(urn) {
             #[cfg(debug_assertions)]
-        println!("[TrackCache] coalescing request for {urn}");
+            println!("[TrackCache] coalescing request for {urn}");
             let notify = existing.notify.clone();
             let result_slot = existing.result.clone();
             drop(active);
@@ -1495,8 +1434,7 @@ impl TrackCacheState {
     }
 
     pub fn cache_likes_running(&self) -> bool {
-        self.likes_running
-            .load(std::sync::atomic::Ordering::Relaxed)
+        self.likes_running.load(Ordering::Relaxed)
     }
 
     fn liked_has_file(&self, urn: &str) -> bool {
@@ -1556,8 +1494,7 @@ impl TrackCacheState {
     }
 
     pub fn cancel_cache_likes(&self) {
-        self.likes_cancel
-            .store(true, std::sync::atomic::Ordering::Relaxed);
+        self.likes_cancel.store(true, Ordering::Relaxed);
     }
 
     /// Bulk cache liked tracks to the protected `liked_dir`, respecting a
@@ -1565,14 +1502,10 @@ impl TrackCacheState {
     /// when `cancel_cache_likes` is called. The op is idempotent — already
     /// cached URNs are skipped without emitting a slot.
     pub async fn cache_likes(&self, entries: Vec<LikeCacheEntry>) -> Result<(), String> {
-        if self
-            .likes_running
-            .swap(true, std::sync::atomic::Ordering::Relaxed)
-        {
+        if self.likes_running.swap(true, Ordering::Relaxed) {
             return Err("cache_likes already running".into());
         }
-        self.likes_cancel
-            .store(false, std::sync::atomic::Ordering::Relaxed);
+        self.likes_cancel.store(false, Ordering::Relaxed);
 
         let total = entries.len() as u32;
         let done = Arc::new(std::sync::atomic::AtomicU32::new(0));
@@ -1583,42 +1516,42 @@ impl TrackCacheState {
         self.emit_likes_progress(
             "start",
             total,
-            done.load(std::sync::atomic::Ordering::Relaxed),
-            failed.load(std::sync::atomic::Ordering::Relaxed),
-            skipped.load(std::sync::atomic::Ordering::Relaxed),
+            done.load(Ordering::Relaxed),
+            failed.load(Ordering::Relaxed),
+            skipped.load(Ordering::Relaxed),
             None,
         );
 
         let mut handles = Vec::with_capacity(entries.len());
 
         for entry in entries {
-            if self.likes_cancel.load(std::sync::atomic::Ordering::Relaxed) {
+            if self.likes_cancel.load(Ordering::Relaxed) {
                 break;
             }
 
             if self.liked_has_file(&entry.urn) {
-                skipped.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                done.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                skipped.fetch_add(1, Ordering::Relaxed);
+                done.fetch_add(1, Ordering::Relaxed);
                 self.emit_likes_progress(
                     "progress",
                     total,
-                    done.load(std::sync::atomic::Ordering::Relaxed),
-                    failed.load(std::sync::atomic::Ordering::Relaxed),
-                    skipped.load(std::sync::atomic::Ordering::Relaxed),
+                    done.load(Ordering::Relaxed),
+                    failed.load(Ordering::Relaxed),
+                    skipped.load(Ordering::Relaxed),
                     Some(&entry.urn),
                 );
                 continue;
             }
 
             if self.promote_to_liked(&entry.urn).await {
-                skipped.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
-                done.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                skipped.fetch_add(1, Ordering::Relaxed);
+                done.fetch_add(1, Ordering::Relaxed);
                 self.emit_likes_progress(
                     "progress",
                     total,
-                    done.load(std::sync::atomic::Ordering::Relaxed),
-                    failed.load(std::sync::atomic::Ordering::Relaxed),
-                    skipped.load(std::sync::atomic::Ordering::Relaxed),
+                    done.load(Ordering::Relaxed),
+                    failed.load(Ordering::Relaxed),
+                    skipped.load(Ordering::Relaxed),
                     Some(&entry.urn),
                 );
                 continue;
@@ -1627,7 +1560,7 @@ impl TrackCacheState {
             let Ok(permit) = self.likes_limiter.clone().acquire_owned().await else {
                 break;
             };
-            if self.likes_cancel.load(std::sync::atomic::Ordering::Relaxed) {
+            if self.likes_cancel.load(Ordering::Relaxed) {
                 break;
             }
 
@@ -1638,10 +1571,7 @@ impl TrackCacheState {
 
             let handle = tokio::spawn(async move {
                 let _permit = permit;
-                if state
-                    .likes_cancel
-                    .load(std::sync::atomic::Ordering::Relaxed)
-                {
+                if state.likes_cancel.load(Ordering::Relaxed) {
                     return;
                 }
                 let LikeCacheEntry {
@@ -1654,17 +1584,17 @@ impl TrackCacheState {
                     .ensure_cached(&urn, &urls, &storage_urls, session_id.as_deref(), true)
                     .await;
                 if result.is_err() {
-                    failed.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                    failed.fetch_add(1, Ordering::Relaxed);
                 } else {
-                    skipped.fetch_add(0, std::sync::atomic::Ordering::Relaxed);
+                    skipped.fetch_add(0, Ordering::Relaxed);
                 }
-                done.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                done.fetch_add(1, Ordering::Relaxed);
                 state.emit_likes_progress(
                     "progress",
                     total,
-                    done.load(std::sync::atomic::Ordering::Relaxed),
-                    failed.load(std::sync::atomic::Ordering::Relaxed),
-                    skipped.load(std::sync::atomic::Ordering::Relaxed),
+                    done.load(Ordering::Relaxed),
+                    failed.load(Ordering::Relaxed),
+                    skipped.load(Ordering::Relaxed),
                     Some(&urn),
                 );
             });
@@ -1676,15 +1606,13 @@ impl TrackCacheState {
             let _ = handle.await;
         }
 
-        let cancelled = self.likes_cancel.load(std::sync::atomic::Ordering::Relaxed);
-        self.likes_running
-            .store(false, std::sync::atomic::Ordering::Relaxed);
-        self.likes_cancel
-            .store(false, std::sync::atomic::Ordering::Relaxed);
+        let cancelled = self.likes_cancel.load(Ordering::Relaxed);
+        self.likes_running.store(false, Ordering::Relaxed);
+        self.likes_cancel.store(false, Ordering::Relaxed);
 
-        let final_done = done.load(std::sync::atomic::Ordering::Relaxed);
-        let final_failed = failed.load(std::sync::atomic::Ordering::Relaxed);
-        let final_skipped = skipped.load(std::sync::atomic::Ordering::Relaxed);
+        let final_done = done.load(Ordering::Relaxed);
+        let final_failed = failed.load(Ordering::Relaxed);
+        let final_skipped = skipped.load(Ordering::Relaxed);
 
         self.emit_likes_progress(
             if cancelled { "cancelled" } else { "done" },

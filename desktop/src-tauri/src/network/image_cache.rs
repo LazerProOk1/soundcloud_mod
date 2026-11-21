@@ -49,6 +49,16 @@ pub struct ImageResult {
     pub data: Vec<u8>,
 }
 
+impl ImageResult {
+    pub(crate) fn text(status: u16, msg: &str) -> Self {
+        Self {
+            status,
+            content_type: "text/plain".into(),
+            data: msg.as_bytes().to_vec(),
+        }
+    }
+}
+
 pub(crate) fn cache_key(url: &str) -> String {
     hex::encode(Sha256::digest(url.as_bytes()))
 }
@@ -101,69 +111,73 @@ async fn write_atomic(path: &Path, data: &[u8]) -> std::io::Result<()> {
     Ok(())
 }
 
-fn decode_payload(encoded: &str) -> Result<Vec<String>, ImageResult> {
+/// Decodes `base64(json([target, ...upstreams]))` and rejects whitelisted targets.
+pub(crate) fn parse_request(encoded: &str) -> Result<(String, Vec<String>), ImageResult> {
     let decoded = urlencoding::decode(encoded).unwrap_or_default();
-    let bytes = BASE64.decode(decoded.as_bytes()).map_err(|_| ImageResult {
-        status: 400,
-        content_type: "text/plain".into(),
-        data: b"invalid base64".to_vec(),
-    })?;
-    serde_json::from_slice(&bytes).map_err(|_| ImageResult {
-        status: 400,
-        content_type: "text/plain".into(),
-        data: b"invalid payload".to_vec(),
-    })
-}
-
-pub async fn handle(encoded: &str) -> ImageResult {
-    let state = match STATE.get() {
-        Some(s) => s,
-        None => {
-            return ImageResult {
-                status: 503,
-                content_type: "text/plain".into(),
-                data: b"not ready".to_vec(),
-            }
-        }
-    };
-
-    let payload = match decode_payload(encoded) {
-        Ok(p) => p,
-        Err(r) => return r,
-    };
-
-    let target_url = match payload.first() {
-        Some(s) if !s.is_empty() => s.clone(),
-        _ => {
-            return ImageResult {
-                status: 400,
-                content_type: "text/plain".into(),
-                data: b"missing target".to_vec(),
-            }
-        }
-    };
-    let upstreams = &payload[1..];
-    if upstreams.is_empty() {
-        return ImageResult {
-            status: 400,
-            content_type: "text/plain".into(),
-            data: b"missing upstream".to_vec(),
-        };
+    let bytes = BASE64
+        .decode(decoded.as_bytes())
+        .map_err(|_| ImageResult::text(400, "invalid base64"))?;
+    let mut payload: Vec<String> =
+        serde_json::from_slice(&bytes).map_err(|_| ImageResult::text(400, "invalid payload"))?;
+    if !matches!(payload.first(), Some(s) if !s.is_empty()) {
+        return Err(ImageResult::text(400, "missing target"));
     }
-
-    let host = target_url
+    let target = payload.remove(0);
+    if payload.is_empty() {
+        return Err(ImageResult::text(400, "missing upstream"));
+    }
+    let host = target
         .split("://")
         .nth(1)
         .and_then(|rest| rest.split('/').next())
         .and_then(|authority| authority.split(':').next())
         .unwrap_or("");
     if is_domain_whitelisted(host) {
-        return ImageResult {
-            status: 403,
-            content_type: "text/plain".into(),
-            data: b"whitelisted domain".to_vec(),
-        };
+        return Err(ImageResult::text(403, "whitelisted domain"));
     }
+    Ok((target, payload))
+}
+
+/// Tries each upstream (target passed in `X-Target`) until one answers below 500.
+pub(crate) async fn fetch_upstreams(
+    client: &reqwest::Client,
+    target: &str,
+    upstreams: &[String],
+) -> (u16, Vec<u8>) {
+    let encoded_for_header = BASE64.encode(target.as_bytes());
+    let mut status = 502u16;
+    let mut data: Vec<u8> = Vec::new();
+    for upstream in upstreams {
+        let Ok(resp) = client
+            .get(upstream)
+            .header("X-Target", &encoded_for_header)
+            .send()
+            .await
+        else {
+            continue;
+        };
+        status = resp.status().as_u16();
+        match resp.bytes().await {
+            Ok(b) => data = b.to_vec(),
+            Err(_) => continue,
+        }
+        if status < 500 {
+            break;
+        }
+    }
+    (status, data)
+}
+
+pub async fn handle(encoded: &str) -> ImageResult {
+    let state = match STATE.get() {
+        Some(s) => s,
+        None => return ImageResult::text(503, "not ready"),
+    };
+
+    let (target_url, upstreams) = match parse_request(encoded) {
+        Ok(r) => r,
+        Err(r) => return r,
+    };
 
     let key = cache_key(&target_url);
     let path = cache_path(&state.dir, &key);
@@ -223,11 +237,7 @@ pub async fn handle(encoded: &str) -> ImageResult {
         {
             return res;
         }
-        return ImageResult {
-            status: 502,
-            content_type: "text/plain".into(),
-            data: b"coalesced image fetch failed".to_vec(),
-        };
+        return ImageResult::text(502, "coalesced image fetch failed");
     }
     let inflight_guard = InflightGuard {
         state,
@@ -237,32 +247,7 @@ pub async fn handle(encoded: &str) -> ImageResult {
     #[cfg(debug_assertions)]
     println!("[ImageCache] MISS {}", target_url);
 
-    let encoded_for_header = BASE64.encode(target_url.as_bytes());
-    let mut status = 502u16;
-    let mut data: Vec<u8> = Vec::new();
-
-    for upstream in upstreams {
-        let resp = match state
-            .http_client
-            .get(upstream)
-            .header("X-Target", &encoded_for_header)
-            .send()
-            .await
-        {
-            Ok(r) => r,
-            Err(_) => continue,
-        };
-
-        status = resp.status().as_u16();
-        match resp.bytes().await {
-            Ok(b) => data = b.to_vec(),
-            Err(_) => continue,
-        }
-
-        if status < 500 {
-            break;
-        }
-    }
+    let (mut status, mut data) = fetch_upstreams(&state.http_client, &target_url, &upstreams).await;
 
     // All upstreams failed — fetch the target URL directly as last resort
     if status >= 500 || data.is_empty() {
