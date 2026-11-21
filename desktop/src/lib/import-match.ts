@@ -29,6 +29,10 @@ export function normalize(s: string): string {
     .trim();
 }
 
+/** Words that mark another version of a song: remixes, mashups, sped-up edits, covers. */
+const VERSION_MARK =
+  /\b(remix|rmx|mix(ed)?|mashup|bootleg|edit|flip|sped ?up|speed ?up|slowed|reverb|nightcore|8d|bass ?boost(ed)?|cover|karaoke|instrumental|live)\b|\s(x|vs\.?)\s/i;
+
 /** How well a SoundCloud result matches the wanted song (higher is better, <0 = reject). */
 export function matchScore(want: ImportItem, got: Pick<Track, 'title' | 'duration' | 'user'>) {
   const wt = normalize(want.title);
@@ -44,6 +48,10 @@ export function matchScore(want: ImportItem, got: Pick<Track, 'title' | 'duratio
     .filter((w) => w.length >= 3);
   if (artistWords.some((w) => ga.includes(w))) score += 2;
   else if (artistWords.length > 0) score -= 1;
+  // "Rihanna X Tame Impala - New Person (mixed)" for "New Person": another version, not the song.
+  if (VERSION_MARK.test(got.title) && !VERSION_MARK.test(`${want.artist} ${want.title}`)) {
+    score -= 4;
+  }
   if (want.durationMs && got.duration) {
     const diff = Math.abs(want.durationMs - got.duration) / 1000;
     if (diff <= 8) score += 1;

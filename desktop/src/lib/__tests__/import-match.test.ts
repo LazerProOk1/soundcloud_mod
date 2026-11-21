@@ -36,3 +36,36 @@ test('scores the right song above noise', () => {
   assert.ok(cover < good);
   assert.equal(other, -1);
 });
+
+test('prefers the original over mashups and edits', () => {
+  const want = {
+    artist: 'Tame Impala',
+    title: 'New Person, Same Old Mistakes',
+    durationMs: 361000,
+  };
+  const original = matchScore(want, {
+    title: 'New Person, Same Old Mistakes',
+    duration: 362000,
+    user: { username: 'Tame Impala' },
+  } as never);
+  const mashup = matchScore(want, {
+    title: 'Rihanna X Tame Impala - New Person, Same Old Mistakes (mixed)',
+    duration: 328000,
+    user: { username: 'danielrekai' },
+  } as never);
+  const sped = matchScore(want, {
+    title: 'New Person, Same Old Mistakes (sped up)',
+    duration: 300000,
+    user: { username: 'Tame Impala' },
+  } as never);
+  assert.ok(mashup < 2, `mashup scored ${mashup}`);
+  assert.ok(sped < original);
+  // Asked for a remix: a remix is not penalised.
+  const remixWant = { artist: 'Justin Bieber', title: 'Yummy (Summer Walker Remix)' };
+  const remix = matchScore(remixWant, {
+    title: 'Yummy (Summer Walker Remix)',
+    duration: 209000,
+    user: { username: 'Justin Bieber' },
+  } as never);
+  assert.ok(remix >= 5);
+});
