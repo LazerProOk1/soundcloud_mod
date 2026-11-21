@@ -104,7 +104,9 @@ jobs:
           Compress-Archive -Path "$portableDir/*" -DestinationPath "$out-portable-windows-x64.zip" -Force
           $setup = Get-ChildItem "$bundle/nsis/*-setup.exe" | Select-Object -First 1
           Copy-Item $setup.FullName "$out-installer-windows-x64.exe"
-          Copy-Item "$($setup.FullName).sig" "$out-installer-windows-x64.exe.sig"
+          # Updater signatures stay out of the release: only latest.json needs them.
+          New-Item -ItemType Directory -Force -Path "sigs" | Out-Null
+          Copy-Item "$($setup.FullName).sig" "sigs/soundcloud-mod-$version-installer-windows-x64.exe.sig"
           Copy-Item (Get-ChildItem "$bundle/msi/*.msi" | Select-Object -First 1).FullName "$out-windows-x64.msi"
 
       # Tauri links .DirIcon to an absolute build-machine path, so it dangles inside the AppImage
@@ -141,8 +143,16 @@ jobs:
           mkdir -p release-assets
           cp $bundle/deb/*.deb "$out-amd64.deb"
           cp $bundle/appimage/*.AppImage "$out-x86_64.AppImage"
-          cp $bundle/appimage/*.AppImage.sig "$out-x86_64.AppImage.sig"
+          mkdir -p sigs
+          cp $bundle/appimage/*.AppImage.sig "sigs/soundcloud-mod-$version-linux-x86_64.AppImage.sig"
           cp $bundle/rpm/*.rpm "$out-x86_64.rpm"
+
+      - name: Keep updater signatures for latest.json
+        uses: actions/upload-artifact@v4
+        if: startsWith(github.ref, 'refs/tags/v')
+        with:
+          name: sigs-${{ matrix.job_name }}
+          path: sigs/*.sig
 
       - name: Upload release assets
         uses: softprops/action-gh-release@v2
@@ -152,7 +162,7 @@ jobs:
 
   # Release notes = the annotated tag message (hand-written intro, optional) + commit subjects
   # since the previous v* tag. The in-app updater reads latest.json from the newest release;
-  # it is built from the uploaded signatures, so the repacked AppImage gets its final signature.
+  # it is built from the build jobs' signatures, so the repacked AppImage gets its final one.
   release-notes-and-manifest:
     name: Release notes and updater manifest
     needs: build-and-release
@@ -215,10 +225,15 @@ jobs:
           cat notes.md
           gh release edit "$tag" -R "$GITHUB_REPOSITORY" --notes-file notes.md
 
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: sigs-*
+          path: sigs
+          merge-multiple: true
+
       - name: Publish latest.json
         run: |
           tag="$GITHUB_REF_NAME"
-          gh release download "$tag" -R "$GITHUB_REPOSITORY" -p '*.sig' -D sigs
           base="https://github.com/$GITHUB_REPOSITORY/releases/download/$tag"
           entry() {
             sig=$(ls sigs/$1 | head -1)
