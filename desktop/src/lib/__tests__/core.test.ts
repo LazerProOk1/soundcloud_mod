@@ -3,7 +3,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 import { hasCachedTrack } from '../../stores/cached-urns.ts';
-import { hslToHex, hueOfHex } from '../color.ts';
 import {
   AURAS,
   artistAuraForId,
@@ -19,6 +18,7 @@ import {
   buildProfileBackupPayload,
   parseProfileBackupPayload,
 } from '../backup-schema.ts';
+import { hslToHex, hueOfHex } from '../color.ts';
 import {
   type CommandPaletteEntry,
   filterCommandItems,
