@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
+import { SocialIcon } from '../components/artist/socials';
 import { QrLinkSheet } from '../components/auth/QrLinkSheet';
+import { PILL_BTN } from '../components/ui/buttonClass';
 import {
   AlertCircle,
   Check,
@@ -9,7 +11,6 @@ import {
   ClipboardCopy,
   Disc3,
   Download,
-  Globe,
   RefreshCw,
   Smartphone,
 } from '../lib/icons';
@@ -66,81 +67,59 @@ export function Login() {
 
   return (
     <div className="h-screen flex items-center justify-center relative overflow-hidden">
+      {/* One soft accent wash from the top: colour without blur layers or glow. */}
       <div
         className="absolute inset-0 pointer-events-none"
-        style={{ contain: 'strict', transform: 'translateZ(0)' }}
-      >
-        <div className="absolute top-[18%] left-[14%] w-[520px] h-[520px] rounded-full bg-accent/[0.10] blur-[160px]" />
-        <div className="absolute bottom-[12%] right-[10%] w-[460px] h-[460px] rounded-full bg-sky-400/[0.08] blur-[160px]" />
-        <div className="absolute top-[55%] left-[55%] w-[360px] h-[360px] rounded-full bg-purple-500/[0.06] blur-[140px]" />
-      </div>
+        style={{
+          background:
+            'radial-gradient(120% 70% at 50% -10%, color-mix(in srgb, var(--color-accent) 22%, transparent), transparent 70%)',
+        }}
+      />
 
-      <div
-        className="relative flex flex-col items-center gap-7 max-w-sm w-full mx-4"
-        style={{ isolation: 'isolate' }}
-      >
-        <div className="relative">
-          <div className="absolute inset-0 bg-accent/25 blur-2xl rounded-full scale-150" />
-          <div className="relative w-20 h-20 rounded-[24px] bg-white/[0.06] backdrop-blur-2xl border border-white/[0.12] flex items-center justify-center">
-            <Disc3 size={36} className="text-accent" strokeWidth={1.5} />
-          </div>
+      <div className="relative flex flex-col items-center max-w-[400px] w-full mx-6 animate-liquid-reveal">
+        <div className="w-16 h-16 rounded-2xl bg-accent flex items-center justify-center text-black">
+          <Disc3 size={34} strokeWidth={1.75} />
         </div>
 
-        <div className="text-center">
-          <h1
-            className="text-2xl"
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontWeight: 800,
-              letterSpacing: '-0.04em',
-              WebkitFontSmoothing: 'antialiased',
-              textRendering: 'optimizeLegibility',
-              fontSynthesis: 'none',
-            }}
-          >
-            SoundCloud Mod
-          </h1>
-          <p className="text-[13px] text-white/35 mt-2">
-            {isPolling ? t('auth.signingIn') : t('auth.tagline')}
-          </p>
-        </div>
+        <h1 className="mt-6 text-[40px] font-black leading-none tracking-tight text-white">
+          SoundCloud Mod
+        </h1>
+        <p className="mt-3 text-[15px] text-white/55">
+          {isPolling ? t('auth.signingIn') : t('auth.tagline')}
+        </p>
 
         {flowError && (
-          <div className="w-full rounded-xl bg-red-500/10 border border-red-500/20 px-3.5 py-3">
-            <div className="flex items-start gap-2.5">
-              <AlertCircle size={15} className="shrink-0 text-red-400 mt-0.5" />
+          <div className="mt-8 w-full rounded-2xl bg-red-500/10 px-4 py-3.5">
+            <div className="flex items-start gap-3">
+              <AlertCircle size={16} className="shrink-0 text-red-400 mt-0.5" />
               <div className="min-w-0 flex-1">
-                <p className="text-[12.5px] font-medium text-red-300">
+                <p className="text-[14px] font-semibold text-red-300">
                   {flowError.kind === 'expired'
                     ? t('auth.errorExpiredTitle')
                     : flowError.kind === 'unreachable'
                       ? t('auth.errorServerTitle')
                       : t('auth.errorFailedTitle')}
                 </p>
-                {flowError.kind === 'unreachable' ? (
-                  <p className="text-[11px] text-red-400/70 mt-0.5">{t('auth.errorServerDesc')}</p>
-                ) : (
-                  <p className="text-[11px] text-red-400/70 mt-0.5 break-words">
-                    {flowError.message}
-                  </p>
-                )}
+                <p className="text-[13px] text-red-300/70 mt-0.5 break-words">
+                  {flowError.kind === 'unreachable' ? t('auth.errorServerDesc') : flowError.message}
+                </p>
               </div>
+              <button
+                type="button"
+                onClick={handleLogin}
+                className="press shrink-0 inline-flex items-center gap-1.5 h-8 px-3 rounded-full bg-red-500/15 hover:bg-red-500/25 text-[13px] font-semibold text-red-300 cursor-pointer"
+              >
+                <RefreshCw size={13} />
+                {t('auth.retry')}
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={handleLogin}
-              className="mt-2.5 w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/[0.12] hover:bg-red-500/[0.20] border border-red-500/20 text-[11.5px] font-medium text-red-300 transition-colors cursor-pointer"
-            >
-              <RefreshCw size={12} />
-              {t('auth.retry')}
-            </button>
           </div>
         )}
 
         {isPolling ? (
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-10 h-10 rounded-full border-2 border-white/[0.06] border-t-accent animate-spin" />
-            <p className="text-[12px] text-white/40">{stepLabel}</p>
+          <div className="mt-10 flex flex-col items-center gap-4">
+            <div className="w-10 h-10 rounded-full border-2 border-white/[0.08] border-t-accent animate-spin" />
+            <p className="text-[14px] text-white/55">{stepLabel}</p>
             {authUrl && (
               <button
                 type="button"
@@ -149,44 +128,36 @@ export function Login() {
                   setCopied(true);
                   setTimeout(() => setCopied(false), 2000);
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bar-control text-[11px] text-white/30 hover:text-white/50 transition-all cursor-pointer"
+                className={PILL_BTN}
               >
-                {copied ? (
-                  <>
-                    <Check size={12} />
-                    {t('auth.copied')}
-                  </>
-                ) : (
-                  <>
-                    <ClipboardCopy size={12} />
-                    {t('auth.copyLink')}
-                  </>
-                )}
+                {copied ? <Check size={14} /> : <ClipboardCopy size={14} />}
+                {copied ? t('auth.copied') : t('auth.copyLink')}
               </button>
             )}
           </div>
         ) : (
-          <div className="flex flex-col items-stretch gap-3 w-full">
+          <div className="mt-10 flex flex-col items-stretch gap-3 w-full">
             <button
               type="button"
               onClick={handleLogin}
-              className="w-full py-3.5 rounded-2xl bg-accent text-accent-contrast font-semibold text-sm hover:bg-accent-hover active:scale-[0.97] transition-all duration-200 ease-[var(--ease-apple)] cursor-pointer"
+              className="press w-full h-12 inline-flex items-center justify-center gap-2.5 rounded-full bg-accent text-[15px] font-bold text-black hover:bg-accent-hover cursor-pointer"
             >
+              <SocialIcon kind="soundcloud" size={20} />
               {t('auth.signIn')}
             </button>
             <button
               type="button"
               onClick={() => setQrOpen(true)}
-              className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[12px] text-white/40 hover:text-white/70 ui-icon transition-all cursor-pointer"
+              className="press w-full h-12 inline-flex items-center justify-center gap-2 rounded-full bg-white/[0.07] text-[15px] font-semibold text-white/85 hover:bg-white/[0.12] hover:text-white cursor-pointer"
             >
-              <Smartphone size={13} />
+              <Smartphone size={17} />
               {t('qrLink.scanQr')}
             </button>
 
-            <div className="my-1 flex items-center gap-3 text-[10px] uppercase tracking-[0.22em] text-white/25">
-              <div className="h-px flex-1 bg-gradient-to-r from-transparent to-white/10" />
+            <div className="my-3 flex items-center gap-4 text-[13px] text-white/35">
+              <div className="h-px flex-1 bg-white/[0.08]" />
               {t('auth.orSeparator')}
-              <div className="h-px flex-1 bg-gradient-to-l from-transparent to-white/10" />
+              <div className="h-px flex-1 bg-white/[0.08]" />
             </div>
 
             <OfflineEntryCard onClick={handleEnterOffline} />
@@ -198,45 +169,30 @@ export function Login() {
   );
 }
 
+/** Secondary way in: a flat row card, like the list rows elsewhere in the app. */
 function OfflineEntryCard({ onClick }: { onClick: () => void }) {
   const { t } = useTranslation();
   return (
     <button
       type="button"
       onClick={onClick}
-      className="group relative w-full overflow-hidden rounded-[22px] border border-white/[0.10] bg-[linear-gradient(140deg,rgba(255,255,255,0.10),rgba(255,255,255,0.02)_55%,rgba(255,255,255,0.06))] p-[1px] text-left shadow-[0_18px_50px_rgba(0,0,0,0.35),0_0_1px_rgba(255,255,255,0.08)] backdrop-blur-[40px] transition-all duration-300 ease-[var(--ease-apple)] hover:border-white/[0.18] hover:shadow-[0_24px_70px_rgba(0,0,0,0.45),0_0_60px_rgba(56,189,248,0.10)] active:scale-[0.985] cursor-pointer"
+      className="group w-full flex items-center gap-4 p-3 pr-4 rounded-2xl bg-white/[0.04] border border-white/[0.06] text-left transition-colors hover:bg-white/[0.07] cursor-pointer"
     >
-      <span
-        className="pointer-events-none absolute inset-0 rounded-[22px] bg-[radial-gradient(ellipse_at_top_left,rgba(255,255,255,0.18),transparent_55%)] opacity-80"
-        aria-hidden="true"
-      />
-      <span
-        className="pointer-events-none absolute -inset-px rounded-[22px] bg-[radial-gradient(circle_at_top_right,rgba(56,189,248,0.18),transparent_55%)] opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-        aria-hidden="true"
-      />
-
-      <span className="relative flex items-center gap-3 rounded-[21px] bg-black/35 px-4 py-3.5 backdrop-blur-[40px]">
-        <span className="relative flex size-11 shrink-0 items-center justify-center rounded-[16px] border border-white/[0.16] bg-[linear-gradient(160deg,rgba(255,255,255,0.16),rgba(255,255,255,0.04))] shadow-[inset_0_1px_0_rgba(255,255,255,0.18),0_4px_14px_rgba(0,0,0,0.25)]">
-          <Globe size={18} className="text-sky-100/95" strokeWidth={1.7} />
-          <span className="absolute -bottom-1 -right-1 flex size-[18px] items-center justify-center rounded-full border border-white/[0.18] bg-emerald-400/90 shadow-[0_2px_6px_rgba(16,185,129,0.45)]">
-            <Download size={10} strokeWidth={3} className="text-emerald-950" />
-          </span>
-        </span>
-
-        <span className="min-w-0 flex-1">
-          <span className="block text-[13.5px] font-semibold tracking-tight text-white/92">
-            {t('auth.continueOffline')}
-          </span>
-          <span className="mt-0.5 block text-[11.5px] leading-snug text-white/45">
-            {t('auth.continueOfflineDesc')}
-          </span>
-        </span>
-
-        <ChevronRight
-          size={16}
-          className="shrink-0 text-white/30 transition-all duration-300 group-hover:translate-x-0.5 group-hover:text-white/70"
-        />
+      <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-400">
+        <Download size={20} strokeWidth={2} />
       </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[15px] font-semibold text-white">
+          {t('auth.continueOffline')}
+        </span>
+        <span className="mt-0.5 block text-[13px] leading-snug text-white/50">
+          {t('auth.continueOfflineDesc')}
+        </span>
+      </span>
+      <ChevronRight
+        size={18}
+        className="shrink-0 text-white/35 transition-transform group-hover:translate-x-0.5 group-hover:text-white/70"
+      />
     </button>
   );
 }
