@@ -194,8 +194,8 @@ const DEFAULTS = {
   crossfadeKeepAlbums: true,
   trimSilence: true,
   artistWaveCollapsed: false,
-  // Classic (flat, calm) look by default; Liquid Glass is opt-in.
-  panelStyle: 'flat' as PanelStyle,
+  // Frosted glass by default; Plain and Liquid Glass are opt-in.
+  panelStyle: 'gloss' as PanelStyle,
   sidebarLikedPlaylists: true,
 };
 
