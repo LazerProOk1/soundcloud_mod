@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { fetchWithAuthFallback, setSessionId } from '../lib/api';
 import { tauriStorage } from '../lib/tauri-storage';
+import { useAppStatusStore } from './app-status';
 
 interface User {
   id: number;
@@ -47,6 +48,8 @@ export const useAuthStore = create<AuthState>()(
 
       logout: () => {
         setSessionId(null);
+        // Also leave the offline bypass, otherwise the offline-only shell keeps hiding Login.
+        useAppStatusStore.getState().setOfflineBypass(false);
         set({ sessionId: null, user: null, isAuthenticated: false });
       },
     }),
