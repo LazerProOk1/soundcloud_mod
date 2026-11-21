@@ -1,13 +1,7 @@
 import React, { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import {
-  APP_VERSION,
-  GITHUB_OWNER,
-  GITHUB_REPO,
-  STREAMING_BASE,
-  STREAMING_PREMIUM_BASE,
-} from '../../lib/constants';
+import { APP_VERSION, GITHUB_OWNER, GITHUB_REPO, STREAMING_BASE } from '../../lib/constants';
 import { isHealthy, markHealthy } from '../../lib/host-health';
 import { ExternalLink, Loader2, RefreshCw, Wifi } from '../../lib/icons';
 import { openExternalUrl } from '../../lib/open-external';
@@ -15,10 +9,7 @@ import { checkForAppUpdate, type GithubRelease } from '../../lib/update-check';
 import { useCachedUrnsStore } from '../../stores/cached-urns';
 import { UpdateChecker } from '../UpdateChecker';
 
-const STREAM_HOSTS = [
-  { id: 'premium', label: 'Stream Premium', url: STREAMING_PREMIUM_BASE },
-  { id: 'primary', label: 'Stream Primary', url: STREAMING_BASE },
-] as const;
+const STREAM_HOSTS = [{ id: 'primary', label: 'Stream Primary', url: STREAMING_BASE }] as const;
 
 export const AboutSection = React.memo(function AboutSection() {
   const { t } = useTranslation();

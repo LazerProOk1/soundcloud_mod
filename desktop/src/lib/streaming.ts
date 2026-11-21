@@ -2,9 +2,9 @@ import { fetch } from '@tauri-apps/plugin-http';
 import type { Track } from '../stores/player';
 import { useSettingsStore } from '../stores/settings';
 import { ApiError, getSessionId } from './api-client';
-import { STORAGE_BASE, STREAMING_BASE, STREAMING_PREMIUM_BASE } from './constants';
+import { API_BASE, STORAGE_BASE, STREAMING_BASE } from './constants';
 import { logHttpError, logHttpFailure, trackAsync } from './diagnostics';
-import { isHealthy, markHealthy, markUnhealthy } from './host-health';
+import { markHealthy, markUnhealthy } from './host-health';
 
 // ─── Types ──────────────────────────────────────────────────
 
@@ -14,9 +14,9 @@ export type ResolvedStreamingTrack = Partial<Track> & {
 
 // ─── Host resolution ────────────────────────────────────────
 
+// The stream-premium host is gone (TLS handshakes fail), so only the main one is left.
 function resolveStreamingBases(): string[] {
-  const unique = [...new Set([STREAMING_PREMIUM_BASE, STREAMING_BASE])];
-  return unique.sort((a, b) => Number(isHealthy(b)) - Number(isHealthy(a)));
+  return [STREAMING_BASE];
 }
 
 // ─── Streaming JSON ─────────────────────────────────────────
@@ -84,27 +84,27 @@ export function buildStorageUrls(trackUrn: string): string[] {
   return [`${STORAGE_BASE}/${file}`];
 }
 
+/** The API's own stream endpoint (what the upstream client uses now); the session goes in the
+ *  `x-session-id` header the engine adds. */
+function buildApiStreamUrl(trackUrn: string, hq: boolean) {
+  const quality = hq ? 'hq=true&quality=hq' : 'quality=sq';
+  return `${API_BASE}/tracks/${encodeURIComponent(trackUrn)}/stream?${quality}`;
+}
+
+/**
+ * Where the engine fetches a track from, in order: the API's stream endpoint, then the older
+ * stream host (it answers 401/404 for many tracks now, so it only goes last).
+ */
 export function streamFallbackUrls(
   trackUrn: string,
   hq = useSettingsStore.getState().highQualityStreaming,
 ): string[] {
-  const bases = resolveStreamingBases();
-  const urls: string[] = [];
-  const seen = new Set<string>();
   const qualities = hq ? [true, false] : [false];
-
+  const urls = qualities.map((q) => buildApiStreamUrl(trackUrn, q));
   for (const useHq of qualities) {
-    for (const base of bases) {
-      // premium endpoint first, then standard
-      for (const premium of [true, false]) {
-        const url = buildStreamUrl(base, trackUrn, premium, useHq);
-        if (!seen.has(url)) {
-          seen.add(url);
-          urls.push(url);
-        }
-      }
+    for (const premium of [true, false]) {
+      urls.push(buildStreamUrl(STREAMING_BASE, trackUrn, premium, useHq));
     }
   }
-
-  return urls;
+  return [...new Set(urls)];
 }
