@@ -1239,6 +1239,7 @@ export const NowPlayingBar = React.memo(
     return (
       <>
         <div
+          data-ui="player-bar"
           className="liquid-panel-heavy shrink-0 relative z-[50]"
           style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}
         >
