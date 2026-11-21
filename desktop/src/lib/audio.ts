@@ -752,7 +752,8 @@ function afterLoad(track: Track, gen: number) {
       body: JSON.stringify({
         scTrackId: historyTrack.urn,
         title: historyTrack.title,
-        artistName: historyTrack.user?.username || '',
+        // Same artist the player shows, not the uploader's handle (re-uploaders use names like 42CF80).
+        artistName: getArtistDisplay(historyTrack).primary || historyTrack.user?.username || '',
         artistUrn: historyTrack.user?.urn || null,
         artworkUrl: historyTrack.artwork_url || null,
         duration: historyTrack.duration || 0,
