@@ -28,6 +28,7 @@ import {
   useUpdatePlaylistTracks,
 } from '../lib/hooks';
 import { AlertCircle, Heart, ListMusic, Loader2, Trash2, X } from '../lib/icons';
+import { getOfflinePlaylist, rememberPlaylist } from '../lib/offline-index';
 import { useAuthStore } from '../stores/auth';
 import type { Track } from '../stores/player';
 
@@ -143,7 +144,7 @@ export const PlaylistPage = React.memo(() => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const myUrn = useAuthStore((s) => s.user?.urn);
-  const { data: playlist, isLoading: playlistLoading } = usePlaylist(urn);
+  const { data: livePlaylist, isLoading: playlistLoading } = usePlaylist(urn);
   const {
     tracks: playlistTracks,
     isLoading: tracksLoading,
@@ -157,13 +158,31 @@ export const PlaylistPage = React.memo(() => {
   const deletePlaylist = useDeletePlaylist();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  const isLoading = playlistLoading || tracksLoading;
+  // The last copy seen online opens the page at once (and without a network); the server
+  // answer replaces it when it arrives.
+  const { data: saved } = useQuery({
+    queryKey: ['offline-playlist', urn],
+    queryFn: () => getOfflinePlaylist<NonNullable<typeof livePlaylist>>(urn!),
+    enabled: !!urn,
+    staleTime: Number.POSITIVE_INFINITY,
+  });
+  const playlist = livePlaylist ?? saved?.playlist;
+  const onlineReady = !!livePlaylist && !playlistLoading && !tracksLoading;
   const isOwner = !!playlist && !!myUrn && playlist.user.urn === myUrn;
 
   const serverTracks: Track[] = React.useMemo(() => {
-    if (isLoading || !playlist) return [];
-    return playlistTracks.length > 0 ? playlistTracks : (playlist.tracks ?? []);
-  }, [isLoading, playlist, playlistTracks]);
+    if (onlineReady && livePlaylist) {
+      return playlistTracks.length > 0 ? playlistTracks : (livePlaylist.tracks ?? []);
+    }
+    return saved?.tracks ?? [];
+  }, [onlineReady, livePlaylist, playlistTracks, saved]);
+
+  // Save the full list once every page is in, for the next (possibly offline) visit.
+  useEffect(() => {
+    if (!onlineReady || !livePlaylist || hasNextPage || tracksFailed) return;
+    const list = playlistTracks.length > 0 ? playlistTracks : (livePlaylist.tracks ?? []);
+    if (list.length > 0) void rememberPlaylist(livePlaylist, list);
+  }, [onlineReady, livePlaylist, playlistTracks, hasNextPage, tracksFailed]);
 
   // Local track order for DnD
   const [localTracks, setLocalTracks] = useState<Track[]>([]);
@@ -233,7 +252,7 @@ export const PlaylistPage = React.memo(() => {
     [debouncedUpdate, t],
   );
 
-  if (isLoading || !playlist) {
+  if (!playlist) {
     return (
       <div className="h-full flex items-center justify-center">
         <Loader2 size={24} className="text-white/15 animate-spin" />

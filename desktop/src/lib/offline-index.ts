@@ -20,12 +20,21 @@ export interface CachedLyrics {
   cachedAt: number;
 }
 
+/** A playlist as last seen online: its header plus the order of its tracks. */
+export interface CachedPlaylist<P = unknown> {
+  playlist: P;
+  trackUrns: string[];
+  savedAt: number;
+}
+
 interface OfflineIndex {
   likedUrns: string[];
   followingUrns: string[];
   recentlyPlayedUrns: string[];
   tracksByUrn: Record<string, Track>;
   lyricsByUrn: Record<string, CachedLyrics>;
+  /** Playlists opened online, so they open instantly and without a network. */
+  playlistsByUrn: Record<string, CachedPlaylist>;
   updatedAt: number | null;
 }
 
@@ -35,6 +44,7 @@ const EMPTY_INDEX: OfflineIndex = {
   recentlyPlayedUrns: [],
   tracksByUrn: {},
   lyricsByUrn: {},
+  playlistsByUrn: {},
   updatedAt: null,
 };
 
@@ -48,7 +58,12 @@ function pruneTracksByUrn(index: OfflineIndex) {
   const keys = Object.keys(index.tracksByUrn);
   if (keys.length <= EXTRA_TRACKS_LIMIT) return;
 
-  const pinned = new Set([...index.likedUrns, ...index.followingUrns, ...index.recentlyPlayedUrns]);
+  const pinned = new Set([
+    ...index.likedUrns,
+    ...index.followingUrns,
+    ...index.recentlyPlayedUrns,
+    ...Object.values(index.playlistsByUrn).flatMap((p) => p.trackUrns),
+  ]);
 
   let unpinnedCount = 0;
   for (const key of keys) {
@@ -97,6 +112,8 @@ async function readIndexFile(): Promise<OfflineIndex> {
       recentlyPlayedUrns: Array.isArray(parsed.recentlyPlayedUrns) ? parsed.recentlyPlayedUrns : [],
       tracksByUrn: parsed.tracksByUrn ?? {},
       lyricsByUrn: parsed.lyricsByUrn ?? {},
+      // Older index files have no playlists yet.
+      playlistsByUrn: parsed.playlistsByUrn ?? {},
       updatedAt: parsed.updatedAt ?? null,
     };
   } catch {
@@ -182,6 +199,33 @@ export async function getOfflineTracksByUrns(urns: string[]) {
   return urns
     .map((urn) => index.tracksByUrn[urn])
     .filter((track): track is Track => Boolean(track));
+}
+
+/** Remembers a playlist header and its full track list (call once every page is loaded). */
+export async function rememberPlaylist<P extends { urn: string }>(playlist: P, tracks: Track[]) {
+  const index = await loadIndex();
+  for (const track of tracks) {
+    if (track?.urn) index.tracksByUrn[track.urn] = cloneTrack(track);
+  }
+  index.playlistsByUrn[playlist.urn] = {
+    playlist,
+    trackUrns: tracks.filter((t) => t?.urn).map((t) => t.urn),
+    savedAt: Date.now(),
+  };
+  schedulePersist();
+}
+
+/** The last saved copy of a playlist, or null if it was never opened online. */
+export async function getOfflinePlaylist<P>(
+  urn: string,
+): Promise<{ playlist: P; tracks: Track[] } | null> {
+  const index = await loadIndex();
+  const entry = index.playlistsByUrn[urn];
+  if (!entry) return null;
+  const tracks = entry.trackUrns
+    .map((u) => index.tracksByUrn[u])
+    .filter((track): track is Track => Boolean(track));
+  return { playlist: entry.playlist as P, tracks };
 }
 
 export async function rememberFollowingTracks(tracks: Track[]) {
