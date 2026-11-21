@@ -1,0 +1,24 @@
+name: Идея
+description: Предложите новую функцию или улучшение
+title: '[FEAT] '
+labels: [enhancement]
+assignees: [LazerProOk1]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Какую проблему это решает
+      placeholder: Меня раздражает, что…
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Как это должно работать
+      description: Опишите, что вы хотите увидеть. Можно приложить скриншот из другого приложения.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Какие ещё варианты вы рассматривали

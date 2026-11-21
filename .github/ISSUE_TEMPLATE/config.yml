@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Вопрос или обсуждение
+    url: https://github.com/LazerProOk1/soundcloud_mod/discussions
+    about: Как что-то настроить, идеи на подумать, просто поговорить — в Discussions.
+  - name: Уязвимость
+    url: https://github.com/LazerProOk1/soundcloud_mod/security/advisories/new
+    about: Об уязвимостях сообщайте приватно, не в открытом issue.

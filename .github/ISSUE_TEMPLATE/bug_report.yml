@@ -1,0 +1,54 @@
+name: Баг
+description: Что-то работает не так, как должно
+title: '[BUG] '
+labels: [bug]
+assignees: [LazerProOk1]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Спасибо, что сообщаете! Сначала поищите похожий issue — возможно, баг уже известен.
+  - type: textarea
+    id: what
+    attributes:
+      label: Что случилось
+      description: Коротко и по делу. Что вы ожидали и что получили.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Как повторить
+      placeholder: |
+        1. Открыть «Волну»
+        2. Нажать «Ещё такого»
+        3. Трек не меняется
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Версия приложения
+      description: Настройки → «О приложении».
+      placeholder: 1.4.0
+    validations:
+      required: true
+  - type: dropdown
+    id: os
+    attributes:
+      label: Система и сборка
+      options:
+        - Windows — установщик
+        - Windows — портативная (ZIP)
+        - Linux — AppImage
+        - Linux — DEB
+        - Linux — RPM
+        - Linux — Flatpak
+        - Другое (напишу ниже)
+    validations:
+      required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: Скриншоты, логи, подробности
+      description: Перетащите сюда скриншот или видео. Ссылка на трек тоже помогает.
