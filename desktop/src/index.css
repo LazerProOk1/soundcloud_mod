@@ -1603,6 +1603,50 @@ svg.lucide:not([stroke-width="0"]) {
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }
 
+/* ══════════════════════════════════════════════════════════════
+   LIQUID GLASS — html.liquid-glass (Settings → Interface → Panel style)
+   See-through panels: the wallpaper / cover colours behind are blurred and bent by
+   #lg-refract, with a bright rim on top. The plain blur line comes first so engines
+   without url() backdrop filters still get glass.
+   ══════════════════════════════════════════════════════════════ */
+.liquid-glass .liquid-panel-heavy,
+.liquid-glass .app-surface,
+.liquid-glass [data-radix-popper-content-wrapper] > [role="dialog"] {
+  background: rgba(255, 255, 255, 0.055) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  backdrop-filter: url(#lg-refract) blur(14px) saturate(180%) brightness(1.06);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.38),
+    inset 1px 0 0 rgba(255, 255, 255, 0.14),
+    inset -1px 0 0 rgba(255, 255, 255, 0.06),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.05),
+    0 18px 50px rgba(0, 0, 0, 0.4) !important;
+}
+/* A soft specular sweep along the top edge. */
+.liquid-glass .liquid-panel-heavy::after,
+.liquid-glass .app-surface::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.16) 0%,
+    rgba(255, 255, 255, 0.03) 18%,
+    transparent 40%
+  );
+}
+@media (prefers-reduced-transparency: reduce) {
+  .liquid-glass .liquid-panel-heavy,
+  .liquid-glass .app-surface {
+    background: rgba(20, 20, 24, 0.94) !important;
+    backdrop-filter: none;
+  }
+}
+
 /* Card glare belongs to Liquid Glass; Gloss and Plain cards stay clean. */
 html:not(.liquid-glass) .glass-artwork::before,
 html:not(.liquid-glass) .glass-artwork::after {
