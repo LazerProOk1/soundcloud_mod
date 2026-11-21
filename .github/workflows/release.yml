@@ -89,15 +89,15 @@ jobs:
           Run "SoundCloud Mod.exe" directly — no installation required.
           Requires Microsoft Edge WebView2 Runtime (pre-installed on Windows 11 and modern Windows 10).
           "@ | Set-Content -Path "$portableDir/README-PORTABLE.txt" -Encoding UTF8
-          # One naming scheme; GitHub lists assets by name, so "Installer" comes first.
-          $out = "release-assets/SoundCloud-Mod-$version"
+          # One naming scheme; GitHub lists assets by name, so "installer" comes first.
+          $out = "release-assets/soundcloud-mod-$version"
           $bundle = "desktop/src-tauri/target/release/bundle"
           New-Item -ItemType Directory -Force -Path "release-assets" | Out-Null
-          Compress-Archive -Path "$portableDir/*" -DestinationPath "$out-Portable-Windows-x64.zip" -Force
+          Compress-Archive -Path "$portableDir/*" -DestinationPath "$out-portable-windows-x64.zip" -Force
           $setup = Get-ChildItem "$bundle/nsis/*-setup.exe" | Select-Object -First 1
-          Copy-Item $setup.FullName "$out-Installer-Windows-x64.exe"
-          Copy-Item "$($setup.FullName).sig" "$out-Installer-Windows-x64.exe.sig"
-          Copy-Item (Get-ChildItem "$bundle/msi/*.msi" | Select-Object -First 1).FullName "$out-Windows-x64.msi"
+          Copy-Item $setup.FullName "$out-installer-windows-x64.exe"
+          Copy-Item "$($setup.FullName).sig" "$out-installer-windows-x64.exe.sig"
+          Copy-Item (Get-ChildItem "$bundle/msi/*.msi" | Select-Object -First 1).FullName "$out-windows-x64.msi"
 
       # Tauri links .DirIcon to an absolute build-machine path, so it dangles inside the AppImage
       # and the AppImage catalog rejects it. Replace the link with the real PNG and repack.
@@ -128,7 +128,7 @@ jobs:
         if: matrix.job_name == 'ubuntu'
         run: |
           version=$(jq -r .version desktop/src-tauri/tauri.conf.json)
-          out="release-assets/SoundCloud-Mod-$version-Linux"
+          out="release-assets/soundcloud-mod-$version-linux"
           bundle=desktop/src-tauri/target/release/bundle
           mkdir -p release-assets
           cp $bundle/deb/*.deb "$out-amd64.deb"
@@ -145,8 +145,8 @@ jobs:
           body: |
             ### Какой файл скачать
 
-            **Windows:** `Installer-Windows-x64.exe` — обычная установка, дальше приложение
-            обновляется само. `Portable-Windows-x64.zip` — без установки, обновлять вручную.
+            **Windows:** `installer-windows-x64.exe` — обычная установка, дальше приложение
+            обновляется само. `portable-windows-x64.zip` — без установки, обновлять вручную.
             `.msi` — для развёртывания на нескольких компьютерах.
 
             **Linux:** `.AppImage` (обновляется само), `.deb` для Ubuntu/Debian, `.rpm` для
@@ -172,7 +172,7 @@ jobs:
             jq -n --arg s "$(cat "$sig")" --arg u "$base/$(basename "${sig%.sig}")" \
               '{signature: $s, url: $u}'
           }
-          win=$(entry '*-Installer-Windows-x64.exe.sig')
+          win=$(entry '*-installer-windows-x64.exe.sig')
           linux=$(entry '*.AppImage.sig')
           jq -n --arg v "${tag#v}" --arg d "$(date -u +%FT%TZ)" \
             --argjson win "$win" --argjson linux "$linux" \
