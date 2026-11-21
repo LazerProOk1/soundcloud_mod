@@ -1,6 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import type { Track } from '../stores/player';
-import { api } from './api';
+import { ApiError, api } from './api';
 import { type ImportItem, matchScore } from './import-match';
 import { queryClient } from './query-client';
 
@@ -32,9 +32,16 @@ export async function matchOnSoundCloud(item: ImportItem): Promise<Track | null>
       if (score >= 2 && (!best || score > best.score)) best = { track: tr, score };
     }
     return best?.track ?? null;
-  } catch {
+  } catch (e) {
+    // SoundCloud refused (rate limit / block): stop the caller instead of hammering on.
+    if (isRefusal(e)) throw e;
     return null;
   }
+}
+
+/** True when SoundCloud refused the request: too many requests or access blocked. */
+export function isRefusal(e: unknown): boolean {
+  return e instanceof ApiError && (e.status === 429 || e.status === 403);
 }
 
 async function findOnSoundCloud(item: ImportItem): Promise<string | null> {
@@ -49,9 +56,11 @@ export interface ImportProgress {
 }
 
 const PLAYLIST_LIMIT = 500;
+/** Pause between searches so a big import does not look like a bot to SoundCloud. */
+const SEARCH_GAP_MS = 1000;
 
 /**
- * Finds every item on SoundCloud (4 at a time) and saves the hits as a new private
+ * Finds every item on SoundCloud (one at a time, paced) and saves the hits as a new private
  * playlist. Returns the playlist URN and how many tracks were found.
  */
 export async function importToPlaylist(
@@ -61,19 +70,14 @@ export async function importToPlaylist(
   signal: { cancelled: boolean },
 ): Promise<{ urn: string | null; found: number; missing: ImportItem[] }> {
   const urns: (string | null)[] = new Array(items.length).fill(null);
-  let next = 0;
-  let done = 0;
   let found = 0;
-  const worker = async () => {
-    while (!signal.cancelled && next < items.length) {
-      const i = next++;
-      urns[i] = await findOnSoundCloud(items[i]);
-      done++;
-      if (urns[i]) found++;
-      onProgress({ done, total: items.length, found });
-    }
-  };
-  await Promise.all(Array.from({ length: 4 }, worker));
+  // A refusal from SoundCloud throws out of here and aborts the whole import.
+  for (let i = 0; i < items.length && !signal.cancelled; i++) {
+    if (i > 0 && !items[i].urn) await new Promise((r) => setTimeout(r, SEARCH_GAP_MS));
+    urns[i] = await findOnSoundCloud(items[i]);
+    if (urns[i]) found++;
+    onProgress({ done: i + 1, total: items.length, found });
+  }
 
   const unique = [...new Set(urns.filter((u): u is string => !!u))];
   const missing = items.filter((_, i) => !urns[i]);
