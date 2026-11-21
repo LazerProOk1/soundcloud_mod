@@ -37,16 +37,11 @@ function getSafeWindow() {
 const Brand = React.memo(() => {
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   return (
-    <div className="flex items-center gap-1.5 pl-2" data-tauri-drag-region>
-      <Disc3
-        size={18}
-        className={`text-accent pointer-events-none ${isPlaying ? 'animate-spin-slow' : ''}`}
-      />
-      <span
-        className="text-[15px] text-white/90 pointer-events-none"
-        style={{ fontFamily: 'var(--font-display)', fontWeight: 800, letterSpacing: '-0.02em' }}
-      >
-        SoundCloud
+    <div className="pointer-events-none flex items-center gap-2 pl-2" data-tauri-drag-region>
+      <Disc3 size={18} className={`text-accent ${isPlaying ? 'animate-spin-slow' : ''}`} />
+      <span className="text-[14px] font-semibold tracking-tight text-white/90">SoundCloud</span>
+      <span className="rounded-md bg-white/[0.08] px-1.5 py-px text-[10px] font-bold tracking-wide text-white/55">
+        MOD
       </span>
     </div>
   );

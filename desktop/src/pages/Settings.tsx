@@ -36,12 +36,7 @@ import { formatBytes } from '../lib/formatters';
 import { Check, Download, Link, Loader2, Pipette, Trash2, Upload, X } from '../lib/icons';
 import { PRESET_WALLPAPERS } from '../lib/wallpapers';
 import { useAuthStore } from '../stores/auth';
-import {
-  type DiscordRpcMode,
-  type StartupPage,
-  THEME_PRESETS,
-  useSettingsStore,
-} from '../stores/settings';
+import { type DiscordRpcMode, type StartupPage, useSettingsStore } from '../stores/settings';
 
 const PRESET_COLORS = [
   '#ff5500',
@@ -861,17 +856,13 @@ function AccentPicker({ value, onChange }: { value: string; onChange: (hex: stri
 
 /* ── Theme Section ──────────────────────────────────────── */
 
-const THEME_PRESET_KEYS = ['soundcloud', 'dark', 'neon', 'forest', 'crimson'] as const;
-
 const ThemeSection = React.memo(function ThemeSection() {
   const { t } = useTranslation();
   const accentColor = useSettingsStore((s) => s.accentColor);
-  const themePreset = useSettingsStore((s) => s.themePreset);
   const backgroundImage = useSettingsStore((s) => s.backgroundImage);
   const backgroundOpacity = useSettingsStore((s) => s.backgroundOpacity);
   const backgroundBlur = useSettingsStore((s) => s.backgroundBlur);
   const setAccentColor = useSettingsStore((s) => s.setAccentColor);
-  const setThemePreset = useSettingsStore((s) => s.setThemePreset);
   const setBackgroundOpacity = useSettingsStore((s) => s.setBackgroundOpacity);
   const setBackgroundBlur = useSettingsStore((s) => s.setBackgroundBlur);
   const resetTheme = useSettingsStore((s) => s.resetTheme);
@@ -890,46 +881,12 @@ const ThemeSection = React.memo(function ThemeSection() {
         </button>
       </div>
 
-      {/* Theme: compact chips with the theme's background and accent. */}
-      <div className="space-y-3">
-        <label className="text-[13px] text-white/50 font-medium">{t('settings.themePreset')}</label>
-        <div className="flex flex-wrap gap-2">
-          {THEME_PRESET_KEYS.map((id) => {
-            const def = THEME_PRESETS[id];
-            const isActive = themePreset === id;
-            return (
-              <button
-                key={id}
-                type="button"
-                onClick={() => setThemePreset(id)}
-                className={`press flex h-10 items-center gap-2.5 rounded-full pl-2 pr-4 text-[13px] font-semibold cursor-pointer ${
-                  isActive
-                    ? 'bg-white text-black'
-                    : 'bg-white/[0.06] text-white/80 hover:bg-white/[0.10] hover:text-white'
-                }`}
-              >
-                <span
-                  className="relative h-6 w-6 rounded-full shadow-[inset_0_0_0_1px_rgba(255,255,255,0.15)]"
-                  style={{ backgroundColor: def.preview[1] }}
-                >
-                  <span
-                    className="absolute inset-[6px] rounded-full"
-                    style={{ backgroundColor: def.preview[0] }}
-                  />
-                </span>
-                {def.name}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Accent: picking a colour switches to the custom theme. */}
+      {/* Accent colour: the only theme setting; the dark background stays the same. */}
       <div className="space-y-3">
         <label className="text-[13px] text-white/50 font-medium">{t('settings.accentColor')}</label>
         <div className="flex flex-wrap items-center gap-2.5">
           {PRESET_COLORS.map((color) => {
-            const isActive = themePreset === 'custom' && accentColor.toLowerCase() === color;
+            const isActive = accentColor.toLowerCase() === color;
             return (
               <button
                 key={color}
@@ -948,7 +905,7 @@ const ThemeSection = React.memo(function ThemeSection() {
       </div>
 
       {/* Extract accent from background */}
-      {backgroundImage && themePreset === 'custom' && (
+      {backgroundImage && (
         <AccentFromWallpaperBtn backgroundImage={backgroundImage} onColor={setAccentColor} />
       )}
 

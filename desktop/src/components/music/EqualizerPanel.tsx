@@ -1,4 +1,4 @@
-import * as Dialog from '@radix-ui/react-dialog';
+import * as Popover from '@radix-ui/react-popover';
 import React, { useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
@@ -179,23 +179,25 @@ export const EqualizerPanel = React.memo(function EqualizerPanel({
   }, [setEqGains, setEqPreset]);
 
   return (
-    <Dialog.Root>
-      <Dialog.Trigger asChild>{children}</Dialog.Trigger>
-      <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm animate-fade-in" />
-        <Dialog.Content
+    <Popover.Root>
+      <Popover.Trigger asChild>{children}</Popover.Trigger>
+      <Popover.Portal>
+        <Popover.Content
+          side="top"
+          align="end"
+          sideOffset={10}
+          collisionPadding={12}
           onOpenAutoFocus={(e) => e.preventDefault()}
-          aria-describedby={undefined}
-          className="fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[520px] max-w-[95vw] animate-fade-in-up outline-none"
+          className="z-[200] w-[480px] max-w-[95vw] origin-bottom-right outline-none data-[state=open]:animate-fade-in-up"
         >
-          <div className="overflow-hidden rounded-3xl border border-white/[0.08] bg-[#161618]/95 shadow-2xl shadow-black/40 backdrop-blur-2xl">
+          <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#141416]/95 shadow-[0_24px_64px_rgba(0,0,0,0.5)] backdrop-blur-xl">
             {/* Header */}
             <div className="flex items-center justify-between px-6 pt-5 pb-4">
               <div className="flex items-center gap-3">
                 <AudioLines size={20} className="text-white/70" />
-                <Dialog.Title className="text-[18px] font-bold tracking-tight text-white">
+                <h2 className="text-[16px] font-semibold tracking-tight text-white">
                   {t('eq.title')}
-                </Dialog.Title>
+                </h2>
                 <LiquidSwitch checked={eqEnabled} onChange={setEqEnabled} />
               </div>
               <div className="flex items-center gap-1">
@@ -207,9 +209,9 @@ export const EqualizerPanel = React.memo(function EqualizerPanel({
                 >
                   <RotateCcw size={15} />
                 </button>
-                <Dialog.Close className="press flex h-9 w-9 items-center justify-center rounded-full text-white/55 hover:bg-white/[0.08] hover:text-white cursor-pointer">
+                <Popover.Close className="press flex h-9 w-9 items-center justify-center rounded-full text-white/55 hover:bg-white/[0.08] hover:text-white cursor-pointer">
                   <X size={16} />
-                </Dialog.Close>
+                </Popover.Close>
               </div>
             </div>
 
@@ -261,8 +263,8 @@ export const EqualizerPanel = React.memo(function EqualizerPanel({
               </div>
             </div>
           </div>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
   );
 });

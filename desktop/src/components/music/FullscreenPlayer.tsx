@@ -14,13 +14,13 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { rgbToCss, useArtworkColor } from '../../hooks/useArtworkColor';
 import { handlePrev } from '../../lib/audio';
-import { art, dur } from '../../lib/formatters';
-import { useLiquidGlass } from '../../lib/hooks';
-import { SkipBack, SkipForward, X } from '../../lib/icons';
+import { art } from '../../lib/formatters';
+import { pauseBlack22, playBlack22, SkipBack, SkipForward, X } from '../../lib/icons';
 import { useArtistDisplay, useDisplayTitle } from '../../lib/track-display';
 import { useLyricsStore } from '../../stores/lyrics';
 import { type Track, usePlayerStore } from '../../stores/player';
-import { ProgressSlider } from '../layout/NowPlayingBar';
+import { ProgressSlider, ProgressTime } from '../layout/NowPlayingBar';
+import { PopIcon } from '../ui/PopIcon';
 import { LikeButton } from './LikeButton';
 import { LiveSpectrumCanvas } from './LiveSpectrumCanvas';
 
@@ -35,7 +35,6 @@ interface FsContentProps {
 const FsContent = React.memo(({ track, visible, onClose }: FsContentProps) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const glass = useLiquidGlass();
   const openLyricsPanel = useLyricsStore((s) => s.openPanel);
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   const togglePlay = usePlayerStore((s) => s.togglePlay);
@@ -196,8 +195,8 @@ const FsContent = React.memo(({ track, visible, onClose }: FsContentProps) => {
             className="max-w-[260px] mx-auto opacity-80"
           />
           <ProgressSlider />
-          <div className="flex justify-end mt-1">
-            <span className="text-[10px] text-white/20 tabular-nums">{dur(track.duration)}</span>
+          <div className="flex justify-center">
+            <ProgressTime />
           </div>
         </div>
 
@@ -206,46 +205,25 @@ const FsContent = React.memo(({ track, visible, onClose }: FsContentProps) => {
           <button
             type="button"
             onClick={handlePrev}
-            className="w-12 h-12 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/[0.06] transition-all duration-200 cursor-pointer"
+            className="press w-12 h-12 rounded-full flex items-center justify-center text-white/70 hover:text-white hover:bg-white/[0.06] cursor-pointer"
           >
-            <SkipBack size={22} />
+            <SkipBack size={22} fill="currentColor" />
           </button>
 
           <button
             type="button"
             onClick={togglePlay}
-            className="w-16 h-16 rounded-full flex items-center justify-center text-black hover:scale-[1.06] active:scale-[0.94] transition-all duration-300 ease-[var(--ease-spring)] cursor-pointer"
-            style={{
-              background:
-                'linear-gradient(165deg, rgba(255,255,255,0.98) 0%, rgba(230,230,236,0.93) 100%)',
-              boxShadow: glass
-                ? '0 1px 0 0 rgba(255,255,255,1) inset, 0 -1px 0 0 rgba(0,0,0,0.22) inset, 0 6px 24px rgba(0,0,0,0.42), 0 0 0 1px rgba(255,255,255,0.18)'
-                : '0 6px 24px rgba(0,0,0,0.45)',
-            }}
+            className="press w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-lg hover:scale-105 cursor-pointer"
           >
-            {isPlaying ? (
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="black">
-                <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
-              </svg>
-            ) : (
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="black"
-                style={{ marginLeft: 3 }}
-              >
-                <path d="M8 5v14l11-7z" />
-              </svg>
-            )}
+            <PopIcon on={isPlaying}>{isPlaying ? pauseBlack22 : playBlack22}</PopIcon>
           </button>
 
           <button
             type="button"
             onClick={next}
-            className="w-12 h-12 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/[0.06] transition-all duration-200 cursor-pointer"
+            className="press w-12 h-12 rounded-full flex items-center justify-center text-white/70 hover:text-white hover:bg-white/[0.06] cursor-pointer"
           >
-            <SkipForward size={22} />
+            <SkipForward size={22} fill="currentColor" />
           </button>
         </div>
 
@@ -256,9 +234,9 @@ const FsContent = React.memo(({ track, visible, onClose }: FsContentProps) => {
             openLyricsPanel({ tab: 'lyrics', rightPanelOpen: true });
             onClose();
           }}
-          className="text-[11px] text-white/30 hover:text-white/60 transition-colors cursor-pointer"
+          className="press h-8 rounded-full bg-white/[0.07] px-4 text-[12px] font-semibold text-white/70 hover:bg-white/[0.12] hover:text-white cursor-pointer"
         >
-          {t('player.openLyrics', 'Open Lyrics')}
+          {t('player.openLyrics')}
         </button>
       </div>
     </div>,
