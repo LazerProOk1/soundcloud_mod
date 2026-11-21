@@ -179,17 +179,25 @@ jobs:
             true
           }
           {
-            if [ "$(git cat-file -t "$tag")" = tag ]; then
-              git tag -l --format='%(contents:subject)%0a%0a%(contents:body)' "$tag"
-              echo
-            fi
             section 'Новое' feat
             section 'Внешний вид' style
             section 'Исправления' fix
             section 'Быстрее' perf
-          } > whats-new.md
+          } > changes.md
+          # With a hand-written intro the English commit list folds away under it.
+          if [ "$(git cat-file -t "$tag")" = tag ]; then
+            git tag -l --format='%(contents)' "$tag" > whats-new.md
+          fi
           {
-            cat whats-new.md
+            if [ -s whats-new.md ]; then
+              cat whats-new.md
+              printf '\n<details>\n<summary>Все изменения по коммитам (на английском)</summary>\n\n'
+              cat changes.md
+              printf '</details>\n\n'
+            else
+              cp changes.md whats-new.md
+              cat changes.md
+            fi
             cat <<'EOF'
           ### Какой файл скачать
 

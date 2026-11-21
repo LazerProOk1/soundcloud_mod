@@ -33,8 +33,7 @@ cargo clippy --all-targets
 
 - `PLAN.md` (repo root, local only — excluded via `.git/info/exclude`) — the live backlog, if present. Read it
   before picking up work; remove finished items and add new findings as you go.
-- `docs/audit-2026-11-17.md` — audit report with file:line evidence
-  (historical; not kept up to date).
+- `docs/audit-2026-11-17.md` (local only, like `PLAN.md`) — historical audit report, if present.
 
 ## Architecture & Directory Map
 
