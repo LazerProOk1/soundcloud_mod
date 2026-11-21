@@ -12,6 +12,7 @@ import {
   type ImportItem,
   type ImportProgress,
   importToPlaylist,
+  isRefusal,
 } from '../../lib/link-import';
 
 type Tab = 'link' | 'yandex' | 'text';
@@ -82,7 +83,7 @@ export function ImportDialog({
         toast.error(t('import.nothingFound'));
       }
     } catch (e) {
-      toast.error(String(e));
+      toast.error(isRefusal(e) ? t('import.refused') : String(e));
     } finally {
       setProgress(null);
     }

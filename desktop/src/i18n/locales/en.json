@@ -471,6 +471,7 @@
     "progress": "Searching {{done}}/{{total}} · found {{found}}",
     "done": "Playlist created: {{found}} of {{total}} found",
     "nothingFound": "Nothing was found on SoundCloud",
+    "refused": "SoundCloud is refusing requests right now. Import stopped; try again later.",
     "button": "Import"
   },
   "transitions": {

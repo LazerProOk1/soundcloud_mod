@@ -481,6 +481,7 @@
     "progress": "Ищем {{done}}/{{total}} · найдено {{found}}",
     "done": "Плейлист создан: найдено {{found}} из {{total}}",
     "nothingFound": "На SoundCloud ничего не нашлось",
+    "refused": "SoundCloud сейчас отклоняет запросы. Импорт остановлен, попробуйте позже.",
     "button": "Импорт"
   },
   "transitions": {
