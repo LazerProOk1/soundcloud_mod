@@ -381,7 +381,13 @@
     "sources": "Music sources",
     "sourcesDesc": "Where tracks are downloaded from, top first. If a source has no song, the next one is tried. SoundCloud keeps likes and playlists; the rest search by artist and title.",
     "sourceUp": "Move up",
-    "sourceDown": "Move down"
+    "sourceDown": "Move down",
+    "general": "General",
+    "navTransitions": "Transitions",
+    "navDiscord": "Discord",
+    "about": "About",
+    "cacheListenedTracks": "Cache listened tracks",
+    "cacheListenedTracksDesc": "Save metadata and artwork to offline storage while listening"
   },
   "eq": {
     "title": "Equalizer",
@@ -527,7 +533,8 @@
     "expand": "Read more",
     "collapse": "Collapse",
     "scrollPrev": "Scroll left",
-    "scrollNext": "Scroll right"
+    "scrollNext": "Scroll right",
+    "clear": "Clear"
   },
   "artist": {
     "title": "Artist",

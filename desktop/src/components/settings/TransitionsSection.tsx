@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { type CrossfadeCurve, useSettingsStore } from '../../stores/settings';
 import { LiquidSwitch } from '../ui/LiquidSwitch';
 import { Segmented } from '../ui/Segmented';
+import { SettingRow, SettingsSection } from './SettingsKit';
 
 /** Same shapes as the audio engine: fade-in of the next track; the current one mirrors it. */
 function fadeIn(t: number, curve: CrossfadeCurve) {
@@ -63,26 +64,6 @@ const CurveGraph = React.memo(function CurveGraph({ curve }: { curve: CrossfadeC
   );
 });
 
-function Row({
-  title,
-  desc,
-  children,
-}: {
-  title: string;
-  desc: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-6 py-4 border-t border-white/[0.07]">
-      <div className="min-w-0">
-        <p className="text-[15px] text-white font-medium">{title}</p>
-        <p className="text-[13px] text-white/55 mt-0.5">{desc}</p>
-      </div>
-      <div className="shrink-0">{children}</div>
-    </div>
-  );
-}
-
 /** Track transitions: off / smooth overlap, length, volume shape and a few rules. */
 export const TransitionsSection = React.memo(function TransitionsSection() {
   const { t } = useTranslation();
@@ -90,7 +71,7 @@ export const TransitionsSection = React.memo(function TransitionsSection() {
   const on = s.crossfadeDuration > 0;
 
   return (
-    <div className="space-y-4">
+    <SettingsSection id="transitions" title={t('transitions.title')}>
       <div className="flex flex-wrap items-center gap-4">
         <Segmented
           value={on ? 'smooth' : 'off'}
@@ -108,7 +89,7 @@ export const TransitionsSection = React.memo(function TransitionsSection() {
       {on && (
         <>
           <CurveGraph curve={s.crossfadeCurve} />
-          <Row title={t('transitions.duration')} desc={t('transitions.durationDesc')}>
+          <SettingRow title={t('transitions.duration')} desc={t('transitions.durationDesc')}>
             <div className="flex items-center gap-3 w-[260px]">
               <input
                 type="range"
@@ -123,8 +104,8 @@ export const TransitionsSection = React.memo(function TransitionsSection() {
                 {s.crossfadeDuration} {t('common.sec', 'с')}
               </span>
             </div>
-          </Row>
-          <Row title={t('transitions.shape')} desc={t('transitions.shapeDesc')}>
+          </SettingRow>
+          <SettingRow title={t('transitions.shape')} desc={t('transitions.shapeDesc')}>
             <Segmented
               value={s.crossfadeCurve}
               options={[
@@ -134,18 +115,18 @@ export const TransitionsSection = React.memo(function TransitionsSection() {
               ]}
               onChange={s.setCrossfadeCurve}
             />
-          </Row>
-          <Row title={t('transitions.keepAlbums')} desc={t('transitions.keepAlbumsDesc')}>
+          </SettingRow>
+          <SettingRow title={t('transitions.keepAlbums')} desc={t('transitions.keepAlbumsDesc')}>
             <LiquidSwitch checked={s.crossfadeKeepAlbums} onChange={s.setCrossfadeKeepAlbums} />
-          </Row>
+          </SettingRow>
         </>
       )}
-      <Row title={t('transitions.trimSilence')} desc={t('transitions.trimSilenceDesc')}>
+      <SettingRow title={t('transitions.trimSilence')} desc={t('transitions.trimSilenceDesc')}>
         <LiquidSwitch checked={s.trimSilence} onChange={s.setTrimSilence} />
-      </Row>
-      <Row title={t('transitions.onSkip')} desc={t('transitions.onSkipDesc')}>
+      </SettingRow>
+      <SettingRow title={t('transitions.onSkip')} desc={t('transitions.onSkipDesc')}>
         <LiquidSwitch checked={s.crossfadeOnSkip} onChange={s.setCrossfadeOnSkip} />
-      </Row>
-    </div>
+      </SettingRow>
+    </SettingsSection>
   );
 });

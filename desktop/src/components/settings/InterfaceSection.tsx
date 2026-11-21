@@ -11,10 +11,11 @@ import {
 } from '../../lib/interface-font';
 import { UI_SCALE_MAX, UI_SCALE_MIN, UI_SCALE_STEP } from '../../lib/ui-scale';
 import { type MusicSourceId, type PanelStyle, useSettingsStore } from '../../stores/settings';
+import { PILL_BTN } from '../ui/buttonClass';
 import { LiquidSwitch } from '../ui/LiquidSwitch';
 import { RANGE_CLS } from '../ui/rangeClass';
 import { Segmented } from '../ui/Segmented';
-import { PILL_BTN } from '../ui/buttonClass';
+import { SettingRow, SettingsSection } from './SettingsKit';
 
 const btnCls = PILL_BTN;
 const inputCls =
@@ -27,19 +28,17 @@ const LiquidGlassRow = React.memo(function LiquidGlassRow() {
   const panelStyle = useSettingsStore((s) => s.panelStyle);
   const setPanelStyle = useSettingsStore((s) => s.setPanelStyle);
   return (
-    <div className="space-y-3">
-      <div>
-        <p className="text-[13px] text-white/70 font-medium">{t('settings.liquidGlass')}</p>
-        <p className="text-[11px] text-white/30 mt-0.5">
-          {t(`settings.panelStyleDesc_${panelStyle}`)}
-        </p>
-      </div>
+    <SettingRow
+      title={t('settings.liquidGlass')}
+      desc={t(`settings.panelStyleDesc_${panelStyle}`)}
+      stacked
+    >
       <Segmented
         value={panelStyle}
         options={PANEL_STYLES.map((id) => ({ id, label: t(`settings.panelStyle_${id}`) }))}
         onChange={setPanelStyle}
       />
-    </div>
+    </SettingRow>
   );
 });
 
@@ -48,17 +47,12 @@ const SidebarRow = React.memo(function SidebarRow() {
   const on = useSettingsStore((s) => s.sidebarLikedPlaylists);
   const set = useSettingsStore((s) => s.setSidebarLikedPlaylists);
   return (
-    <div className="flex items-center justify-between gap-4">
-      <div>
-        <p className="text-[13px] text-white/70 font-medium">
-          {t('settings.sidebarLikedPlaylists')}
-        </p>
-        <p className="text-[11px] text-white/30 mt-0.5">
-          {t('settings.sidebarLikedPlaylistsDesc')}
-        </p>
-      </div>
+    <SettingRow
+      title={t('settings.sidebarLikedPlaylists')}
+      desc={t('settings.sidebarLikedPlaylistsDesc')}
+    >
       <LiquidSwitch checked={on} onChange={set} />
-    </div>
+    </SettingRow>
   );
 });
 
@@ -67,14 +61,12 @@ const ScaleRow = React.memo(function ScaleRow() {
   const uiScale = useSettingsStore((s) => s.uiScale);
   const setUiScale = useSettingsStore((s) => s.setUiScale);
   return (
-    <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <div>
-          <p className="text-[13px] text-white/70 font-medium">{t('settings.uiScale')}</p>
-          <p className="text-[11px] text-white/30 mt-0.5">{t('settings.uiScaleDesc')}</p>
-        </div>
-        <span className="text-[12px] text-white/50 tabular-nums">{uiScale}%</span>
-      </div>
+    <SettingRow
+      title={t('settings.uiScale')}
+      desc={t('settings.uiScaleDesc')}
+      value={`${uiScale}%`}
+      stacked
+    >
       <input
         type="range"
         min={UI_SCALE_MIN}
@@ -84,7 +76,7 @@ const ScaleRow = React.memo(function ScaleRow() {
         onChange={(e) => setUiScale(Number(e.target.value))}
         className={RANGE_CLS}
       />
-    </div>
+    </SettingRow>
   );
 });
 
@@ -127,13 +119,11 @@ const FontRow = React.memo(function FontRow() {
   };
 
   return (
-    <div className="space-y-3">
-      <div>
-        <p className="text-[13px] text-white/70 font-medium">{t('settings.font')}</p>
-        <p className="text-[11px] text-white/30 mt-0.5">
-          {name ? t('settings.fontCurrent', { name }) : t('settings.fontDesc')}
-        </p>
-      </div>
+    <SettingRow
+      title={t('settings.font')}
+      desc={name ? t('settings.fontCurrent', { name }) : t('settings.fontDesc')}
+      stacked
+    >
       <div className="flex items-center gap-2">
         <input
           value={draft}
@@ -161,7 +151,7 @@ const FontRow = React.memo(function FontRow() {
           onChange={(e) => void onFile(e)}
         />
       </div>
-    </div>
+    </SettingRow>
   );
 });
 
@@ -188,11 +178,7 @@ const SourceRow = React.memo(function SourceRow() {
   const arrow =
     'w-7 h-7 rounded-full flex items-center justify-center text-white/50 hover:text-white hover:bg-white/[0.08] cursor-pointer disabled:opacity-20 disabled:pointer-events-none';
   return (
-    <div className="space-y-3">
-      <div>
-        <p className="text-[13px] text-white/70 font-medium">{t('settings.sources')}</p>
-        <p className="text-[11px] text-white/30 mt-0.5">{t('settings.sourcesDesc')}</p>
-      </div>
+    <SettingRow title={t('settings.sources')} desc={t('settings.sourcesDesc')} stacked>
       <div className="flex flex-col">
         {sources.map((src, i) => {
           const meta = SOURCE_META[src.id];
@@ -236,20 +222,19 @@ const SourceRow = React.memo(function SourceRow() {
           );
         })}
       </div>
-    </div>
+    </SettingRow>
   );
 });
 
 export const InterfaceSection = React.memo(function InterfaceSection() {
   const { t } = useTranslation();
   return (
-    <section className="settings-section space-y-6">
-      <h3 className="text-[22px] font-bold text-white tracking-tight">{t('settings.interface')}</h3>
+    <SettingsSection id="interface" title={t('settings.interface')}>
       <LiquidGlassRow />
       <SidebarRow />
       <SourceRow />
       <ScaleRow />
       <FontRow />
-    </section>
+    </SettingsSection>
   );
 });
