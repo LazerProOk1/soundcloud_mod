@@ -635,7 +635,20 @@
     "sortTrending": "Trending",
     "sortAz": "A–Z",
     "showMore": "Show more",
-    "listeners": "{{value}} monthly listeners"
+    "listeners": "{{value}} monthly listeners",
+    "sub": {
+      "spotlight": "Picked by the catalog right now",
+      "freshReleases": "New albums, EPs and singles",
+      "charts": "The most played tracks by genre",
+      "recommended": "Based on what you like",
+      "trendingArtists": "Gaining listeners fast",
+      "popularAlbums": "Albums everyone keeps playing",
+      "byYear": "Albums by release year",
+      "byTag": "Find artists by their sound",
+      "yourGenres": "More of the genres you play",
+      "following": "Fresh tracks from people you follow",
+      "browse": "Every album and artist in the catalog"
+    }
   },
   "trackMenu": {
     "menuLabel": "Track actions",

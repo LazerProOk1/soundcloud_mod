@@ -14,6 +14,7 @@ import {
   ArtistTile,
   CatalogSection,
   Pills,
+  type SectionId,
   Shelf,
   SpotlightCard,
 } from '../components/discover/CatalogCards';
@@ -60,7 +61,7 @@ import {
 } from '../lib/icons';
 import type { Track } from '../stores/player';
 
-const ICON = 'text-white/60';
+const ICON = '';
 
 function TrackShelf({ tracks, loading }: { tracks: Track[]; loading: boolean }) {
   return (
@@ -145,7 +146,11 @@ const SpotlightShelf = React.memo(function SpotlightShelf() {
   const { data = [], isLoading, isError } = useDiscoverSpotlight(12);
   if (isError || (!isLoading && data.length === 0)) return null;
   return (
-    <CatalogSection title={t('discover.spotlight')} icon={<Star size={20} className={ICON} />}>
+    <CatalogSection
+      id="spotlight"
+      title={t('discover.spotlight')}
+      icon={<Star size={20} className={ICON} />}
+    >
       <Shelf loading={isLoading}>
         {data.map((item) => (
           <SpotlightCard
@@ -159,10 +164,12 @@ const SpotlightShelf = React.memo(function SpotlightShelf() {
 });
 
 const AlbumShelf = React.memo(function AlbumShelf({
+  id,
   sort,
   title,
   icon,
 }: {
+  id: SectionId;
   sort: AlbumSort;
   title: string;
   icon: React.ReactNode;
@@ -171,7 +178,7 @@ const AlbumShelf = React.memo(function AlbumShelf({
   const albums = useMemo(() => dedupeReleases(items), [items]);
   if (isError || (!isLoading && albums.length === 0)) return null;
   return (
-    <CatalogSection title={title} icon={icon}>
+    <CatalogSection id={id} title={title} icon={icon}>
       <Shelf loading={isLoading}>
         {albums.map((album) => (
           <AlbumTile key={album.id} album={album} />
@@ -182,10 +189,12 @@ const AlbumShelf = React.memo(function AlbumShelf({
 });
 
 const ArtistShelf = React.memo(function ArtistShelf({
+  id,
   sort,
   title,
   icon,
 }: {
+  id: SectionId;
   sort: ArtistSort;
   title: string;
   icon: React.ReactNode;
@@ -193,7 +202,7 @@ const ArtistShelf = React.memo(function ArtistShelf({
   const { items, isLoading, isError } = useDiscoverArtists(sort);
   if (isError || (!isLoading && items.length === 0)) return null;
   return (
-    <CatalogSection title={title} icon={icon}>
+    <CatalogSection id={id} title={title} icon={icon}>
       <Shelf loading={isLoading}>
         {items.map((artist) => (
           <ArtistTile key={artist.id} artist={artist} />
@@ -215,7 +224,11 @@ const YearShelf = React.memo(function YearShelf() {
   );
   if (isError || (!isLoading && buckets.length === 0)) return null;
   return (
-    <CatalogSection title={t('discover.byYear')} icon={<Calendar size={20} className={ICON} />}>
+    <CatalogSection
+      id="byYear"
+      title={t('discover.byYear')}
+      icon={<Calendar size={20} className={ICON} />}
+    >
       {years.length > 0 && <Pills items={years} value={selected} onChange={setYear} />}
       <Shelf loading={isLoading}>
         {albums.map((album) => (
@@ -236,7 +249,11 @@ const TagArtists = React.memo(function TagArtists() {
   const { items, isLoading } = useDiscoverArtists('popular', selected ?? undefined);
   if (tagsError || ids.length === 0) return null;
   return (
-    <CatalogSection title={t('discover.byTag')} icon={<Hash size={20} className={ICON} />}>
+    <CatalogSection
+      id="byTag"
+      title={t('discover.byTag')}
+      icon={<Hash size={20} className={ICON} />}
+    >
       <Pills items={ids} value={selected} onChange={setTag} label={(id) => labels.get(id) ?? id} />
       <Shelf loading={isLoading}>
         {items.map((artist) => (
@@ -254,7 +271,11 @@ const GenreCharts = React.memo(function GenreCharts() {
   const [genre, setGenre] = useState<string>(CHART_GENRES[0]);
   const { data: tracks = [], isLoading, isError } = useGenreChart(genre, 10);
   return (
-    <CatalogSection title={t('discover.charts')} icon={<Activity size={20} className={ICON} />}>
+    <CatalogSection
+      id="charts"
+      title={t('discover.charts')}
+      icon={<Activity size={20} className={ICON} />}
+    >
       <Pills items={CHART_GENRES} value={genre} onChange={setGenre} />
       {isLoading ? (
         <div className="space-y-2">
@@ -287,7 +308,11 @@ const RecommendedShelf = React.memo(function RecommendedShelf({
   const tracks = useRecommendedTracks(pool, 40);
   if (!isLoading && tracks.length === 0) return null;
   return (
-    <CatalogSection title={t('home.recommended')} icon={<Sparkles size={20} className={ICON} />}>
+    <CatalogSection
+      id="recommended"
+      title={t('home.recommended')}
+      icon={<Sparkles size={20} className={ICON} />}
+    >
       <TrackShelf tracks={tracks} loading={isLoading} />
     </CatalogSection>
   );
@@ -306,7 +331,11 @@ const YourGenres = React.memo(function YourGenres({ likedTracks }: { likedTracks
   );
   if (!isLoading && genres.length === 0) return null;
   return (
-    <CatalogSection title={t('discover.yourGenres')} icon={<Compass size={20} className={ICON} />}>
+    <CatalogSection
+      id="yourGenres"
+      title={t('discover.yourGenres')}
+      icon={<Compass size={20} className={ICON} />}
+    >
       {genres.length > 0 && <Pills items={genres} value={selected} onChange={setActiveGenre} />}
       <TrackShelf tracks={tracks} loading={isLoading} />
     </CatalogSection>
@@ -319,7 +348,11 @@ const FollowingShelf = React.memo(function FollowingShelf() {
   const tracks = useMemo(() => data?.collection ?? [], [data]);
   if (!isLoading && tracks.length === 0) return null;
   return (
-    <CatalogSection title={t('discover.following')} icon={<Music size={20} className={ICON} />}>
+    <CatalogSection
+      id="following"
+      title={t('discover.following')}
+      icon={<Music size={20} className={ICON} />}
+    >
       <TrackShelf tracks={tracks} loading={isLoading} />
     </CatalogSection>
   );
@@ -431,6 +464,7 @@ function FullCatalog() {
 
   return (
     <CatalogSection
+      id="browse"
       title={t('discover.browse')}
       icon={<Disc3 size={20} className={ICON} />}
       right={
@@ -469,6 +503,7 @@ export function Discover() {
       <DiscoverHero />
       <SpotlightShelf />
       <AlbumShelf
+        id="freshReleases"
         sort="recent"
         title={t('discover.freshReleases')}
         icon={<Zap size={20} className={ICON} />}
@@ -476,11 +511,13 @@ export function Discover() {
       <GenreCharts />
       <RecommendedShelf likedTracks={likedTracks} />
       <ArtistShelf
+        id="trendingArtists"
         sort="trending"
         title={t('discover.trendingArtists')}
         icon={<Users size={20} className={ICON} />}
       />
       <AlbumShelf
+        id="popularAlbums"
         sort="popular"
         title={t('discover.popularAlbums')}
         icon={<Disc3 size={20} className={ICON} />}

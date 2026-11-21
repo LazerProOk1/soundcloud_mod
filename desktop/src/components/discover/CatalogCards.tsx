@@ -9,25 +9,62 @@ import { Avatar } from '../ui/Avatar';
 import { HorizontalScroll } from '../ui/HorizontalScroll';
 import { ShelfSkeleton } from '../ui/ShelfSkeleton';
 
-/** Section title with an optional "See all" link and controls on the right. */
+/** Every catalog section, for its colour and its one-line subtitle (`discover.sub.<id>`). */
+const SECTION_TINT = {
+  spotlight: ['#f59e0b', '#ef4444'],
+  freshReleases: ['#ff5500', '#ec4899'],
+  charts: ['#8b5cf6', '#6366f1'],
+  recommended: ['#ec4899', '#a855f7'],
+  trendingArtists: ['#14b8a6', '#0ea5e9'],
+  popularAlbums: ['#3b82f6', '#6366f1'],
+  byYear: ['#22c55e', '#14b8a6'],
+  byTag: ['#f43f5e', '#f59e0b'],
+  yourGenres: ['#6366f1', '#06b6d4'],
+  following: ['#0ea5e9', '#22c55e'],
+  browse: ['#64748b', '#334155'],
+} as const;
+
+export type SectionId = keyof typeof SECTION_TINT;
+
+/** Section header: a coloured icon tile, the title, a short subtitle and controls on the right. */
 export function CatalogSection({
+  id,
   title,
   icon,
   right,
   children,
 }: {
+  id: SectionId;
   title: string;
   icon?: React.ReactNode;
   right?: React.ReactNode;
   children: React.ReactNode;
 }) {
+  const { t } = useTranslation();
+  const [from, to] = SECTION_TINT[id];
   return (
     <section>
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-        <h2 className="flex items-center gap-2.5 text-[24px] font-bold tracking-tight text-white">
-          {icon}
-          {title}
-        </h2>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex min-w-0 items-center gap-3.5">
+          {icon && (
+            <span
+              aria-hidden
+              className="flex size-11 shrink-0 items-center justify-center rounded-2xl text-white"
+              style={{
+                background: `linear-gradient(135deg, ${from}, ${to})`,
+                boxShadow: `0 10px 24px -10px ${from}`,
+              }}
+            >
+              {icon}
+            </span>
+          )}
+          <div className="min-w-0">
+            <h2 className="truncate pb-0.5 text-[22px] font-bold leading-tight tracking-tight text-white">
+              {title}
+            </h2>
+            <p className="truncate text-[13px] text-white/45">{t(`discover.sub.${id}`)}</p>
+          </div>
+        </div>
         {right}
       </div>
       {children}
