@@ -134,13 +134,7 @@ const INFINITE_GC_MS = 1000 * 60 * 3;
 /* ── Helpers ───────────────────────────────────────────────────── */
 
 function flattenCollectionPages<T>(pages: Array<{ collection: T[] }> | undefined): T[] {
-  if (!pages) return [];
-  const items: T[] = [];
-  for (const page of pages) {
-    if (!page?.collection) continue;
-    items.push(...page.collection);
-  }
-  return items;
+  return pages?.flatMap((p) => p?.collection ?? []) ?? [];
 }
 
 export function dedupeByKey<T, K>(items: T[], getKey: (item: T) => K): T[] {

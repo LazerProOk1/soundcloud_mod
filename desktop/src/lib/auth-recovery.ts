@@ -8,10 +8,6 @@
  *   noteRateLimit() — call on every 429
  *   noteAuthGap()   — call on 401 / missing user
  *   noteSuccess()   — call on every successful response
- *
- * Public API (called from UI / auth flow):
- *   retryRenew()    — manual retry from modal
- *   completeReauth(sessionId) — finalise OAuth re-login
  */
 
 import { useAuthStore } from '../stores/auth';
@@ -94,16 +90,4 @@ export function noteSuccess(): void {
   if (s.phase === 'idle' || s.busy || s.oauthActive) return;
   cancelledGen = gen;
   s.markRecovered();
-}
-
-export function retryRenew(): Promise<void> {
-  return runRenew(true);
-}
-
-export function completeReauth(sessionId: string): void {
-  const auth = useAuthStore.getState();
-  auth.setSession(sessionId);
-  auth.fetchUser().catch(() => {});
-  useAuthRecoveryStore.getState().markRecovered();
-  queryClient.invalidateQueries();
 }

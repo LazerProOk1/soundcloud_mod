@@ -8,7 +8,7 @@ import { ArtistRelatedTab } from '../components/artist/ArtistRelatedTab';
 import { ArtistTracksTab, type TracksView } from '../components/artist/ArtistTracksTab';
 import type { ArtistTabId, TracksSort } from '../components/artist/types';
 import { useArtistDetail } from '../components/artist/useArtistData';
-import { ArtistSoundWave } from '../components/artist/wave';
+import { ArtistSoundWave } from '../components/artist/wave/ArtistSoundWave';
 import { USER_PAGE_KEYFRAMES } from '../components/user/keyframes';
 import { type TabDescriptor, TabDock } from '../components/user/TabDock';
 import { artistAuraForId } from '../lib/aura';

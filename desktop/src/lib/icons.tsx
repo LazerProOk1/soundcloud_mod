@@ -48,7 +48,6 @@ import {
   ListX as _ListX,
   Loader2 as _Loader2,
   Lock as _Lock,
-  MapPin as _MapPin,
   MessageCircle as _MessageCircle,
   MicVocal as _MicVocal,
   Minus as _Minus,
@@ -60,7 +59,6 @@ import {
   PanelRight as _PanelRight,
   Pause as _Pause,
   Pencil as _Pencil,
-  PictureInPicture2 as _PictureInPicture2,
   Pipette as _Pipette,
   Play as _Play,
   Plus as _Plus,
@@ -160,7 +158,6 @@ export const ListStart = memo(_ListStart);
 export const ListX = memo(_ListX);
 export const Loader2 = memo(_Loader2);
 export const Lock = memo(_Lock);
-export const MapPin = memo(_MapPin);
 export const MicVocal = memo(_MicVocal);
 export const Moon = memo(_Moon);
 export const MessageCircle = memo(_MessageCircle);
@@ -171,12 +168,10 @@ export const PanelLeftClose = memo(_PanelLeftClose);
 export const PanelLeftOpen = memo(_PanelLeftOpen);
 export const Pencil = memo(_Pencil);
 export const Pipette = memo(_Pipette);
-export const PictureInPicture2 = memo(_PictureInPicture2);
 export const Pause = memo(_Pause);
 export const Play = memo(_Play);
 export const Plus = memo(_Plus);
 export const Repeat = memo(_Repeat);
-export const Repeat1 = memo(_Repeat1);
 export const RefreshCw = memo(_RefreshCw);
 export const Repeat2 = memo(_Repeat2);
 export const Search = memo(_Search);
@@ -197,9 +192,7 @@ export const Twitter = memo(({ size, className }: { size?: number; className?: s
 ));
 export const User = memo(_User);
 export const Users = memo(_Users);
-export const Volume1 = memo(_Volume1);
 export const Volume2 = memo(_Volume2);
-export const VolumeX = memo(_VolumeX);
 export const Wifi = memo(_Wifi);
 export const X = memo(_X);
 export const Zap = memo(_Zap);
@@ -256,6 +249,5 @@ export const headphones11 = <_Headphones size={11} className="text-white/20" />;
 export const heart11 = <_Heart size={11} className="text-white/20" />;
 export const listMusic16 = <_ListMusic size={16} />;
 export const musicIcon14 = <_Music size={14} className="text-white/15" />;
-export const musicIcon20 = <_Music size={16} className="text-white/20" />;
 export const audioLines16 = <_AudioLines size={16} />;
 export const slidersHorizontal16 = <_SlidersHorizontal size={16} />;

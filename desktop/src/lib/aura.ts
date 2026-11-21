@@ -80,10 +80,6 @@ export const AURAS: ReadonlyArray<Aura> = [
 ];
 
 export const DEFAULT_AURA: Aura = AURAS[0];
-export const DEFAULT_CUSTOM_HEX = '#a855f7';
-
-export const auraRgba = (a: Aura, alpha: number) =>
-  `rgba(${a.accent[0]}, ${a.accent[1]}, ${a.accent[2]}, ${alpha})`;
 
 export const auraRgb = (a: Aura) => `rgb(${a.accent[0]}, ${a.accent[1]}, ${a.accent[2]})`;
 

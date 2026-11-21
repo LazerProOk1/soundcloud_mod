@@ -4,7 +4,7 @@ import { Trans, useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { AddToPlaylistDialog } from '../components/music/AddToPlaylistDialog';
-import { SoundWaveSimilarBlock } from '../components/music/soundwave';
+import { SoundWaveSimilarBlock } from '../components/music/soundwave/similar-block';
 import { TrackTitleArtist } from '../components/music/TrackTitleArtist';
 import { CopyIconAction } from '../components/ui/CopyIconAction';
 import { api } from '../lib/api';
