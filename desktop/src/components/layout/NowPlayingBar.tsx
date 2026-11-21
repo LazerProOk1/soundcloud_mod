@@ -692,7 +692,7 @@ export const PitchModeToggle = React.memo(() => {
         title={t('player.pitchModeAuto')}
         onClick={() => setMode('auto')}
         className={`press h-8 rounded-full text-[13px] font-semibold cursor-pointer ${
-          mode === 'auto' ? 'bg-white text-black' : 'text-white/70 hover:text-white'
+          mode === 'auto' ? 'ui-selected' : 'text-white/70 hover:text-white'
         }`}
       >
         {t('player.pitchModeAutoShort')}
@@ -702,7 +702,7 @@ export const PitchModeToggle = React.memo(() => {
         title={t('player.pitchModeManual')}
         onClick={() => setMode('manual')}
         className={`press h-8 rounded-full text-[13px] font-semibold cursor-pointer ${
-          mode === 'manual' ? 'bg-white text-black' : 'text-white/70 hover:text-white'
+          mode === 'manual' ? 'ui-selected' : 'text-white/70 hover:text-white'
         }`}
       >
         {t('player.pitchModeManualShort')}

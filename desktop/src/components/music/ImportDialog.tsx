@@ -96,7 +96,7 @@ export function ImportDialog({
         setList(null);
       }}
       className={`flex items-center gap-2 h-10 px-4 rounded-full text-[14px] font-semibold cursor-pointer transition-colors ${
-        tab === id ? 'bg-white text-black' : 'bar-control text-white'
+        tab === id ? 'ui-selected' : 'bar-control text-white'
       }`}
     >
       {icon}

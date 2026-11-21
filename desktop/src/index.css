@@ -1505,6 +1505,15 @@ svg.lucide:not([stroke-width="0"]) {
 .ui-primary:hover {
   background: rgba(255, 255, 255, 0.88);
 }
+/* .ui-selected: the chosen chip / tab / segment. .ui-row-active: the current list row
+   (sidebar). Both become lit glass in Liquid Glass. */
+.ui-selected {
+  background: #fff;
+  color: #000;
+}
+.ui-row-active {
+  background: rgba(255, 255, 255, 0.08);
+}
 .ui-card,
 .glass,
 .glass-flat {
@@ -1566,47 +1575,49 @@ svg.lucide:not([stroke-width="0"]) {
 .bar-control.is-active {
   background: rgba(255, 255, 255, 0.16);
 }
-/* Chips and pill bars: a glass bead — top highlight band, lit rim, soft glow on hover. */
+/* Chips and pill bars: smoked glass beads, a faint top light and a lit hairline rim.
+   Selected chips, tabs and the main button are brighter glass, never flat white. */
 .liquid-glass .bar-control,
 .liquid-glass .ui-track {
-  background-color: rgba(255, 255, 255, 0.06);
-  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.1), transparent 55%);
+  background-color: rgba(255, 255, 255, 0.05);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.045), transparent 60%);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.28),
-    inset 1px 0 0 rgba(255, 255, 255, 0.12),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.3),
-    0 0 0 0.5px rgba(255, 255, 255, 0.1),
-    0 4px 14px rgba(0, 0, 0, 0.22);
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.32),
+    0 0 0 0.5px rgba(255, 255, 255, 0.09),
+    0 4px 12px rgba(0, 0, 0, 0.24);
 }
 .liquid-glass .bar-control:hover {
-  background-color: rgba(255, 255, 255, 0.11);
+  background-color: rgba(255, 255, 255, 0.09);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.36),
-    inset 1px 0 0 rgba(255, 255, 255, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.32),
+    0 0 0 0.5px rgba(255, 255, 255, 0.14),
+    0 4px 12px rgba(0, 0, 0, 0.24);
+}
+.liquid-glass .bar-control.is-active,
+.liquid-glass .ui-selected,
+.liquid-glass .ui-primary,
+.liquid-glass .ui-row-active {
+  background-color: rgba(255, 255, 255, 0.17);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.09), transparent 65%);
+  color: #fff;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.24),
     inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+    inset 0 0 14px rgba(255, 255, 255, 0.04),
     0 0 0 0.5px rgba(255, 255, 255, 0.16),
-    0 0 20px rgba(255, 255, 255, 0.07),
-    0 4px 14px rgba(0, 0, 0, 0.22);
-}
-.liquid-glass .bar-control.is-active {
-  background-color: rgba(255, 255, 255, 0.16);
-}
-/* The main white button glows like lit glass. */
-.liquid-glass .ui-primary {
-  background-image: linear-gradient(180deg, #fff, rgba(255, 255, 255, 0.86));
-  box-shadow:
-    inset 0 -1px 0 rgba(0, 0, 0, 0.12),
-    0 0 0 0.5px rgba(255, 255, 255, 0.5),
-    0 6px 24px -6px rgba(255, 255, 255, 0.4);
+    0 6px 18px -4px rgba(0, 0, 0, 0.45);
 }
 .liquid-glass .ui-primary:hover {
-  background-image: none;
-  box-shadow:
-    inset 0 -1px 0 rgba(0, 0, 0, 0.12),
-    0 0 0 0.5px rgba(255, 255, 255, 0.6),
-    0 8px 30px -6px rgba(255, 255, 255, 0.55);
+  background-color: rgba(255, 255, 255, 0.18);
+}
+/* A list row is lit glass but quieter than a button. */
+.liquid-glass .ui-row-active {
+  background-color: rgba(255, 255, 255, 0.07);
+  background-image: linear-gradient(90deg, rgba(255, 255, 255, 0.05), transparent 70%);
 }
 /* Destructive buttons (Sign out, Clear cache): red on hover in every style. */
 .bar-control.ui-danger:hover,
@@ -1675,16 +1686,16 @@ svg.lucide:not([stroke-width="0"]) {
    paint: rasterised once, recomposited for free.
    ══════════════════════════════════════════════════════════════ */
 .liquid-glass {
-  --lg-filter: blur(24px) saturate(185%) brightness(1.04);
+  --lg-filter: blur(24px) saturate(165%);
   --lg-rim:
-    inset 0 1px 0 rgba(255, 255, 255, 0.2), inset 0 -1px 0 rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 -1px 0 rgba(0, 0, 0, 0.5),
     inset -1px 0 0 rgba(0, 0, 0, 0.24), 0 0 0 0.5px rgba(255, 255, 255, 0.08);
   /* Static frosted grain, a 160px tile rendered once. */
-  --lg-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .045 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --lg-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .03 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   /* --art-tint / --art-glow come from the current artwork (DynamicBackground). */
   --lg-light: radial-gradient(
     120% 70% at 0% 0%,
-    var(--art-tint, rgba(255, 255, 255, 0.05)),
+    var(--art-tint, rgba(255, 255, 255, 0.02)),
     transparent 62%
   );
 }
@@ -1697,15 +1708,14 @@ svg.lucide:not([stroke-width="0"]) {
   -webkit-backdrop-filter: var(--lg-filter);
   box-shadow:
     var(--lg-rim),
-    inset 0 3px 10px -2px rgba(255, 255, 255, 0.06),
-    inset 0 0 32px rgba(255, 255, 255, 0.03),
+    inset 0 3px 10px -2px rgba(255, 255, 255, 0.035),
     0 0 60px -18px var(--art-glow, transparent),
     0 12px 28px rgba(0, 0, 0, 0.16),
     0 32px 64px rgba(0, 0, 0, 0.22) !important;
 }
 /* Fixed chrome is denser: several layers of glass thick. */
 .liquid-glass .liquid-panel-heavy {
-  background-color: rgba(8, 8, 12, 0.55) !important;
+  background-color: rgba(6, 6, 9, 0.62) !important;
 }
 /* Lit rim: a 1px gradient ring, bright where the light hits the upper-left corner and
    fading along the edges, with a faint bounce on the lower right. */
@@ -1721,11 +1731,11 @@ svg.lucide:not([stroke-width="0"]) {
   pointer-events: none;
   background: linear-gradient(
     150deg,
-    rgba(255, 255, 255, 0.5),
-    rgba(255, 255, 255, 0.12) 22%,
-    rgba(255, 255, 255, 0.03) 50%,
-    rgba(255, 255, 255, 0.07) 80%,
-    rgba(255, 255, 255, 0.2)
+    rgba(255, 255, 255, 0.26),
+    rgba(255, 255, 255, 0.07) 22%,
+    rgba(255, 255, 255, 0.02) 50%,
+    rgba(255, 255, 255, 0.04) 80%,
+    rgba(255, 255, 255, 0.1)
   );
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
@@ -1744,7 +1754,7 @@ svg.lucide:not([stroke-width="0"]) {
   box-shadow:
     var(--lg-rim),
     inset 1px 0 0 rgba(255, 255, 255, 0.08),
-    inset 0 0 40px rgba(255, 255, 255, 0.025);
+    inset 0 0 40px rgba(255, 255, 255, 0.015);
 }
 /* Top glass sheen. */
 .liquid-glass .liquid-panel-heavy::after,
@@ -1756,8 +1766,8 @@ svg.lucide:not([stroke-width="0"]) {
   pointer-events: none;
   background: linear-gradient(
     180deg,
-    rgba(255, 255, 255, 0.065) 0%,
-    rgba(255, 255, 255, 0.018) 28%,
+    rgba(255, 255, 255, 0.035) 0%,
+    rgba(255, 255, 255, 0.01) 28%,
     transparent 55%
   );
 }
