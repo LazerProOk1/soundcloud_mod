@@ -489,32 +489,20 @@ textarea:focus-visible {
   background: rgba(255, 255, 255, 0.08);
 }
 
-/* ── Liquid Glass v2 — Глубокая физика стекла ─────────────── */
+/* ── App chrome panels ───────────────────────────────────────
 
 /**
- * .liquid-panel-heavy
- *
- * Для закреплённого хрома (sidebar, player bar):
- *  — более тёмный, плотный фон (стекло толщиной в несколько слоёв)
- *  — усиленный blur + saturate для глубокого преломления
- *  — тот же дифференциальный свет, но с большим контрастом
+ * .liquid-panel-heavy — the fixed chrome (sidebar, player bar, now-playing panel).
+ * Default ("Frosted glass" style): matte frosted glass — a translucent dark tint over a
+ * strong blur, a hairline edge and no glare. Plain and Liquid Glass override it below.
  */
 .liquid-panel-heavy {
   position: relative;
   isolation: isolate;
-  background: rgba(6, 6, 9, 0.6);
-  /* Heavy chrome (sidebar, player bar): calibrated 28px blur + rich saturation */
-  backdrop-filter: blur(28px) saturate(185%);
-  -webkit-backdrop-filter: blur(28px) saturate(185%);
-  /* Differential inset, then a subtle ambient rim diffusion outside */
-  box-shadow:
-    0 1px 0 0 rgba(255, 255, 255, 0.26) inset,
-    0 4px 10px -2px rgba(255, 255, 255, 0.05) inset,
-    1px 0 0 0 rgba(255, 255, 255, 0.11) inset,
-    0 -1px 0 0 rgba(0, 0, 0, 0.68) inset,
-    -1px 0 0 0 rgba(0, 0, 0, 0.3) inset,
-    0 0 0 0.5px rgba(255, 255, 255, 0.06),
-    0 0 60px rgba(255, 255, 255, 0.01);
+  background: rgba(20, 20, 26, 0.5);
+  backdrop-filter: blur(32px) saturate(140%);
+  -webkit-backdrop-filter: blur(32px) saturate(140%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
 /* ── Synced lyrics lines ─────────────────────────────────── */
@@ -1439,14 +1427,15 @@ svg.lucide:not([stroke-width="0"]) {
 /* Shared surface for dialogs and side panels: our own look in both modes —
    frosted glass with Liquid Glass on, a solid dark panel in the classic look. */
 /* Panel surfaces in three styles (Settings → Interface):
-   - Gloss (default): nearly opaque with a light frost.
+   - Frosted glass (default, internal id "gloss"): matte translucent panels over a strong blur.
    - Liquid Glass (.liquid-glass on <html>): see-through glass with refraction, defined below.
    - Plain (.no-glass): fully opaque. */
 .app-surface {
-  background: rgba(20, 20, 24, 0.94);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  /* Dialogs and the queue: matte frosted glass, dense enough to read over anything. */
+  background: rgba(24, 24, 30, 0.74);
+  backdrop-filter: blur(32px) saturate(140%);
+  -webkit-backdrop-filter: blur(32px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.07);
   box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
 }
 .no-glass .app-surface {
@@ -1492,6 +1481,19 @@ svg.lucide:not([stroke-width="0"]) {
 }
 .ui-icon {
   background: transparent;
+}
+/* Frosted glass style (the default): chips, pill bars and tiles are lightly frosted too. */
+.bar-control,
+.ui-track,
+.ui-card {
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+}
+.no-glass .bar-control,
+.no-glass .ui-track,
+.no-glass .ui-card {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 .ui-icon:hover {
   background: rgba(255, 255, 255, 0.08);

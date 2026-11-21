@@ -349,7 +349,7 @@ export const CommandPalette = React.memo(function CommandPalette({
         badge: t(`settings.panelStyle_${panelStyle}`),
         keywords: ['liquid', 'glass', 'blur', 'performance', 'стекло', 'размытие'],
         icon: <Sparkles size={15} />,
-        // Cycles Plain → Gloss → Liquid Glass.
+        // Cycles Plain → Frosted glass → Liquid Glass.
         run: () =>
           settings.setPanelStyle(
             panelStyle === 'flat' ? 'gloss' : panelStyle === 'gloss' ? 'liquid' : 'flat',
