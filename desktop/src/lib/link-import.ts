@@ -112,7 +112,19 @@ export async function runImport(id: string): Promise<void> {
         track = null;
       }
       if (!row.urn) searched++;
-      store().setRow(id, index, track ? { state: 'found', track } : { state: 'missing' });
+      const taken =
+        !!track &&
+        (store()
+          .jobs.find((j) => j.id === id)
+          ?.rows.some(
+            (r) => r.key !== row.key && r.state === 'found' && r.track?.urn === track.urn,
+          ) ??
+          false);
+      store().setRow(
+        id,
+        row.key,
+        !track ? { state: 'missing' } : taken ? { state: 'duplicate' } : { state: 'found', track },
+      );
     }
 
     const job = store().jobs.find((j) => j.id === id);

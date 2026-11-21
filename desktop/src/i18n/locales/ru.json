@@ -486,12 +486,13 @@
       "searching": "Ищем на SoundCloud: {{done}} из {{total}} · найдено {{found}}. Можно закрыть страницу — поиск идёт в фоне.",
       "paused": "Пауза: SoundCloud отклоняет запросы. Проверено {{done}} из {{total}}, найдено {{found}}.",
       "done": "Найдено {{found}} из {{total}}. Найденное сохранено в плейлист SoundCloud.",
-      "play": "Слушать найденное",
       "resume": "Продолжить",
       "openPlaylist": "Плейлист на SoundCloud",
       "delete": "Удалить",
       "confirmDelete": "Точно удалить?",
-      "notFound": "Не найдено"
+      "notFound": "Не найдено",
+      "remove": "Убрать из импорта",
+      "duplicate": "Повтор"
     }
   },
   "transitions": {

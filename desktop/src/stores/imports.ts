@@ -4,9 +4,12 @@ import type { ImportItem } from '../lib/import-match';
 import { tauriStorage } from '../lib/tauri-storage';
 import type { Track } from './player';
 
-export type ImportRowState = 'pending' | 'found' | 'missing';
+/** duplicate: the SoundCloud match is already in this import under another row. */
+export type ImportRowState = 'pending' | 'found' | 'missing' | 'duplicate';
 
 export interface ImportRow extends ImportItem {
+  /** Stable id inside the job: rows can be removed while the search runs. */
+  key: number;
   state: ImportRowState;
   track?: Track;
 }
@@ -27,7 +30,8 @@ export interface ImportJob {
 interface ImportsState {
   jobs: ImportJob[];
   add: (title: string, items: ImportItem[]) => string;
-  setRow: (id: string, index: number, row: Partial<ImportRow>) => void;
+  setRow: (id: string, key: number, row: Partial<ImportRow>) => void;
+  removeRow: (id: string, key: number) => void;
   update: (id: string, patch: Partial<ImportJob>) => void;
   remove: (id: string) => void;
 }
@@ -51,25 +55,38 @@ export const useImportsStore = create<ImportsState>()(
       jobs: [],
       add: (title, items) => {
         const id = `imp-${Date.now().toString(36)}`;
+        // The same song listed twice in the source is imported once.
+        const seen = new Set<string>();
+        items = items.filter((it) => {
+          const k = it.urn ?? `${it.artist}|${it.title}`.toLowerCase().replace(/\s+/g, ' ').trim();
+          if (seen.has(k)) return false;
+          seen.add(k);
+          return true;
+        });
         const job: ImportJob = {
           id,
           title,
           createdAt: Date.now(),
           status: 'running',
-          rows: items.map((it) => ({ ...it, state: 'pending' })),
+          rows: items.map((it, key) => ({ ...it, key, state: 'pending' })),
         };
         set((s) => ({ jobs: [job, ...s.jobs] }));
         return id;
       },
-      setRow: (id, index, row) =>
+      setRow: (id, key, row) =>
         set((s) => ({
-          jobs: patchJob(s.jobs, id, (j) => {
-            const rows = [...j.rows];
-            const next = { ...rows[index], ...row };
-            if (row.track) next.track = slim(row.track);
-            rows[index] = next;
-            return { ...j, rows };
-          }),
+          jobs: patchJob(s.jobs, id, (j) => ({
+            ...j,
+            rows: j.rows.map((r) =>
+              r.key === key
+                ? { ...r, ...row, ...(row.track ? { track: slim(row.track) } : {}) }
+                : r,
+            ),
+          })),
+        })),
+      removeRow: (id, key) =>
+        set((s) => ({
+          jobs: patchJob(s.jobs, id, (j) => ({ ...j, rows: j.rows.filter((r) => r.key !== key) })),
         })),
       update: (id, patch) =>
         set((s) => ({ jobs: patchJob(s.jobs, id, (j) => ({ ...j, ...patch })) })),
@@ -78,6 +95,15 @@ export const useImportsStore = create<ImportsState>()(
     {
       name: 'sc-imports',
       storage: createJSONStorage(() => tauriStorage),
+      version: 1,
+      // v0 rows had no key: number them in order.
+      migrate: (state, version) => {
+        const st = state as { jobs: ImportJob[] };
+        if (version < 1) {
+          st.jobs = st.jobs.map((j) => ({ ...j, rows: j.rows.map((r, key) => ({ ...r, key })) }));
+        }
+        return st as ImportsState;
+      },
     },
   ),
 );

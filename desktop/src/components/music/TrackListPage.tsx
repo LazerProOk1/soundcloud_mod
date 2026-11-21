@@ -32,6 +32,7 @@ export const TrackListPage = React.memo(function TrackListPage({
   description,
   actions,
   renderRows,
+  rowsWhenEmpty,
 }: {
   kind: string;
   title: string;
@@ -55,6 +56,8 @@ export const TrackListPage = React.memo(function TrackListPage({
   actions?: React.ReactNode;
   /** Custom row rendering (e.g. drag-and-drop for own playlists). */
   renderRows?: (shown: Track[]) => React.ReactNode;
+  /** renderRows also draws rows that are not tracks yet (an import still searching). */
+  rowsWhenEmpty?: boolean;
 }) {
   const { t } = useTranslation();
   const colors = useArtworkColor(colorFrom ?? null);
@@ -195,7 +198,7 @@ export const TrackListPage = React.memo(function TrackListPage({
           <div className="flex justify-center py-16 text-white/30">
             <Loader2 size={28} className="animate-spin" />
           </div>
-        ) : shown.length === 0 ? (
+        ) : shown.length === 0 && !(rowsWhenEmpty && renderRows && !query) ? (
           onRetry && !query ? (
             <div className="flex flex-col items-center gap-3 py-16">
               <p className="text-[14px] text-white/50">{t('trackList.loadFailed')}</p>
