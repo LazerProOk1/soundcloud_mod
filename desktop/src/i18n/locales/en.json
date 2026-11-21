@@ -143,7 +143,13 @@
     "removeDislike": "Remove dislike",
     "play": "Play",
     "pause": "Pause",
-    "openTrackPage": "Open track page"
+    "openTrackPage": "Open track page",
+    "editInfo": "Rename track",
+    "editTitle": "Title",
+    "editArtist": "Artist",
+    "editInfoHint": "Only on this device, for downloaded tracks. Lyrics are searched by this name; nothing changes on SoundCloud.",
+    "editInfoActive": "Renamed — search again",
+    "editInfoSuggest": "Fix the title for the search"
   },
   "playlist": {
     "removeTrack": "Remove from playlist",
@@ -534,7 +540,10 @@
     "collapse": "Collapse",
     "scrollPrev": "Scroll left",
     "scrollNext": "Scroll right",
-    "clear": "Clear"
+    "clear": "Clear",
+    "save": "Save",
+    "reset": "Reset",
+    "close": "Close"
   },
   "artist": {
     "title": "Artist",

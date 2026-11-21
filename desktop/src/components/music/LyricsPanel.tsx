@@ -49,6 +49,7 @@ import {
 import { fetchLyricsForTrack, firstSynced, lyricsQueryKey } from '../../lib/lyrics-fetch';
 import { forgetLyrics, rememberLyrics } from '../../lib/offline-index';
 import { getArtistDisplay, useArtistDisplay, useDisplayTitle } from '../../lib/track-display';
+import { useCachedUrnsStore } from '../../stores/cached-urns';
 import {
   clampLyricsSplit,
   LYRICS_SPLIT_DEFAULT,
@@ -1160,6 +1161,10 @@ const LyricsPane = React.memo(({ track }: { track: Track }) => {
   const [manualQuery, setManualQuery] = useState<{ artist: string; title: string } | null>(null);
   // Must be unconditional — hooks cannot be called after conditional returns
   const override = useTrackOverridesStore((s) => s.getOverride(track.urn));
+  const setOverride = useTrackOverridesStore((s) => s.setOverride);
+  // A downloaded track keeps the corrected name (local rename); others search once.
+  const onDisk = useCachedUrnsStore((s) => s.urns.has(track.urn));
+  const qc = useQueryClient();
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: reset only on track switch
   useEffect(() => {
@@ -1224,8 +1229,9 @@ const LyricsPane = React.memo(({ track }: { track: Track }) => {
 
   if (isEditing) {
     const parsed = splitArtistTitle(track.title);
-    const initialArtist = manualQuery?.artist || parsed?.[0] || getArtistDisplay(track).primary;
-    const initialTitle = manualQuery?.title || parsed?.[1] || track.title;
+    const initialArtist =
+      manualQuery?.artist || override?.artist || parsed?.[0] || getArtistDisplay(track).primary;
+    const initialTitle = manualQuery?.title || override?.title || parsed?.[1] || track.title;
     return (
       <ManualSearchPanel
         initialArtist={initialArtist}
@@ -1234,6 +1240,13 @@ const LyricsPane = React.memo(({ track }: { track: Track }) => {
         onSubmit={(artist, title) => {
           // Clear the disk cache so manual search doesn't return stale wrong lyrics
           void forgetLyrics(track.urn);
+          if (onDisk) {
+            setOverride(track.urn, {
+              title: title.trim() || undefined,
+              artist: artist.trim() || undefined,
+            });
+            void qc.invalidateQueries({ queryKey: ['lyrics', 'track', track.urn] });
+          }
           setManualQuery({ artist, title });
           setIsEditing(false);
         }}
@@ -1302,9 +1315,7 @@ const LyricsPane = React.memo(({ track }: { track: Track }) => {
         }`}
       >
         <Pencil size={12} />
-        {override
-          ? t('track.editInfoActive', 'Название изменено — поиск ещё раз')
-          : t('track.editInfoSuggest', 'Изменить название для поиска')}
+        {override ? t('track.editInfoActive') : t('track.editInfoSuggest')}
       </button>
     </div>
   );

@@ -43,6 +43,7 @@ import { optimisticToggleLike } from '../../lib/likes';
 import { getSleepTimerRemaining, useSleepTimer } from '../../lib/sleep-timer';
 import { getArtistDisplay, useArtistDisplay, useDisplayTitle } from '../../lib/track-display';
 import { useWheelSeek } from '../../lib/useWheelSeek';
+import { useCachedUrnsStore } from '../../stores/cached-urns';
 import { useLyricsStore } from '../../stores/lyrics';
 import {
   getEffectivePitchSemitones,
@@ -951,7 +952,6 @@ const EditTrackInfoDialog = React.memo(function EditTrackInfoDialog({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
-  const glass = useLiquidGlass();
   const { getOverride, setOverride, clearOverride } = useTrackOverridesStore();
   const qc = useQueryClient();
   const existing = getOverride(track.urn);
@@ -978,27 +978,15 @@ const EditTrackInfoDialog = React.memo(function EditTrackInfoDialog({
   };
 
   return (
-    <div
-      className="absolute bottom-full left-0 mb-2 z-50 w-[280px] animate-fade-in-scale"
-      style={{
-        background: glass ? 'rgba(12,12,16,0.96)' : 'rgba(14,14,18,0.99)',
-        ...(glass ? { backdropFilter: 'blur(24px) saturate(180%)' } : {}),
-        border: '1px solid rgba(255,255,255,0.08)',
-        borderRadius: 16,
-        boxShadow: glass
-          ? '0 1px 0 rgba(255,255,255,0.10) inset, 0 12px 48px rgba(0,0,0,0.70)'
-          : '0 8px 32px rgba(0,0,0,0.60)',
-        padding: '14px 16px',
-      }}
-    >
+    // Dense fill: inside the player bar its own blur can't reach the page behind.
+    <div className="app-surface absolute bottom-full left-0 mb-2 z-50 w-[300px] rounded-2xl bg-[#17171c]! px-4 py-3.5 animate-fade-in-scale">
       <div className="flex items-center justify-between mb-3">
-        <span className="text-[12px] font-semibold text-white/70">
-          {t('track.editInfo', 'Редактировать трек')}
-        </span>
+        <span className="text-[12px] font-semibold text-white/70">{t('track.editInfo')}</span>
         <button
           type="button"
           onClick={onClose}
-          className="text-white/30 hover:text-white/70 transition-colors cursor-pointer"
+          aria-label={t('common.close')}
+          className="ui-icon flex h-7 w-7 items-center justify-center rounded-full text-white/40 hover:text-white cursor-pointer"
         >
           <X size={14} />
         </button>
@@ -1007,26 +995,26 @@ const EditTrackInfoDialog = React.memo(function EditTrackInfoDialog({
       <div className="space-y-2">
         <div>
           <label className="text-[10px] text-white/30 uppercase tracking-wide mb-1 block">
-            {t('track.title', 'Название')}
+            {t('track.editTitle')}
           </label>
           <input
             value={titleVal}
             onChange={(e) => setTitleVal(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-            className="w-full bg-white/[0.06] border border-white/[0.08] rounded-lg px-3 py-2 text-[12px] text-white/90 placeholder:text-white/20 outline-none focus:border-white/[0.18] focus:bg-white/[0.09] transition-all"
+            className="bar-control w-full rounded-xl px-3 py-2 text-[13px] text-white/90 placeholder:text-white/25 outline-none focus:outline focus:outline-1 focus:outline-white/25"
             placeholder={track.title}
             autoFocus
           />
         </div>
         <div>
           <label className="text-[10px] text-white/30 uppercase tracking-wide mb-1 block">
-            {t('track.artist', 'Исполнитель')}
+            {t('track.editArtist')}
           </label>
           <input
             value={artistVal}
             onChange={(e) => setArtistVal(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-            className="w-full bg-white/[0.06] border border-white/[0.08] rounded-lg px-3 py-2 text-[12px] text-white/90 placeholder:text-white/20 outline-none focus:border-white/[0.18] focus:bg-white/[0.09] transition-all"
+            className="bar-control w-full rounded-xl px-3 py-2 text-[13px] text-white/90 placeholder:text-white/25 outline-none focus:outline focus:outline-1 focus:outline-white/25"
             placeholder={getArtistDisplay(track).primary}
           />
         </div>
@@ -1036,28 +1024,22 @@ const EditTrackInfoDialog = React.memo(function EditTrackInfoDialog({
         <button
           type="button"
           onClick={handleSave}
-          className="flex-1 py-2 rounded-lg text-[12px] font-semibold cursor-pointer transition-all hover:opacity-90"
-          style={{ background: 'var(--color-accent)', color: '#fff' }}
+          className="press flex-1 h-9 rounded-full bg-accent text-[13px] font-semibold text-accent-contrast cursor-pointer hover:bg-accent-hover"
         >
-          {t('common.save', 'Сохранить')}
+          {t('common.save')}
         </button>
         {existing && (
           <button
             type="button"
             onClick={handleClear}
-            className="bar-control px-3 py-2 rounded-lg text-[12px] text-white/40 hover:text-white/70 cursor-pointer"
+            className="bar-control press h-9 px-4 rounded-full text-[13px] font-semibold text-white/70 hover:text-white cursor-pointer"
           >
-            {t('common.reset', 'Сброс')}
+            {t('common.reset')}
           </button>
         )}
       </div>
 
-      <p className="text-[10px] text-white/20 mt-2 leading-relaxed">
-        {t(
-          'track.editInfoHint',
-          'Используется для поиска текстов. Не изменяет данные в SoundCloud.',
-        )}
-      </p>
+      <p className="text-[10px] text-white/20 mt-2 leading-relaxed">{t('track.editInfoHint')}</p>
     </div>
   );
 });
@@ -1106,7 +1088,9 @@ const TrackInfoBody = React.memo(function TrackInfoBody({
   const handleArtworkClick = onArtworkClick ?? (() => openLyricsPanel({ rightPanelOpen: false }));
   const artistDisplay = useArtistDisplay(track);
   const displayTitle = useDisplayTitle(track);
-  const playbackSource = usePlayerStore((s) => s.playbackSource);
+  const { t } = useTranslation();
+  // Renaming is for tracks on disk: the edit stays local and drives the lyrics search.
+  const onDisk = useCachedUrnsStore((s) => s.urns.has(track.urn));
   const [editOpen, setEditOpen] = useState(false);
   const override = useTrackOverridesStore((s) => s.getOverride(track.urn));
   const artistTarget =
@@ -1179,12 +1163,13 @@ const TrackInfoBody = React.memo(function TrackInfoBody({
               E
             </span>
           )}
-          {/* Pencil — visible when downloaded (storage) or has override */}
-          {(playbackSource === 'storage' || override) && (
+          {/* Pencil: rename a downloaded track (local only; lyrics are searched by it). */}
+          {onDisk && (
             <button
               type="button"
               onClick={() => setEditOpen((v) => !v)}
-              title="Редактировать название / исполнителя"
+              title={t('track.editInfo')}
+              aria-label={t('track.editInfo')}
               className={`ui-icon shrink-0 w-5 h-5 flex items-center justify-center rounded-md transition-all! duration-200 cursor-pointer opacity-0 group-hover/title:opacity-100 ${
                 editOpen ? 'opacity-100 text-accent' : 'text-white/30 hover:text-white/70'
               } ${override ? '!opacity-70' : ''}`}

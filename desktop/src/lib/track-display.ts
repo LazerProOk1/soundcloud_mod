@@ -1,5 +1,17 @@
 import { useMemo } from 'react';
+import { useCachedUrnsStore } from '../stores/cached-urns';
 import type { EnrichmentArtist, Track, TrackAvailability } from '../stores/player';
+import { type TrackOverride, useTrackOverridesStore } from '../stores/track-overrides';
+
+/**
+ * The user's own title / artist for a track, applied only while the track is downloaded
+ * (renaming is a local fix for files on disk, edited from the player bar).
+ */
+function useLocalOverride(urn: string | undefined): TrackOverride | undefined {
+  const override = useTrackOverridesStore((s) => (urn ? s.overrides[urn] : undefined));
+  const onDisk = useCachedUrnsStore((s) => s.urns.has(urn ?? ''));
+  return onDisk ? override : undefined;
+}
 
 /** Artist name from SoundCloud's own publisher_metadata, if present and non-empty. */
 function publisherArtist(track: Pick<Track, 'publisher_metadata'>): string | null {
@@ -106,12 +118,17 @@ export function getDisplayTitle(
 }
 
 export function useArtistDisplay(
-  track: Pick<Track, 'user' | 'enrichment' | 'publisher_metadata'>,
+  track: Pick<Track, 'user' | 'enrichment' | 'publisher_metadata'> & { urn?: string },
 ): ArtistDisplay {
+  const localArtist = useLocalOverride(track.urn)?.artist;
   return useMemo(
-    () => getArtistDisplay(track),
+    () => {
+      const display = getArtistDisplay(track);
+      return localArtist ? { ...display, primary: localArtist, uploader: null } : display;
+    },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
+      localArtist,
       track.user?.username,
       track.publisher_metadata?.artist,
       track.enrichment?.primary_artist?.name,
@@ -142,12 +159,15 @@ export function getArtistTarget(
 export function useDisplayTitle(
   track: Pick<Track, 'title' | 'enrichment' | 'publisher_metadata'> & {
     user?: Pick<NonNullable<Track['user']>, 'username'> | null;
+    urn?: string;
   },
 ): string {
+  const localTitle = useLocalOverride(track.urn)?.title;
   return useMemo(
-    () => getDisplayTitle(track),
+    () => localTitle || getDisplayTitle(track),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
+      localTitle,
       track.title,
       track.publisher_metadata?.artist,
       track.enrichment?.primary_artist?.name,
