@@ -1,12 +1,12 @@
 import { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type Aura, auraRgba } from '../../lib/aura';
 import { dur, fc } from '../../lib/formatters';
 import { Calendar, ListMusic, Loader2, Music } from '../../lib/icons';
 import { getArtistDisplay } from '../../lib/track-display';
 import type { Track } from '../../stores/player';
+import { TrackTableRow } from '../music/TrackTableRow';
+import { Segmented } from '../ui/Segmented';
 import { VirtualList } from '../ui/VirtualList';
-import { ThemedTrackRow } from '../user/ThemedTrackRow';
 import type { TracksSort } from './types';
 import { useArtistTracks } from './useArtistData';
 
@@ -15,7 +15,6 @@ export type TracksView = 'list' | 'years';
 interface ArtistTracksTabProps {
   artistId: string;
   role: 'primary' | 'featured';
-  aura: Aura;
   sort: TracksSort;
   onSortChange: (s: TracksSort) => void;
   view: TracksView;
@@ -23,7 +22,7 @@ interface ArtistTracksTabProps {
   showSort?: boolean;
 }
 
-const ROW_HEIGHT = 72;
+const ROW_HEIGHT = 56;
 
 function partition(tracks: Track[]): { available: Track[]; wanted: Track[] } {
   const available: Track[] = [];
@@ -76,7 +75,6 @@ function groupByYear(tracks: Track[]): YearBucket[] {
 function ArtistTracksTabImpl({
   artistId,
   role,
-  aura,
   sort,
   onSortChange,
   view,
@@ -115,13 +113,7 @@ function ArtistTracksTabImpl({
   if (tracks.length === 0) {
     return (
       <div className="py-24 flex flex-col items-center gap-4">
-        <div
-          className="w-16 h-16 rounded-2xl flex items-center justify-center"
-          style={{
-            background: 'rgba(255,255,255,0.03)',
-            boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.06)',
-          }}
-        >
+        <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-white/[0.04]">
           <Music size={24} className="text-white/15" />
         </div>
         <p className="text-white/30 text-sm">
@@ -136,18 +128,29 @@ function ArtistTracksTabImpl({
       {showSort && (
         <div className="flex flex-wrap items-center justify-between gap-3 px-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <SortToggle
-              sort={sort}
-              onChange={onSortChange}
-              aura={aura}
-              disabled={view === 'years'}
+            <div className={view === 'years' ? 'opacity-40 pointer-events-none' : ''}>
+              <Segmented
+                value={sort}
+                onChange={onSortChange}
+                options={[
+                  { id: 'popular', label: t('artist.sortPopular') },
+                  { id: 'recent', label: t('artist.sortRecent') },
+                ]}
+              />
+            </div>
+            <Segmented
+              value={view}
+              onChange={onViewChange}
+              options={[
+                { id: 'list', label: t('artist.viewList'), icon: <ListMusic size={14} /> },
+                { id: 'years', label: t('artist.viewYears'), icon: <Calendar size={14} /> },
+              ]}
             />
-            <ViewToggle view={view} onChange={onViewChange} aura={aura} />
           </div>
-          <span className="text-[11px] text-white/30 font-bold uppercase tracking-[0.18em] tabular-nums">
+          <span className="text-[13px] text-white/50 tabular-nums">
             {fc(tracks.length)} · {dur(totalDuration)}
             {view === 'years' && taggedYears > 0 && (
-              <span className="ml-2 text-white/20">· {taggedYears} y</span>
+              <span className="ml-2 text-white/35">· {taggedYears} y</span>
             )}
           </span>
         </div>
@@ -158,23 +161,15 @@ function ArtistTracksTabImpl({
           items={available}
           rowHeight={ROW_HEIGHT}
           overscan={8}
-          className="flex flex-col gap-1"
           getItemKey={(track) => track.urn}
-          renderItem={(track, i) => (
-            <ThemedTrackRow track={track} index={i} queue={available} aura={aura} />
-          )}
+          renderItem={(track, i) => <TrackTableRow track={track} index={i} queue={available} />}
         />
       )}
 
       {view === 'years' && yearBuckets.length > 0 && (
         <div className="flex flex-col gap-10">
           {yearBuckets.map((bucket, idx) => (
-            <YearBlock
-              key={bucket.year ?? `unknown-${idx}`}
-              bucket={bucket}
-              queue={yearsQueue}
-              aura={aura}
-            />
+            <YearBlock key={bucket.year ?? `unknown-${idx}`} bucket={bucket} queue={yearsQueue} />
           ))}
         </div>
       )}
@@ -182,20 +177,11 @@ function ArtistTracksTabImpl({
       {wanted.length > 0 && (
         <div className="space-y-3 pt-4">
           <div className="flex items-center gap-3 px-2">
-            <span
-              className="text-[10px] font-bold uppercase tracking-[0.22em] px-3 py-1 rounded-full"
-              style={{
-                background: auraRgba(aura, 0.16),
-                color: '#fff',
-                boxShadow: `inset 0 0 0 1px ${auraRgba(aura, 0.3)}`,
-              }}
-            >
-              {t('artist.comingSoon')}
-            </span>
-            <span className="text-[11px] text-white/30 tabular-nums">{fc(wanted.length)}</span>
-            <div className="flex-1 h-px bg-white/[0.05]" />
+            <span className="text-[15px] font-bold text-white/80">{t('artist.comingSoon')}</span>
+            <span className="text-[13px] text-white/40 tabular-nums">{fc(wanted.length)}</span>
+            <div className="flex-1 h-px bg-white/[0.06]" />
           </div>
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col">
             {wanted.slice(0, 100).map((track, i) => (
               <WantedRow key={track.urn} track={track} index={i} />
             ))}
@@ -206,188 +192,50 @@ function ArtistTracksTabImpl({
   );
 }
 
-const YearBlock = memo(
-  ({ bucket, queue, aura }: { bucket: YearBucket; queue: Track[]; aura: Aura }) => {
-    const { t } = useTranslation();
-    const total = bucket.items.reduce((acc, x) => acc + (x.duration ?? 0), 0);
-    return (
-      <div className="flex flex-col md:flex-row md:gap-8 gap-3">
-        {/* Year marker — same look as albums timeline */}
-        <div className="md:w-[200px] md:shrink-0 flex md:flex-col md:items-end items-center md:sticky md:top-24 self-start">
-          <div className="flex items-baseline gap-3 md:flex-col md:items-end md:gap-1 min-w-0 max-w-full">
-            <span
-              className="font-black leading-none tabular-nums tracking-tight whitespace-nowrap text-[clamp(48px,7vw,80px)]"
-              style={{
-                background: `linear-gradient(180deg, ${auraRgba(aura, 0.95)}, ${auraRgba(aura, 0.4)})`,
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-                filter: `drop-shadow(0 4px 24px ${auraRgba(aura, 0.35)})`,
-              }}
-            >
-              {bucket.year ?? '∞'}
-            </span>
-            <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/30 md:text-right whitespace-nowrap">
-              {bucket.year != null ? t('artist.releaseYear') : t('artist.unknownYear')} ·{' '}
-              {bucket.items.length} · {dur(total)}
-            </span>
-          </div>
-        </div>
-
-        {/* Tracks of the year */}
-        <div className="flex-1 min-w-0 flex flex-col gap-1">
-          {bucket.items.map((track, i) => (
-            <ThemedTrackRow key={track.urn} track={track} index={i} queue={queue} aura={aura} />
-          ))}
+const YearBlock = memo(({ bucket, queue }: { bucket: YearBucket; queue: Track[] }) => {
+  const { t } = useTranslation();
+  const total = bucket.items.reduce((acc, x) => acc + (x.duration ?? 0), 0);
+  return (
+    <div className="flex flex-col md:flex-row md:gap-8 gap-3">
+      {/* Year marker, same look as the albums timeline */}
+      <div className="md:w-[200px] md:shrink-0 flex md:flex-col md:items-end items-center md:sticky md:top-24 self-start">
+        <div className="flex items-baseline gap-3 md:flex-col md:items-end md:gap-1 min-w-0 max-w-full">
+          <span className="font-black leading-none tabular-nums tracking-tight whitespace-nowrap text-white text-[clamp(40px,6vw,64px)]">
+            {bucket.year ?? '∞'}
+          </span>
+          <span className="text-[12px] text-white/45 md:text-right whitespace-nowrap">
+            {bucket.year != null ? t('artist.releaseYear') : t('artist.unknownYear')} ·{' '}
+            {bucket.items.length} · {dur(total)}
+          </span>
         </div>
       </div>
-    );
-  },
-);
 
-const SortToggle = memo(
-  ({
-    sort,
-    onChange,
-    aura,
-    disabled,
-  }: {
-    sort: TracksSort;
-    onChange: (s: TracksSort) => void;
-    aura: Aura;
-    disabled?: boolean;
-  }) => {
-    const { t } = useTranslation();
-    const options: Array<{ id: TracksSort; label: string }> = [
-      { id: 'popular', label: t('artist.sortPopular') },
-      { id: 'recent', label: t('artist.sortRecent') },
-    ];
-    return (
-      <div
-        className={`inline-flex items-center gap-1 p-1 rounded-2xl transition-opacity ${disabled ? 'opacity-40 pointer-events-none' : ''}`}
-        style={{
-          background: 'rgba(255,255,255,0.03)',
-          boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.06)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-        }}
-      >
-        {options.map((o) => {
-          const active = o.id === sort;
-          return (
-            <button
-              key={o.id}
-              type="button"
-              onClick={() => onChange(o.id)}
-              className={`relative px-4 h-8 rounded-xl text-[12px] font-semibold cursor-pointer transition-all ${
-                active ? 'text-white' : 'text-white/40 hover:text-white/70'
-              }`}
-              style={
-                active
-                  ? {
-                      background: `linear-gradient(180deg, ${auraRgba(aura, 0.22)}, ${auraRgba(aura, 0.06)})`,
-                      boxShadow: `inset 0 0 0 1px ${auraRgba(aura, 0.35)}, 0 4px 12px ${auraRgba(aura, 0.2)}`,
-                    }
-                  : undefined
-              }
-            >
-              {o.label}
-            </button>
-          );
-        })}
+      {/* Tracks of the year */}
+      <div className="flex-1 min-w-0 flex flex-col">
+        {bucket.items.map((track, i) => (
+          <TrackTableRow key={track.urn} track={track} index={i} queue={queue} />
+        ))}
       </div>
-    );
-  },
-);
+    </div>
+  );
+});
 
-const ViewToggle = memo(
-  ({
-    view,
-    onChange,
-    aura,
-  }: {
-    view: TracksView;
-    onChange: (v: TracksView) => void;
-    aura: Aura;
-  }) => {
-    const { t } = useTranslation();
-    const options: Array<{ id: TracksView; label: string; icon: React.ReactNode }> = [
-      {
-        id: 'list',
-        label: t('artist.viewList'),
-        icon: <ListMusic size={13} />,
-      },
-      {
-        id: 'years',
-        label: t('artist.viewYears'),
-        icon: <Calendar size={13} />,
-      },
-    ];
-    return (
-      <div
-        className="inline-flex items-center gap-1 p-1 rounded-2xl"
-        style={{
-          background: 'rgba(255,255,255,0.03)',
-          boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.06)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-        }}
-      >
-        {options.map((o) => {
-          const active = o.id === view;
-          return (
-            <button
-              key={o.id}
-              type="button"
-              onClick={() => onChange(o.id)}
-              className={`relative inline-flex items-center gap-1.5 px-3 h-8 rounded-xl text-[12px] font-semibold cursor-pointer transition-all ${
-                active ? 'text-white' : 'text-white/40 hover:text-white/70'
-              }`}
-              style={
-                active
-                  ? {
-                      background: `linear-gradient(180deg, ${auraRgba(aura, 0.22)}, ${auraRgba(aura, 0.06)})`,
-                      boxShadow: `inset 0 0 0 1px ${auraRgba(aura, 0.35)}, 0 4px 12px ${auraRgba(aura, 0.2)}`,
-                    }
-                  : undefined
-              }
-            >
-              {o.icon}
-              {o.label}
-            </button>
-          );
-        })}
-      </div>
-    );
-  },
-);
-
+/** A track the catalog knows about but cannot play yet: dimmed, laid out like TrackTableRow. */
 const WantedRow = memo(({ track, index }: { track: Track; index: number }) => (
-  <div
-    className="flex items-center gap-4 px-4 py-2.5 rounded-2xl opacity-50"
-    style={{ background: 'rgba(255,255,255,0.015)' }}
-  >
-    <div className="w-10 h-10 flex items-center justify-center shrink-0">
-      <span className="text-[12px] text-white/20 tabular-nums font-semibold">{index + 1}</span>
+  <div className="grid grid-cols-[32px_minmax(0,1fr)_56px] items-center gap-4 px-4 h-14 opacity-50 select-none">
+    <span className="text-center text-[14px] tabular-nums text-white/50">{index + 1}</span>
+    <div className="flex items-center gap-3 min-w-0">
+      <div className="w-10 h-10 rounded bg-white/[0.06] shrink-0 flex items-center justify-center text-white/30">
+        <Music size={16} />
+      </div>
+      <div className="min-w-0">
+        <p className="truncate text-[15px] text-white">{track.title}</p>
+        <p className="truncate text-[13px] text-white/55">{getArtistDisplay(track).primary}</p>
+      </div>
     </div>
-    <div
-      className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
-      style={{
-        background: 'rgba(255,255,255,0.03)',
-        boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.06)',
-      }}
-    >
-      <Music size={16} className="text-white/20" />
-    </div>
-    <div className="flex-1 min-w-0">
-      <p className="text-[13px] font-medium text-white/55 truncate">{track.title}</p>
-      <p className="text-[11px] text-white/25 truncate">{getArtistDisplay(track).primary}</p>
-    </div>
-    {track.enrichment?.release_year && (
-      <span className="text-[11px] text-white/25 tabular-nums shrink-0">
-        {track.enrichment.release_year}
-      </span>
-    )}
+    <span className="text-right text-[13px] tabular-nums text-white/55">
+      {track.enrichment?.release_year ?? ''}
+    </span>
   </div>
 ));
 

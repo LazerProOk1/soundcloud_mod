@@ -47,11 +47,11 @@ function writeLocalAura(urn: string | undefined, payload: AuraResponse): void {
   }
 }
 
-export function useUserAura(urn: string | undefined, hasStar: boolean) {
+export function useUserAura(urn: string | undefined, enabled: boolean) {
   const query = useQuery({
     queryKey: auraKey(urn),
     queryFn: () => api<AuraResponse>(`/users/${encodeURIComponent(urn!)}/aura`),
-    enabled: !!urn && hasStar,
+    enabled: !!urn && enabled,
     staleTime: STALE_MS,
     gcTime: GC_MS,
     retry: false,
@@ -60,10 +60,10 @@ export function useUserAura(urn: string | undefined, hasStar: boolean) {
   const localFallback = useMemo(() => readLocalAura(urn), [urn]);
 
   const aura = useMemo(() => {
-    if (!hasStar) return DEFAULT_AURA;
+    if (!enabled) return DEFAULT_AURA;
     const src = query.data?.aura_id ? query.data : localFallback;
     return resolveAura(src?.aura_id, src?.custom_hex);
-  }, [hasStar, query.data, localFallback]);
+  }, [enabled, query.data, localFallback]);
 
   const initialCustomHex =
     query.data?.custom_hex ?? localFallback?.custom_hex ?? DEFAULT_CUSTOM_HEX;

@@ -7,10 +7,11 @@ import { ArtistHero } from '../components/artist/ArtistHero';
 import { ArtistRelatedTab } from '../components/artist/ArtistRelatedTab';
 import { ArtistTracksTab, type TracksView } from '../components/artist/ArtistTracksTab';
 import type { ArtistTabId, TracksSort } from '../components/artist/types';
-import { useArtistDetail, useArtistStar } from '../components/artist/useArtistData';
+import { useArtistDetail } from '../components/artist/useArtistData';
 import { ArtistSoundWave } from '../components/artist/wave';
 import { USER_PAGE_KEYFRAMES } from '../components/user/keyframes';
 import { type TabDescriptor, TabDock } from '../components/user/TabDock';
+import { artistAuraForId } from '../lib/aura';
 import { Loader2 } from '../lib/icons';
 
 export function ArtistPage() {
@@ -20,7 +21,7 @@ export function ArtistPage() {
   const detail = useArtistDetail(id);
   const artist = detail.data;
 
-  const { hasStar, aura } = useArtistStar(id);
+  const aura = useMemo(() => artistAuraForId(id), [id]);
 
   const [tab, setTab] = useState<ArtistTabId>('tracks');
   const [primarySort, setPrimarySort] = useState<TracksSort>('popular');
@@ -74,32 +75,21 @@ export function ArtistPage() {
           className="relative z-10 w-full max-w-[1480px] mx-auto px-4 md:px-8 pt-10 md:pt-16 pb-32"
           style={{ isolation: 'isolate' }}
         >
-          <ArtistHero artist={artist} hasStar={hasStar} aura={aura} />
+          <ArtistHero artist={artist} />
 
           <div className="mt-8">
             <ArtistSoundWave artistId={artist.id} artistName={artist.name} aura={aura} />
           </div>
 
           <div className="mt-10 mb-8">
-            <TabDock<ArtistTabId> tabs={tabs} active={tab} onChange={setTab} aura={aura} />
+            <TabDock<ArtistTabId> tabs={tabs} active={tab} onChange={setTab} />
           </div>
 
-          <div
-            className="rounded-[2rem] p-3 md:p-5"
-            style={{
-              background:
-                'linear-gradient(180deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.015) 100%)',
-              backdropFilter: 'blur(28px) saturate(160%)',
-              WebkitBackdropFilter: 'blur(28px) saturate(160%)',
-              boxShadow:
-                '0 30px 80px rgba(0,0,0,0.30), inset 0 0 0 1px rgba(255,255,255,0.06), inset 0 1px 0 rgba(255,255,255,0.05)',
-            }}
-          >
+          <div>
             {tab === 'tracks' && (
               <ArtistTracksTab
                 artistId={artist.id}
                 role="primary"
-                aura={aura}
                 sort={primarySort}
                 onSortChange={setPrimarySort}
                 view={primaryView}
@@ -110,16 +100,15 @@ export function ArtistPage() {
               <ArtistTracksTab
                 artistId={artist.id}
                 role="featured"
-                aura={aura}
                 sort={featuredSort}
                 onSortChange={setFeaturedSort}
                 view={featuredView}
                 onViewChange={setFeaturedView}
               />
             )}
-            {tab === 'albums' && <ArtistAlbumsTab artistId={artist.id} aura={aura} />}
-            {tab === 'related' && <ArtistRelatedTab related={artist.related_artists} aura={aura} />}
-            {tab === 'about' && <ArtistAboutTab artist={artist} aura={aura} />}
+            {tab === 'albums' && <ArtistAlbumsTab artistId={artist.id} />}
+            {tab === 'related' && <ArtistRelatedTab related={artist.related_artists} />}
+            {tab === 'about' && <ArtistAboutTab artist={artist} />}
           </div>
         </div>
       </div>

@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { type Aura, auraRgb, auraRgba, isLight } from '../../../lib/aura';
+import { type Aura, auraRgb, isLight } from '../../../lib/aura';
 import {
   AudioLines,
   ChevronDown,
@@ -23,7 +23,6 @@ import {
   NeighborsRow,
   useClusterWave,
 } from '../../music/cluster';
-import { AmbientLayer } from '../../music/soundwave/ambient';
 import { useInfiniteWave } from '../../music/soundwave/use-infinite-wave';
 
 interface Props {
@@ -47,17 +46,11 @@ const WAVE_KEYFRAMES = `
   0%,100% { transform: scaleY(0.35); }
   50%     { transform: scaleY(1); }
 }
-@keyframes artistWaveSheen {
-  0%   { transform: translateX(-110%); }
-  60%  { transform: translateX(110%); }
-  100% { transform: translateX(110%); }
-}
 `;
 
 const EASE = 'cubic-bezier(0.32, 0.72, 0.24, 1)';
 
-function EqualizerBars({ aura }: { aura: Aura }) {
-  const color = auraRgb(aura);
+function EqualizerBars() {
   return (
     <div className="flex items-end gap-[2.5px] h-[14px]" aria-hidden>
       {[0.15, 0, 0.3, 0.05].map((delay, i) => (
@@ -66,10 +59,9 @@ function EqualizerBars({ aura }: { aura: Aura }) {
           className="w-[2.5px] rounded-full"
           style={{
             height: '100%',
-            background: color,
+            background: 'currentColor',
             transformOrigin: 'bottom',
             animation: `artistWaveEq ${0.8 + i * 0.07}s ease-in-out ${delay}s infinite`,
-            boxShadow: `0 0 6px ${auraRgba(aura, 0.7)}`,
           }}
         />
       ))}
@@ -145,130 +137,49 @@ export const ArtistSoundWave = React.memo(function ArtistSoundWave({
 
   return (
     <section
-      className="relative rounded-[1.75rem] overflow-hidden select-none"
+      className="relative rounded-2xl overflow-hidden select-none bg-white/[0.04] border border-white/[0.06]"
       style={
         {
           '--color-accent': auraRgb(aura),
-          '--color-accent-glow': auraRgba(aura, 0.32),
+          '--color-accent-glow': 'transparent',
           '--color-accent-hover': auraRgb(aura),
           '--color-accent-contrast': lightAura ? '#000' : '#fff',
-          background: `linear-gradient(135deg, ${auraRgba(aura, 0.16)} 0%, rgba(255,255,255,0.025) 45%, ${auraRgba(aura, 0.1)} 100%)`,
-          border: `0.5px solid ${auraRgba(aura, 0.26)}`,
-          backdropFilter: 'blur(26px) saturate(165%)',
-          WebkitBackdropFilter: 'blur(26px) saturate(165%)',
-          boxShadow: `0 30px 90px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.07), 0 0 80px ${auraRgba(aura, 0.22)}`,
-          transition: `box-shadow 0.6s ${EASE}`,
         } as React.CSSProperties
       }
     >
       <style>{WAVE_KEYFRAMES}</style>
 
-      {/* top sheen */}
-      <div
-        className="absolute inset-x-0 top-0 h-px pointer-events-none"
-        style={{
-          background: `linear-gradient(90deg, transparent, ${auraRgba(aura, 0.55)}, transparent)`,
-        }}
-      />
-      {/* aura orbs (decorative smooth gradients, zero offscreen blur pass) */}
-      <div
-        className="absolute left-[-60px] top-1/2 w-64 h-64 rounded-full pointer-events-none opacity-45"
-        style={{
-          background: `radial-gradient(circle, ${auraRgba(aura, 0.45)} 0%, transparent 70%)`,
-          contain: 'strict',
-          transform: 'translateZ(0) translateY(-50%)',
-        }}
-      />
-      <div
-        className="absolute right-[-50px] top-1/2 w-56 h-56 rounded-full pointer-events-none opacity-35"
-        style={{
-          background: `radial-gradient(circle, ${auraRgba(aura, 0.35)} 0%, transparent 70%)`,
-          contain: 'strict',
-          transform: 'translateZ(0) translateY(-50%)',
-        }}
-      />
-
       <div className="relative" style={{ isolation: 'isolate' }}>
         {/* HEADER — always visible */}
         <div className="flex items-center gap-3 md:gap-4 p-3 md:p-3.5">
-          {/* aura badge */}
-          <div
-            className="relative w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 text-white"
-            style={{
-              background: `linear-gradient(135deg, ${auraRgba(aura, 0.85)}, ${auraRgba(aura, 0.18)})`,
-              border: `0.5px solid ${auraRgba(aura, 0.5)}`,
-              boxShadow: `0 10px 28px ${auraRgba(aura, 0.45)}, inset 0 1px 0 rgba(255,255,255,0.22)`,
-            }}
-          >
-            {isPlayingFromWave ? <EqualizerBars aura={aura} /> : <AudioLines size={18} />}
-            <span
-              className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center"
-              style={{
-                background: 'rgba(0,0,0,0.78)',
-                border: `0.5px solid ${auraRgba(aura, 0.55)}`,
-                boxShadow: `0 0 10px ${auraRgba(aura, 0.5)}`,
-              }}
-            >
-              <Sparkles size={8} style={{ color: 'var(--color-accent-contrast)' }} />
-            </span>
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-accent text-[var(--color-accent-contrast)]">
+            {isPlayingFromWave ? <EqualizerBars /> : <AudioLines size={20} />}
           </div>
 
           {/* title + caption */}
           <div className="flex-1 min-w-0 flex flex-col gap-[3px]">
             <div className="flex items-center gap-2 min-w-0">
-              <span
-                className="text-[14px] font-black tracking-tight text-white truncate leading-tight"
-                style={{ textShadow: `0 0 18px ${auraRgba(aura, 0.45)}` }}
-              >
+              <span className="text-[16px] font-bold text-white truncate leading-tight">
                 {t('artist.wave.title')}
               </span>
-              <span
-                className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.18em] px-1.5 py-[2px] rounded-full text-white/90 shrink-0"
-                style={{
-                  background: `linear-gradient(135deg, ${auraRgba(aura, 0.4)}, rgba(255,255,255,0.05))`,
-                  border: `0.5px solid ${auraRgba(aura, 0.45)}`,
-                }}
-              >
-                <Sparkles size={8} />
+              <span className="inline-flex items-center gap-1 h-5 px-2 rounded-full bg-white/[0.08] text-[11px] font-semibold text-white/70 shrink-0">
+                <Sparkles size={10} />
                 AI
               </span>
             </div>
-            <p className="text-[11px] text-white/45 truncate" title={artistName}>
+            <p className="text-[13px] text-white/50 truncate" title={artistName}>
               {t('artist.wave.desc', { name: artistName })}
             </p>
           </div>
 
-          {/* play button */}
           <button
             type="button"
             onClick={handlePlay}
             disabled={!canPlay || isLoading}
-            className="relative overflow-hidden inline-flex items-center gap-2 h-10 pl-1.5 pr-3.5 rounded-full text-[12.5px] font-bold cursor-pointer transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] hover:scale-[1.04] active:scale-[0.97] disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
-            style={{
-              background: `linear-gradient(180deg, ${auraRgba(aura, 0.95)}, ${auraRgba(aura, 0.7)})`,
-              color: lightAura ? '#000' : '#fff',
-              border: `0.5px solid ${auraRgba(aura, 0.55)}`,
-              boxShadow: `0 12px 28px ${auraRgba(aura, 0.45)}, inset 0 1px 0 rgba(255,255,255,0.3)`,
-            }}
+            className="press inline-flex items-center gap-2 h-9 pl-3 pr-4 rounded-full bg-accent text-[13px] font-semibold text-[var(--color-accent-contrast)] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
           >
-            <span
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                background:
-                  'linear-gradient(90deg, transparent, rgba(255,255,255,0.28), transparent)',
-                animation: 'artistWaveSheen 2.6s ease-in-out infinite',
-              }}
-            />
-            <span
-              className="relative w-7 h-7 rounded-full flex items-center justify-center shrink-0"
-              style={{
-                background: lightAura ? 'rgba(0,0,0,0.2)' : 'rgba(255,255,255,0.22)',
-                border: `0.5px solid ${lightAura ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.3)'}`,
-              }}
-            >
-              {playIcon}
-            </span>
-            <span className="relative tracking-wide whitespace-nowrap">
+            {playIcon}
+            <span className="whitespace-nowrap">
               {isPlayingFromWave ? t('artist.wave.pause') : t('artist.wave.playAll')}
             </span>
           </button>
@@ -279,12 +190,7 @@ export const ArtistSoundWave = React.memo(function ArtistSoundWave({
             onClick={() => setCollapsed(!collapsed)}
             aria-label={collapsed ? t('nav.expand') : t('nav.collapse')}
             title={collapsed ? t('nav.expand') : t('nav.collapse')}
-            className="relative w-9 h-9 rounded-full flex items-center justify-center cursor-pointer transition-transform duration-300 hover:scale-110 text-white/55 hover:text-white shrink-0"
-            style={{
-              background: 'rgba(255,255,255,0.04)',
-              border: `0.5px solid ${auraRgba(aura, 0.22)}`,
-              boxShadow: `inset 0 1px 0 rgba(255,255,255,0.05)`,
-            }}
+            className="press w-9 h-9 rounded-full flex items-center justify-center cursor-pointer bg-white/[0.07] text-white/70 hover:bg-white/[0.12] hover:text-white shrink-0"
           >
             <ChevronDown
               size={14}
@@ -313,17 +219,9 @@ export const ArtistSoundWave = React.memo(function ArtistSoundWave({
                 opacity: collapsed ? 0 : 1,
               }}
             >
-              {/* divider — sits between header and clusters when expanded */}
-              <div
-                className="mx-4 md:mx-5 h-px"
-                style={{
-                  background: `linear-gradient(90deg, transparent, ${auraRgba(aura, 0.28)}, transparent)`,
-                }}
-              />
+              <div className="mx-4 md:mx-5 h-px bg-white/[0.06]" />
 
               <div className="relative p-5 md:p-6 pt-6 md:pt-7">
-                <AmbientLayer particleCount={14} blur={70} intensity={0.5} />
-
                 {isLoading ? (
                   <ClusterSkeletonState />
                 ) : showEmpty ? (

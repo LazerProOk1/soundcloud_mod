@@ -1,14 +1,15 @@
 import { useTranslation } from 'react-i18next';
-import { type Aura, auraRgba } from '../../lib/aura';
+import type { Aura } from '../../lib/aura';
 import { monthYear } from '../../lib/formatters';
-import { Calendar, Globe } from '../../lib/icons';
+import { Calendar, Globe, Heart, Music, User, Users } from '../../lib/icons';
+import { PILL_BTN } from '../ui/buttonClass';
 import { CopyLinkButton } from '../ui/CopyLinkButton';
 import { GlassHeroPanel } from '../ui/GlassHeroPanel';
 import { AuraPicker } from './AuraPicker';
 import { AvatarArtifact } from './AvatarArtifact';
 import { FollowBtn } from './FollowBtn';
 import { StatOrb } from './StatOrb';
-import { getWebIcon, InfoChip, ProChip, StarChip, VerifiedBadge } from './UserChips';
+import { getWebIcon, InfoChip, ProChip, VerifiedBadge } from './UserChips';
 
 interface IdentityHubProps {
   user: {
@@ -28,12 +29,12 @@ interface IdentityHubProps {
     track_count?: number | null;
     public_favorites_count?: number | null;
   };
-  hasStar: boolean;
   webProfiles:
     | Array<{ id: number | string; url: string; service: string; title: string }>
     | undefined;
   aura: Aura;
   isOwnProfile: boolean;
+  showAuraPicker: boolean;
   customHex: string;
   onPickAura: (a: Aura) => void;
   onPickCustom: (hex: string) => void;
@@ -41,10 +42,10 @@ interface IdentityHubProps {
 
 export function IdentityHub({
   user,
-  hasStar,
   webProfiles,
   aura,
   isOwnProfile,
+  showAuraPicker,
   customHex,
   onPickAura,
   onPickCustom,
@@ -55,71 +56,43 @@ export function IdentityHub({
 
   return (
     <GlassHeroPanel>
-      <div className="relative p-6 md:p-10 flex flex-col lg:flex-row gap-8 lg:gap-10 items-center lg:items-stretch">
-        <AvatarArtifact
-          username={user.username}
-          avatarUrl={user.avatar_url}
-          hasStar={hasStar}
-          aura={aura}
-        />
+      <div className="flex flex-col lg:flex-row gap-8 items-center lg:items-end">
+        <AvatarArtifact username={user.username} avatarUrl={user.avatar_url} />
 
-        <div className="flex-1 min-w-0 flex flex-col justify-between gap-5 text-center lg:text-left">
+        <div className="flex-1 min-w-0 flex flex-col gap-4 text-center lg:text-left">
           <div className="flex flex-wrap items-center gap-2 justify-center lg:justify-start">
             {user.verified && <VerifiedBadge title={t('user.verifiedArtist')} />}
-            {hasStar && <StarChip label={t('user.starBadge', 'Star')} accentColor={aura.orbs[0]} />}
             {user.plan && user.plan !== 'Free' && <ProChip plan={user.plan} />}
-            {formattedDate && <InfoChip icon={<Calendar size={11} />}>{formattedDate}</InfoChip>}
-            {country && <InfoChip icon={<Globe size={11} />}>{country}</InfoChip>}
+            {formattedDate && <InfoChip icon={<Calendar size={12} />}>{formattedDate}</InfoChip>}
+            {country && <InfoChip icon={<Globe size={12} />}>{country}</InfoChip>}
           </div>
 
-          <div className="flex flex-col items-center lg:items-start gap-3">
-            <h1
-              className="text-5xl md:text-7xl font-black leading-[0.85] tracking-tighter break-words max-w-full"
-              style={
-                hasStar
-                  ? {
-                      background: aura.nameGradient,
-                      backgroundSize: '200% auto',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      backgroundClip: 'text',
-                      animation: 'prismatic-shift 6s linear infinite',
-                      filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.5))',
-                    }
-                  : { color: '#fff', textShadow: '0 8px 24px rgba(0,0,0,0.5)' }
-              }
-            >
+          <div className="flex flex-col items-center lg:items-start gap-2">
+            <h1 className="text-5xl md:text-7xl font-black leading-[0.95] tracking-tight text-white break-words max-w-full">
               {user.username}
             </h1>
-
             {user.full_name && user.full_name !== user.username && (
-              <p className="text-[13px] text-white/40 font-medium">{user.full_name}</p>
+              <p className="text-[14px] text-white/50 font-medium">{user.full_name}</p>
             )}
           </div>
 
           {user.description && (
-            <p className="text-[14px] md:text-[15px] text-white/65 leading-relaxed max-w-2xl line-clamp-3 hover:line-clamp-none transition-all duration-700 cursor-help">
+            <p className="text-[14px] text-white/65 leading-relaxed max-w-2xl line-clamp-3 hover:line-clamp-none">
               {user.description}
             </p>
           )}
 
           {webProfiles && webProfiles.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 justify-center lg:justify-start">
+            <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
               {webProfiles.map((link) => (
                 <a
                   key={link.id}
                   href={link.url}
                   target="_blank"
                   rel="noreferrer"
-                  className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-semibold text-white/55 hover:text-white transition-all duration-300 hover:scale-105"
-                  style={{
-                    background: 'rgba(255,255,255,0.04)',
-                    border: '0.5px solid rgba(255,255,255,0.08)',
-                    backdropFilter: 'blur(16px)',
-                    WebkitBackdropFilter: 'blur(16px)',
-                  }}
+                  className={PILL_BTN}
                 >
-                  <span className="text-white/45">{getWebIcon(link.service)}</span>
+                  {getWebIcon(link.service)}
                   <span className="truncate max-w-[160px]">{link.title}</span>
                 </a>
               ))}
@@ -127,9 +100,9 @@ export function IdentityHub({
           )}
 
           <div className="flex flex-wrap items-center gap-3 pt-1 justify-center lg:justify-start">
-            {!isOwnProfile && <FollowBtn userUrn={user.urn} aura={aura} />}
+            {!isOwnProfile && <FollowBtn userUrn={user.urn} />}
             {user.permalink_url && <CopyLinkButton url={user.permalink_url} />}
-            {hasStar && isOwnProfile && (
+            {showAuraPicker && (
               <AuraPicker
                 aura={aura}
                 onPickAura={onPickAura}
@@ -139,47 +112,24 @@ export function IdentityHub({
             )}
           </div>
         </div>
-
-        <div className="hidden xl:flex flex-col gap-3 self-stretch min-w-[160px]">
-          <StatOrb
-            value={user.followers_count}
-            label={t('user.followers')}
-            accent={auraRgba(aura, 0.2)}
-          />
-          <StatOrb
-            value={user.followings_count}
-            label={t('user.following')}
-            accent={auraRgba(aura, 0.16)}
-          />
-          <StatOrb
-            value={user.track_count}
-            label={t('user.tracks')}
-            accent={auraRgba(aura, 0.14)}
-          />
-          <StatOrb
-            value={user.public_favorites_count}
-            label={t('user.likes')}
-            accent={auraRgba(aura, 0.12)}
-          />
-        </div>
       </div>
 
-      <div className="xl:hidden flex flex-wrap gap-2 px-6 md:px-10 pb-6 md:pb-8 justify-center lg:justify-start">
+      <div className="mt-6 flex flex-wrap gap-2 justify-center lg:justify-start">
         <StatOrb
+          icon={<Users size={14} />}
           value={user.followers_count}
           label={t('user.followers')}
-          accent={auraRgba(aura, 0.2)}
         />
         <StatOrb
+          icon={<User size={14} />}
           value={user.followings_count}
           label={t('user.following')}
-          accent={auraRgba(aura, 0.16)}
         />
-        <StatOrb value={user.track_count} label={t('user.tracks')} accent={auraRgba(aura, 0.14)} />
+        <StatOrb icon={<Music size={14} />} value={user.track_count} label={t('user.tracks')} />
         <StatOrb
+          icon={<Heart size={14} />}
           value={user.public_favorites_count}
           label={t('user.likes')}
-          accent={auraRgba(aura, 0.12)}
         />
       </div>
     </GlassHeroPanel>

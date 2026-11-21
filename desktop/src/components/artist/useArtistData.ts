@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../lib/api';
-import { type Aura, artistAuraForId } from '../../lib/aura';
 import type { Track } from '../../stores/player';
 import type { ArtistAlbum, ArtistDetail, TracksSort } from './types';
 
@@ -41,14 +40,4 @@ export function useArtistAlbums(id: string | undefined) {
     enabled: !!id,
     staleTime: STALE_ALBUMS,
   });
-}
-
-export interface ArtistStar {
-  hasStar: boolean;
-  aura: Aura;
-}
-
-// Star gating is gone: every artist/album page gets the same aura.
-export function useArtistStar(id: string | undefined): ArtistStar {
-  return { hasStar: false, aura: artistAuraForId(id) };
 }

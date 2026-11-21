@@ -1,7 +1,6 @@
 import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import type { Aura } from '../../lib/aura';
 import { fc } from '../../lib/formatters';
 import {
   useInfiniteScroll,
@@ -14,10 +13,10 @@ import {
 } from '../../lib/hooks';
 import { Loader2, Music } from '../../lib/icons';
 import { PlaylistCard } from '../music/PlaylistCard';
+import { TrackTableRow } from '../music/TrackTableRow';
 import { Avatar } from '../ui/Avatar';
 import { VirtualGrid } from '../ui/VirtualGrid';
 import { VirtualList } from '../ui/VirtualList';
-import { ThemedTrackRow } from './ThemedTrackRow';
 
 interface TabWrapperProps {
   isLoading: boolean;
@@ -36,13 +35,7 @@ function TabWrapperImpl({ children, isLoading, isEmpty, emptyText }: TabWrapperP
         </div>
       ) : isEmpty ? (
         <div className="py-24 flex flex-col items-center gap-4">
-          <div
-            className="w-16 h-16 rounded-2xl flex items-center justify-center"
-            style={{
-              background: 'rgba(255,255,255,0.03)',
-              border: '0.5px solid rgba(255,255,255,0.06)',
-            }}
-          >
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-white/[0.04]">
             <Music size={24} className="text-white/15" />
           </div>
           <p className="text-white/30 text-sm">{emptyText ?? t('common.empty')}</p>
@@ -56,22 +49,21 @@ function TabWrapperImpl({ children, isLoading, isEmpty, emptyText }: TabWrapperP
 
 export const TabWrapper = React.memo(TabWrapperImpl);
 
-export function UserTracksTab({ urn, aura }: { urn: string; aura: Aura }) {
+export function UserTracksTab({ urn }: { urn: string }) {
   const q = useUserTracks(urn);
   const ref = useInfiniteScroll(!!q.hasNextPage, !!q.isFetchingNextPage, q.fetchNextPage);
   const renderItem = useCallback(
     (track: (typeof q.tracks)[number], i: number) => (
-      <ThemedTrackRow track={track} index={i} queue={q.tracks} aura={aura} />
+      <TrackTableRow track={track} index={i} queue={q.tracks} />
     ),
-    [aura, q.tracks],
+    [q.tracks],
   );
   return (
     <TabWrapper isLoading={q.isLoading} isEmpty={q.tracks.length === 0}>
       <VirtualList
         items={q.tracks}
-        rowHeight={72}
+        rowHeight={56}
         overscan={8}
-        className="flex flex-col gap-1"
         getItemKey={(t) => t.urn}
         renderItem={renderItem}
       />
@@ -82,21 +74,20 @@ export function UserTracksTab({ urn, aura }: { urn: string; aura: Aura }) {
   );
 }
 
-export function UserPopularTab({ urn, aura }: { urn: string; aura: Aura }) {
+export function UserPopularTab({ urn }: { urn: string }) {
   const { data = [], isLoading } = useUserPopularTracks(urn);
   const renderItem = useCallback(
     (track: (typeof data)[number], i: number) => (
-      <ThemedTrackRow track={track} index={i} queue={data} aura={aura} />
+      <TrackTableRow track={track} index={i} queue={data} />
     ),
-    [aura, data],
+    [data],
   );
   return (
     <TabWrapper isLoading={isLoading} isEmpty={data.length === 0}>
       <VirtualList
         items={data}
-        rowHeight={72}
+        rowHeight={56}
         overscan={8}
-        className="flex flex-col gap-1"
         getItemKey={(t) => t.urn}
         renderItem={renderItem}
       />
@@ -129,22 +120,21 @@ export function UserPlaylistsTab({ urn }: { urn: string }) {
   );
 }
 
-export function UserLikesTab({ urn, aura }: { urn: string; aura: Aura }) {
+export function UserLikesTab({ urn }: { urn: string }) {
   const q = useUserLikedTracks(urn);
   const ref = useInfiniteScroll(!!q.hasNextPage, !!q.isFetchingNextPage, q.fetchNextPage);
   const renderItem = useCallback(
     (track: (typeof q.tracks)[number], i: number) => (
-      <ThemedTrackRow track={track} index={i} queue={q.tracks} aura={aura} />
+      <TrackTableRow track={track} index={i} queue={q.tracks} />
     ),
-    [aura, q.tracks],
+    [q.tracks],
   );
   return (
     <TabWrapper isLoading={q.isLoading} isEmpty={q.tracks.length === 0}>
       <VirtualList
         items={q.tracks}
-        rowHeight={72}
+        rowHeight={56}
         overscan={8}
-        className="flex flex-col gap-1"
         getItemKey={(t) => t.urn}
         renderItem={renderItem}
       />
@@ -174,23 +164,15 @@ export function UserConnectionsTab({
       <button
         type="button"
         onClick={() => nav(`/user/${encodeURIComponent(user.urn)}`)}
-        className="group relative h-full w-full flex flex-col items-center gap-3 p-6 rounded-3xl transition-all duration-500 cursor-pointer overflow-hidden hover:scale-[1.02]"
-        style={{
-          background: 'rgba(255,255,255,0.03)',
-          border: '0.5px solid rgba(255,255,255,0.06)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-        }}
+        className="h-full w-full flex flex-col items-center gap-3 p-6 rounded-xl transition-colors cursor-pointer hover:bg-white/[0.06]"
       >
-        <div className="w-20 h-20 rounded-full overflow-hidden ring-2 ring-white/10 group-hover:ring-white/30 transition-all duration-500">
-          <Avatar src={user.avatar_url} alt={user.username} size={80} />
+        <div className="w-24 h-24 rounded-full overflow-hidden bg-white/[0.06]">
+          <Avatar src={user.avatar_url} alt={user.username} size={96} />
         </div>
         <div className="text-center min-w-0 w-full">
-          <p className="text-[13px] font-semibold text-white/90 truncate group-hover:text-white">
-            {user.username}
-          </p>
+          <p className="text-[14px] font-semibold text-white truncate">{user.username}</p>
           {user.followers_count != null && (
-            <p className="text-[10px] text-white/30 mt-1 tabular-nums uppercase tracking-widest font-semibold">
+            <p className="text-[12px] text-white/50 mt-1 tabular-nums">
               {fc(user.followers_count)} {t('user.followers')}
             </p>
           )}

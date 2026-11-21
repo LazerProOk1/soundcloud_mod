@@ -1,14 +1,12 @@
 import { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { type Aura, auraRgba } from '../../lib/aura';
 import { Users } from '../../lib/icons';
 import { Avatar } from '../ui/Avatar';
 import type { AlbumArtist } from './types';
 
 interface AlbumCastProps {
   artists: AlbumArtist[];
-  aura: Aura;
 }
 
 const ROLE_BUCKETS = ['primary', 'featured', 'remixer', 'producer'] as const;
@@ -46,106 +44,65 @@ function groupByRole(artists: AlbumArtist[]): CastGroup[] {
 const CastCard = memo(function CastCard({
   artist,
   roleLabel,
-  aura,
 }: {
   artist: AlbumArtist;
   roleLabel: string;
-  aura: Aura;
 }) {
   const navigate = useNavigate();
   return (
     <button
       type="button"
       onClick={() => navigate(`/artist/${encodeURIComponent(artist.id)}`)}
-      className="group relative flex items-center gap-3 p-2.5 rounded-2xl cursor-pointer transition-all duration-500 hover:scale-[1.04]"
-      style={{
-        background: 'rgba(255,255,255,0.03)',
-        boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.06)',
-      }}
+      className="flex items-center gap-3 p-2.5 rounded-xl cursor-pointer text-left transition-colors hover:bg-white/[0.06]"
     >
-      <span
-        className="relative w-12 h-12 rounded-full overflow-hidden shrink-0 ring-2 ring-white/10 group-hover:ring-white/30 transition-all duration-500"
-        style={{ boxShadow: `0 8px 18px ${auraRgba(aura, 0.18)}` }}
-      >
+      <span className="w-12 h-12 rounded-full overflow-hidden shrink-0 bg-white/[0.06]">
         <Avatar src={artist.avatar_url} alt={artist.name} size={48} />
       </span>
       <span className="min-w-0 flex flex-col leading-tight">
-        <span className="text-[12px] font-semibold text-white/90 truncate group-hover:text-white">
-          {artist.name}
-        </span>
-        <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-white/30">
-          {roleLabel}
-        </span>
+        <span className="text-[14px] font-semibold text-white truncate">{artist.name}</span>
+        <span className="text-[12px] text-white/50">{roleLabel}</span>
       </span>
     </button>
   );
 });
 
-const CastRow = memo(function CastRow({
-  role,
-  items,
-  aura,
-}: {
-  role: string;
-  items: AlbumArtist[];
-  aura: Aura;
-}) {
+const CastRow = memo(function CastRow({ role, items }: { role: string; items: AlbumArtist[] }) {
   const { t } = useTranslation();
   const roleLabel = ROLE_LABEL_KEY[role] ? t(ROLE_LABEL_KEY[role]) : role;
   return (
     <div className="flex flex-col gap-3">
-      <span className="text-[9px] font-bold uppercase tracking-[0.28em] text-white/30">
+      <span className="text-[13px] text-white/50">
         {roleLabel} · {items.length}
       </span>
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
         {items.map((artist) => (
-          <CastCard key={artist.id} artist={artist} roleLabel={roleLabel} aura={aura} />
+          <CastCard key={artist.id} artist={artist} roleLabel={roleLabel} />
         ))}
       </div>
     </div>
   );
 });
 
-function AlbumCastImpl({ artists, aura }: AlbumCastProps) {
+function AlbumCastImpl({ artists }: AlbumCastProps) {
   const { t } = useTranslation();
   const groups = useMemo(() => groupByRole(artists), [artists]);
 
   if (artists.length === 0) return null;
 
   return (
-    <div
-      className="rounded-[2rem] p-5 md:p-7"
-      style={{
-        background:
-          'linear-gradient(180deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.015) 100%)',
-        backdropFilter: 'blur(28px) saturate(160%)',
-        WebkitBackdropFilter: 'blur(28px) saturate(160%)',
-        boxShadow:
-          '0 30px 80px rgba(0,0,0,0.30), inset 0 0 0 1px rgba(255,255,255,0.06), inset 0 1px 0 rgba(255,255,255,0.05)',
-      }}
-    >
-      <div className="flex items-center gap-3 mb-5">
-        <span
-          className="w-8 h-8 rounded-xl flex items-center justify-center"
-          style={{
-            background: auraRgba(aura, 0.12),
-            boxShadow: `inset 0 0 0 1px ${auraRgba(aura, 0.25)}`,
-          }}
-        >
-          <Users size={14} className="text-white/70" />
-        </span>
-        <h3 className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/60">
-          {t('album.cast')}
-          <span className="text-white/25 ml-2">{artists.length}</span>
-        </h3>
-      </div>
+    <section>
+      <h2 className="flex items-center gap-2 mb-4 text-[22px] font-bold text-white">
+        <Users size={20} className="text-white/50" />
+        {t('album.cast')}
+        <span className="text-[15px] font-semibold text-white/40">{artists.length}</span>
+      </h2>
 
       <div className="flex flex-col gap-6">
         {groups.map((g) => (
-          <CastRow key={g.role} role={g.role} items={g.items} aura={aura} />
+          <CastRow key={g.role} role={g.role} items={g.items} />
         ))}
       </div>
-    </div>
+    </section>
   );
 }
 

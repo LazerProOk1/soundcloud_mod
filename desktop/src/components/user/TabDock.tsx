@@ -1,5 +1,4 @@
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
-import type { Aura } from '../../lib/aura';
 import { fc } from '../../lib/formatters';
 
 export type TabId = 'popular' | 'tracks' | 'playlists' | 'likes' | 'followers' | 'following';
@@ -14,7 +13,6 @@ interface TabDockProps<T extends string = string> {
   tabs: ReadonlyArray<TabDescriptor<T>>;
   active: T;
   onChange: (id: T) => void;
-  aura: Aura;
 }
 
 const useIsoLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;

@@ -2,16 +2,15 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../../lib/api';
-import { type Aura, auraRgba } from '../../lib/aura';
 import { Loader2 } from '../../lib/icons';
 import { useAuthStore } from '../../stores/auth';
+import { PILL_BTN } from '../ui/buttonClass';
 
 interface FollowBtnProps {
   userUrn: string;
-  aura: Aura;
 }
 
-export function FollowBtn({ userUrn, aura }: FollowBtnProps) {
+export function FollowBtn({ userUrn }: FollowBtnProps) {
   const { t } = useTranslation();
   const currentUser = useAuthStore((s) => s.user);
   const qc = useQueryClient();
@@ -55,31 +54,12 @@ export function FollowBtn({ userUrn, aura }: FollowBtnProps) {
       type="button"
       onClick={toggle}
       disabled={busy}
-      className={`group relative overflow-hidden inline-flex items-center justify-center gap-2 px-7 h-11 rounded-full text-[13px] font-semibold tracking-wide transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] cursor-pointer disabled:opacity-60 ${
+      className={
         following
-          ? 'text-white/80 hover:text-white'
-          : 'text-black hover:scale-[1.03] active:scale-[0.97]'
-      }`}
-      style={{
-        background: following
-          ? 'rgba(255,255,255,0.06)'
-          : 'linear-gradient(180deg, #ffffff, #e5e7eb)',
-        border: following
-          ? '0.5px solid rgba(255,255,255,0.12)'
-          : '0.5px solid rgba(255,255,255,0.4)',
-        boxShadow: following
-          ? 'inset 0 0.5px 0 rgba(255,255,255,0.08)'
-          : `0 12px 32px ${auraRgba(aura, 0.28)}, inset 0 1px 0 rgba(255,255,255,0.6)`,
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-      }}
+          ? PILL_BTN
+          : 'press inline-flex h-9 items-center justify-center gap-2 rounded-full bg-white px-5 text-[13px] font-semibold text-black hover:bg-white/90 cursor-pointer disabled:opacity-60'
+      }
     >
-      <span
-        className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700"
-        style={{
-          background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent)',
-        }}
-      />
       {busy ? (
         <Loader2 size={14} className="animate-spin" />
       ) : following ? (

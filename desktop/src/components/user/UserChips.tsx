@@ -1,10 +1,10 @@
 import React from 'react';
-import { Check, Globe, Instagram, LinkIcon, Sparkles, Twitter, Youtube } from '../../lib/icons';
+import { Check, Globe, Instagram, LinkIcon, Twitter, Youtube } from '../../lib/icons';
 
 export const VerifiedBadge = React.memo(function VerifiedBadge({ title }: { title: string }) {
   return (
     <div
-      className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center ring-2 ring-white/20"
+      className="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center"
       title={title}
     >
       <Check size={13} className="text-white" strokeWidth={3.5} />
@@ -12,48 +12,16 @@ export const VerifiedBadge = React.memo(function VerifiedBadge({ title }: { titl
   );
 });
 
-export const StarChip = React.memo(function StarChip({
-  label = 'Star',
-  accentColor,
-}: {
-  label?: string;
-  accentColor?: string;
-}) {
-  const glow = accentColor ?? '#a855f7';
-  return (
-    <span
-      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.18em] text-white/95"
-      style={{
-        background: `linear-gradient(135deg, ${glow}33, rgba(255,255,255,0.08))`,
-        border: `0.5px solid ${glow}66`,
-        boxShadow: `0 0 14px ${glow}33, inset 0 1px 0 rgba(255,255,255,0.2)`,
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
-      }}
-    >
-      <Sparkles size={11} style={{ color: glow }} />
-      {label}
-    </span>
-  );
-});
-
 export const ProChip = React.memo(function ProChip({ plan }: { plan: string }) {
   return (
-    <span
-      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-[0.18em] text-orange-300/90"
-      style={{
-        background: 'linear-gradient(135deg, rgba(255,85,0,0.18), rgba(255,0,128,0.10))',
-        border: '0.5px solid rgba(255,85,0,0.25)',
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
-      }}
-    >
+    <span className="inline-flex items-center gap-1.5 h-7 px-3 rounded-full bg-orange-500/15 text-[12px] font-semibold text-orange-300">
       <span className="w-1.5 h-1.5 rounded-full bg-orange-400" />
       {plan}
     </span>
   );
 });
 
+/** Small flat label chip (country, date, kind...). */
 export const InfoChip = React.memo(function InfoChip({
   icon,
   children,
@@ -62,15 +30,7 @@ export const InfoChip = React.memo(function InfoChip({
   children: React.ReactNode;
 }) {
   return (
-    <span
-      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-[0.16em] text-white/55"
-      style={{
-        background: 'rgba(255,255,255,0.04)',
-        border: '0.5px solid rgba(255,255,255,0.07)',
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
-      }}
-    >
+    <span className="inline-flex items-center gap-1.5 h-7 px-3 rounded-full bg-white/[0.07] text-[12px] font-semibold text-white/70">
       <span className="text-white/45">{icon}</span>
       {children}
     </span>

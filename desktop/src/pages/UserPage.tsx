@@ -28,11 +28,11 @@ export function UserPage() {
 
   const isOwnProfile = !!user && currentUser?.urn === user.urn;
 
-  // Profile decoration (Star badge, aura picker, star field) is switched off: plain profile.
-  const hasStar = false;
+  // The profile aura picker is switched off for now (it came with the removed Star plan).
+  const auraPicker = false;
 
-  const readonly = useUserAura(urn, hasStar && !isOwnProfile);
-  const editable = useEditableUserAura(urn, hasStar && isOwnProfile);
+  const readonly = useUserAura(urn, auraPicker && !isOwnProfile);
+  const editable = useEditableUserAura(urn, auraPicker && isOwnProfile);
 
   const aura = isOwnProfile ? editable.aura : readonly.aura;
   const customHex = isOwnProfile ? editable.customHex : readonly.customHex;
@@ -67,7 +67,7 @@ export function UserPage() {
         >
           <IdentityHub
             user={user}
-            hasStar={hasStar}
+            showAuraPicker={auraPicker && isOwnProfile}
             webProfiles={webProfiles}
             aura={aura}
             isOwnProfile={isOwnProfile}
@@ -77,24 +77,14 @@ export function UserPage() {
           />
 
           <div className="mt-10 mb-8">
-            <TabDock tabs={tabs} active={activeTab} onChange={setActiveTab} aura={aura} />
+            <TabDock tabs={tabs} active={activeTab} onChange={setActiveTab} />
           </div>
 
-          <div
-            className="rounded-[2rem] p-3 md:p-5"
-            style={{
-              background:
-                'linear-gradient(180deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.015) 100%)',
-              backdropFilter: 'blur(28px) saturate(160%)',
-              WebkitBackdropFilter: 'blur(28px) saturate(160%)',
-              boxShadow:
-                '0 30px 80px rgba(0,0,0,0.30), inset 0 0 0 1px rgba(255,255,255,0.06), inset 0 1px 0 rgba(255,255,255,0.05)',
-            }}
-          >
-            {activeTab === 'popular' && <UserPopularTab urn={urn!} aura={aura} />}
-            {activeTab === 'tracks' && <UserTracksTab urn={urn!} aura={aura} />}
+          <div>
+            {activeTab === 'popular' && <UserPopularTab urn={urn!} />}
+            {activeTab === 'tracks' && <UserTracksTab urn={urn!} />}
             {activeTab === 'playlists' && <UserPlaylistsTab urn={urn!} />}
-            {activeTab === 'likes' && <UserLikesTab urn={urn!} aura={aura} />}
+            {activeTab === 'likes' && <UserLikesTab urn={urn!} />}
             {activeTab === 'followers' && <UserConnectionsTab urn={urn!} mode="followers" />}
             {activeTab === 'following' && <UserConnectionsTab urn={urn!} mode="followings" />}
           </div>

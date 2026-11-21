@@ -689,10 +689,6 @@ export const TrackPage = React.memo(() => {
                     ? 'bg-white text-black hover:bg-white/95'
                     : 'bg-accent text-accent-contrast hover:bg-accent-hover'
                 }`}
-                style={{
-                  boxShadow:
-                    '0 8px 28px var(--color-accent-glow), inset 0 1px 0 rgba(255,255,255,0.22)',
-                }}
               >
                 {isThisPlaying ? pauseCurrent16 : playCurrent16}
                 {isThisPlaying ? t('track.pause') : t('track.play')}
