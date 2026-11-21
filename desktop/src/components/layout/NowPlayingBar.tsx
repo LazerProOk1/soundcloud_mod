@@ -1011,7 +1011,7 @@ const EditTrackInfoDialog = React.memo(function EditTrackInfoDialog({
         <button
           type="button"
           onClick={handleSave}
-          className="press flex-1 h-9 rounded-full bg-accent text-[13px] font-semibold text-accent-contrast cursor-pointer hover:bg-accent-hover"
+          className="press flex-1 h-9 rounded-full ui-accent text-[13px] font-semibold cursor-pointer"
         >
           {t('common.save')}
         </button>

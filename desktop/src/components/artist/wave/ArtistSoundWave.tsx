@@ -176,7 +176,7 @@ export const ArtistSoundWave = React.memo(function ArtistSoundWave({
             type="button"
             onClick={handlePlay}
             disabled={!canPlay || isLoading}
-            className="press inline-flex items-center gap-2 h-9 pl-3 pr-4 rounded-full bg-accent text-[13px] font-semibold text-[var(--color-accent-contrast)] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed shrink-0"
+            className="press inline-flex items-center gap-2 h-9 pl-3 pr-4 rounded-full ui-accent text-[13px] font-semibold cursor-pointer shrink-0"
           >
             {playIcon}
             <span className="whitespace-nowrap">

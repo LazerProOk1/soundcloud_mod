@@ -48,7 +48,7 @@ export function ImportPage() {
         : t('import.page.done', { found, total });
 
   const pill =
-    'h-9 px-4 rounded-full text-[13px] font-semibold flex items-center gap-2 cursor-pointer';
+    'h-10 px-4 rounded-full bar-control text-[13px] font-semibold text-white flex items-center gap-2 cursor-pointer';
 
   return (
     <TrackListPage
@@ -79,11 +79,7 @@ export function ImportPage() {
       actions={
         <>
           {job.status === 'paused' && (
-            <button
-              type="button"
-              onClick={() => void runImport(job.id)}
-              className={`${pill} bar-control text-white`}
-            >
+            <button type="button" onClick={() => void runImport(job.id)} className={pill}>
               {t('import.page.resume')}
             </button>
           )}
@@ -91,12 +87,13 @@ export function ImportPage() {
             <button
               type="button"
               onClick={() => navigate(`/playlist/${encodeURIComponent(job.playlistUrn ?? '')}`)}
-              className={`${pill} bar-control text-white`}
+              className={pill}
             >
               <ExternalLink size={15} />
               {t('import.page.openPlaylist')}
             </button>
           )}
+          {/* Same trash icon as a playlist; the first click arms it (turns red), the second deletes. */}
           <button
             type="button"
             onClick={() => {
@@ -108,10 +105,13 @@ export function ImportPage() {
               navigate('/library');
             }}
             onBlur={() => setConfirmDelete(false)}
-            className={`${pill} ${confirmDelete ? 'ui-danger' : 'text-white/60 hover:text-white'}`}
+            title={confirmDelete ? t('import.page.confirmDelete') : t('import.page.delete')}
+            aria-label={confirmDelete ? t('import.page.confirmDelete') : t('import.page.delete')}
+            className={`w-10 h-10 rounded-full flex items-center justify-center cursor-pointer transition-colors ${
+              confirmDelete ? 'text-red-400 bg-red-500/15' : 'text-white/60 hover:text-red-400'
+            }`}
           >
-            <Trash2 size={15} />
-            {confirmDelete ? t('import.page.confirmDelete') : t('import.page.delete')}
+            <Trash2 size={22} />
           </button>
         </>
       }

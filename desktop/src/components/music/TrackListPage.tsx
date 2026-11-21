@@ -125,7 +125,7 @@ export const TrackListPage = React.memo(function TrackListPage({
           onClick={play}
           disabled={!shown.length}
           title={showPause ? t('common.pause', 'Pause') : t('common.play', 'Play')}
-          className="play-fab relative w-14 h-14 rounded-full bg-accent flex items-center justify-center text-black shadow-[0_8px_24px_rgba(0,0,0,0.35)] cursor-pointer disabled:opacity-40"
+          className="play-fab relative w-14 h-14 rounded-full ui-accent flex items-center justify-center shadow-[0_8px_24px_rgba(0,0,0,0.35)] cursor-pointer"
         >
           {/* Both icons stay mounted and morph (fade + rotate) into each other. */}
           <span className={fabIcon(!showPause)}>

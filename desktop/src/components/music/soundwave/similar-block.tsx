@@ -98,7 +98,7 @@ export const SoundWaveSimilarBlock = React.memo(function SoundWaveSimilarBlock({
             <button
               type="button"
               onClick={handlePlay}
-              className="press flex items-center gap-2 pl-2.5 pr-4 h-9 rounded-full bg-accent font-semibold text-[13px] text-[var(--color-accent-contrast)] cursor-pointer"
+              className="press flex items-center gap-2 pl-2.5 pr-4 h-9 rounded-full ui-accent font-semibold text-[13px] cursor-pointer"
             >
               <span
                 className="w-5 h-5 rounded-full flex items-center justify-center"

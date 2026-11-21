@@ -43,7 +43,7 @@ function AlbumPlayButtonImpl({ tracks }: { tracks: Track[] }) {
       type="button"
       onClick={onClick}
       disabled={empty}
-      className="press inline-flex items-center gap-2 h-10 pl-4 pr-5 rounded-full bg-accent text-[14px] font-semibold text-black cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+      className="press inline-flex items-center gap-2 h-10 pl-4 pr-5 rounded-full ui-accent text-[14px] font-semibold cursor-pointer"
     >
       {isPlayingFromAlbum ? pauseBlack14 : playBlack14}
       {isPlayingFromAlbum ? t('album.pauseAlbum') : t('album.playAlbum')}

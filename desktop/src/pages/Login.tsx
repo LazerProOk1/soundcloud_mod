@@ -140,7 +140,7 @@ export function Login() {
             <button
               type="button"
               onClick={handleLogin}
-              className="press w-full h-12 inline-flex items-center justify-center gap-2.5 rounded-full bg-accent text-[15px] font-bold text-black hover:bg-accent-hover cursor-pointer"
+              className="press w-full h-12 inline-flex items-center justify-center gap-2.5 rounded-full ui-accent text-[15px] font-bold cursor-pointer"
             >
               <SocialIcon kind="soundcloud" size={20} />
               {t('auth.signIn')}

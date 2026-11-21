@@ -206,7 +206,7 @@ export function ImportDialog({
               type="button"
               onClick={run}
               disabled={items.length === 0}
-              className="h-12 px-7 rounded-full bg-accent text-black text-[15px] font-bold cursor-pointer disabled:opacity-40"
+              className="h-12 px-7 rounded-full ui-accent text-[15px] font-bold cursor-pointer"
             >
               {t('import.run')}
             </button>

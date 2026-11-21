@@ -175,7 +175,7 @@ export const WaveTuneDialog = React.memo(function WaveTuneDialog({
                 onListen();
                 onOpenChange(false);
               }}
-              className="flex items-center gap-2 h-12 px-7 rounded-full bg-accent text-black text-[15px] font-bold cursor-pointer hover:scale-[1.03] transition-transform"
+              className="flex items-center gap-2 h-12 px-7 rounded-full ui-accent text-[15px] font-bold cursor-pointer hover:scale-[1.03]"
             >
               <Play size={16} fill="currentColor" strokeWidth={0} />
               {t('waveTune.listen')}
