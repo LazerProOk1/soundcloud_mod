@@ -379,7 +379,7 @@ export const PlaylistPage = React.memo(() => {
               <Dialog.Title className="text-[15px] font-bold text-white/90">
                 {t('playlist.delete')}
               </Dialog.Title>
-              <Dialog.Close className="ml-auto w-7 h-7 rounded-lg flex items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/[0.08] transition-all">
+              <Dialog.Close className="ml-auto w-7 h-7 rounded-lg flex items-center justify-center text-white/30 hover:text-white/70 ui-icon transition-all">
                 <X size={14} />
               </Dialog.Close>
             </div>
@@ -387,7 +387,7 @@ export const PlaylistPage = React.memo(() => {
               {t('playlist.deleteConfirm', { title: playlist.title })}
             </p>
             <div className="flex items-center justify-end gap-2.5 pt-1">
-              <Dialog.Close className="px-4 py-2 rounded-xl text-[13px] font-medium text-white/50 hover:text-white/80 hover:bg-white/[0.06] transition-all cursor-pointer">
+              <Dialog.Close className="px-4 py-2 rounded-xl text-[13px] font-medium text-white/50 hover:text-white/80 ui-icon transition-all cursor-pointer">
                 {t('common.cancel') ?? 'Cancel'}
               </Dialog.Close>
               <button

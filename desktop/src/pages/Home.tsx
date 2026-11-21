@@ -90,7 +90,7 @@ const QuickTiles = React.memo(function QuickTiles() {
           key={tile.key}
           type="button"
           onClick={() => navigate(tile.to)}
-          className="quick-tile group flex items-center gap-3 h-16 rounded-md overflow-hidden bg-white/[0.07] hover:bg-white/[0.14] text-left cursor-pointer"
+          className="quick-tile group flex items-center gap-3 h-16 rounded-md overflow-hidden bar-control text-left cursor-pointer"
           style={{ animationDelay: `${i * 40}ms` }}
         >
           <div className="w-16 h-16 shrink-0">{tile.tile}</div>

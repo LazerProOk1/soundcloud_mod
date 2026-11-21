@@ -16,7 +16,7 @@ export const ClusterHeader = React.memo(function ClusterHeader({
 }: Props) {
   return (
     <div className="flex items-center gap-3">
-      <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-white/[0.07] text-accent">
+      <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ui-card text-accent">
         {icon}
       </div>
       <div className="min-w-0 flex-1">

@@ -14,7 +14,7 @@ function ArtistRelatedTabImpl({ related }: ArtistRelatedTabProps) {
   if (related.length === 0) {
     return (
       <div className="py-24 flex flex-col items-center gap-4">
-        <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-white/[0.04]">
+        <div className="w-16 h-16 rounded-2xl flex items-center justify-center ui-card">
           <Users size={24} className="text-white/15" />
         </div>
         <p className="text-white/30 text-sm">{t('artist.noRelated')}</p>
@@ -41,7 +41,7 @@ const RelatedCard = memo(({ item, maxWeight }: { item: RelatedArtist; maxWeight:
     <button
       type="button"
       onClick={() => navigate(`/artist/${encodeURIComponent(item.id)}`)}
-      className="group flex flex-col items-center gap-3 p-5 rounded-xl cursor-pointer transition-colors hover:bg-white/[0.06]"
+      className="group flex flex-col items-center gap-3 p-5 ui-icon rounded-xl cursor-pointer"
     >
       <div className="w-24 h-24 rounded-full overflow-hidden bg-white/[0.06]">
         <Avatar src={item.avatar_url} alt={item.name} size={96} />

@@ -31,7 +31,7 @@ const NowPlayingItem = React.memo(() => {
 
   return (
     <div
-      className="flex items-center gap-3.5 px-2 py-2 rounded-lg hover:bg-white/[0.06] cursor-pointer"
+      className="ui-icon flex items-center gap-3.5 px-2 py-2 rounded-lg cursor-pointer"
       onClick={handleClick}
     >
       <div className="w-14 h-14 rounded-md overflow-hidden shrink-0 relative bg-white/[0.04]">
@@ -100,8 +100,8 @@ const QueueRow = React.memo(function QueueRow({
       onContextMenu={(e) => openTrackMenu(e, track, absIdx)}
       ref={setNodeRef}
       style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={`flex items-center gap-3 pl-1 pr-2 py-1.5 rounded-lg group select-none transition-colors duration-150 ${
-        isDragging ? 'opacity-40' : isCurrent ? 'bg-white/[0.08]' : 'hover:bg-white/[0.06]'
+      className={`ui-icon flex items-center gap-3 pl-1 pr-2 py-1.5 rounded-lg group select-none ${
+        isDragging ? 'opacity-40' : ''
       }`}
     >
       <div
@@ -149,7 +149,7 @@ const QueueRow = React.memo(function QueueRow({
           e.stopPropagation();
           handleRemove();
         }}
-        className="hidden group-hover:flex w-8 h-8 rounded-full items-center justify-center text-white/55 hover:text-white hover:bg-white/[0.08] cursor-pointer shrink-0"
+        className="ui-icon hidden group-hover:flex w-8 h-8 rounded-full items-center justify-center text-white/55 hover:text-white cursor-pointer shrink-0"
       >
         <X size={15} />
       </button>
@@ -257,7 +257,7 @@ export const QueuePanel = React.memo(
                 <button
                   type="button"
                   onClick={() => usePlayerStore.getState().clearQueue()}
-                  className="h-8 px-3 rounded-full text-[12.5px] font-semibold text-white/60 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer flex items-center gap-1.5"
+                  className="ui-icon h-8 px-3 rounded-full text-[12.5px] font-semibold text-white/60 hover:text-white cursor-pointer flex items-center gap-1.5"
                 >
                   <Trash2 size={14} />
                   {t('player.clearQueue')}
@@ -267,7 +267,7 @@ export const QueuePanel = React.memo(
                 type="button"
                 aria-label={t('common.close', 'Close')}
                 onClick={onClose}
-                className="w-8 h-8 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer"
+                className="ui-icon w-8 h-8 rounded-full flex items-center justify-center text-white/60 hover:text-white cursor-pointer"
               >
                 <X size={18} />
               </button>

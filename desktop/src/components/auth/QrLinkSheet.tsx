@@ -48,7 +48,7 @@ export const QrLinkSheet = React.memo(
           />
           <Dialog.Content className="fixed left-1/2 top-1/2 z-[101] w-[420px] max-w-[92vw] -translate-x-1/2 -translate-y-1/2 rounded-2xl overflow-hidden outline-none app-surface">
             <div className="relative p-7" style={{ isolation: 'isolate' }}>
-              <Dialog.Close className="absolute top-5 right-5 w-8 h-8 flex items-center justify-center rounded-full text-white/60 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer">
+              <Dialog.Close className="absolute top-5 right-5 w-8 h-8 flex items-center justify-center ui-icon rounded-full text-white/60 hover:text-white cursor-pointer">
                 <X size={18} />
               </Dialog.Close>
 
@@ -99,7 +99,7 @@ export const QrLinkSheet = React.memo(
                   <button
                     type="button"
                     onClick={() => start()}
-                    className="flex items-center gap-1.5 h-10 px-5 rounded-full bg-white text-black text-[14px] font-semibold cursor-pointer"
+                    className="flex items-center gap-1.5 h-10 px-5 rounded-full ui-primary text-black text-[14px] font-semibold cursor-pointer"
                   >
                     <RefreshCw size={12} />
                     {t('qrLink.retry')}

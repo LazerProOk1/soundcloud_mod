@@ -73,7 +73,7 @@ export const SoundWaveSimilarBlock = React.memo(function SoundWaveSimilarBlock({
   const canPlay = allTracks.length > 0;
 
   return (
-    <section className="relative rounded-2xl overflow-hidden select-none bg-white/[0.04] border border-white/[0.06]">
+    <section className="relative rounded-2xl overflow-hidden select-none ui-card">
       <div className="relative p-5 md:p-6 flex flex-col gap-6" style={{ isolation: 'isolate' }}>
         <header className="flex items-center gap-3 flex-wrap">
           <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-accent">
@@ -84,7 +84,7 @@ export const SoundWaveSimilarBlock = React.memo(function SoundWaveSimilarBlock({
               <h2 className="soundwave-title text-[18px] font-black tracking-tight leading-none">
                 {t('soundwave.similar.title')}
               </h2>
-              <span className="inline-flex items-center gap-1 h-5 px-2 rounded-full bg-white/[0.08] text-[11px] font-semibold text-white/70">
+              <span className="inline-flex items-center gap-1 h-5 px-2 rounded-full bar-control text-[11px] font-semibold text-white/70">
                 <Sparkles size={10} />
                 AI
               </span>

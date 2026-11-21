@@ -29,9 +29,7 @@ export function CopyLinkButton({
       type="button"
       onClick={handleCopy}
       className={`inline-flex items-center gap-2 font-semibold transition-colors duration-200 cursor-pointer rounded-full ${
-        copied
-          ? 'bg-emerald-500/15 text-emerald-300'
-          : 'bg-white/[0.1] text-white/85 hover:bg-white/[0.16] hover:text-white'
+        copied ? 'bg-emerald-500/15 text-emerald-300' : 'bar-control text-white/85 hover:text-white'
       } ${size === 'sm' ? 'h-8 px-3.5 text-[12px]' : 'h-11 px-5 text-[13px]'}`}
     >
       {copied ? <Check size={iconSize} className="text-emerald-400" /> : <Link size={iconSize} />}

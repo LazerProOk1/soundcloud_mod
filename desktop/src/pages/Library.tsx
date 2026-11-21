@@ -83,9 +83,7 @@ const LibraryTrackRow = React.memo(
       <div
         onContextMenu={(e) => openTrackMenu(e, track)}
         className={`group flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-300 ease-[var(--ease-apple)] ${
-          isThis
-            ? 'bg-accent/[0.06] ring-1 ring-accent/20 shadow-[inset_0_0_20px_rgba(255,85,0,0.05)]'
-            : 'hover:bg-white/[0.04]'
+          isThis ? 'bg-white/[0.04]' : 'hover:bg-white/[0.04]'
         }`}
       >
         <div
@@ -102,7 +100,7 @@ const LibraryTrackRow = React.memo(
               <span className="text-[13px] text-white/20 tabular-nums font-medium group-hover:hidden">
                 {index + 1}
               </span>
-              <div className="hidden group-hover:flex w-8 h-8 rounded-full bg-white/10 items-center justify-center hover:bg-white/20 hover:scale-105 transition-all">
+              <div className="hidden group-hover:flex w-8 h-8 rounded-full bar-control items-center justify-center hover:scale-105 transition-all">
                 {playWhite14}
               </div>
             </>
@@ -131,7 +129,7 @@ const LibraryTrackRow = React.memo(
         <AddToPlaylistDialog trackUrns={[track.urn]}>
           <button
             type="button"
-            className="opacity-0 group-hover:opacity-100 w-8 h-8 rounded-lg flex items-center justify-center text-white/30 hover:text-white/80 hover:bg-white/[0.08] transition-all duration-200 shrink-0"
+            className="opacity-0 group-hover:opacity-100 w-8 h-8 rounded-lg flex items-center justify-center text-white/30 hover:text-white/80 ui-icon transition-all duration-200 shrink-0"
             title={t('playlist.addToPlaylist')}
           >
             <ListMusic size={16} />
@@ -141,7 +139,7 @@ const LibraryTrackRow = React.memo(
         <button
           type="button"
           onClick={handleAddToQueue}
-          className="opacity-0 group-hover:opacity-100 w-8 h-8 rounded-lg flex items-center justify-center text-white/30 hover:text-white/80 hover:bg-white/[0.08] transition-all duration-200 shrink-0"
+          className="opacity-0 group-hover:opacity-100 w-8 h-8 rounded-lg flex items-center justify-center text-white/30 hover:text-white/80 ui-icon transition-all duration-200 shrink-0"
           title={t('player.addToQueue')}
         >
           <ListPlus size={16} />
@@ -269,7 +267,7 @@ const LibraryHero = React.memo(function LibraryHero({
             type="button"
             onClick={handleShuffleLikes}
             disabled={shuffleLoading}
-            className="press flex h-12 w-12 items-center justify-center rounded-full bg-white text-black shadow-lg hover:scale-105 disabled:opacity-60 cursor-pointer"
+            className="press flex h-12 w-12 items-center justify-center rounded-full ui-primary shadow-lg hover:scale-105 disabled:opacity-60 cursor-pointer"
           >
             {shuffleLoading ? <Loader2 size={20} className="animate-spin" /> : playBlack20ml1}
           </button>
@@ -282,7 +280,7 @@ const LibraryHero = React.memo(function LibraryHero({
         tabIndex={0}
         onClick={onTabFollowing}
         onKeyDown={(e) => e.key === 'Enter' && onTabFollowing()}
-        className="relative flex h-[200px] cursor-pointer flex-col justify-between overflow-hidden rounded-2xl bg-white/[0.06] p-6 transition-colors duration-200 hover:bg-white/[0.09]"
+        className="relative flex h-[200px] cursor-pointer flex-col justify-between overflow-hidden rounded-2xl ui-card p-6"
       >
         <div>
           <Users size={26} className="text-white/80" />
@@ -357,7 +355,7 @@ const LocalTracksTab = React.memo(function LocalTracksTab({
                 ? useLibraryLocalStore.getState().toggleSuperlike(track)
                 : void toggleDislike(qc, track, false)
             }
-            className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-white/40 hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer"
+            className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-white/40 hover:text-white ui-icon transition-colors cursor-pointer"
           >
             <X size={16} />
           </button>
@@ -820,7 +818,7 @@ export const Library = React.memo(() => {
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             placeholder={t('library.filter')}
-            className="h-10 w-full rounded-full border border-transparent bg-white/[0.06] pl-9 pr-8 text-[13px] text-white/85 outline-none transition-colors placeholder:text-white/35 hover:bg-white/[0.08] focus:border-white/25 focus:bg-white/[0.08]"
+            className="h-10 w-full rounded-full bar-control pl-9 pr-8 text-[13px] text-white/85 outline-none transition-colors placeholder:text-white/35 focus:outline focus:outline-white/25"
           />
           {filter && (
             <button

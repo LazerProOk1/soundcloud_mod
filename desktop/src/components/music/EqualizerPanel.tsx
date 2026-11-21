@@ -124,9 +124,7 @@ const PresetBtn = React.memo(function PresetBtn({
       type="button"
       onClick={() => onClick(id)}
       className={`press h-8 rounded-full px-3.5 text-[12px] font-semibold cursor-pointer ${
-        active
-          ? 'bg-white text-black'
-          : 'bg-white/[0.06] text-white/75 hover:bg-white/[0.11] hover:text-white'
+        active ? 'bg-white text-black' : 'bar-control text-white/75 hover:text-white'
       }`}
     >
       {label}
@@ -205,11 +203,11 @@ export const EqualizerPanel = React.memo(function EqualizerPanel({
                   type="button"
                   onClick={handleReset}
                   title={t('eq.reset')}
-                  className="press flex h-9 w-9 items-center justify-center rounded-full text-white/55 hover:bg-white/[0.08] hover:text-white cursor-pointer"
+                  className="ui-icon press flex h-9 w-9 items-center justify-center rounded-full text-white/55 hover:text-white cursor-pointer"
                 >
                   <RotateCcw size={15} />
                 </button>
-                <Popover.Close className="press flex h-9 w-9 items-center justify-center rounded-full text-white/55 hover:bg-white/[0.08] hover:text-white cursor-pointer">
+                <Popover.Close className="ui-icon press flex h-9 w-9 items-center justify-center rounded-full text-white/55 hover:text-white cursor-pointer">
                   <X size={16} />
                 </Popover.Close>
               </div>

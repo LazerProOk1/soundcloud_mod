@@ -512,7 +512,7 @@ export const CommandPalette = React.memo(function CommandPalette({
               )}
               className="flex-1 bg-transparent text-[16px] text-white placeholder:text-white/35 outline-none"
             />
-            <kbd className="text-[11px] px-2 py-0.5 rounded-md bg-white/[0.08] text-white/50 shrink-0">
+            <kbd className="text-[11px] px-2 py-0.5 rounded-md bar-control text-white/50 shrink-0">
               Esc
             </kbd>
           </div>
@@ -561,7 +561,7 @@ export const CommandPalette = React.memo(function CommandPalette({
           <div className="px-5 py-2.5 border-t border-white/[0.06] flex items-center justify-between text-[12px] text-white/35">
             <div className="flex items-center gap-3">
               <span className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 rounded bg-white/[0.08] text-[11px]">↑↓</kbd>
+                <kbd className="px-1.5 py-0.5 rounded bar-control text-[11px]">↑↓</kbd>
                 {t('commandPalette.hintNavigate', 'navigate')}
               </span>
               <span className="flex items-center gap-1">
@@ -599,7 +599,7 @@ const CommandRow = React.memo(function CommandRow({
     >
       <div
         className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
-          selected ? 'bg-white/[0.12] text-white' : 'bg-white/[0.05] text-white/55'
+          selected ? 'bar-control is-active text-white' : 'bar-control text-white/55'
         }`}
       >
         {item.icon}
@@ -609,12 +609,12 @@ const CommandRow = React.memo(function CommandRow({
         {item.subtitle && <p className="text-[12px] text-white/40 truncate">{item.subtitle}</p>}
       </div>
       {item.badge && (
-        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-white/[0.08] text-white/65 shrink-0">
+        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bar-control text-white/65 shrink-0">
           {item.badge}
         </span>
       )}
       {item.shortcut && (
-        <kbd className="text-[11px] px-1.5 py-0.5 rounded-md bg-white/[0.08] text-white/50 shrink-0">
+        <kbd className="text-[11px] px-1.5 py-0.5 rounded-md bar-control text-white/50 shrink-0">
           {item.shortcut}
         </kbd>
       )}

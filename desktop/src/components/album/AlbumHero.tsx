@@ -36,7 +36,7 @@ const ArtistChip = memo(function ArtistChip({
       type="button"
       onClick={() => navigate(`/artist/${encodeURIComponent(id)}`)}
       title={subLabel}
-      className="press inline-flex items-center gap-2 h-9 pl-1 pr-4 rounded-full bg-white/[0.07] text-[13px] font-semibold text-white/85 hover:bg-white/[0.12] hover:text-white cursor-pointer"
+      className="press inline-flex items-center gap-2 h-9 pl-1 pr-4 rounded-full bar-control text-[13px] font-semibold text-white/85 hover:text-white cursor-pointer"
     >
       <span className="w-7 h-7 rounded-full overflow-hidden">
         <Avatar src={avatarUrl} alt={name} size={28} />
@@ -116,7 +116,7 @@ function AlbumHeroImpl({ album }: { album: AlbumDetail }) {
               <InfoChip icon={<Clock size={12} />}>{dur(totalDuration)}</InfoChip>
             )}
             {indexedCount < album.tracks.length && (
-              <span className="inline-flex items-center h-7 px-3 rounded-full bg-white/[0.07] text-[12px] font-semibold text-white/70">
+              <span className="inline-flex items-center h-7 px-3 rounded-full bar-control text-[12px] font-semibold text-white/70">
                 {t('album.availability', {
                   indexed: indexedCount,
                   total: album.tracks.length,

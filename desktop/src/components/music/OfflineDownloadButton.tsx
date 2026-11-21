@@ -79,7 +79,7 @@ export function OfflineDownloadButton({ tracks }: { tracks: Track[] }) {
       disabled={running || done}
       title={label}
       aria-label={label}
-      className={`press relative flex h-10 w-10 items-center justify-center rounded-full cursor-pointer disabled:cursor-default ${
+      className={`ui-icon press relative flex h-10 w-10 items-center justify-center rounded-full cursor-pointer disabled:cursor-default ${
         done ? 'text-emerald-400' : running ? 'text-white' : 'text-white/60 hover:text-white'
       }`}
     >

@@ -243,15 +243,7 @@ export const TrackCard = React.memo(
           {(track.access === 'blocked' || isCachedOffline) && (
             <div className="absolute bottom-2 left-2 flex items-center gap-1.5 z-[3]">
               {track.access === 'blocked' && (
-                <div
-                  className="flex items-center gap-1 rounded-full px-2 py-0.5"
-                  style={{
-                    background: glass ? 'rgba(10,10,14,0.72)' : 'rgba(20,20,24,0.88)',
-                    boxShadow: glass
-                      ? '0 1px 0 0 rgba(255,255,255,0.12) inset'
-                      : '0 0 0 1px rgba(255,255,255,0.10)',
-                  }}
-                >
+                <div className="flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5">
                   <span className="text-[9px] font-bold text-amber-400 uppercase tracking-wide">
                     Go+
                   </span>
@@ -267,15 +259,7 @@ export const TrackCard = React.memo(
 
           {/* Duration pill — bottom right */}
           <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <div
-              className="text-[10px] font-medium text-white/85 px-2 py-0.5 rounded-full"
-              style={{
-                background: glass ? 'rgba(10,10,14,0.72)' : 'rgba(18,18,22,0.85)',
-                boxShadow: glass
-                  ? '0 1px 0 0 rgba(255,255,255,0.10) inset'
-                  : '0 0 0 1px rgba(255,255,255,0.08)',
-              }}
-            >
+            <div className="text-[10px] font-medium text-white/85 px-2 py-0.5 rounded-full bg-black/60">
               {dur(track.duration)}
             </div>
           </div>

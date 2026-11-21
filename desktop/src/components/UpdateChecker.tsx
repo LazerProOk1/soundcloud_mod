@@ -178,7 +178,7 @@ export function UpdateChecker({
           <button
             type="button"
             onClick={onDismiss}
-            className="w-7 h-7 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] flex items-center justify-center transition-colors cursor-pointer"
+            className="ui-icon w-7 h-7 rounded-full flex items-center justify-center cursor-pointer"
           >
             <X size={14} className="text-white/40" />
           </button>
@@ -193,7 +193,7 @@ export function UpdateChecker({
 
         {/* Release notes */}
         {release.body && (
-          <div className="mx-5 mb-4 max-h-60 overflow-y-auto rounded-xl bg-black/30 border border-white/[0.08] p-4 space-y-1">
+          <div className="mx-5 mb-4 max-h-60 overflow-y-auto rounded-xl ui-card p-4 space-y-1">
             {renderedNotes}
           </div>
         )}
@@ -203,7 +203,7 @@ export function UpdateChecker({
           <button
             type="button"
             onClick={onDismiss}
-            className="flex-1 py-2.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.08] text-[13px] text-white/50 font-medium transition-colors cursor-pointer"
+            className="flex-1 py-2.5 rounded-xl bar-control text-[13px] text-white/50 font-medium cursor-pointer"
           >
             {t('update.later')}
           </button>

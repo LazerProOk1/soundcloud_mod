@@ -8,7 +8,7 @@ const VARIANT = {
   rail: {
     base: 'inline-flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-200 ease-[var(--ease-apple)] cursor-pointer',
     copied: 'text-emerald-400 bg-emerald-500/12',
-    idle: 'text-white/60 hover:text-white/95 hover:bg-white/[0.07]',
+    idle: 'ui-icon text-white/60 hover:text-white/95',
   },
   /** Round icon in a row of other round buttons (same 22 px icons as its neighbours). */
   round: {

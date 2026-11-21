@@ -520,10 +520,10 @@ export function SoundWavePage() {
                   {t('soundwave.myWave', 'My Wave')}
                 </h1>
                 <span
-                  className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-[0.14em]"
+                  className={`bar-control inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-[0.14em] ${
+                    isWaveTrack ? 'is-active' : ''
+                  }`}
                   style={{
-                    background: isWaveTrack ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.06)',
-                    border: '0.5px solid rgba(255,255,255,0.14)',
                     color: isWaveTrack ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.5)',
                   }}
                 >
@@ -620,7 +620,7 @@ export function SoundWavePage() {
                     onClick={handleStartWave}
                     disabled={allTracks.length === 0}
                     title={t('soundwave.nowPlayingOther', { title: currentTrack.title })}
-                    className="press mx-auto mt-2 flex h-8 select-none items-center gap-1.5 rounded-full bg-white px-3.5 text-[12.5px] font-bold text-black cursor-pointer disabled:opacity-40"
+                    className="press mx-auto mt-2 flex h-8 select-none items-center gap-1.5 rounded-full ui-primary px-3.5 text-[12.5px] font-bold cursor-pointer disabled:opacity-40"
                   >
                     <Play size={12} fill="currentColor" strokeWidth={0} />
                     {t('soundwave.startWave')}
@@ -657,7 +657,7 @@ export function SoundWavePage() {
               onClick={handlePrev}
               disabled={!currentTrack}
               aria-label={t('kb.prevTrack')}
-              className="press relative z-10 flex h-12 w-12 items-center justify-center rounded-full bg-white/[0.07] text-white/75 hover:bg-white/[0.14] hover:text-white cursor-pointer disabled:opacity-30 disabled:cursor-default"
+              className="press relative z-10 flex h-12 w-12 items-center justify-center rounded-full bar-control text-white/75 hover:text-white cursor-pointer disabled:opacity-30 disabled:cursor-default"
             >
               <SkipBack size={20} fill="currentColor" />
             </button>
@@ -726,7 +726,7 @@ export function SoundWavePage() {
               onClick={playerNext}
               disabled={!currentTrack}
               aria-label={t('kb.nextTrack')}
-              className="press relative z-10 flex h-12 w-12 items-center justify-center rounded-full bg-white/[0.07] text-white/75 hover:bg-white/[0.14] hover:text-white cursor-pointer disabled:opacity-30 disabled:cursor-default"
+              className="press relative z-10 flex h-12 w-12 items-center justify-center rounded-full bar-control text-white/75 hover:text-white cursor-pointer disabled:opacity-30 disabled:cursor-default"
             >
               <SkipForward size={20} fill="currentColor" />
             </button>
@@ -744,7 +744,7 @@ export function SoundWavePage() {
                     type="button"
                     onClick={handleNotThis}
                     disabled={!isWaveTrack}
-                    className="press flex h-10 items-center gap-2 rounded-full bg-white/[0.07] px-4 text-[13px] font-semibold text-white/85 hover:bg-white/[0.14] hover:text-white cursor-pointer disabled:opacity-35 disabled:cursor-default"
+                    className="press flex h-10 items-center gap-2 rounded-full bar-control px-4 text-[13px] font-semibold text-white/85 hover:text-white cursor-pointer disabled:opacity-35 disabled:cursor-default"
                   >
                     <ThumbsDown size={15} />
                     {t('soundwave.notThis')}
@@ -755,7 +755,7 @@ export function SoundWavePage() {
                     type="button"
                     onClick={handleMoreLikeThis}
                     disabled={!isWaveTrack}
-                    className="press flex h-10 items-center gap-2 rounded-full bg-white/[0.07] px-4 text-[13px] font-semibold text-white/85 hover:bg-white/[0.14] hover:text-white cursor-pointer disabled:opacity-35 disabled:cursor-default"
+                    className="press flex h-10 items-center gap-2 rounded-full bar-control px-4 text-[13px] font-semibold text-white/85 hover:text-white cursor-pointer disabled:opacity-35 disabled:cursor-default"
                   >
                     <ThumbsUp size={15} />
                     {t('soundwave.moreLikeThis')}
@@ -765,7 +765,7 @@ export function SoundWavePage() {
                     onClick={() => openLyricsPanel({ tab: 'lyrics', rightPanelOpen: true })}
                     title={t('kb.lyrics')}
                     aria-label={t('kb.lyrics')}
-                    className="flex h-10 w-10 items-center justify-center rounded-full text-white/60 hover:bg-white/[0.1] hover:text-white cursor-pointer"
+                    className="flex h-10 w-10 items-center justify-center rounded-full ui-icon text-white/60 hover:text-white cursor-pointer"
                   >
                     <MicVocal size={17} />
                   </button>
@@ -774,7 +774,7 @@ export function SoundWavePage() {
                     onClick={() => openLyricsPanel({ tab: 'comments', rightPanelOpen: true })}
                     title={t('track.comments')}
                     aria-label={t('track.comments')}
-                    className="flex h-10 w-10 items-center justify-center rounded-full text-white/60 hover:bg-white/[0.1] hover:text-white cursor-pointer"
+                    className="flex h-10 w-10 items-center justify-center rounded-full ui-icon text-white/60 hover:text-white cursor-pointer"
                   >
                     <MessageCircle size={17} />
                   </button>
@@ -805,7 +805,7 @@ export function SoundWavePage() {
                   type="button"
                   onClick={() => handlePlayFromWave(tr)}
                   title={`${tr.user?.username ?? ''} — ${tr.title}`}
-                  className="wave-next-chip flex items-center gap-2 h-9 pl-1 pr-3.5 rounded-full bg-white/[0.07] hover:bg-white/[0.14] border border-white/[0.08] cursor-pointer max-w-[240px]"
+                  className="wave-next-chip flex items-center gap-2 h-9 pl-1 pr-3.5 rounded-full bar-control cursor-pointer max-w-[240px]"
                   style={{ animationDelay: `${i * 60}ms` }}
                 >
                   {thumb ? (

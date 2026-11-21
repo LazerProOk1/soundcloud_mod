@@ -150,6 +150,7 @@ const PlayBtn = ({ onClick, playing }: { onClick: () => void; playing: boolean }
   return (
     <button
       type="button"
+      className="ui-primary"
       style={{
         border: 'none',
         cursor: 'pointer',
@@ -161,19 +162,8 @@ const PlayBtn = ({ onClick, playing }: { onClick: () => void; playing: boolean }
         height: 28,
         borderRadius: '50%',
         flexShrink: 0,
-        background: 'linear-gradient(150deg,rgba(255,255,255,0.97) 0%,rgba(215,215,235,0.92) 100%)',
-        color: '#18182a',
         transform: pressed ? 'scale(0.87)' : 'scale(1)',
-        transition: 'transform 0.10s cubic-bezier(0.16,1,0.3,1)',
-        boxShadow: pressed
-          ? '0 1px 3px rgba(0,0,0,0.45)'
-          : [
-              '0 1px 0 0 rgba(255,255,255,1) inset',
-              '0 3px 8px -2px rgba(255,255,255,0.50) inset',
-              '0 -1px 0 0 rgba(0,0,0,0.18) inset',
-              '0 0 0 0.5px rgba(255,255,255,0.45)',
-              '0 3px 12px rgba(0,0,0,0.42)',
-            ].join(','),
+        transition: 'transform 0.10s cubic-bezier(0.16,1,0.3,1), background-color 0.15s',
         ...noDrag,
       }}
       onClick={onClick}
@@ -203,6 +193,7 @@ const GhostBtn = ({
   return (
     <button
       type="button"
+      className="ui-icon"
       style={{
         border: 'none',
         cursor: 'pointer',
@@ -219,11 +210,6 @@ const GhostBtn = ({
           : hovered
             ? 'rgba(255,255,255,0.82)'
             : 'rgba(255,255,255,0.40)',
-        background: active
-          ? 'color-mix(in srgb,var(--color-accent,#ff5500) 16%,transparent)'
-          : hovered
-            ? 'rgba(255,255,255,0.06)'
-            : 'transparent',
         transform: pressed ? 'scale(0.80)' : 'scale(1)',
         transition: 'transform 0.09s cubic-bezier(0.16,1,0.3,1), color 0.14s, background 0.14s',
         ...noDrag,
@@ -461,6 +447,7 @@ function MiniPlayerInner() {
         {/* ── Expand button ────────────────────────────────── */}
         <button
           type="button"
+          className="ui-icon"
           onClick={() => void exit()}
           style={{
             border: 'none',
@@ -473,18 +460,15 @@ function MiniPlayerInner() {
             height: 58,
             flexShrink: 0,
             color: 'rgba(255,255,255,0.22)',
-            background: 'rgba(255,255,255,0.03)',
             borderLeft: '1px solid rgba(255,255,255,0.05)',
             transition: 'color 0.14s, background 0.14s',
             ...noDrag,
           }}
           onMouseEnter={(e) => {
             (e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.65)';
-            (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.06)';
           }}
           onMouseLeave={(e) => {
             (e.currentTarget as HTMLButtonElement).style.color = 'rgba(255,255,255,0.22)';
-            (e.currentTarget as HTMLButtonElement).style.background = 'rgba(255,255,255,0.03)';
           }}
         >
           <IconExpand />

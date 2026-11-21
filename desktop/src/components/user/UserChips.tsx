@@ -30,7 +30,7 @@ export const InfoChip = React.memo(function InfoChip({
   children: React.ReactNode;
 }) {
   return (
-    <span className="inline-flex items-center gap-1.5 h-7 px-3 rounded-full bg-white/[0.07] text-[12px] font-semibold text-white/70">
+    <span className="inline-flex items-center gap-1.5 h-7 px-3 rounded-full bar-control text-[12px] font-semibold text-white/70">
       <span className="text-white/45">{icon}</span>
       {children}
     </span>

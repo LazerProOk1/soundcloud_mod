@@ -57,7 +57,7 @@ export function FollowBtn({ userUrn }: FollowBtnProps) {
       className={
         following
           ? PILL_BTN
-          : 'press inline-flex h-9 items-center justify-center gap-2 rounded-full bg-white px-5 text-[13px] font-semibold text-black hover:bg-white/90 cursor-pointer disabled:opacity-60'
+          : 'press inline-flex h-9 items-center justify-center gap-2 rounded-full ui-primary px-5 text-[13px] font-semibold text-black cursor-pointer disabled:opacity-60'
       }
     >
       {busy ? (

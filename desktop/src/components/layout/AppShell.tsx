@@ -80,7 +80,7 @@ function getVolumeStep(repeatCount: number): number {
 /* ── Keybindings dialog ───────────────────────────────────── */
 
 const KeyCap = ({ children }: { children: React.ReactNode }) => (
-  <kbd className="inline-flex items-center justify-center min-w-[28px] h-[28px] px-1.5 rounded-lg bg-white/[0.08] border border-white/[0.1] text-[12px] font-semibold text-white/70 font-mono shadow-[0_1px_2px_rgba(0,0,0,0.3),inset_0_1px_0_rgba(255,255,255,0.06)]">
+  <kbd className="inline-flex items-center justify-center min-w-[28px] h-[28px] px-1.5 rounded-lg bar-control text-[12px] font-semibold text-white/70 font-mono">
     {children}
   </kbd>
 );
@@ -99,7 +99,7 @@ const KeybindingsDialog = React.memo(
       <Dialog.Root open={open} onOpenChange={onOpenChange}>
         <Dialog.Portal>
           <Dialog.Overlay className="dialog-overlay fixed inset-0 z-[80] bg-black/60 backdrop-blur-sm" />
-          <Dialog.Content className="dialog-content fixed z-[80] top-1/2 left-1/2 w-full max-w-[520px] bg-[#1a1a1e]/95 backdrop-blur-2xl border border-white/[0.08] rounded-[40px] shadow-2xl overflow-hidden">
+          <Dialog.Content className="dialog-content fixed z-[80] top-1/2 left-1/2 w-full max-w-[520px] app-surface rounded-[40px] overflow-hidden">
             {/* Header */}
             <div className="px-7 pt-6 pb-4 border-b border-white/[0.06]">
               <Dialog.Title className="text-[18px] font-bold text-white/90 tracking-tight">
@@ -141,7 +141,7 @@ const KeybindingsDialog = React.memo(
               <Dialog.Close asChild>
                 <button
                   type="button"
-                  className="px-5 py-2 rounded-xl bg-white/[0.08] hover:bg-white/[0.12] text-[13px] font-semibold text-white/70 hover:text-white transition-all cursor-pointer"
+                  className="px-5 py-2 rounded-full bar-control text-[13px] font-semibold text-white/70 hover:text-white transition-all cursor-pointer"
                 >
                   {t('kb.close')}
                 </button>

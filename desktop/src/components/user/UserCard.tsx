@@ -4,14 +4,14 @@ import { art, fc } from '../../lib/formatters';
 import type { SCUser } from '../../lib/hooks';
 import { Users } from '../../lib/icons';
 
-/** Карточка пользователя: аватар, имя, подписчики. */
+/** User card: avatar, name, follower count. */
 export const UserCard = React.memo(function UserCard({ user }: { user: SCUser }) {
   const navigate = useNavigate();
   const avatar = art(user.avatar_url, 't300x300');
 
   return (
     <div
-      className="group flex flex-col items-center gap-4 p-5 rounded-3xl bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.04] hover:border-white/[0.08] transition-all duration-300 cursor-pointer"
+      className="group flex flex-col items-center gap-4 p-5 rounded-3xl ui-card cursor-pointer"
       onClick={() => navigate(`/user/${encodeURIComponent(user.urn)}`)}
     >
       <div className="relative w-24 h-24 rounded-full shadow-xl overflow-hidden ring-2 ring-white/[0.05] group-hover:ring-white/[0.15] group-hover:scale-105 transition-all duration-500">

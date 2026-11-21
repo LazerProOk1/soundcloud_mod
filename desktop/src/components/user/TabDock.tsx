@@ -164,7 +164,7 @@ function TabDockImpl<T extends string>({ tabs, active, onChange }: TabDockProps<
               onClick={() => onChange(tab.id)}
               className={`relative z-10 shrink-0 inline-flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 md:px-4 h-8 sm:h-9 rounded-full text-[13px] sm:text-[14px] font-semibold transition-colors duration-300 ${
                 overflows ? 'cursor-grab' : 'cursor-pointer'
-              } ${isActive ? 'text-black' : 'text-white/80 bg-white/[0.07] hover:bg-white/[0.12] hover:text-white'}`}
+              } ${isActive ? 'text-black' : 'bar-control text-white/80 hover:text-white'}`}
             >
               <span className="whitespace-nowrap">{tab.label}</span>
               {tab.count != null && (

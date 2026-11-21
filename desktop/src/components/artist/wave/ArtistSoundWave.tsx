@@ -137,7 +137,7 @@ export const ArtistSoundWave = React.memo(function ArtistSoundWave({
 
   return (
     <section
-      className="relative rounded-2xl overflow-hidden select-none bg-white/[0.04] border border-white/[0.06]"
+      className="relative rounded-2xl overflow-hidden select-none ui-card"
       style={
         {
           '--color-accent': auraRgb(aura),
@@ -162,7 +162,7 @@ export const ArtistSoundWave = React.memo(function ArtistSoundWave({
               <span className="text-[16px] font-bold text-white truncate leading-tight">
                 {t('artist.wave.title')}
               </span>
-              <span className="inline-flex items-center gap-1 h-5 px-2 rounded-full bg-white/[0.08] text-[11px] font-semibold text-white/70 shrink-0">
+              <span className="inline-flex items-center gap-1 h-5 px-2 rounded-full bar-control text-[11px] font-semibold text-white/70 shrink-0">
                 <Sparkles size={10} />
                 AI
               </span>
@@ -190,7 +190,7 @@ export const ArtistSoundWave = React.memo(function ArtistSoundWave({
             onClick={() => setCollapsed(!collapsed)}
             aria-label={collapsed ? t('nav.expand') : t('nav.collapse')}
             title={collapsed ? t('nav.expand') : t('nav.collapse')}
-            className="press w-9 h-9 rounded-full flex items-center justify-center cursor-pointer bg-white/[0.07] text-white/70 hover:bg-white/[0.12] hover:text-white shrink-0"
+            className="press w-9 h-9 rounded-full flex items-center justify-center cursor-pointer bar-control text-white/70 hover:text-white shrink-0"
           >
             <ChevronDown
               size={14}

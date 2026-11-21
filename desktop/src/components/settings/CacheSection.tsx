@@ -26,7 +26,7 @@ import { SettingRow, SettingsDivider, SettingsSection } from './SettingsKit';
 const CACHE_LIMIT_GB = [1, 2, 5, 10, 20, 0];
 
 const CLEAR_BTN =
-  'press flex h-9 items-center gap-2 rounded-full bg-white/[0.07] px-4 text-[13px] font-semibold text-white/80 hover:bg-red-500/15 hover:text-red-300 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed';
+  'press flex h-9 items-center gap-2 rounded-full bar-control ui-danger px-4 text-[13px] font-semibold text-white/80 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed';
 
 function CacheRow({
   label,

@@ -112,7 +112,7 @@ const WallpaperPicker = React.memo(function WallpaperPicker() {
         <button
           type="button"
           onClick={() => setBackgroundImage('')}
-          className={`press-soft relative flex aspect-video items-center justify-center rounded-xl bg-white/[0.04] cursor-pointer ${optionRing(!backgroundImage)}`}
+          className={`press-soft relative flex aspect-video items-center justify-center rounded-xl ui-card cursor-pointer ${optionRing(!backgroundImage)}`}
         >
           <span className="text-[12px] font-semibold text-white/60">{t('settings.none')}</span>
           {!backgroundImage && <SelectedCheck />}
@@ -163,7 +163,7 @@ const WallpaperPicker = React.memo(function WallpaperPicker() {
         })}
 
         {loading && (
-          <div className="flex aspect-video items-center justify-center rounded-xl bg-white/[0.04]">
+          <div className="flex aspect-video items-center justify-center rounded-xl ui-card">
             <Loader2 size={14} className="animate-spin text-white/30" />
           </div>
         )}
@@ -172,7 +172,7 @@ const WallpaperPicker = React.memo(function WallpaperPicker() {
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          className="press flex aspect-video flex-col items-center justify-center gap-1 rounded-xl bg-white/[0.04] text-white/55 hover:bg-white/[0.08] hover:text-white cursor-pointer"
+          className="press flex aspect-video flex-col items-center justify-center gap-1 rounded-xl bar-control text-white/55 hover:text-white cursor-pointer"
         >
           <Upload size={15} />
           <span className="text-[11px] font-semibold">{t('settings.addFile')}</span>
@@ -191,8 +191,8 @@ const WallpaperPicker = React.memo(function WallpaperPicker() {
           onClick={() => setShowUrlInput(!showUrlInput)}
           className={`press flex aspect-video flex-col items-center justify-center gap-1 rounded-xl cursor-pointer ${
             showUrlInput
-              ? 'bg-white/[0.10] text-white'
-              : 'bg-white/[0.04] text-white/55 hover:bg-white/[0.08] hover:text-white'
+              ? 'bar-control is-active text-white'
+              : 'bar-control text-white/55 hover:text-white'
           }`}
         >
           <Link size={15} />
@@ -209,7 +209,7 @@ const WallpaperPicker = React.memo(function WallpaperPicker() {
             onChange={(e) => setUrlInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleDownloadUrl()}
             placeholder={t('settings.bgUrlPlaceholder')}
-            className="flex-1 px-4 py-2.5 rounded-xl bg-white/[0.04] border border-white/[0.06] text-[13px] text-white/80 placeholder:text-white/20 focus:border-white/[0.12] focus:bg-white/[0.06] transition-all duration-200 outline-none"
+            className="flex-1 px-4 py-2.5 rounded-xl bar-control border border-transparent text-[13px] text-white/80 placeholder:text-white/20 focus:border-white/25 outline-none"
             autoFocus
           />
           <button
@@ -335,7 +335,7 @@ function AccentFromWallpaperBtn({
       type="button"
       onClick={extract}
       disabled={loading}
-      className="press flex h-8 items-center gap-2 rounded-full bg-white/[0.08] px-3.5 text-[13px] font-semibold text-white/80 hover:bg-white/[0.13] hover:text-white cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+      className="press flex h-8 items-center gap-2 rounded-full bar-control px-3.5 text-[13px] font-semibold text-white/80 hover:text-white cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
     >
       {loading ? <Loader2 size={14} className="animate-spin" /> : <Pipette size={14} />}
       {t('settings.accentFromWallpaper', 'Цвет акцента из обоев')}
@@ -371,7 +371,7 @@ function AccentPicker({ value, onChange }: { value: string; onChange: (hex: stri
         <button
           type="button"
           title={t('settings.accentPick')}
-          className="press flex h-7 w-7 items-center justify-center rounded-full bg-white/[0.08] text-white/70 hover:bg-white/[0.14] hover:text-white cursor-pointer"
+          className="press flex h-7 w-7 items-center justify-center rounded-full bar-control text-white/70 hover:text-white cursor-pointer"
         >
           <Pipette size={13} />
         </button>
@@ -402,7 +402,7 @@ function AccentPicker({ value, onChange }: { value: string; onChange: (hex: stri
                 setDraft(e.target.value);
                 if (/^#[0-9a-f]{6}$/i.test(e.target.value)) onChange(e.target.value.toLowerCase());
               }}
-              className="h-8 min-w-0 flex-1 rounded-full border border-transparent bg-white/[0.06] px-3 text-[13px] tabular-nums text-white outline-none focus:border-white/25"
+              className="h-8 min-w-0 flex-1 rounded-full bar-control border border-transparent px-3 text-[13px] tabular-nums text-white outline-none focus:border-white/25"
             />
           </div>
         </Popover.Content>

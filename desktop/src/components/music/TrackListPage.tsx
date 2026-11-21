@@ -160,14 +160,14 @@ export const TrackListPage = React.memo(function TrackListPage({
             onChange={(e) => setQuery(e.target.value)}
             onBlur={() => !query && setSearchOpen(false)}
             placeholder={t('trackList.searchHere', 'Search in this list')}
-            className="w-64 h-9 px-3 rounded-md bg-white/[0.08] text-[14px] text-white placeholder:text-white/40 outline-none focus:bg-white/[0.12]"
+            className="w-64 h-9 px-3 rounded-md bar-control text-[14px] text-white placeholder:text-white/40 outline-none focus:outline focus:outline-white/25"
           />
         ) : (
           <button
             type="button"
             onClick={() => setSearchOpen(true)}
             title={t('trackList.searchHere', 'Search in this list')}
-            className="w-10 h-10 rounded-full flex items-center justify-center text-white/60 hover:text-white cursor-pointer"
+            className="w-10 h-10 rounded-full flex items-center justify-center text-white/60 hover:text-white ui-icon cursor-pointer"
           >
             <Search size={20} />
           </button>
@@ -202,7 +202,7 @@ export const TrackListPage = React.memo(function TrackListPage({
               <button
                 type="button"
                 onClick={onRetry}
-                className="press h-9 rounded-full bg-white/[0.08] px-4 text-[13px] font-semibold text-white/85 hover:bg-white/[0.13] cursor-pointer"
+                className="press h-9 rounded-full bar-control px-4 text-[13px] font-semibold text-white/85 cursor-pointer"
               >
                 {t('common.retry')}
               </button>

@@ -101,7 +101,7 @@ export const Sidebar = React.memo(() => {
         type="button"
         onClick={toggleSidebar}
         title={t(collapsed ? 'nav.expand' : 'nav.collapse')}
-        className={`group flex items-center gap-2.5 mx-2 mt-2 mb-1 px-2 h-11 rounded-lg text-white/85 hover:text-white hover:bg-white/[0.06] cursor-pointer ${
+        className={`group flex items-center gap-2.5 mx-2 mt-2 mb-1 px-2 h-11 rounded-lg text-white/85 hover:text-white ui-icon cursor-pointer ${
           collapsed ? 'justify-center' : ''
         }`}
       >

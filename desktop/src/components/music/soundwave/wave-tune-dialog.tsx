@@ -43,8 +43,8 @@ function Chip({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`flex items-center gap-2 h-11 px-5 rounded-full text-[15px] font-semibold cursor-pointer transition-colors ${
-        active ? 'bg-white text-black' : 'bg-white/[0.08] text-white hover:bg-white/[0.14]'
+      className={`flex items-center gap-2 h-11 px-5 rounded-full text-[15px] font-semibold cursor-pointer ${
+        active ? 'ui-primary' : 'bar-control text-white'
       }`}
     >
       {children}
@@ -111,7 +111,7 @@ export const WaveTuneDialog = React.memo(function WaveTuneDialog({
             <Dialog.Title className="text-[28px] font-bold text-white tracking-tight">
               {t('waveTune.title')}
             </Dialog.Title>
-            <Dialog.Close className="w-9 h-9 -mr-2 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/[0.08] cursor-pointer">
+            <Dialog.Close className="w-9 h-9 -mr-2 rounded-full flex items-center justify-center ui-icon text-white/60 hover:text-white cursor-pointer">
               <X size={20} />
             </Dialog.Close>
           </div>

@@ -53,7 +53,7 @@ const CastCard = memo(function CastCard({
     <button
       type="button"
       onClick={() => navigate(`/artist/${encodeURIComponent(artist.id)}`)}
-      className="flex items-center gap-3 p-2.5 rounded-xl cursor-pointer text-left transition-colors hover:bg-white/[0.06]"
+      className="flex items-center gap-3 p-2.5 ui-icon rounded-xl cursor-pointer text-left"
     >
       <span className="w-12 h-12 rounded-full overflow-hidden shrink-0 bg-white/[0.06]">
         <Avatar src={artist.avatar_url} alt={artist.name} size={48} />

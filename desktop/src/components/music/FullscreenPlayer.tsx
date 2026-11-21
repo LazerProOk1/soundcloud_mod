@@ -126,7 +126,7 @@ const FsContent = React.memo(({ track, visible, onClose }: FsContentProps) => {
       <button
         type="button"
         onClick={onClose}
-        className="absolute top-5 right-5 z-20 w-10 h-10 rounded-full flex items-center justify-center text-white/50 hover:text-white hover:bg-white/[0.08] transition-all duration-200 cursor-pointer"
+        className="ui-icon absolute top-5 right-5 z-20 w-10 h-10 rounded-full flex items-center justify-center text-white/50 hover:text-white cursor-pointer"
       >
         <X size={18} />
       </button>
@@ -205,7 +205,7 @@ const FsContent = React.memo(({ track, visible, onClose }: FsContentProps) => {
           <button
             type="button"
             onClick={handlePrev}
-            className="press w-12 h-12 rounded-full flex items-center justify-center text-white/70 hover:text-white hover:bg-white/[0.06] cursor-pointer"
+            className="ui-icon press w-12 h-12 rounded-full flex items-center justify-center text-white/70 hover:text-white cursor-pointer"
           >
             <SkipBack size={22} fill="currentColor" />
           </button>
@@ -213,7 +213,7 @@ const FsContent = React.memo(({ track, visible, onClose }: FsContentProps) => {
           <button
             type="button"
             onClick={togglePlay}
-            className="press w-16 h-16 rounded-full bg-white flex items-center justify-center shadow-lg hover:scale-105 cursor-pointer"
+            className="ui-primary press w-16 h-16 rounded-full flex items-center justify-center hover:scale-105 cursor-pointer"
           >
             <PopIcon on={isPlaying}>{isPlaying ? pauseBlack22 : playBlack22}</PopIcon>
           </button>
@@ -221,7 +221,7 @@ const FsContent = React.memo(({ track, visible, onClose }: FsContentProps) => {
           <button
             type="button"
             onClick={next}
-            className="press w-12 h-12 rounded-full flex items-center justify-center text-white/70 hover:text-white hover:bg-white/[0.06] cursor-pointer"
+            className="ui-icon press w-12 h-12 rounded-full flex items-center justify-center text-white/70 hover:text-white cursor-pointer"
           >
             <SkipForward size={22} fill="currentColor" />
           </button>
@@ -234,7 +234,7 @@ const FsContent = React.memo(({ track, visible, onClose }: FsContentProps) => {
             openLyricsPanel({ tab: 'lyrics', rightPanelOpen: true });
             onClose();
           }}
-          className="press h-8 rounded-full bg-white/[0.07] px-4 text-[12px] font-semibold text-white/70 hover:bg-white/[0.12] hover:text-white cursor-pointer"
+          className="bar-control press h-8 rounded-full px-4 text-[12px] font-semibold text-white/70 hover:text-white cursor-pointer"
         >
           {t('player.openLyrics')}
         </button>

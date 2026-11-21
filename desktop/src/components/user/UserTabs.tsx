@@ -35,7 +35,7 @@ function TabWrapperImpl({ children, isLoading, isEmpty, emptyText }: TabWrapperP
         </div>
       ) : isEmpty ? (
         <div className="py-24 flex flex-col items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-white/[0.04]">
+          <div className="w-16 h-16 rounded-2xl flex items-center justify-center ui-card">
             <Music size={24} className="text-white/15" />
           </div>
           <p className="text-white/30 text-sm">{emptyText ?? t('common.empty')}</p>
@@ -164,7 +164,7 @@ export function UserConnectionsTab({
       <button
         type="button"
         onClick={() => nav(`/user/${encodeURIComponent(user.urn)}`)}
-        className="h-full w-full flex flex-col items-center gap-3 p-6 rounded-xl transition-colors cursor-pointer hover:bg-white/[0.06]"
+        className="h-full w-full flex flex-col items-center gap-3 p-6 ui-icon rounded-xl cursor-pointer"
       >
         <div className="w-24 h-24 rounded-full overflow-hidden bg-white/[0.06]">
           <Avatar src={user.avatar_url} alt={user.username} size={96} />

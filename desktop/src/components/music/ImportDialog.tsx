@@ -96,7 +96,7 @@ export function ImportDialog({
         setList(null);
       }}
       className={`flex items-center gap-2 h-10 px-4 rounded-full text-[14px] font-semibold cursor-pointer transition-colors ${
-        tab === id ? 'bg-white text-black' : 'bg-white/[0.08] text-white hover:bg-white/[0.14]'
+        tab === id ? 'bg-white text-black' : 'bar-control text-white'
       }`}
     >
       {icon}
@@ -114,7 +114,7 @@ export function ImportDialog({
               <Dialog.Title className="text-[26px] font-bold text-white tracking-tight">
                 {t('import.title')}
               </Dialog.Title>
-              <Dialog.Close className="w-9 h-9 -mr-2 rounded-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/[0.08] cursor-pointer">
+              <Dialog.Close className="w-9 h-9 -mr-2 rounded-full flex items-center justify-center text-white/60 hover:text-white ui-icon cursor-pointer">
                 <X size={20} />
               </Dialog.Close>
             </div>
@@ -136,13 +136,13 @@ export function ImportDialog({
                     onKeyDown={(e) => e.key === 'Enter' && void load()}
                     placeholder={t('ym.tokenPlaceholder')}
                     autoComplete="off"
-                    className="flex-1 min-w-0 h-12 px-4 rounded-md bg-[#3e3e3e] text-[15px] text-white placeholder:text-white/35 outline-none border border-transparent focus:border-white/25"
+                    className="flex-1 min-w-0 h-12 px-4 rounded-md bar-control text-[15px] text-white placeholder:text-white/35 outline-none focus:outline focus:outline-white/25"
                   />
                   <button
                     type="button"
                     onClick={() => void load()}
                     disabled={loading || !token.trim()}
-                    className="h-12 px-6 rounded-full bg-white text-black text-[15px] font-bold cursor-pointer disabled:opacity-50"
+                    className="h-12 px-6 rounded-full ui-primary text-[15px] font-bold cursor-pointer disabled:opacity-50"
                   >
                     {loading ? <Loader2 size={18} className="animate-spin" /> : t('import.load')}
                   </button>
@@ -166,13 +166,13 @@ export function ImportDialog({
                     onChange={(e) => setUrl(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && void load()}
                     placeholder="https://music.yandex.ru/users/…/playlists/…"
-                    className="flex-1 min-w-0 h-12 px-4 rounded-md bg-[#3e3e3e] text-[15px] text-white placeholder:text-white/35 outline-none border border-transparent focus:border-white/25"
+                    className="flex-1 min-w-0 h-12 px-4 rounded-md bar-control text-[15px] text-white placeholder:text-white/35 outline-none focus:outline focus:outline-white/25"
                   />
                   <button
                     type="button"
                     onClick={() => void load()}
                     disabled={loading || !url.trim()}
-                    className="h-12 px-6 rounded-full bg-white text-black text-[15px] font-bold cursor-pointer disabled:opacity-50"
+                    className="h-12 px-6 rounded-full ui-primary text-[15px] font-bold cursor-pointer disabled:opacity-50"
                   >
                     {loading ? <Loader2 size={18} className="animate-spin" /> : t('import.load')}
                   </button>
@@ -186,7 +186,7 @@ export function ImportDialog({
                       {SOURCES.map((s) => (
                         <span
                           key={s.label}
-                          className="flex items-center gap-2 h-9 px-3.5 rounded-full bg-black/30 text-[13px] font-semibold text-white"
+                          className="flex items-center gap-2 h-9 px-3.5 rounded-full bar-control text-[13px] font-semibold text-white"
                         >
                           <span className="w-2 h-2 rounded-full" style={{ background: s.dot }} />
                           {s.label}
@@ -204,7 +204,7 @@ export function ImportDialog({
                   onChange={(e) => setText(e.target.value)}
                   rows={8}
                   placeholder={'kizaru - Bandana\nМонеточка - гори гори гори'}
-                  className="w-full px-4 py-3 rounded-md bg-[#3e3e3e] text-[14px] text-white placeholder:text-white/35 outline-none border border-transparent focus:border-white/25 resize-none"
+                  className="w-full px-4 py-3 rounded-md bar-control text-[14px] text-white placeholder:text-white/35 outline-none focus:outline focus:outline-white/25 resize-none"
                 />
                 <p className="text-[13px] text-white/50">
                   {t('import.textHint', { count: items.length })}
@@ -253,7 +253,7 @@ function ListPreview({ title, tracks }: { title: string; tracks: ImportItem[] })
         <span className="font-bold text-white">{title}</span> ·{' '}
         {t('import.tracksCount', { count: tracks.length })}
       </p>
-      <div className="max-h-48 overflow-y-auto rounded-md bg-black/25 divide-y divide-white/[0.05]">
+      <div className="max-h-48 overflow-y-auto rounded-md ui-card divide-y divide-white/[0.05]">
         {tracks.slice(0, 200).map((tr, i) => (
           <div key={`${i}-${tr.title}`} className="flex gap-3 px-3 py-1.5 text-[13px]">
             <span className="w-6 text-right tabular-nums text-white/35">{i + 1}</span>

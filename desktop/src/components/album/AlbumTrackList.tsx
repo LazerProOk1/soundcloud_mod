@@ -58,7 +58,7 @@ function AlbumTrackListImpl({ tracks }: AlbumTrackListProps) {
   if (tracks.length === 0) {
     return (
       <div className="py-24 flex flex-col items-center gap-4">
-        <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-white/[0.04]">
+        <div className="w-16 h-16 rounded-2xl flex items-center justify-center ui-card">
           <Music size={24} className="text-white/15" />
         </div>
         <p className="text-white/30 text-sm">{t('album.noTracks')}</p>

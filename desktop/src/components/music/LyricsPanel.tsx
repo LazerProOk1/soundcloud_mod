@@ -143,7 +143,7 @@ const FullscreenLikeButton = React.memo(({ track }: { track: Track }) => {
     <button
       type="button"
       onClick={toggle}
-      className={`press w-11 h-11 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/[0.06] outline-none ${
+      className={`press w-11 h-11 rounded-full flex items-center justify-center cursor-pointer ui-icon outline-none ${
         liked ? 'text-accent' : 'text-white/30 hover:text-white/60'
       }`}
     >
@@ -180,7 +180,7 @@ const FullscreenDislikeButton = React.memo(({ track }: { track: Track }) => {
       type="button"
       onClick={toggle}
       title={disliked ? t('track.removeDislike') : t('track.dislike')}
-      className={`press w-11 h-11 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/[0.06] outline-none ${
+      className={`press w-11 h-11 rounded-full flex items-center justify-center cursor-pointer ui-icon outline-none ${
         disliked ? 'text-rose-400' : 'text-white/30 hover:text-white/60'
       }`}
     >
@@ -205,7 +205,7 @@ const FullscreenOpenTrackButton = React.memo(({ track }: { track: Track }) => {
         navigate(`/track/${encodeURIComponent(track.urn)}`);
       }}
       title={t('track.openTrackPage')}
-      className="press w-10 h-10 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/[0.06] text-white/30 hover:text-white/60 outline-none"
+      className="press w-10 h-10 rounded-full flex items-center justify-center cursor-pointer ui-icon text-white/30 hover:text-white/60 outline-none"
     >
       <ExternalLink size={18} />
     </button>
@@ -229,9 +229,9 @@ const Controls = React.memo(({ track }: { track: Track }) => {
     );
 
   const ctrl =
-    'press w-10 h-10 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/[0.06] outline-none';
+    'press w-10 h-10 rounded-full flex items-center justify-center cursor-pointer ui-icon outline-none';
   const small =
-    'press w-9 h-9 rounded-full flex items-center justify-center cursor-pointer hover:bg-white/[0.06] outline-none';
+    'press w-9 h-9 rounded-full flex items-center justify-center cursor-pointer ui-icon outline-none';
 
   return (
     <div className="flex items-center justify-center gap-2">
@@ -259,7 +259,7 @@ const Controls = React.memo(({ track }: { track: Track }) => {
       <button
         type="button"
         onClick={togglePlay}
-        className="w-14 h-14 rounded-full bg-white flex items-center justify-center hover:scale-105 active:scale-90 transition-all duration-200 cursor-pointer shadow-lg outline-none"
+        className="w-14 h-14 rounded-full ui-primary flex items-center justify-center hover:scale-105 active:scale-90 transition-all duration-200 cursor-pointer shadow-lg outline-none"
       >
         <PopIcon on={isPlaying}>{isPlaying ? pauseBlack18 : playBlack18}</PopIcon>
       </button>
@@ -312,7 +312,7 @@ const ArtworkViewModal = React.memo(
         <button
           type="button"
           onClick={onClose}
-          className="absolute right-6 top-6 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/10 text-white transition-all hover:bg-white/20 cursor-pointer"
+          className="absolute right-6 top-6 z-10 flex h-11 w-11 items-center justify-center rounded-full bar-control text-white cursor-pointer"
         >
           <X size={20} />
         </button>
@@ -331,7 +331,7 @@ const ArtworkViewModal = React.memo(
           </div>
         </div>
         <div className="pointer-events-none absolute bottom-8 left-1/2 z-10 w-[min(560px,calc(100vw-3rem))] -translate-x-1/2 px-3">
-          <div className="mx-auto flex w-fit max-w-full flex-col items-center gap-0.5 rounded-[28px] border border-white/10 bg-black/40 px-4 py-3 text-center shadow-[0_18px_60px_rgba(0,0,0,0.42)] backdrop-blur-xl">
+          <div className="mx-auto flex w-fit max-w-full flex-col items-center gap-0.5 rounded-[28px] ui-float px-4 py-3 text-center">
             <p className="max-w-[min(480px,calc(100vw-6rem))] truncate text-lg font-bold text-white/95">
               {title}
             </p>
@@ -460,9 +460,7 @@ const TrackColumn = React.memo(({ track, maxArt }: { track: Track; maxArt?: stri
 
       <Controls track={track} />
 
-      <div
-        className={`${widthClass} flex flex-col gap-2 rounded-[22px] border border-white/[0.07] bg-black/30 p-3 shadow-[0_18px_60px_rgba(0,0,0,0.30)] backdrop-blur-xl`}
-      >
+      <div className={`${widthClass} flex flex-col gap-2 rounded-[22px] ui-float p-3`}>
         <div className="flex items-center gap-2">
           <ControlVolumeBtn size="sm" />
           <VolumeSlider className="flex-1" />
@@ -496,7 +494,7 @@ const LyricsSourceBadge = React.memo(
       <div className="flex items-center justify-between px-12 pt-3 pb-0">
         <div className="flex items-center gap-1.5">
           {label ? (
-            <span className="text-[10px] font-semibold text-white/20 bg-white/[0.04] px-2 py-0.5 rounded-full border border-white/[0.06]">
+            <span className="text-[10px] font-semibold text-white/20 ui-card px-2 py-0.5 rounded-full">
               {label}
             </span>
           ) : (
@@ -507,8 +505,8 @@ const LyricsSourceBadge = React.memo(
               type="button"
               onClick={() => setWordMode(!wordMode)}
               aria-pressed={wordMode}
-              className={`text-[11px] font-semibold px-2.5 py-1 rounded-full cursor-pointer transition-colors ${
-                wordMode ? 'bg-white text-black' : 'bg-white/[0.06] text-white/60 hover:text-white'
+              className={`bar-control text-[11px] font-semibold px-2.5 py-1 rounded-full cursor-pointer ${
+                wordMode ? 'is-active text-white' : 'text-white/60 hover:text-white'
               }`}
             >
               {t('track.lyricsWordMode')}
@@ -521,7 +519,7 @@ const LyricsSourceBadge = React.memo(
                 .writeText(copyText)
                 .then(() => toast.success(t('track.lyricsCopied')));
             }}
-            className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-white/[0.06] text-white/60 hover:text-white cursor-pointer transition-colors"
+            className="bar-control text-[11px] font-semibold px-2.5 py-1 rounded-full text-white/60 hover:text-white cursor-pointer"
           >
             {t('track.lyricsCopy')}
           </button>
@@ -529,7 +527,7 @@ const LyricsSourceBadge = React.memo(
         <button
           type="button"
           onClick={onSearch}
-          className="w-8 h-8 flex items-center justify-center rounded-full text-white/30 hover:text-white/70 hover:bg-white/10 transition-colors cursor-pointer"
+          className="w-8 h-8 flex items-center justify-center rounded-full ui-icon text-white/30 hover:text-white/70 cursor-pointer"
           aria-label={t('track.manualSearch')}
         >
           <Search size={14} />
@@ -1025,7 +1023,7 @@ const ManualSearchPanel = React.memo(
           onChange={(e) => setArtist(e.target.value)}
           placeholder="Artist"
           autoFocus
-          className="w-full max-w-[280px] bg-white/10 px-4 py-2.5 rounded-xl text-white text-[14px] outline-none border border-transparent focus:border-white/20 placeholder:text-white/30"
+          className="w-full max-w-[280px] ui-card px-4 py-2.5 rounded-xl text-white text-[14px] outline-none focus-visible:ring-1 focus-visible:ring-white/25 placeholder:text-white/30"
         />
         <input
           value={title}
@@ -1036,13 +1034,13 @@ const ManualSearchPanel = React.memo(
               onSubmit(artist.trim(), title.trim());
             }
           }}
-          className="w-full max-w-[280px] bg-white/10 px-4 py-2.5 rounded-xl text-white text-[14px] outline-none border border-transparent focus:border-white/20 placeholder:text-white/30"
+          className="w-full max-w-[280px] ui-card px-4 py-2.5 rounded-xl text-white text-[14px] outline-none focus-visible:ring-1 focus-visible:ring-white/25 placeholder:text-white/30"
         />
         <div className="flex gap-3 mt-4">
           <button
             type="button"
             onClick={onCancel}
-            className="px-5 py-2 rounded-full text-[13px] font-medium text-white/50 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+            className="px-5 py-2 rounded-full ui-icon text-[13px] font-medium text-white/50 hover:text-white cursor-pointer"
           >
             {t('common.back')}
           </button>
@@ -1050,7 +1048,7 @@ const ManualSearchPanel = React.memo(
             type="button"
             disabled={!artist.trim() || !title.trim()}
             onClick={() => onSubmit(artist.trim(), title.trim())}
-            className="px-6 py-2 rounded-full text-[13px] font-bold bg-white/20 hover:bg-white/30 text-white transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            className="px-6 py-2 rounded-full bar-control text-[13px] font-bold text-white cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {t('track.search')}
           </button>
@@ -1286,7 +1284,7 @@ const LyricsPane = React.memo(({ track }: { track: Track }) => {
         type="button"
         onClick={startSearch}
         aria-label={t('track.manualSearch')}
-        className="absolute right-3 top-3 w-8 h-8 flex items-center justify-center rounded-full text-white/30 hover:text-white/70 hover:bg-white/10 transition-colors cursor-pointer"
+        className="absolute right-3 top-3 w-8 h-8 flex items-center justify-center rounded-full ui-icon text-white/30 hover:text-white/70 cursor-pointer"
       >
         <Search size={14} />
       </button>
@@ -1603,7 +1601,7 @@ export const LyricsPanel = React.memo(() => {
         <button
           type="button"
           onClick={close}
-          className="w-9 h-9 rounded-full flex items-center justify-center text-white/25 hover:text-white/70 hover:bg-white/[0.08] transition-all duration-200 cursor-pointer"
+          className="w-9 h-9 rounded-full flex items-center justify-center ui-icon text-white/25 hover:text-white/70 cursor-pointer"
         >
           <X size={18} />
         </button>

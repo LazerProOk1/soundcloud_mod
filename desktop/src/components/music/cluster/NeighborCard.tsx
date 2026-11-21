@@ -43,7 +43,7 @@ export const NeighborCard = React.memo(function NeighborCard({ neighbor, track, 
       onContextMenu={(e) => openTrackMenu(e, track)}
       type="button"
       onClick={togglePlay}
-      className="group relative w-full text-left p-2 rounded-xl cursor-pointer transition-colors hover:bg-white/[0.06]"
+      className="group relative w-full text-left p-2 rounded-xl cursor-pointer ui-icon"
     >
       <div className="relative aspect-square w-full overflow-hidden rounded-md bg-white/[0.06]">
         {cover ? (

@@ -149,7 +149,7 @@ export function Login() {
                   setCopied(true);
                   setTimeout(() => setCopied(false), 2000);
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.06] text-[11px] text-white/30 hover:text-white/50 transition-all cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bar-control text-[11px] text-white/30 hover:text-white/50 transition-all cursor-pointer"
               >
                 {copied ? (
                   <>
@@ -177,7 +177,7 @@ export function Login() {
             <button
               type="button"
               onClick={() => setQrOpen(true)}
-              className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[12px] text-white/40 hover:text-white/70 hover:bg-white/[0.04] transition-all cursor-pointer"
+              className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[12px] text-white/40 hover:text-white/70 ui-icon transition-all cursor-pointer"
             >
               <Smartphone size={13} />
               {t('qrLink.scanQr')}

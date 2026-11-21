@@ -44,7 +44,7 @@ const StatusBadge = React.memo(function StatusBadge() {
   const isOffline = mode === 'offline';
 
   return (
-    <span className="inline-flex h-7 items-center gap-2 rounded-full bg-white/[0.07] px-3 text-[12px] font-medium text-white/80">
+    <span className="inline-flex h-7 items-center gap-2 rounded-full bar-control px-3 text-[12px] font-medium text-white/80">
       <span
         className={`h-1.5 w-1.5 rounded-full ${isOffline ? 'bg-white/40' : 'bg-emerald-400'}`}
       />
@@ -68,7 +68,7 @@ const PendingBadge = React.memo(function PendingBadge({
 
   return (
     <div className="inline-flex flex-wrap items-center gap-2">
-      <div className="inline-flex items-center gap-1.5 rounded-full border border-accent/18 bg-accent/[0.10] px-3 py-1.5 text-[11px] font-semibold text-white/78 backdrop-blur-sm">
+      <div className="inline-flex items-center gap-1.5 rounded-full bar-control px-3 py-1.5 text-[11px] font-semibold text-white/78">
         <Clock size={11} />
         {t('offline.pendingCount', { count: stats.pending })}
         {stats.failed > 0 && (
@@ -81,7 +81,7 @@ const PendingBadge = React.memo(function PendingBadge({
         type="button"
         onClick={onSync}
         disabled={syncing}
-        className="inline-flex cursor-pointer items-center gap-1.5 rounded-full border border-accent/18 bg-accent/[0.10] px-3 py-1.5 text-[11px] font-semibold text-white/78 transition-all hover:bg-accent/[0.16] disabled:opacity-50"
+        className="inline-flex cursor-pointer items-center gap-1.5 rounded-full bar-control px-3 py-1.5 text-[11px] font-semibold text-white/78 transition-all disabled:opacity-50"
       >
         <RefreshCw size={11} className={syncing ? 'animate-spin' : ''} />
         {t('offline.syncNow')}
@@ -240,9 +240,7 @@ export const OfflinePage = React.memo(() => {
       onClick={() => setActiveSection(key)}
       aria-pressed={activeSection === key}
       className={`h-8 px-3.5 rounded-full text-[13px] font-semibold cursor-pointer transition-colors ${
-        activeSection === key
-          ? 'bg-white text-black'
-          : 'bg-white/[0.08] text-white/80 hover:bg-white/[0.14]'
+        activeSection === key ? 'bg-white text-black' : 'bar-control text-white/80'
       }`}
     >
       {label} · {count}

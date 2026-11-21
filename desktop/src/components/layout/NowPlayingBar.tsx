@@ -108,7 +108,7 @@ const DownloadProgressPanel = React.memo(() => {
   return (
     <div className="pointer-events-none absolute left-1/2 top-0 z-30 -translate-x-1/2 -translate-y-[calc(100%+8px)]">
       <div
-        className="flex min-w-[148px] items-center gap-2.5 rounded-full border border-white/[0.08] bg-white/[0.045] px-3 py-2 shadow-[0_10px_34px_rgba(0,0,0,0.32),inset_0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-[22px]"
+        className="ui-card flex min-w-[148px] items-center gap-2.5 rounded-full px-3 py-2"
         style={{ contain: 'layout paint', transform: 'translateZ(0)' }}
       >
         <div className="relative h-1.5 w-20 overflow-hidden rounded-full bg-white/[0.09]">
@@ -335,7 +335,7 @@ export const ControlVolumeBtn = React.memo(({ size = 'default' }: { size?: 'defa
     <button
       type="button"
       onClick={() => setVolume(volume > 0 ? 0 : volumeBeforeMute)}
-      className={`${s} rounded-full flex items-center justify-center transition-all duration-150 ease-[var(--ease-apple)] cursor-pointer hover:bg-white/[0.04] ${
+      className={`ui-icon ${s} rounded-full flex items-center justify-center transition-all duration-150 ease-[var(--ease-apple)] cursor-pointer ${
         volume === 0 ? 'text-accent' : 'text-white/40 hover:text-white/70'
       }`}
     >
@@ -404,16 +404,14 @@ const PlaybackQualityBadge = React.memo(() => {
   return (
     <div className="hidden 2xl:flex shrink-0 items-center gap-1.5">
       <span
-        className={`inline-flex h-6 shrink-0 items-center rounded-md border px-2 text-[9px] font-semibold tracking-[0.14em] ${
-          isHq
-            ? 'border-white/[0.14] bg-white/[0.08] text-white/92'
-            : 'border-white/[0.08] bg-white/[0.04] text-white/68'
+        className={`bar-control inline-flex h-6 shrink-0 items-center rounded-md px-2 text-[9px] font-semibold tracking-[0.14em] ${
+          isHq ? 'is-active text-white/92' : 'text-white/68'
         }`}
       >
         {isHq ? t('player.qualityHQ') : t('player.qualitySQ')}
       </span>
       {playbackSource === 'storage' && (
-        <span className="hidden xl:inline-flex h-6 shrink-0 items-center gap-1.5 rounded-md border border-[#b7ffd8]/[0.16] bg-[#b7ffd8]/[0.07] px-2 text-[8px] font-medium tracking-[0.12em] text-[#dff7e9]/82">
+        <span className="bar-control hidden xl:inline-flex h-6 shrink-0 items-center gap-1.5 rounded-md px-2 text-[8px] font-medium tracking-[0.12em] text-[#dff7e9]/82">
           <span className="h-1.5 w-1.5 rounded-full bg-[#b7ffd8]" />
           {t('player.qualityCDN')}
         </span>
@@ -477,7 +475,7 @@ function LikeButton({ trackUrn }: { trackUrn: string }) {
       type="button"
       onClick={toggle}
       title={t('track.likes')}
-      className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all duration-200 cursor-pointer hover:bg-white/[0.04] ${
+      className={`ui-icon w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all duration-200 cursor-pointer ${
         isLiked ? 'text-accent' : 'text-white/30 hover:text-white/60'
       }`}
     >
@@ -515,7 +513,7 @@ export function NowBarDislikeButton({ trackUrn }: { trackUrn: string }) {
       type="button"
       onClick={toggle}
       title={disliked ? t('track.removeDislike') : t('track.dislike')}
-      className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all duration-200 cursor-pointer hover:bg-white/[0.04] ${
+      className={`ui-icon w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all duration-200 cursor-pointer ${
         disliked ? 'text-rose-400' : 'text-white/30 hover:text-white/60'
       }`}
     >
@@ -527,7 +525,7 @@ export function NowBarDislikeButton({ trackUrn }: { trackUrn: string }) {
 /* ── Isolated control buttons ────────────────────────────────── */
 
 const btnClass = (active: boolean, size: 'default' | 'sm') =>
-  `${size === 'sm' ? 'w-9 h-9' : 'w-10 h-10'} rounded-full flex items-center justify-center transition-all duration-150 ease-[var(--ease-apple)] cursor-pointer hover:bg-white/[0.04] active:scale-[0.97] active:shadow-[inset_0_2px_6px_rgba(0,0,0,0.50)] ${
+  `ui-icon ${size === 'sm' ? 'w-9 h-9' : 'w-10 h-10'} rounded-full flex items-center justify-center transition-all duration-150 ease-[var(--ease-apple)] cursor-pointer active:scale-[0.97] ${
     active ? 'text-accent' : 'text-white/40 hover:text-white/70'
   }`;
 
@@ -545,7 +543,7 @@ const PlayPauseBtn = React.memo(() => {
       type="button"
       onClick={togglePlay}
       aria-label={isPlaying ? 'Pause' : 'Play'}
-      className="relative w-10 h-10 rounded-full bg-white text-black flex items-center justify-center hover:scale-[1.06] active:scale-[0.92] transition-transform duration-200 ease-[var(--ease-spring)] cursor-pointer mx-1.5 shadow-[0_4px_14px_rgba(0,0,0,0.35)]"
+      className="ui-primary relative w-10 h-10 rounded-full flex items-center justify-center hover:scale-[1.06] active:scale-[0.92] transition-transform! duration-200 ease-[var(--ease-spring)] cursor-pointer mx-1.5"
     >
       <span className={icon(isPlaying && !isBuffering)}>{pauseBlack20}</span>
       <span className={icon(!isPlaying && !isBuffering)}>{playBlack20}</span>
@@ -700,7 +698,7 @@ export const PitchModeToggle = React.memo(() => {
   const mode = usePlayerStore((s) => s.pitchControlMode);
   const setMode = usePlayerStore((s) => s.setPitchControlMode);
   return (
-    <div className="grid grid-cols-2 gap-1 rounded-full bg-white/[0.06] p-1">
+    <div className="ui-track grid grid-cols-2 gap-1 rounded-full p-1">
       <button
         type="button"
         title={t('player.pitchModeAuto')}
@@ -742,8 +740,8 @@ export const PitchSlider = React.memo(() => {
         <div className="flex min-w-0 items-center gap-1.5">
           <span className="text-[13px] font-semibold text-white/80">{t('player.pitch')}</span>
           <span
-            className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${
-              isManual ? 'bg-white/[0.08] text-white/60' : 'bg-accent/15 text-accent'
+            className={`bar-control rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+              isManual ? 'text-white/60' : 'text-accent'
             }`}
           >
             {isManual ? t('player.pitchModeManualShort') : t('player.pitchModeAutoShort')}
@@ -821,7 +819,7 @@ const SleepTimerBtn = React.memo(() => {
           title={t('player.sleepTimer')}
           className={
             isActive
-              ? 'relative h-8 px-2 rounded-full flex items-center gap-1 text-accent bg-accent/15 border border-accent/25 transition-all duration-150 ease-[var(--ease-apple)] cursor-pointer hover:bg-accent/20 active:scale-[0.97] shrink-0'
+              ? 'bar-control is-active relative h-8 px-2 rounded-full flex items-center gap-1 text-accent cursor-pointer active:scale-[0.97] shrink-0'
               : `relative shrink-0 ${btnClass(false, 'sm')}`
           }
         >
@@ -867,7 +865,7 @@ const SleepTimerBtn = React.memo(() => {
                   className={`press h-10 rounded-xl text-[13px] font-semibold tabular-nums cursor-pointer ${
                     isSelected
                       ? 'bg-accent text-[var(--color-accent-contrast)]'
-                      : 'bg-white/[0.06] text-white/80 hover:bg-white/[0.11] hover:text-white'
+                      : 'bar-control text-white/80 hover:text-white'
                   }`}
                 >
                   {t('player.sleepMinutes', { count: min })}
@@ -882,7 +880,7 @@ const SleepTimerBtn = React.memo(() => {
             className={`press mt-1.5 h-10 w-full rounded-xl text-[13px] font-semibold cursor-pointer ${
               afterTrack
                 ? 'bg-accent text-[var(--color-accent-contrast)]'
-                : 'bg-white/[0.06] text-white/80 hover:bg-white/[0.11] hover:text-white'
+                : 'bar-control text-white/80 hover:text-white'
             }`}
           >
             {t('player.sleepAfterTrack')}
@@ -892,7 +890,7 @@ const SleepTimerBtn = React.memo(() => {
             <button
               type="button"
               onClick={cancel}
-              className="press mt-1.5 h-10 w-full rounded-xl text-[13px] font-semibold text-white/55 hover:bg-white/[0.06] hover:text-white cursor-pointer"
+              className="ui-icon press mt-1.5 h-10 w-full rounded-xl text-[13px] font-semibold text-white/55 hover:text-white cursor-pointer"
             >
               {t('player.sleepCancel')}
             </button>
@@ -1047,7 +1045,7 @@ const EditTrackInfoDialog = React.memo(function EditTrackInfoDialog({
           <button
             type="button"
             onClick={handleClear}
-            className="px-3 py-2 rounded-lg text-[12px] text-white/40 hover:text-white/70 bg-white/[0.04] hover:bg-white/[0.08] cursor-pointer transition-all"
+            className="bar-control px-3 py-2 rounded-lg text-[12px] text-white/40 hover:text-white/70 cursor-pointer"
           >
             {t('common.reset', 'Сброс')}
           </button>
@@ -1177,7 +1175,7 @@ const TrackInfoBody = React.memo(function TrackInfoBody({
             {displayTitle}
           </p>
           {track.publisher_metadata?.explicit && (
-            <span className="shrink-0 inline-flex items-center text-[8px] font-bold px-1 py-0.5 rounded bg-white/[0.08] text-white/35 border border-white/[0.08] tracking-widest uppercase leading-none">
+            <span className="bar-control shrink-0 inline-flex items-center text-[8px] font-bold px-1 py-0.5 rounded text-white/35 tracking-widest uppercase leading-none">
               E
             </span>
           )}
@@ -1187,10 +1185,8 @@ const TrackInfoBody = React.memo(function TrackInfoBody({
               type="button"
               onClick={() => setEditOpen((v) => !v)}
               title="Редактировать название / исполнителя"
-              className={`shrink-0 w-5 h-5 flex items-center justify-center rounded-md transition-all duration-200 cursor-pointer opacity-0 group-hover/title:opacity-100 ${
-                editOpen
-                  ? 'opacity-100 text-accent bg-white/[0.08]'
-                  : 'text-white/30 hover:text-white/70 hover:bg-white/[0.06]'
+              className={`ui-icon shrink-0 w-5 h-5 flex items-center justify-center rounded-md transition-all! duration-200 cursor-pointer opacity-0 group-hover/title:opacity-100 ${
+                editOpen ? 'opacity-100 text-accent' : 'text-white/30 hover:text-white/70'
               } ${override ? '!opacity-70' : ''}`}
             >
               <Pencil size={11} />

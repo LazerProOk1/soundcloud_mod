@@ -19,7 +19,7 @@ import { SettingRow, SettingsSection } from './SettingsKit';
 
 const btnCls = PILL_BTN;
 const inputCls =
-  'h-9 flex-1 min-w-0 rounded-full border border-transparent bg-white/[0.07] px-4 text-[13px] text-white/85 outline-none placeholder:text-white/35 focus:border-white/25';
+  'bar-control h-9 flex-1 min-w-0 rounded-full border border-transparent px-4 text-[13px] text-white/85 outline-none placeholder:text-white/35 focus:border-white/25';
 
 const PANEL_STYLES: PanelStyle[] = ['liquid', 'gloss', 'flat'];
 
@@ -176,7 +176,7 @@ const SourceRow = React.memo(function SourceRow() {
   const toggle = (i: number) =>
     setSources(sources.map((s, k) => (k === i ? { ...s, enabled: !s.enabled } : s)));
   const arrow =
-    'w-7 h-7 rounded-full flex items-center justify-center text-white/50 hover:text-white hover:bg-white/[0.08] cursor-pointer disabled:opacity-20 disabled:pointer-events-none';
+    'ui-icon w-7 h-7 rounded-full flex items-center justify-center text-white/50 hover:text-white cursor-pointer disabled:opacity-20 disabled:pointer-events-none';
   return (
     <SettingRow title={t('settings.sources')} desc={t('settings.sourcesDesc')} stacked>
       <div className="flex flex-col">

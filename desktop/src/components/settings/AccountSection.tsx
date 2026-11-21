@@ -74,14 +74,14 @@ export const AccountSection = React.memo(function AccountSection() {
         <button
           type="button"
           onClick={() => setTransferOpen(true)}
-          className="press h-10 px-5 rounded-full text-[14px] font-semibold bg-white text-black cursor-pointer"
+          className="press h-10 px-5 rounded-full text-[14px] font-semibold ui-primary text-black cursor-pointer"
         >
           {t('qrLink.transferSession')}
         </button>
         <button
           type="button"
           onClick={logout}
-          className="press h-10 px-5 rounded-full text-[14px] font-semibold text-white/80 bg-white/[0.07] hover:bg-red-500/15 hover:text-red-300 cursor-pointer"
+          className="press h-10 px-5 rounded-full text-[14px] font-semibold bar-control ui-danger text-white/80 cursor-pointer"
         >
           {t('auth.signOut')}
         </button>

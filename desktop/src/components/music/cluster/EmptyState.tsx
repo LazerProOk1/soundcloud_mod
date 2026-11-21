@@ -10,7 +10,7 @@ interface Props {
 export const EmptyState = React.memo(function EmptyState({ title, description, icon }: Props) {
   return (
     <div className="py-14 flex flex-col items-center gap-4 text-center">
-      <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-white/[0.04]">
+      <div className="w-16 h-16 rounded-2xl flex items-center justify-center ui-card">
         {icon ?? <AudioLines size={22} className="text-white/25" />}
       </div>
       <div className="space-y-1.5 max-w-sm">

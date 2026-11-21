@@ -114,8 +114,8 @@ export function Settings() {
         compact ? 'h-8 px-3.5' : 'h-9 w-full px-3'
       } ${
         active === item.id
-          ? 'bg-white/[0.1] text-white'
-          : 'text-white/55 hover:bg-white/[0.05] hover:text-white'
+          ? 'bar-control is-active text-white'
+          : 'ui-icon text-white/55 hover:text-white'
       }`}
     >
       {!compact && (
@@ -145,14 +145,14 @@ export function Settings() {
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => e.key === 'Escape' && setQuery('')}
             placeholder={t('settings.searchPlaceholder')}
-            className="h-10 w-full rounded-full border border-transparent bg-white/[0.06] pl-10 pr-10 text-[13px] text-white/85 outline-none placeholder:text-white/35 focus:border-white/25 [&::-webkit-search-cancel-button]:hidden"
+            className="bar-control h-10 w-full rounded-full border border-transparent pl-10 pr-10 text-[13px] text-white/85 outline-none placeholder:text-white/35 focus:border-white/25 [&::-webkit-search-cancel-button]:hidden"
           />
           {query && (
             <button
               type="button"
               onClick={() => setQuery('')}
               aria-label={t('common.clear')}
-              className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-white/45 hover:bg-white/[0.08] hover:text-white cursor-pointer"
+              className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center ui-icon rounded-full text-white/45 hover:text-white cursor-pointer"
             >
               <X size={13} />
             </button>

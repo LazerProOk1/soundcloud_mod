@@ -68,7 +68,7 @@ function ResolveCard({ url, onDone }: { url: string; onDone: () => void }) {
 
   return (
     <div className="max-w-lg mx-auto mt-12 animate-fade-in-up">
-      <div className="glass rounded-3xl p-6 border border-white/[0.06]">
+      <div className="ui-card rounded-3xl p-6">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-2xl bg-accent/10 flex items-center justify-center shrink-0">
             <ExternalLink size={20} className="text-accent" />
@@ -215,7 +215,7 @@ const SearchPlaylistsTab = React.memo(function SearchPlaylistsTab({ query }: { q
           <button
             type="button"
             onClick={() => playlistsQuery.refetch()}
-            className="px-4 py-2 rounded-xl text-[12px] font-medium bg-white/[0.05] border border-white/[0.08] text-white/50 hover:text-white/80 hover:bg-white/[0.09] transition-all duration-200 cursor-pointer"
+            className="px-4 py-2 rounded-full text-[12px] font-medium bar-control text-white/50 hover:text-white/80 transition-all duration-200 cursor-pointer"
           >
             {t('common.retry', 'Повторить')}
           </button>
@@ -381,8 +381,10 @@ export const Search = React.memo(() => {
           onKeyDown={handleKeyDown}
           onPaste={handlePaste}
           placeholder={t('search.placeholder')}
-          className={`h-12 w-full rounded-full border bg-white/[0.07] pl-12 pr-12 text-[16px] text-white outline-none transition-colors placeholder:text-white/35 hover:bg-white/[0.09] focus:bg-white/[0.09] ${
-            isUrl ? 'border-[var(--color-accent)]' : 'border-transparent focus:border-white/25'
+          className={`h-12 w-full rounded-full bar-control pl-12 pr-12 text-[16px] text-white transition-colors placeholder:text-white/35 ${
+            isUrl
+              ? 'outline outline-[var(--color-accent)]'
+              : 'outline-none focus:outline focus:outline-white/25'
           }`}
           autoFocus
         />

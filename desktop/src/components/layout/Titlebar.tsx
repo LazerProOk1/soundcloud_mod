@@ -19,11 +19,11 @@ import { isMac } from '../../lib/platform';
 import { usePlayerStore } from '../../stores/player';
 
 const iconBtn =
-  'w-8 h-8 rounded-full flex items-center justify-center text-white/80 hover:text-white hover:bg-white/[0.08] transition-colors duration-150 cursor-pointer disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-default';
+  'w-8 h-8 rounded-full flex items-center justify-center text-white/80 hover:text-white ui-icon transition-colors duration-150 cursor-pointer disabled:opacity-30 disabled:cursor-default';
 
 // Windows/Linux-style caption buttons: full bar height, flat, close turns red.
 const capBtn =
-  'w-11 h-full flex items-center justify-center text-white/60 hover:text-white hover:bg-white/[0.08] transition-colors duration-150 cursor-pointer';
+  'w-11 h-full flex items-center justify-center text-white/60 hover:text-white ui-icon transition-colors duration-150 cursor-pointer';
 
 function getSafeWindow() {
   if (typeof window === 'undefined' || !('__TAURI_INTERNALS__' in window)) return null;
@@ -40,7 +40,7 @@ const Brand = React.memo(() => {
     <div className="pointer-events-none flex items-center gap-2 pl-2" data-tauri-drag-region>
       <Disc3 size={18} className={`text-accent ${isPlaying ? 'animate-spin-slow' : ''}`} />
       <span className="text-[14px] font-semibold tracking-tight text-white/90">SoundCloud</span>
-      <span className="rounded-md bg-white/[0.08] px-1.5 py-px text-[10px] font-bold tracking-wide text-white/55">
+      <span className="rounded-md bar-control px-1.5 py-px text-[10px] font-bold tracking-wide text-white/55">
         MOD
       </span>
     </div>
@@ -109,7 +109,7 @@ const CenterNav = React.memo(() => {
             e.stopPropagation();
             window.dispatchEvent(new CustomEvent('sc:open-command-palette'));
           }}
-          className="hidden md:inline text-[11px] font-semibold px-2 py-0.5 rounded-md bg-white/[0.08] text-white/55 shrink-0"
+          className="hidden md:inline text-[11px] font-semibold px-2 py-0.5 rounded-md bar-control text-white/55 shrink-0"
         >
           {shortcutLabel}
         </kbd>
@@ -139,7 +139,7 @@ const ImportButton = React.memo(() => {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="hidden md:flex items-center gap-2 h-8 px-3.5 mr-1 rounded-full bg-white text-black text-[13px] font-bold cursor-pointer hover:scale-[1.04] transition-transform"
+        className="hidden md:flex items-center gap-2 h-8 px-3.5 mr-1 rounded-full ui-primary text-[13px] font-bold cursor-pointer hover:scale-[1.04] transition-transform"
       >
         <Import size={15} />
         {t('import.button')}
@@ -162,7 +162,7 @@ const SettingsButton = React.memo(() => {
       type="button"
       title={t('titlebar.settings')}
       onClick={() => navigate('/settings')}
-      className={`${iconBtn} ${pathname.startsWith('/settings') ? '!text-white bg-white/[0.08]' : ''}`}
+      className={`${iconBtn} ${pathname.startsWith('/settings') ? '!text-accent' : ''}`}
     >
       <Settings size={17} />
     </button>

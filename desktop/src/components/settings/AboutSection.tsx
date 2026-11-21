@@ -70,7 +70,7 @@ export const AboutSection = React.memo(function AboutSection() {
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-[22px] font-bold tracking-tight text-white">SoundCloud Mod</h3>
-              <span className="rounded-full bg-white/[0.08] px-2 py-0.5 text-[12px] font-semibold tabular-nums text-white/70">
+              <span className="bar-control rounded-full px-2 py-0.5 text-[12px] font-semibold tabular-nums text-white/70">
                 v{APP_VERSION}
               </span>
             </div>
@@ -89,7 +89,7 @@ export const AboutSection = React.memo(function AboutSection() {
               type="button"
               onClick={handleCheckUpdates}
               disabled={checking}
-              className="press flex h-9 items-center gap-2 rounded-full bg-white px-4 text-[13px] font-semibold text-black hover:bg-white/90 disabled:opacity-60 cursor-pointer"
+              className="press flex h-9 items-center gap-2 rounded-full ui-primary px-4 text-[13px] font-semibold text-black disabled:opacity-60 cursor-pointer"
             >
               {checking ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
               {t('settings.checkUpdates', 'Check for updates')}
@@ -97,7 +97,7 @@ export const AboutSection = React.memo(function AboutSection() {
             <button
               type="button"
               onClick={() => openExternalUrl(releasesUrl)}
-              className="press flex h-9 items-center gap-2 rounded-full bg-white/[0.07] px-4 text-[13px] font-semibold text-white/80 hover:bg-white/[0.12] hover:text-white cursor-pointer"
+              className="press flex h-9 items-center gap-2 rounded-full bar-control px-4 text-[13px] font-semibold text-white/80 hover:text-white cursor-pointer"
               title="GitHub Releases"
             >
               <ExternalLink size={14} />
@@ -127,7 +127,7 @@ export const AboutSection = React.memo(function AboutSection() {
               return (
                 <div
                   key={host.id}
-                  className="flex items-center justify-between gap-3 rounded-xl bg-white/[0.04] px-3.5 py-2.5"
+                  className="flex items-center justify-between gap-3 rounded-xl ui-card px-3.5 py-2.5"
                 >
                   <p className="min-w-0 truncate text-[13px] font-semibold text-white/85">
                     {host.label}

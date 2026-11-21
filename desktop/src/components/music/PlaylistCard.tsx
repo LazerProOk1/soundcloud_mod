@@ -126,7 +126,7 @@ export const PlaylistCard = React.memo(
           </p>
           {showPlayback ? (
             <div className="flex items-center gap-2 mt-1">
-              <span className="text-[10px] font-bold text-white/30 uppercase tracking-wider bg-white/[0.05] px-1.5 py-0.5 rounded-md">
+              <span className="text-[10px] font-bold text-white/30 uppercase tracking-wider bar-control px-1.5 py-0.5 rounded-md">
                 {playlist.playlist_type || 'Playlist'}
               </span>
               {playlist.likes_count > 0 && (

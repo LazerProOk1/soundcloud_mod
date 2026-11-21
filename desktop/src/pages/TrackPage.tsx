@@ -215,12 +215,12 @@ const IconAction = React.memo(function IconAction({
   active?: boolean;
 }) {
   const base =
-    'press inline-flex items-center justify-center w-9 h-9 rounded-full transition-colors duration-200 cursor-pointer';
+    'ui-icon press inline-flex items-center justify-center w-9 h-9 rounded-full transition-colors duration-200 cursor-pointer';
   const tone = danger
-    ? 'text-white/55 hover:text-red-400 hover:bg-red-500/10'
+    ? 'ui-danger text-white/55'
     : active
-      ? 'text-accent hover:bg-white/[0.08]'
-      : 'text-white/65 hover:text-white hover:bg-white/[0.08]';
+      ? 'text-accent'
+      : 'text-white/65 hover:text-white';
   return (
     <button
       type="button"
@@ -293,7 +293,7 @@ const CommentForm = React.memo(({ trackUrn }: { trackUrn: string }) => {
   };
 
   return (
-    <div className="flex gap-3 glass rounded-xl px-4 py-3">
+    <div className="flex gap-3 ui-card rounded-xl px-4 py-3">
       <textarea
         value={body}
         onChange={(e) => setBody(e.target.value)}
@@ -311,7 +311,7 @@ const CommentForm = React.memo(({ trackUrn }: { trackUrn: string }) => {
         type="button"
         onClick={submit}
         disabled={!body.trim() || mutation.isPending}
-        className="w-8 h-8 rounded-lg flex items-center justify-center text-accent hover:bg-accent/10 transition-all duration-150 cursor-pointer disabled:opacity-30 disabled:cursor-default self-end"
+        className="w-8 h-8 rounded-lg flex items-center justify-center text-accent ui-icon transition-all duration-150 cursor-pointer disabled:opacity-30 disabled:cursor-default self-end"
       >
         {mutation.isPending ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
       </button>
@@ -330,7 +330,7 @@ const RelatedRow = React.memo(
       <div
         onContextMenu={(e) => openTrackMenu(e, track)}
         className={`group flex items-center gap-3 p-2.5 rounded-xl transition-all duration-200 ease-[var(--ease-apple)] ${
-          isThis ? 'bg-accent/[0.04] ring-1 ring-accent/15' : 'hover:bg-white/[0.03]'
+          isThis ? 'bg-white/[0.04]' : 'hover:bg-white/[0.03]'
         }`}
         onMouseEnter={() => preloadTrack(track.urn)}
       >
@@ -403,7 +403,7 @@ const DownloadButton = React.memo(({ track }: { track: Track }) => {
       disabled={loading}
       title={t('track.download')}
       aria-label={t('track.download')}
-      className="inline-flex items-center justify-center w-10 h-10 rounded-xl text-white/60 hover:text-white/95 hover:bg-white/[0.07] transition-all duration-200 cursor-pointer disabled:opacity-50"
+      className="inline-flex items-center justify-center w-10 h-10 rounded-full text-white/60 hover:text-white/95 ui-icon transition-all duration-200 cursor-pointer disabled:opacity-50"
     >
       {loading ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
     </button>
@@ -533,14 +533,14 @@ export const TrackPage = React.memo(() => {
           {/* Info */}
           <div className="flex-1 min-w-0 py-2">
             {track.genre && (
-              <span className="inline-block text-[10px] font-semibold px-2.5 py-1 rounded-full bg-white/[0.06] text-white/40 border border-white/[0.06] mb-3 uppercase tracking-wider">
+              <span className="inline-block text-[10px] font-semibold px-2.5 py-1 rounded-full bar-control text-white/40 mb-3 uppercase tracking-wider">
                 {track.genre}
               </span>
             )}
             <h1 className="text-2xl font-bold text-white/95 leading-tight mb-2 line-clamp-2 flex items-start gap-2 flex-wrap">
               {getDisplayTitle(track)}
               {track.publisher_metadata?.explicit && (
-                <span className="inline-flex items-center shrink-0 self-center text-[9px] font-bold px-1.5 py-0.5 rounded bg-white/[0.10] text-white/45 border border-white/[0.10] tracking-widest uppercase leading-none translate-y-px">
+                <span className="inline-flex items-center shrink-0 self-center text-[9px] font-bold px-1.5 py-0.5 rounded bar-control text-white/45 tracking-widest uppercase leading-none translate-y-px">
                   E
                 </span>
               )}
@@ -680,7 +680,7 @@ export const TrackPage = React.memo(() => {
                 onClick={handlePlay}
                 className={`inline-flex items-center gap-2 pl-4 pr-5 h-11 rounded-2xl text-[14px] font-semibold transition-all duration-200 ease-[var(--ease-apple)] cursor-pointer active:scale-[0.97] ${
                   isThisPlaying
-                    ? 'bg-white text-black hover:bg-white/95'
+                    ? 'ui-primary'
                     : 'bg-accent text-accent-contrast hover:bg-accent-hover'
                 }`}
               >
@@ -710,7 +710,7 @@ export const TrackPage = React.memo(() => {
                     type="button"
                     title={t('playlist.addToPlaylist')}
                     aria-label={t('playlist.addToPlaylist')}
-                    className="press inline-flex items-center justify-center w-9 h-9 rounded-full text-white/65 hover:text-white hover:bg-white/[0.08] transition-colors duration-200 cursor-pointer"
+                    className="press inline-flex items-center justify-center w-9 h-9 rounded-full text-white/65 hover:text-white ui-icon transition-colors duration-200 cursor-pointer"
                   >
                     <ListPlus size={16} />
                   </button>
@@ -762,7 +762,7 @@ export const TrackPage = React.memo(() => {
         <div className="space-y-6 min-w-0">
           {/* Description */}
           {desc && (
-            <section className="glass rounded-2xl p-5">
+            <section className="ui-card rounded-2xl p-5">
               <h3 className="text-[13px] font-semibold text-white/50 mb-3 flex items-center gap-2">
                 {t('track.description')}
               </h3>
@@ -796,7 +796,7 @@ export const TrackPage = React.memo(() => {
               {tags.map((tag) => (
                 <span
                   key={tag}
-                  className="text-[10px] font-medium px-2.5 py-1 rounded-full bg-white/[0.04] text-white/35 border border-white/[0.04] hover:bg-white/[0.06] hover:text-white/50 transition-all duration-150 cursor-default"
+                  className="text-[10px] font-medium px-2.5 py-1 rounded-full bar-control text-white/35 hover:text-white/50 transition-all duration-150 cursor-default"
                 >
                   {tag}
                 </span>
@@ -846,7 +846,7 @@ export const TrackPage = React.memo(() => {
         <div className="space-y-6">
           {/* Artist card */}
           <section
-            className="glass rounded-2xl p-4 cursor-pointer hover:bg-white/[0.04] transition-all duration-200 group/ac"
+            className="ui-card rounded-2xl p-4 cursor-pointer transition-all duration-200 group/ac"
             onClick={() => navigate(`/user/${encodeURIComponent(track.user.urn)}`)}
           >
             <div className="flex items-center gap-3">
@@ -873,7 +873,7 @@ export const TrackPage = React.memo(() => {
 
           {/* Favoriters */}
           {favoriters.length > 0 && (
-            <section className="glass rounded-2xl p-4">
+            <section className="ui-card rounded-2xl p-4">
               <h3 className="text-[12px] font-semibold text-white/40 mb-3">
                 {t('track.favoriters')}
               </h3>

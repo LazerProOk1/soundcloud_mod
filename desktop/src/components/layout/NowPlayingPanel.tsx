@@ -16,7 +16,7 @@ import { LikeButton } from '../music/LikeButton';
  */
 
 const iconBtn =
-  'w-8 h-8 rounded-full flex items-center justify-center text-white/55 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer';
+  'ui-icon w-8 h-8 rounded-full flex items-center justify-center text-white/55 hover:text-white cursor-pointer';
 
 const NextUp = React.memo(function NextUp({ onOpenQueue }: { onOpenQueue: () => void }) {
   const { t } = useTranslation();
@@ -24,7 +24,7 @@ const NextUp = React.memo(function NextUp({ onOpenQueue }: { onOpenQueue: () => 
   if (!next) return null;
   const cover = art(next.artwork_url, 't200x200');
   return (
-    <section className="glass-flat rounded-2xl p-4 space-y-3">
+    <section className="ui-card rounded-2xl p-4 space-y-3">
       <div className="flex items-center justify-between">
         <h3 className="text-[14px] font-bold text-white/90">{t('nowPlaying.nextUp')}</h3>
         <button
@@ -39,7 +39,7 @@ const NextUp = React.memo(function NextUp({ onOpenQueue }: { onOpenQueue: () => 
         type="button"
         onClick={() => usePlayerStore.getState().next()}
         onContextMenu={(e) => openTrackMenu(e, next)}
-        className="w-full flex items-center gap-3 p-1.5 -m-1.5 rounded-xl hover:bg-white/[0.05] transition-colors text-left cursor-pointer"
+        className="ui-icon w-full flex items-center gap-3 p-1.5 -m-1.5 rounded-xl text-left cursor-pointer"
       >
         <div className="w-11 h-11 rounded-lg overflow-hidden shrink-0 bg-white/[0.05]">
           {cover && <img src={cover} alt="" className="w-full h-full object-cover" />}
@@ -62,7 +62,7 @@ const AboutArtist = React.memo(function AboutArtist({ track }: { track: Track })
   const target = getArtistTarget(track) ?? `/user/${encodeURIComponent(track.user.urn)}`;
 
   return (
-    <section className="glass-flat rounded-2xl overflow-hidden">
+    <section className="ui-card rounded-2xl overflow-hidden">
       <button
         type="button"
         onClick={() => navigate(target)}

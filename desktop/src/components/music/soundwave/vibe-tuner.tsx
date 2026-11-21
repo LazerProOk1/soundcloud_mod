@@ -44,11 +44,7 @@ export const VibeTuner = React.memo(function VibeTuner({
               data-vibe-active={active}
               className={`inline-flex items-center gap-1.5 rounded-full font-semibold transition-colors duration-200 cursor-pointer select-none ${
                 compact ? 'h-7 px-2.5 text-[11.5px]' : 'h-8 px-3.5 text-[12.5px]'
-              } ${
-                active
-                  ? 'bg-white text-black'
-                  : 'text-white/75 hover:text-white bg-white/[0.07] hover:bg-white/[0.12]'
-              }`}
+              } ${active ? 'ui-primary' : 'bar-control text-white/75 hover:text-white'}`}
             >
               <span className="shrink-0" style={{ color: active ? '#000' : item.tint }}>
                 {VIBE_ICON[item.id]}
@@ -63,7 +59,7 @@ export const VibeTuner = React.memo(function VibeTuner({
       <div
         role="group"
         aria-label={t('soundwave.modeLabel')}
-        className="inline-flex items-center rounded-full p-0.5 bg-white/[0.07] shrink-0"
+        className="ui-track inline-flex items-center rounded-full p-0.5 shrink-0"
       >
         {(['similar', 'diverse'] as const).map((m) => {
           const active = mode === m;

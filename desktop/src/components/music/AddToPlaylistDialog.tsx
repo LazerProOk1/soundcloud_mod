@@ -58,11 +58,11 @@ const PlaylistOption = React.memo(function PlaylistOption({
         <p className="text-[11px] text-white/30">{fc(playlist.track_count)} tracks</p>
       </div>
       {containsAll ? (
-        <span className="shrink-0 text-[10px] font-semibold px-2 py-1 rounded-full bg-accent/12 text-accent border border-accent/20">
+        <span className="shrink-0 text-[10px] font-semibold px-2 py-1 rounded-full bar-control text-accent">
           {t('playlist.alreadyAdded')}
         </span>
       ) : containsSome ? (
-        <span className="shrink-0 text-[10px] font-semibold px-2 py-1 rounded-full bg-white/[0.06] text-white/55 border border-white/[0.06]">
+        <span className="shrink-0 text-[10px] font-semibold px-2 py-1 rounded-full bar-control text-white/55">
           {t('playlist.containsSome')}
         </span>
       ) : null}
@@ -102,7 +102,7 @@ const CreatePlaylistForm = React.memo(function CreatePlaylistForm({
 
   return (
     <div className="px-3 pb-3">
-      <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-3 space-y-2.5">
+      <div className="rounded-xl ui-card p-3 space-y-2.5">
         <input
           ref={inputRef}
           type="text"
@@ -110,7 +110,7 @@ const CreatePlaylistForm = React.memo(function CreatePlaylistForm({
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
           placeholder={t('playlist.playlistName')}
-          className="w-full bg-white/[0.04] text-[13px] text-white/90 placeholder:text-white/25 px-3 py-2 rounded-lg outline-none border border-white/[0.06] focus:border-white/25 transition-colors"
+          className="w-full bar-control text-[13px] text-white/90 placeholder:text-white/25 px-3 py-2 rounded-lg outline-none focus:outline focus:outline-white/25 transition-colors"
           autoFocus
           disabled={createPlaylist.isPending}
         />
@@ -274,7 +274,7 @@ export const AddToPlaylistDialog = React.memo(function AddToPlaylistDialog({
       {children && <Dialog.Trigger asChild>{children}</Dialog.Trigger>}
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[70] animate-fade-in" />
-        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[70] w-[380px] max-h-[70vh] rounded-[32px] glass border border-white/[0.08] shadow-2xl animate-fade-in-up flex flex-col">
+        <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[70] w-[380px] max-h-[70vh] rounded-[32px] app-surface animate-fade-in-up flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between px-5 pt-5 pb-3">
             <Dialog.Title className="text-[15px] font-bold text-white/90 flex items-center gap-2">
@@ -284,7 +284,7 @@ export const AddToPlaylistDialog = React.memo(function AddToPlaylistDialog({
             <Dialog.Description className="sr-only">
               Choose a playlist for the selected track.
             </Dialog.Description>
-            <Dialog.Close className="w-7 h-7 rounded-lg flex items-center justify-center text-white/30 hover:text-white/70 hover:bg-white/[0.08] transition-all">
+            <Dialog.Close className="w-7 h-7 rounded-lg flex items-center justify-center text-white/30 hover:text-white/70 ui-icon transition-all">
               <X size={14} />
             </Dialog.Close>
           </div>

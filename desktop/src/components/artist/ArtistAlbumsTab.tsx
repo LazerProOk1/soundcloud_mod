@@ -47,7 +47,7 @@ function ArtistAlbumsTabImpl({ artistId }: ArtistAlbumsTabProps) {
   if (items.length === 0) {
     return (
       <div className="py-24 flex flex-col items-center gap-4">
-        <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-white/[0.04]">
+        <div className="w-16 h-16 rounded-2xl flex items-center justify-center ui-card">
           <Disc3 size={24} className="text-white/15" />
         </div>
         <p className="text-white/30 text-sm">{t('artist.noAlbums')}</p>
@@ -100,7 +100,7 @@ const AlbumCard = memo(({ album }: { album: ArtistAlbum }) => {
     <button
       type="button"
       onClick={() => navigate(`/album/${encodeURIComponent(album.id)}`)}
-      className="group relative flex flex-col gap-2 text-left p-3 rounded-xl cursor-pointer transition-colors hover:bg-white/[0.06]"
+      className="group relative flex flex-col gap-2 text-left p-3 ui-icon rounded-xl cursor-pointer"
     >
       <div className="aspect-square rounded-md overflow-hidden relative bg-white/[0.06]">
         {album.cover_url ? (
