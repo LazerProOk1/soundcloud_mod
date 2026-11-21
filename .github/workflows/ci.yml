@@ -128,7 +128,7 @@ jobs:
         if: matrix.job_name == 'windows'
         shell: pwsh
         run: |
-          $version = (Get-Content desktop/src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
+          $version = (Get-Content desktop/package.json -Raw | ConvertFrom-Json).version
           $portableDir = "portable-staging"
           New-Item -ItemType Directory -Force -Path $portableDir | Out-Null
           $exe = Get-ChildItem -Path "desktop/src-tauri/target/release" -Filter "*.exe" |

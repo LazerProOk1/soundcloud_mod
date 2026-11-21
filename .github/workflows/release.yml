@@ -62,6 +62,14 @@ jobs:
         working-directory: desktop
         run: pnpm install --frozen-lockfile
 
+      # The tag is the version: tauri.conf.json reads it from package.json.
+      - name: Take version from tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: |
+          jq --arg v "${GITHUB_REF_NAME#v}" '.version = $v' desktop/package.json > pkg.tmp
+          mv pkg.tmp desktop/package.json
+
       - name: Build Tauri
         uses: tauri-apps/tauri-action@v0
         env:
@@ -75,7 +83,7 @@ jobs:
         if: matrix.job_name == 'windows'
         shell: pwsh
         run: |
-          $version = (Get-Content desktop/src-tauri/tauri.conf.json -Raw | ConvertFrom-Json).version
+          $version = (Get-Content desktop/package.json -Raw | ConvertFrom-Json).version
           $portableDir = "portable-staging"
           New-Item -ItemType Directory -Force -Path $portableDir | Out-Null
           $exe = Get-ChildItem -Path "desktop/src-tauri/target/release" -Filter "*.exe" |
@@ -127,7 +135,7 @@ jobs:
       - name: Stage Ubuntu release assets
         if: matrix.job_name == 'ubuntu'
         run: |
-          version=$(jq -r .version desktop/src-tauri/tauri.conf.json)
+          version=$(jq -r .version desktop/package.json)
           out="release-assets/soundcloud-mod-$version-linux"
           bundle=desktop/src-tauri/target/release/bundle
           mkdir -p release-assets
@@ -141,27 +149,64 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         with:
           files: release-assets/*
-          generate_release_notes: true
-          body: |
-            ### Какой файл скачать
 
-            **Windows:** `installer-windows-x64.exe` — обычная установка, дальше приложение
-            обновляется само. `portable-windows-x64.zip` — без установки, обновлять вручную.
-            `.msi` — для развёртывания на нескольких компьютерах.
-
-            **Linux:** `.AppImage` (обновляется само), `.deb` для Ubuntu/Debian, `.rpm` для
-            Fedora/openSUSE.
-
-  # The in-app updater reads latest.json from the newest release. Built from the uploaded
-  # signatures, so the repacked AppImage is listed with its final signature.
-  updater-manifest:
-    name: Updater manifest
+  # Release notes = the annotated tag message (hand-written intro, optional) + commit subjects
+  # since the previous v* tag. The in-app updater reads latest.json from the newest release;
+  # it is built from the uploaded signatures, so the repacked AppImage gets its final signature.
+  release-notes-and-manifest:
+    name: Release notes and updater manifest
     needs: build-and-release
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Write release notes
+        run: |
+          tag="$GITHUB_REF_NAME"
+          # checkout can turn the annotated tag into a lightweight one; fetch it back.
+          git fetch --force --tags -q
+          prev=$(git describe --tags --abbrev=0 --match 'v*' "$tag^" 2>/dev/null || true)
+          range=${prev:+$prev..}$tag
+          section() { # $1 = title, $2 = commit type regex
+            lines=$(git log "$range" --no-merges --format=%s | grep -E "^($2)(\(|:)" \
+              | sed -E 's/^[a-z]+(\([a-z0-9-]+\))?: /- /' | awk '!seen[$0]++')
+            [ -n "$lines" ] && printf '### %s\n\n%s\n\n' "$1" "$lines"
+            true
+          }
+          {
+            if [ "$(git cat-file -t "$tag")" = tag ]; then
+              git tag -l --format='%(contents:subject)%0a%0a%(contents:body)' "$tag"
+              echo
+            fi
+            section 'Новое' feat
+            section 'Внешний вид' style
+            section 'Исправления' fix
+            section 'Быстрее' perf
+          } > whats-new.md
+          {
+            cat whats-new.md
+            cat <<'EOF'
+          ### Какой файл скачать
+
+          **Windows:** `installer-windows-x64.exe` — обычная установка, дальше приложение
+          обновляется само. `portable-windows-x64.zip` — без установки, обновлять вручную.
+          `.msi` — для развёртывания на нескольких компьютерах.
+
+          **Linux:** `.AppImage` (обновляется само), `.deb` для Ubuntu/Debian, `.rpm` для
+          Fedora/openSUSE.
+          EOF
+            [ -n "$prev" ] && printf '\n[Все изменения](https://github.com/%s/compare/%s...%s)\n' \
+              "$GITHUB_REPOSITORY" "$prev" "$tag"
+            true
+          } > notes.md
+          cat notes.md
+          gh release edit "$tag" -R "$GITHUB_REPOSITORY" --notes-file notes.md
+
       - name: Publish latest.json
         run: |
           tag="$GITHUB_REF_NAME"
@@ -174,10 +219,31 @@ jobs:
           }
           win=$(entry '*-installer-windows-x64.exe.sig')
           linux=$(entry '*.AppImage.sig')
-          jq -n --arg v "${tag#v}" --arg d "$(date -u +%FT%TZ)" \
+          jq -n --arg v "${tag#v}" --arg d "$(date -u +%FT%TZ)" --rawfile n whats-new.md \
             --argjson win "$win" --argjson linux "$linux" \
-            '{version: $v, notes: "", pub_date: $d, platforms: {
+            '{version: $v, notes: $n, pub_date: $d, platforms: {
               "windows-x86_64": $win, "windows-x86_64-nsis": $win,
               "linux-x86_64": $linux, "linux-x86_64-appimage": $linux}}' > latest.json
           cat latest.json
           gh release upload "$tag" latest.json -R "$GITHUB_REPOSITORY" --clobber
+
+  # Keep package.json on main at the released version, so dev builds and the next release agree.
+  bump-version:
+    name: Write version back to main
+    needs: release-notes-and-manifest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Commit version
+        run: |
+          v="${GITHUB_REF_NAME#v}"
+          [ "$(jq -r .version desktop/package.json)" = "$v" ] && exit 0
+          jq --arg v "$v" '.version = $v' desktop/package.json > pkg.tmp
+          mv pkg.tmp desktop/package.json
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -am "chore: release v$v"
+          git push
