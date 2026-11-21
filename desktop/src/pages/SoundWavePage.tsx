@@ -503,7 +503,7 @@ export function SoundWavePage() {
 
       {/* ═══════════════ CONTENT ═══════════════ */}
       <div
-        className="relative z-10 flex flex-col flex-1 justify-between max-w-[1040px] w-full mx-auto px-6 md:px-10 py-7 gap-6"
+        className="relative z-10 flex flex-col flex-1 justify-between max-w-[1040px] w-full mx-auto px-6 md:px-10 py-5 gap-4"
         style={{ isolation: 'isolate' }}
       >
         {/* ── Top Bar: Brand + Live Pill + Filters + Refresh ── */}
@@ -577,7 +577,7 @@ export function SoundWavePage() {
         {/* ── The wave card: title on top, cover on the living horizon with play on it,
              dotted spectrum, progress and the action row (old card + new stage). ── */}
         <section
-          className="wave-card relative my-auto flex w-full flex-col items-center gap-6 rounded-[32px] px-5 py-7 md:px-10 md:py-9"
+          className="wave-card relative my-auto flex w-full flex-col items-center gap-4 rounded-[32px] px-5 py-5 md:px-10 md:py-6"
           style={{
             background:
               'linear-gradient(165deg, rgba(255,255,255,0.075) 0%, rgba(255,255,255,0.025) 55%, rgba(8,8,12,0.4) 100%)',
@@ -597,7 +597,7 @@ export function SoundWavePage() {
                   disabled={!artistTarget}
                   className="mx-auto block max-w-full truncate font-extrabold leading-[1.15] tracking-tight text-white hover:opacity-85 cursor-pointer disabled:cursor-default disabled:hover:opacity-100"
                   style={{
-                    fontSize: 'clamp(30px, 4.8vw, 58px)',
+                    fontSize: 'clamp(28px, 4.2vw, 50px)',
                     textShadow: dom
                       ? `0 0 60px ${rgbToCss(dom, 0.4)}, 0 4px 24px rgba(0,0,0,0.45)`
                       : '0 4px 24px rgba(0,0,0,0.45)',
@@ -605,7 +605,7 @@ export function SoundWavePage() {
                 >
                   {artistDisplay.primary}
                 </button>
-                <div className="mt-1.5 flex items-center justify-center gap-2">
+                <div className="mt-1 flex items-center justify-center gap-2">
                   <button
                     type="button"
                     onClick={() => navigate(`/track/${encodeURIComponent(displayTrack.urn)}`)}
@@ -619,12 +619,26 @@ export function SoundWavePage() {
                     </span>
                   )}
                 </div>
-                <p className="mt-2 flex items-center justify-center gap-1.5 text-[13px] text-white/45">
-                  <Sparkles size={13} />
-                  {isUrnLiked(displayTrack.urn) || displayTrack.user_favorite
-                    ? t('waveTune.reasonLiked')
-                    : t('waveTune.reasonNew')}
-                </p>
+                {!isWaveTrack && currentTrack ? (
+                  // Something else is playing: a small pill starts the wave instead of a big block.
+                  <button
+                    type="button"
+                    onClick={handleStartWave}
+                    disabled={allTracks.length === 0}
+                    title={t('soundwave.nowPlayingOther', { title: currentTrack.title })}
+                    className="press mx-auto mt-2 flex h-8 select-none items-center gap-1.5 rounded-full bg-white px-3.5 text-[12.5px] font-bold text-black cursor-pointer disabled:opacity-40"
+                  >
+                    <Play size={12} fill="currentColor" strokeWidth={0} />
+                    {t('soundwave.startWave')}
+                  </button>
+                ) : (
+                  <p className="mt-1.5 flex items-center justify-center gap-1.5 text-[13px] text-white/45">
+                    <Sparkles size={13} />
+                    {isUrnLiked(displayTrack.urn) || displayTrack.user_favorite
+                      ? t('waveTune.reasonLiked')
+                      : t('waveTune.reasonNew')}
+                  </p>
+                )}
               </div>
             ) : isLoading ? (
               <div className="flex flex-col items-center gap-3 py-2">
@@ -680,7 +694,7 @@ export function SoundWavePage() {
                 e.currentTarget.style.setProperty('--tx', '0deg');
                 e.currentTarget.style.setProperty('--ty', '0deg');
               }}
-              className="np-cover-img group/art relative z-10 h-[232px] w-[232px] shrink-0 overflow-hidden rounded-3xl bg-white/[0.06] ring-1 ring-white/15 cursor-pointer disabled:cursor-default"
+              className="np-cover-img group/art relative z-10 h-[196px] w-[196px] shrink-0 overflow-hidden rounded-3xl bg-white/[0.06] ring-1 ring-white/15 cursor-pointer disabled:cursor-default"
             >
               {artworkUrl ? (
                 <img
@@ -702,7 +716,7 @@ export function SoundWavePage() {
                     : 'bg-black/25 opacity-100'
                 }`}
               >
-                <span className="play-fab flex h-16 w-16 items-center justify-center rounded-full bg-white text-black shadow-[0_8px_24px_rgba(0,0,0,0.45)] transition-transform duration-200 group-hover/art:scale-110">
+                <span className="play-fab flex h-14 w-14 items-center justify-center rounded-full bg-white text-black shadow-[0_8px_24px_rgba(0,0,0,0.45)] transition-transform duration-200 group-hover/art:scale-110">
                   {isBuffering && currentTrack ? (
                     <Loader2 size={24} className="animate-spin" />
                   ) : playingHere ? (
@@ -724,33 +738,12 @@ export function SoundWavePage() {
             </button>
           </div>
 
-          {/* Start wave when something else is playing */}
-          {!isWaveTrack && currentTrack && (
-            <div className="flex flex-col items-center gap-1.5">
-              <button
-                type="button"
-                onClick={handleStartWave}
-                disabled={allTracks.length === 0}
-                className="press flex select-none items-center gap-2 rounded-full bg-white px-5 py-2.5 text-[13.5px] font-bold text-black cursor-pointer disabled:opacity-40"
-              >
-                <Play size={14} fill="currentColor" strokeWidth={0} />
-                {t('soundwave.startWave', 'Start wave')}
-              </button>
-              <p className="max-w-sm truncate text-[11px] text-white/40">
-                {t('soundwave.nowPlayingOther', {
-                  defaultValue: 'Playing now: {{title}}',
-                  title: currentTrack.title,
-                })}
-              </p>
-            </div>
-          )}
-
           {/* Dotted spectrum, progress and actions */}
           {currentTrack && (
-            <div className="flex w-full max-w-2xl flex-col gap-3">
-              <LiveSpectrumCanvas active={isPlaying} bars={56} height={30} variant="dots" />
+            <div className="flex w-full max-w-2xl flex-col gap-2.5">
+              <LiveSpectrumCanvas active={isPlaying} bars={56} height={22} variant="dots" />
               <ProgressSlider />
-              <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                   <ControlVolumeBtn size="sm" />
                   <button
