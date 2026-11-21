@@ -1380,35 +1380,58 @@ button:not(:disabled):active,
   inherits: false;
   initial-value: 0deg;
 }
+/* Which corner a bass hit pushes down; walks round the four corners every 2 s. */
+@property --dip-x {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 12deg;
+}
+@property --dip-y {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: -12deg;
+}
+@keyframes cover-dip-corner {
+  0% {
+    --dip-x: 12deg;
+    --dip-y: -12deg;
+  }
+  25% {
+    --dip-x: -12deg;
+    --dip-y: -12deg;
+  }
+  50% {
+    --dip-x: -12deg;
+    --dip-y: 12deg;
+  }
+  75% {
+    --dip-x: 12deg;
+    --dip-y: 12deg;
+  }
+}
 @keyframes cover-idle-tilt {
-  /* Rest, then dip one corner, another, and settle — like the cover is being pressed. */
+  /* Dip one corner, settle, dip the opposite one, settle — starting right away. */
   0%,
-  55%,
+  40%,
+  90%,
   100% {
     --idle-x: 0deg;
     --idle-y: 0deg;
   }
-  64% {
-    --idle-x: -11deg;
-    --idle-y: 11deg;
+  18% {
+    --idle-x: -9deg;
+    --idle-y: 9deg;
   }
-  74% {
-    --idle-x: 0deg;
-    --idle-y: 0deg;
-  }
-  83% {
-    --idle-x: 10deg;
-    --idle-y: -9deg;
-  }
-  92% {
-    --idle-x: 0deg;
-    --idle-y: 0deg;
+  66% {
+    --idle-x: 8deg;
+    --idle-y: -8deg;
   }
 }
 .np-cover-img {
   animation:
     np-in 0.7s var(--ease-out-soft) backwards,
-    cover-idle-tilt 12s cubic-bezier(0.45, 0, 0.25, 1) 4s infinite;
+    cover-idle-tilt 8s cubic-bezier(0.45, 0, 0.25, 1) infinite,
+    cover-dip-corner 8s steps(1, end) infinite;
 }
 @keyframes np-in {
   from {
@@ -1578,71 +1601,6 @@ svg.lucide:not([stroke-width="0"]) {
   border-radius: 50%;
   background: #fff;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
-}
-
-/* ── Download in progress: the arrow keeps dropping ─────────── */
-@keyframes download-nudge {
-  0%,
-  100% {
-    transform: translateY(-2px);
-    opacity: 1;
-  }
-  50% {
-    transform: translateY(3px);
-    opacity: 0.6;
-  }
-}
-.download-nudge {
-  animation: download-nudge 1.1s ease-in-out infinite;
-}
-@media (prefers-reduced-motion: reduce) {
-  .download-nudge {
-    animation: none;
-  }
-}
-
-/* ══════════════════════════════════════════════════════════════
-   LIQUID GLASS — html.liquid-glass (Settings → Interface → Panel style)
-   See-through panels: the wallpaper / cover colours behind are blurred and bent by
-   #lg-refract, with a bright rim on top. The plain blur line comes first so engines
-   without url() backdrop filters still get glass.
-   ══════════════════════════════════════════════════════════════ */
-.liquid-glass .liquid-panel-heavy,
-.liquid-glass .app-surface,
-.liquid-glass [data-radix-popper-content-wrapper] > [role="dialog"] {
-  background: rgba(255, 255, 255, 0.055) !important;
-  border: 1px solid rgba(255, 255, 255, 0.14) !important;
-  backdrop-filter: blur(14px) saturate(180%);
-  -webkit-backdrop-filter: blur(14px) saturate(180%);
-  backdrop-filter: url(#lg-refract) blur(14px) saturate(180%) brightness(1.06);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.38),
-    inset 1px 0 0 rgba(255, 255, 255, 0.14),
-    inset -1px 0 0 rgba(255, 255, 255, 0.06),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.05),
-    0 18px 50px rgba(0, 0, 0, 0.4) !important;
-}
-/* A soft specular sweep along the top edge. */
-.liquid-glass .liquid-panel-heavy::after,
-.liquid-glass .app-surface::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.16) 0%,
-    rgba(255, 255, 255, 0.03) 18%,
-    transparent 40%
-  );
-}
-@media (prefers-reduced-transparency: reduce) {
-  .liquid-glass .liquid-panel-heavy,
-  .liquid-glass .app-surface {
-    background: rgba(20, 20, 24, 0.94) !important;
-    backdrop-filter: none;
-  }
 }
 
 /* Card glare belongs to Liquid Glass; Gloss and Plain cards stay clean. */

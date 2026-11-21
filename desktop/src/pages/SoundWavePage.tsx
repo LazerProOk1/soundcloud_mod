@@ -581,7 +581,7 @@ export function SoundWavePage() {
                 // Tilt toward the cursor (like the cards), an occasional idle tilt (CSS), bass pulse
                 // and a slow sway.
                 transform:
-                  'perspective(700px) rotateY(calc(var(--tx, 0deg) + var(--idle-x, 0deg))) rotateX(calc(var(--ty, 0deg) + var(--idle-y, 0deg))) translateY(calc(var(--sway, 0) * 1px)) scale(calc(1 + var(--bass, 0) * 0.06))',
+                  'perspective(700px) rotateY(calc(var(--tx, 0deg) + var(--idle-x, 0deg) + var(--bass, 0) * var(--dip-x, 12deg))) rotateX(calc(var(--ty, 0deg) + var(--idle-y, 0deg) + var(--bass, 0) * var(--dip-y, -12deg))) translateY(calc(var(--sway, 0) * 1px)) scale(calc(1 + var(--bass, 0) * 0.06))',
                 transition: 'transform 0.12s linear',
               }}
               onPointerMove={(e) => {
@@ -654,26 +654,29 @@ export function SoundWavePage() {
             )}
           </div>
 
-          {/* Not this · Play/Pause · More like this */}
-          <div className="flex items-center justify-center gap-4">
-            <button
-              type="button"
-              onClick={handleNotThis}
-              disabled={!displayTrack || !isWaveTrack}
-              className="flex items-center gap-2 h-11 px-5 rounded-full bg-white/[0.08] hover:bg-white/[0.14] border border-white/[0.08] text-[14px] font-semibold text-white cursor-pointer disabled:opacity-40 disabled:cursor-default"
-            >
-              <ThumbsDown size={17} />
-              {t('soundwave.notThis')}
-            </button>
-            <button
-              type="button"
-              onClick={handlePrev}
-              disabled={!currentTrack}
-              aria-label={t('kb.prevTrack')}
-              className="w-11 h-11 rounded-full flex items-center justify-center text-white/75 hover:text-white hover:bg-white/[0.1] cursor-pointer disabled:opacity-30 disabled:cursor-default"
-            >
-              <SkipBack size={22} fill="currentColor" />
-            </button>
+          {/* Not this · Play/Pause · More like this. Three equal columns keep play centred
+              (the side labels differ in width), right under the Start wave button. */}
+          <div className="grid w-full max-w-[640px] grid-cols-[1fr_auto_1fr] items-center gap-4">
+            <div className="flex items-center justify-end gap-4">
+              <button
+                type="button"
+                onClick={handleNotThis}
+                disabled={!displayTrack || !isWaveTrack}
+                className="flex items-center gap-2 h-11 px-5 rounded-full bg-white/[0.08] hover:bg-white/[0.14] border border-white/[0.08] text-[14px] font-semibold text-white cursor-pointer disabled:opacity-40 disabled:cursor-default"
+              >
+                <ThumbsDown size={17} />
+                {t('soundwave.notThis')}
+              </button>
+              <button
+                type="button"
+                onClick={handlePrev}
+                disabled={!currentTrack}
+                aria-label={t('kb.prevTrack')}
+                className="w-11 h-11 rounded-full flex items-center justify-center text-white/75 hover:text-white hover:bg-white/[0.1] cursor-pointer disabled:opacity-30 disabled:cursor-default"
+              >
+                <SkipBack size={22} fill="currentColor" />
+              </button>
+            </div>
             <button
               type="button"
               onClick={handlePlayPause}
@@ -686,27 +689,29 @@ export function SoundWavePage() {
               ) : isPlaying && currentTrack ? (
                 <Pause size={24} fill="currentColor" strokeWidth={0} />
               ) : (
-                <Play size={24} fill="currentColor" strokeWidth={0} className="ml-0.5" />
+                <Play size={24} fill="currentColor" strokeWidth={0} />
               )}
             </button>
-            <button
-              type="button"
-              onClick={playerNext}
-              disabled={!currentTrack}
-              aria-label={t('kb.nextTrack')}
-              className="w-11 h-11 rounded-full flex items-center justify-center text-white/75 hover:text-white hover:bg-white/[0.1] cursor-pointer disabled:opacity-30 disabled:cursor-default"
-            >
-              <SkipForward size={22} fill="currentColor" />
-            </button>
-            <button
-              type="button"
-              onClick={handleMoreLikeThis}
-              disabled={!displayTrack || !isWaveTrack}
-              className="flex items-center gap-2 h-11 px-5 rounded-full bg-white/[0.08] hover:bg-white/[0.14] border border-white/[0.08] text-[14px] font-semibold text-white cursor-pointer disabled:opacity-40 disabled:cursor-default"
-            >
-              <ThumbsUp size={17} />
-              {t('soundwave.moreLikeThis')}
-            </button>
+            <div className="flex items-center justify-start gap-4">
+              <button
+                type="button"
+                onClick={playerNext}
+                disabled={!currentTrack}
+                aria-label={t('kb.nextTrack')}
+                className="w-11 h-11 rounded-full flex items-center justify-center text-white/75 hover:text-white hover:bg-white/[0.1] cursor-pointer disabled:opacity-30 disabled:cursor-default"
+              >
+                <SkipForward size={22} fill="currentColor" />
+              </button>
+              <button
+                type="button"
+                onClick={handleMoreLikeThis}
+                disabled={!displayTrack || !isWaveTrack}
+                className="flex items-center gap-2 h-11 px-5 rounded-full bg-white/[0.08] hover:bg-white/[0.14] border border-white/[0.08] text-[14px] font-semibold text-white cursor-pointer disabled:opacity-40 disabled:cursor-default"
+              >
+                <ThumbsUp size={17} />
+                {t('soundwave.moreLikeThis')}
+              </button>
+            </div>
           </div>
 
           {/* Start Wave CTA when listening outside the wave */}
