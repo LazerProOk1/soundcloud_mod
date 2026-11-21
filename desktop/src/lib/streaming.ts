@@ -1,7 +1,7 @@
 import { fetch } from '@tauri-apps/plugin-http';
 import type { Track } from '../stores/player';
 import { useSettingsStore } from '../stores/settings';
-import { ApiError, getSessionId } from './api-client';
+import { ApiError } from './api-client';
 import { API_BASE, STORAGE_BASE, STREAMING_BASE } from './constants';
 import { logHttpError, logHttpFailure, trackAsync } from './diagnostics';
 import { markHealthy, markUnhealthy } from './host-health';
@@ -70,15 +70,6 @@ export function resolveTrackFromStreaming(url: string) {
   return streamingJson<ResolvedStreamingTrack>(`/resolve?url=${encodeURIComponent(url)}`);
 }
 
-function buildStreamUrl(base: string, trackUrn: string, premium: boolean, hq: boolean) {
-  const params = new URLSearchParams();
-  if (hq) params.set('hq', 'true');
-  const sid = getSessionId();
-  if (sid) params.set('session_id', sid);
-  const path = premium ? '/premium' : '';
-  return `${base}/stream/${encodeURIComponent(trackUrn)}${path}?${params.toString()}`;
-}
-
 export function buildStorageUrls(trackUrn: string): string[] {
   const file = `${trackUrn.replace(/:/g, '_')}.m4a`;
   return [`${STORAGE_BASE}/${file}`];
@@ -92,19 +83,12 @@ function buildApiStreamUrl(trackUrn: string, hq: boolean) {
 }
 
 /**
- * Where the engine fetches a track from, in order: the API's stream endpoint, then the older
- * stream host (it answers 401/404 for many tracks now, so it only goes last).
+ * Where the engine fetches a track from: the API's stream endpoint, high quality first. The old
+ * `stream.` host's `/stream/{urn}` answers only 401/404 now, so it is no longer tried.
  */
 export function streamFallbackUrls(
   trackUrn: string,
   hq = useSettingsStore.getState().highQualityStreaming,
 ): string[] {
-  const qualities = hq ? [true, false] : [false];
-  const urls = qualities.map((q) => buildApiStreamUrl(trackUrn, q));
-  for (const useHq of qualities) {
-    for (const premium of [true, false]) {
-      urls.push(buildStreamUrl(STREAMING_BASE, trackUrn, premium, useHq));
-    }
-  }
-  return [...new Set(urls)];
+  return (hq ? [true, false] : [false]).map((q) => buildApiStreamUrl(trackUrn, q));
 }

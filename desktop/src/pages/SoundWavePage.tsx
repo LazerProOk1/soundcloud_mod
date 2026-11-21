@@ -49,6 +49,7 @@ import {
   ThumbsUp,
 } from '../lib/icons';
 import { isUrnLiked } from '../lib/likes';
+import { isDownloadable } from '../lib/offline-download';
 import { matchOnSoundCloud } from '../lib/link-import';
 import {
   getArtistDisplay,
@@ -152,6 +153,8 @@ export function SoundWavePage() {
       (!hideLiked || (!tr.user_favorite && !isUrnLiked(tr.urn))) &&
       // Barely played uploads (re-uploads, demos, no-names) stay out unless you liked them.
       ((tr.playback_count ?? MIN_WAVE_PLAYS) >= MIN_WAVE_PLAYS || isUrnLiked(tr.urn)) &&
+      // Previews and blocked tracks only play through the slow YouTube fallback: skip them.
+      isDownloadable(tr) &&
       (!hideVariants || !isVariant(tr)) &&
       matchesLanguages(tr, stableLanguages),
     [hideLiked, hideVariants, stableLanguages],
