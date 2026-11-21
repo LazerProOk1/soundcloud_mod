@@ -91,6 +91,26 @@ jobs:
           Copy-Item "desktop/src-tauri/target/release/bundle/nsis/*.exe" "release-assets/" -Force
           Copy-Item "desktop/src-tauri/target/release/bundle/msi/*.msi" "release-assets/" -Force
 
+      # Tauri links .DirIcon to an absolute build-machine path, so it dangles inside the AppImage
+      # and the AppImage catalog rejects it. Replace the link with the real PNG and repack.
+      - name: Fix AppImage .DirIcon
+        if: matrix.job_name == 'ubuntu'
+        working-directory: desktop/src-tauri/target/release/bundle/appimage
+        env:
+          APPIMAGE_EXTRACT_AND_RUN: 1
+          ARCH: x86_64
+        run: |
+          wget -q https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-x86_64.AppImage -O "$RUNNER_TEMP/appimagetool"
+          chmod +x "$RUNNER_TEMP/appimagetool"
+          for img in *.AppImage; do
+            "./$img" --appimage-extract > /dev/null
+            icon=$(grep -m1 '^Icon=' squashfs-root/*.desktop | cut -d= -f2)
+            cp --remove-destination "squashfs-root/$icon.png" squashfs-root/.DirIcon
+            test -s squashfs-root/.DirIcon
+            "$RUNNER_TEMP/appimagetool" squashfs-root "$img"
+            rm -rf squashfs-root
+          done
+
       - name: Stage Ubuntu release assets
         if: matrix.job_name == 'ubuntu'
         run: |
