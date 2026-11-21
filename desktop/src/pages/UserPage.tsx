@@ -11,7 +11,6 @@ import {
   UserPopularTab,
   UserTracksTab,
 } from '../components/user/UserTabs';
-import { useEditableUserAura, useUserAura } from '../components/user/useUserAura';
 import { useUser, useUserWebProfiles } from '../lib/hooks';
 import { Loader2 } from '../lib/icons';
 import { useAuthStore } from '../stores/auth';
@@ -27,15 +26,6 @@ export function UserPage() {
   const { data: webProfiles } = useUserWebProfiles(urn);
 
   const isOwnProfile = !!user && currentUser?.urn === user.urn;
-
-  // The profile aura picker is switched off for now (it came with the removed Star plan).
-  const auraPicker = false;
-
-  const readonly = useUserAura(urn, auraPicker && !isOwnProfile);
-  const editable = useEditableUserAura(urn, auraPicker && isOwnProfile);
-
-  const aura = isOwnProfile ? editable.aura : readonly.aura;
-  const customHex = isOwnProfile ? editable.customHex : readonly.customHex;
 
   const tabs = useMemo(() => {
     if (!user) return [] as const;
@@ -65,16 +55,7 @@ export function UserPage() {
           className="relative z-10 w-full max-w-[1480px] mx-auto px-4 md:px-8 pt-10 md:pt-16 pb-32"
           style={{ isolation: 'isolate' }}
         >
-          <IdentityHub
-            user={user}
-            showAuraPicker={auraPicker && isOwnProfile}
-            webProfiles={webProfiles}
-            aura={aura}
-            isOwnProfile={isOwnProfile}
-            customHex={customHex}
-            onPickAura={editable.onPickAura}
-            onPickCustom={editable.onPickCustom}
-          />
+          <IdentityHub user={user} webProfiles={webProfiles} isOwnProfile={isOwnProfile} />
 
           <div className="mt-10 mb-8">
             <TabDock tabs={tabs} active={activeTab} onChange={setActiveTab} />

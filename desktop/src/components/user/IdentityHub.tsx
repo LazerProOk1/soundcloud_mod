@@ -1,11 +1,9 @@
 import { useTranslation } from 'react-i18next';
-import type { Aura } from '../../lib/aura';
 import { monthYear } from '../../lib/formatters';
 import { Calendar, Globe, Heart, Music, User, Users } from '../../lib/icons';
 import { PILL_BTN } from '../ui/buttonClass';
 import { CopyLinkButton } from '../ui/CopyLinkButton';
 import { GlassHeroPanel } from '../ui/GlassHeroPanel';
-import { AuraPicker } from './AuraPicker';
 import { AvatarArtifact } from './AvatarArtifact';
 import { FollowBtn } from './FollowBtn';
 import { StatOrb } from './StatOrb';
@@ -32,24 +30,10 @@ interface IdentityHubProps {
   webProfiles:
     | Array<{ id: number | string; url: string; service: string; title: string }>
     | undefined;
-  aura: Aura;
   isOwnProfile: boolean;
-  showAuraPicker: boolean;
-  customHex: string;
-  onPickAura: (a: Aura) => void;
-  onPickCustom: (hex: string) => void;
 }
 
-export function IdentityHub({
-  user,
-  webProfiles,
-  aura,
-  isOwnProfile,
-  showAuraPicker,
-  customHex,
-  onPickAura,
-  onPickCustom,
-}: IdentityHubProps) {
+export function IdentityHub({ user, webProfiles, isOwnProfile }: IdentityHubProps) {
   const { t } = useTranslation();
   const formattedDate = monthYear(user.created_at);
   const country = [user.city, user.country_code].filter(Boolean).join(', ');
@@ -102,14 +86,6 @@ export function IdentityHub({
           <div className="flex flex-wrap items-center gap-3 pt-1 justify-center lg:justify-start">
             {!isOwnProfile && <FollowBtn userUrn={user.urn} />}
             {user.permalink_url && <CopyLinkButton url={user.permalink_url} />}
-            {showAuraPicker && (
-              <AuraPicker
-                aura={aura}
-                onPickAura={onPickAura}
-                customHex={customHex}
-                onPickCustom={onPickCustom}
-              />
-            )}
           </div>
         </div>
       </div>
