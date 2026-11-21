@@ -1525,17 +1525,27 @@ svg.lucide:not([stroke-width="0"]) {
   -webkit-backdrop-filter: none;
 }
 .liquid-glass .ui-float {
-  background: rgba(10, 10, 14, 0.42);
+  position: relative;
+  background-color: rgba(10, 10, 14, 0.42);
+  background-image: var(--lg-grain), var(--lg-light);
   backdrop-filter: var(--lg-filter);
   -webkit-backdrop-filter: var(--lg-filter);
-  box-shadow: var(--lg-rim);
+  box-shadow:
+    var(--lg-rim),
+    inset 0 0 24px rgba(255, 255, 255, 0.03);
 }
 /* Inside Liquid Glass, tiles and chips sit on glass that is already blurred: they get
    the lighting (rim + halo) but no backdrop filter of their own. */
 .liquid-glass .ui-card,
 .liquid-glass .glass,
 .liquid-glass .glass-flat {
-  background: rgba(255, 255, 255, 0.045);
+  background-color: rgba(255, 255, 255, 0.045);
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.06),
+    rgba(255, 255, 255, 0.015) 30%,
+    transparent 60%
+  );
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   box-shadow:
@@ -1556,22 +1566,47 @@ svg.lucide:not([stroke-width="0"]) {
 .bar-control.is-active {
   background: rgba(255, 255, 255, 0.16);
 }
+/* Chips and pill bars: a glass bead — top highlight band, lit rim, soft glow on hover. */
 .liquid-glass .bar-control,
 .liquid-glass .ui-track {
-  background: rgba(255, 255, 255, 0.06);
+  background-color: rgba(255, 255, 255, 0.06);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.1), transparent 55%);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.28),
-    inset 1px 0 0 rgba(255, 255, 255, 0.14),
+    inset 1px 0 0 rgba(255, 255, 255, 0.12),
     inset 0 -1px 0 rgba(0, 0, 0, 0.3),
-    0 0 0 0.5px rgba(255, 255, 255, 0.1);
+    0 0 0 0.5px rgba(255, 255, 255, 0.1),
+    0 4px 14px rgba(0, 0, 0, 0.22);
 }
 .liquid-glass .bar-control:hover {
-  background: rgba(255, 255, 255, 0.11);
+  background-color: rgba(255, 255, 255, 0.11);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.36),
+    inset 1px 0 0 rgba(255, 255, 255, 0.16),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+    0 0 0 0.5px rgba(255, 255, 255, 0.16),
+    0 0 20px rgba(255, 255, 255, 0.07),
+    0 4px 14px rgba(0, 0, 0, 0.22);
 }
 .liquid-glass .bar-control.is-active {
-  background: rgba(255, 255, 255, 0.16);
+  background-color: rgba(255, 255, 255, 0.16);
+}
+/* The main white button glows like lit glass. */
+.liquid-glass .ui-primary {
+  background-image: linear-gradient(180deg, #fff, rgba(255, 255, 255, 0.86));
+  box-shadow:
+    inset 0 -1px 0 rgba(0, 0, 0, 0.12),
+    0 0 0 0.5px rgba(255, 255, 255, 0.5),
+    0 6px 24px -6px rgba(255, 255, 255, 0.4);
+}
+.liquid-glass .ui-primary:hover {
+  background-image: none;
+  box-shadow:
+    inset 0 -1px 0 rgba(0, 0, 0, 0.12),
+    0 0 0 0.5px rgba(255, 255, 255, 0.6),
+    0 8px 30px -6px rgba(255, 255, 255, 0.55);
 }
 /* Destructive buttons (Sign out, Clear cache): red on hover in every style. */
 .bar-control.ui-danger:hover,
@@ -1586,7 +1621,8 @@ svg.lucide:not([stroke-width="0"]) {
 }
 .liquid-glass :is(span, div, p, kbd).bar-control:hover,
 .liquid-glass .bar-control:disabled:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background-color: rgba(255, 255, 255, 0.06);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.1), transparent 55%);
 }
 .ui-icon:disabled:hover {
   background: transparent;
@@ -1635,30 +1671,67 @@ svg.lucide:not([stroke-width="0"]) {
    - no SVG displacement filter: a url() backdrop filter is re-rasterised on every repaint;
    - the ambiance blobs stop drifting, so the backdrop stays static and the compositor
      reuses the blurred result instead of re-filtering every frame.
+   Everything else (lit gradient rim, grain, inner glow, artwork-coloured glow) is plain
+   paint: rasterised once, recomposited for free.
    ══════════════════════════════════════════════════════════════ */
 .liquid-glass {
   --lg-filter: blur(24px) saturate(185%) brightness(1.04);
   --lg-rim:
-    inset 0 1px 0 rgba(255, 255, 255, 0.26), inset 1px 0 0 rgba(255, 255, 255, 0.12),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.5), inset -1px 0 0 rgba(0, 0, 0, 0.26),
-    0 0 0 0.5px rgba(255, 255, 255, 0.08);
+    inset 0 1px 0 rgba(255, 255, 255, 0.2), inset 0 -1px 0 rgba(0, 0, 0, 0.5),
+    inset -1px 0 0 rgba(0, 0, 0, 0.24), 0 0 0 0.5px rgba(255, 255, 255, 0.08);
+  /* Static frosted grain, a 160px tile rendered once. */
+  --lg-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .045 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  /* --art-tint / --art-glow come from the current artwork (DynamicBackground). */
+  --lg-light: radial-gradient(
+    120% 70% at 0% 0%,
+    var(--art-tint, rgba(255, 255, 255, 0.05)),
+    transparent 62%
+  );
 }
 .liquid-glass .liquid-panel-heavy,
-.liquid-glass .app-surface,
-.liquid-glass [data-radix-popper-content-wrapper] > [role="dialog"] {
-  background: rgba(10, 10, 14, 0.42) !important;
+.liquid-glass .app-surface {
+  background-color: rgba(10, 10, 14, 0.42) !important;
+  background-image: var(--lg-grain), var(--lg-light) !important;
   border-color: transparent !important;
   backdrop-filter: var(--lg-filter);
   -webkit-backdrop-filter: var(--lg-filter);
   box-shadow:
     var(--lg-rim),
     inset 0 3px 10px -2px rgba(255, 255, 255, 0.06),
+    inset 0 0 32px rgba(255, 255, 255, 0.03),
+    0 0 60px -18px var(--art-glow, transparent),
     0 12px 28px rgba(0, 0, 0, 0.16),
     0 32px 64px rgba(0, 0, 0, 0.22) !important;
 }
 /* Fixed chrome is denser: several layers of glass thick. */
 .liquid-glass .liquid-panel-heavy {
-  background: rgba(8, 8, 12, 0.55) !important;
+  background-color: rgba(8, 8, 12, 0.55) !important;
+}
+/* Lit rim: a 1px gradient ring, bright where the light hits the upper-left corner and
+   fading along the edges, with a faint bounce on the lower right. */
+.liquid-glass .liquid-panel-heavy::before,
+.liquid-glass .app-surface::before,
+.liquid-glass .ui-float::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  padding: 1px;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    150deg,
+    rgba(255, 255, 255, 0.5),
+    rgba(255, 255, 255, 0.12) 22%,
+    rgba(255, 255, 255, 0.03) 50%,
+    rgba(255, 255, 255, 0.07) 80%,
+    rgba(255, 255, 255, 0.2)
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
 }
 /* Top glass sheen. */
 .liquid-glass .liquid-panel-heavy::after,
