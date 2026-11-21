@@ -1713,33 +1713,34 @@ svg.lucide:not([stroke-width="0"]) {
     0 12px 28px rgba(0, 0, 0, 0.16),
     0 32px 64px rgba(0, 0, 0, 0.22) !important;
 }
-/* Fixed chrome (sidebar, player bar, now-playing) is onyx: near-black smoked glass, no
-   glare, one quiet top hairline and a deep shadow. The current row glows in the accent. */
+/* Fixed chrome (sidebar, player bar, now-playing) is tinted by the cover: the current
+   artwork colour (--art-glow) washes down from the top into dark glass, with a matching
+   shadow and one light top hairline. No gradient rim or sheen. */
 .liquid-glass .liquid-panel-heavy {
-  background-color: rgba(4, 4, 6, 0.72) !important;
-  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 30%) !important;
+  background-color: rgba(10, 8, 12, 0.5) !important;
+  background-image: linear-gradient(
+    180deg,
+    var(--art-glow, rgba(255, 255, 255, 0.04)),
+    transparent 50%
+  ) !important;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 0 0 0.5px rgba(255, 255, 255, 0.06),
-    0 30px 70px rgba(0, 0, 0, 0.55) !important;
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 0 0 0.5px rgba(255, 255, 255, 0.08),
+    0 24px 70px -10px var(--art-glow, rgba(0, 0, 0, 0.5)) !important;
 }
 .liquid-glass .liquid-panel-heavy::after {
   display: none;
 }
 .liquid-glass [data-ui="sidebar"],
 .liquid-glass [data-ui="main"] {
-  border-radius: 20px;
+  border-radius: 22px;
 }
 .liquid-glass [data-ui="sidebar"] .ui-row-active {
   border-radius: 14px;
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--color-accent) 22%, transparent),
-    transparent 85%
-  );
+  background: rgba(255, 255, 255, 0.1);
   box-shadow:
-    inset 0 0 0 0.5px color-mix(in srgb, var(--color-accent) 35%, transparent),
-    0 0 28px -10px var(--color-accent);
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 0 0 0.5px rgba(255, 255, 255, 0.1);
 }
 /* Lit rim: a 1px gradient ring, bright where the light hits the upper-left corner and
    fading along the edges, with a faint bounce on the lower right. */
