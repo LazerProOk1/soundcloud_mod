@@ -1482,19 +1482,6 @@ svg.lucide:not([stroke-width="0"]) {
 .ui-icon {
   background: transparent;
 }
-/* Frosted glass style (the default): chips, pill bars and tiles are lightly frosted too. */
-.bar-control,
-.ui-track,
-.ui-card {
-  backdrop-filter: blur(16px) saturate(140%);
-  -webkit-backdrop-filter: blur(16px) saturate(140%);
-}
-.no-glass .bar-control,
-.no-glass .ui-track,
-.no-glass .ui-card {
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-}
 .ui-icon:hover {
   background: rgba(255, 255, 255, 0.08);
 }
@@ -1791,7 +1778,9 @@ svg.lucide:not([stroke-width="0"]) {
     transparent 55%
   );
 }
-.liquid-glass .dynamic-bg-blob {
+/* Under any glass style the artwork blobs hold still: a drifting backdrop forces every
+   blurred panel to be re-filtered on every frame. Plain has no blur, so they still drift. */
+html:not(.no-glass) .dynamic-bg-blob {
   animation: none;
   will-change: auto;
 }
