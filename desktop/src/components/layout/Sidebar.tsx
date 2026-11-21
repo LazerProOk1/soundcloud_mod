@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { art } from '../../lib/formatters';
-import { useMyPlaylists, usePlaylistCover } from '../../lib/hooks';
+import { useMyLikedPlaylists, useMyPlaylists, usePlaylistCover } from '../../lib/hooks';
 import {
   AudioLines,
   Clock,
@@ -76,7 +76,18 @@ export const Sidebar = React.memo(() => {
   const cachedCount = useCachedUrnsStore((s) => s.urns.size);
   const collapsed = useSettingsStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useSettingsStore((s) => s.toggleSidebar);
-  const { playlists } = useMyPlaylists(50);
+  const { playlists: own } = useMyPlaylists(50);
+  const showLiked = useSettingsStore((s) => s.sidebarLikedPlaylists);
+  const { playlists: liked } = useMyLikedPlaylists(50);
+  // Own playlists first, then liked ones (a liked own playlist is listed once).
+  const playlists = useMemo(() => {
+    if (!showLiked) return own.map((p) => ({ p, mine: true }));
+    const seen = new Set(own.map((p) => p.urn));
+    return [
+      ...own.map((p) => ({ p, mine: true })),
+      ...liked.filter((p) => !seen.has(p.urn)).map((p) => ({ p, mine: false })),
+    ];
+  }, [own, liked, showLiked]);
 
   return (
     <aside
@@ -144,12 +155,16 @@ export const Sidebar = React.memo(() => {
         />
 
         {playlists.length > 0 && !collapsed && <div className="h-px bg-white/[0.06] my-2 mx-2" />}
-        {playlists.map((p) => (
+        {playlists.map(({ p, mine }) => (
           <Row
             key={p.urn}
             to={`/playlist/${encodeURIComponent(p.urn)}`}
             title={p.title}
-            subtitle={t('sidebar.playlistTracks', { count: p.track_count ?? 0 })}
+            subtitle={
+              mine
+                ? t('sidebar.playlistTracks', { count: p.track_count ?? 0 })
+                : t('sidebar.playlistBy', { name: p.user?.username ?? '' })
+            }
             collapsed={collapsed}
             tile={
               <PlaylistTile urn={p.urn} artwork={p.artwork_url ?? p.tracks?.[0]?.artwork_url} />

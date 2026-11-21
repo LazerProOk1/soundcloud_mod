@@ -119,6 +119,9 @@ export interface SettingsState {
   /** Liquid Glass (frosted-glass / backdrop-filter) UI effects */
   /** Panel look: flat (opaque), gloss (light frost) or liquid (see-through glass). */
   panelStyle: PanelStyle;
+  /** Show liked playlists under your own in the sidebar. */
+  sidebarLikedPlaylists: boolean;
+  setSidebarLikedPlaylists: (v: boolean) => void;
   setAccentColor: (color: string) => void;
   setThemePreset: (id: ThemePreset) => void;
   setBackgroundImage: (url: string) => void;
@@ -193,6 +196,7 @@ const DEFAULTS = {
   artistWaveCollapsed: false,
   // Classic (flat, calm) look by default; Liquid Glass is opt-in.
   panelStyle: 'flat' as PanelStyle,
+  sidebarLikedPlaylists: true,
 };
 
 export const useSettingsStore = create<SettingsState>()(
@@ -248,6 +252,7 @@ export const useSettingsStore = create<SettingsState>()(
       setCrossfadeDuration: (crossfadeDuration) => set({ crossfadeDuration }),
       setArtistWaveCollapsed: (artistWaveCollapsed) => set({ artistWaveCollapsed }),
       setPanelStyle: (panelStyle) => set({ panelStyle }),
+      setSidebarLikedPlaylists: (sidebarLikedPlaylists) => set({ sidebarLikedPlaylists }),
       resetTheme: () =>
         set({
           accentColor: DEFAULTS.accentColor,
@@ -335,6 +340,7 @@ export const useSettingsStore = create<SettingsState>()(
         trimSilence: s.trimSilence,
         artistWaveCollapsed: s.artistWaveCollapsed,
         panelStyle: s.panelStyle,
+        sidebarLikedPlaylists: s.sidebarLikedPlaylists,
       }),
     },
   ),

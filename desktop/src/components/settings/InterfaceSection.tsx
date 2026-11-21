@@ -43,6 +43,25 @@ const LiquidGlassRow = React.memo(function LiquidGlassRow() {
   );
 });
 
+const SidebarRow = React.memo(function SidebarRow() {
+  const { t } = useTranslation();
+  const on = useSettingsStore((s) => s.sidebarLikedPlaylists);
+  const set = useSettingsStore((s) => s.setSidebarLikedPlaylists);
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <div>
+        <p className="text-[13px] text-white/70 font-medium">
+          {t('settings.sidebarLikedPlaylists')}
+        </p>
+        <p className="text-[11px] text-white/30 mt-0.5">
+          {t('settings.sidebarLikedPlaylistsDesc')}
+        </p>
+      </div>
+      <LiquidSwitch checked={on} onChange={set} />
+    </div>
+  );
+});
+
 const ScaleRow = React.memo(function ScaleRow() {
   const { t } = useTranslation();
   const uiScale = useSettingsStore((s) => s.uiScale);
@@ -227,6 +246,7 @@ export const InterfaceSection = React.memo(function InterfaceSection() {
     <section className="settings-section space-y-6">
       <h3 className="text-[22px] font-bold text-white tracking-tight">{t('settings.interface')}</h3>
       <LiquidGlassRow />
+      <SidebarRow />
       <SourceRow />
       <ScaleRow />
       <FontRow />
