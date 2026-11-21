@@ -32,14 +32,27 @@ import {
 } from '../lib/cache';
 import { hslToHex, hueOfHex } from '../lib/color';
 import { trackedInvoke } from '../lib/diagnostics';
+import { isDownloadable } from '../lib/offline-download';
 import { formatBytes } from '../lib/formatters';
-import { Check, Download, Link, Loader2, Pipette, Trash2, Upload, X } from '../lib/icons';
+import {
+  Check,
+  Download,
+  Heart,
+  Link,
+  Loader2,
+  Pipette,
+  playBlack14,
+  Trash2,
+  Upload,
+  X,
+} from '../lib/icons';
 import { PRESET_WALLPAPERS } from '../lib/wallpapers';
 import { useAuthStore } from '../stores/auth';
 import { type DiscordRpcMode, type StartupPage, useSettingsStore } from '../stores/settings';
 
 const PRESET_COLORS = [
   '#ff5500',
+  '#ffffff',
   '#ff3366',
   '#7c3aed',
   '#3b82f6',
@@ -48,6 +61,9 @@ const PRESET_COLORS = [
   '#eab308',
   '#ef4444',
 ];
+
+/** Audio cache limit choices in GB (0 = no limit). */
+const CACHE_LIMIT_GB = [1, 2, 5, 10, 20, 0];
 
 const LANGUAGES = [
   { code: 'en', label: 'English' },
@@ -296,7 +312,8 @@ const CacheSection = React.memo(function CacheSection() {
       ]);
       const hq = useSettingsStore.getState().highQualityStreaming;
       const sessionId = getSessionId();
-      const tracks = await fetchAllLikedTracks(200);
+      // Previews and blocked tracks can't be downloaded: leaving them in kept the run at N-1 of N.
+      const tracks = (await fetchAllLikedTracks(200)).filter(isDownloadable);
       const entries: LikeCacheEntry[] = tracks.map((track) => ({
         urn: track.urn,
         urls: streamFallbackUrls(track.urn, hq),
@@ -323,12 +340,6 @@ const CacheSection = React.memo(function CacheSection() {
   }, []);
 
   const totalSize = (audioSize ?? 0) + (imagesSize ?? 0) + (likedSize ?? 0);
-  const limitLabel =
-    audioCacheLimitMB <= 0
-      ? t('settings.unlimited')
-      : audioCacheLimitMB >= 1024
-        ? `${(audioCacheLimitMB / 1024).toFixed(audioCacheLimitMB % 1024 === 0 ? 0 : 1)} GB`
-        : `${audioCacheLimitMB} MB`;
 
   const progressPct =
     progress && progress.total > 0
@@ -414,8 +425,9 @@ const CacheSection = React.memo(function CacheSection() {
               />
             </div>
             <button
+              type="button"
               onClick={handleCancelCacheLikes}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-[12px] font-semibold bg-white/[0.04] text-white/60 hover:bg-white/[0.08] border border-white/[0.06] hover:border-white/[0.12] transition-all duration-200 cursor-pointer"
+              className="press flex h-9 items-center gap-2 rounded-full bg-white/[0.07] px-4 text-[13px] font-semibold text-white/80 hover:bg-white/[0.12] hover:text-white cursor-pointer"
             >
               <X size={12} />
               {t('common.cancel')}
@@ -423,8 +435,9 @@ const CacheSection = React.memo(function CacheSection() {
           </div>
         ) : (
           <button
+            type="button"
             onClick={handleCacheLikes}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-[12px] font-semibold bg-white/[0.06] text-white/75 hover:bg-white/[0.1] border border-white/[0.06] hover:border-white/[0.12] transition-all duration-200 cursor-pointer"
+            className="press flex h-9 items-center gap-2 rounded-full bg-white/[0.07] px-4 text-[13px] font-semibold text-white/80 hover:bg-white/[0.12] hover:text-white cursor-pointer"
           >
             <Download size={12} />
             {t('settings.cacheLikes')}
@@ -439,16 +452,14 @@ const CacheSection = React.memo(function CacheSection() {
             <p className="text-[13px] text-white/60 font-medium">{t('settings.audioCacheLimit')}</p>
             <p className="text-[11px] text-white/30 mt-0.5">{t('settings.audioCacheLimitDesc')}</p>
           </div>
-          <span className="text-[12px] text-white/30 tabular-nums">{limitLabel}</span>
         </div>
-        <input
-          type="range"
-          min={0}
-          max={8192}
-          step={256}
-          value={audioCacheLimitMB}
-          onChange={(e) => setAudioCacheLimitMB(Number(e.target.value))}
-          className={RANGE_CLS}
+        <Segmented
+          value={String(audioCacheLimitMB)}
+          options={CACHE_LIMIT_GB.map((gb) => ({
+            id: String(gb * 1024),
+            label: gb === 0 ? t('settings.unlimited') : `${gb} GB`,
+          }))}
+          onChange={(mb) => setAudioCacheLimitMB(Number(mb))}
         />
       </div>
 
@@ -540,7 +551,7 @@ const WallpaperPicker = React.memo(function WallpaperPicker() {
       </label>
 
       {/* Wallpaper grid */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-5 gap-2.5">
         {/* "None" option */}
         <button
           type="button"
@@ -768,19 +779,9 @@ function AccentFromWallpaperBtn({
       type="button"
       onClick={extract}
       disabled={loading}
-      className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[12px] font-semibold transition-all duration-200 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed w-fit"
-      style={{
-        background: 'rgba(255,255,255,0.05)',
-        border: '1px solid rgba(255,255,255,0.08)',
-        color: 'rgba(255,255,255,0.65)',
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.10), 0 2px 8px rgba(0,0,0,0.20)',
-      }}
+      className="press flex h-8 items-center gap-2 rounded-full bg-white/[0.08] px-3.5 text-[13px] font-semibold text-white/80 hover:bg-white/[0.13] hover:text-white cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
     >
-      {loading ? (
-        <Loader2 size={13} className="animate-spin" style={{ color: 'var(--color-accent)' }} />
-      ) : (
-        <Pipette size={13} style={{ color: 'var(--color-accent)' }} />
-      )}
+      {loading ? <Loader2 size={14} className="animate-spin" /> : <Pipette size={14} />}
       {t('settings.accentFromWallpaper', 'Цвет акцента из обоев')}
     </button>
   );
@@ -797,7 +798,7 @@ function optionRing(selected: boolean) {
 
 function SelectedCheck() {
   return (
-    <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--color-accent)] text-white shadow-md">
+    <span className="absolute right-2 top-2 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--color-accent)] text-[var(--color-accent-contrast)] shadow-md">
       <Check size={12} strokeWidth={3} />
     </span>
   );
@@ -854,6 +855,43 @@ function AccentPicker({ value, onChange }: { value: string; onChange: (hex: stri
   );
 }
 
+/** Mini player on the current background, so accent and wallpaper changes show at once. */
+function AppearancePreview({
+  accent,
+  backgroundImage,
+}: {
+  accent: string;
+  backgroundImage: string;
+}) {
+  const url = backgroundImage ? getWallpaperUrl(backgroundImage) : null;
+  return (
+    <div
+      aria-hidden
+      className="relative h-36 overflow-hidden rounded-2xl bg-[#101012] bg-cover bg-center shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
+      style={url ? { backgroundImage: `url("${url}")` } : undefined}
+    >
+      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+      <div className="absolute inset-x-4 bottom-4 flex items-center gap-3 rounded-xl bg-black/45 p-3 backdrop-blur-md">
+        <div
+          className="h-11 w-11 shrink-0 rounded-lg"
+          style={{ background: `linear-gradient(135deg, ${accent}, #1d1d22)` }}
+        />
+        <div className="min-w-0 flex-1 space-y-2">
+          <div className="h-2 w-28 rounded-full bg-white/80" />
+          <div className="h-1.5 w-20 rounded-full bg-white/35" />
+          <div className="h-1 w-full rounded-full bg-white/15">
+            <div className="h-full w-2/5 rounded-full" style={{ background: accent }} />
+          </div>
+        </div>
+        <Heart size={18} fill={accent} stroke="none" />
+        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white">
+          {playBlack14}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 /* ── Theme Section ──────────────────────────────────────── */
 
 const ThemeSection = React.memo(function ThemeSection() {
@@ -881,10 +919,12 @@ const ThemeSection = React.memo(function ThemeSection() {
         </button>
       </div>
 
-      {/* Accent colour: the only theme setting; the dark background stays the same. */}
+      {/* Live preview: a mini player on the chosen background, painted with the accent. */}
+      <AppearancePreview accent={accentColor} backgroundImage={backgroundImage} />
+
       <div className="space-y-3">
-        <label className="text-[13px] text-white/50 font-medium">{t('settings.accentColor')}</label>
-        <div className="flex flex-wrap items-center gap-2.5">
+        <p className="text-[13px] font-medium text-white/50">{t('settings.accentColor')}</p>
+        <div className="flex flex-wrap items-center gap-3">
           {PRESET_COLORS.map((color) => {
             const isActive = accentColor.toLowerCase() === color;
             return (
@@ -893,21 +933,19 @@ const ThemeSection = React.memo(function ThemeSection() {
                 type="button"
                 title={color}
                 onClick={() => setAccentColor(color)}
-                className={`press h-7 w-7 rounded-full cursor-pointer ${
-                  isActive ? 'ring-2 ring-white ring-offset-2 ring-offset-[#121214]' : ''
+                className={`press h-8 w-8 rounded-full cursor-pointer shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)] ${
+                  isActive ? 'ring-2 ring-white ring-offset-[3px] ring-offset-[#121214]' : ''
                 }`}
                 style={{ background: color }}
               />
             );
           })}
           <AccentPicker value={accentColor} onChange={setAccentColor} />
+          {backgroundImage && (
+            <AccentFromWallpaperBtn backgroundImage={backgroundImage} onColor={setAccentColor} />
+          )}
         </div>
       </div>
-
-      {/* Extract accent from background */}
-      {backgroundImage && (
-        <AccentFromWallpaperBtn backgroundImage={backgroundImage} onColor={setAccentColor} />
-      )}
 
       {/* Background Image */}
       <WallpaperPicker />

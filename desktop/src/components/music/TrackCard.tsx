@@ -3,8 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { preloadTrack } from '../../lib/audio';
 import { art, dur, fc } from '../../lib/formatters';
-import { useLiquidGlass } from '../../lib/hooks';
-import { CheckCircle2, ListMusic, ListPlus, playIcon32 } from '../../lib/icons';
+import { ListMusic, ListPlus, playIcon32 } from '../../lib/icons';
 import { recordClusterFeedback, setUrnCluster, useClusterFeedback } from '../../lib/recsFeedback';
 import { useArtistDisplay, useDisplayTitle } from '../../lib/track-display';
 import { openTrackMenu } from '../../lib/useTrackContextMenu';
@@ -12,7 +11,9 @@ import { useTrackPlay } from '../../lib/useTrackPlay';
 import { useCachedUrnsStore } from '../../stores/cached-urns';
 import type { Track } from '../../stores/player';
 import { usePlayerStore } from '../../stores/player';
+import { useSettingsStore } from '../../stores/settings';
 import { AddToPlaylistDialog } from './AddToPlaylistDialog';
+import { CacheBadge } from './CacheBadge';
 import { LikeButton } from './LikeButton';
 import { UploadKindDot } from './UploadKindDot';
 
@@ -41,7 +42,8 @@ export const TrackCard = React.memo(
     const displayTitle = useDisplayTitle(track);
     const isWanted = artistDisplay.availability !== 'indexed';
     const isCachedOffline = useCachedUrnsStore((s) => s.urns.has(track.urn));
-    const glass = useLiquidGlass();
+    // The glassy card look belongs to the Liquid Glass panel style; other styles are flat.
+    const glass = useSettingsStore((s) => s.panelStyle === 'liquid');
 
     const artistTarget =
       track.enrichment?.primary_artist?.id && artistDisplay.verified
@@ -256,17 +258,8 @@ export const TrackCard = React.memo(
                 </div>
               )}
               {isCachedOffline && (
-                <div
-                  title={t('offline.cachedBadge')}
-                  className="flex items-center gap-1 rounded-full px-1.5 py-0.5 text-emerald-300/95"
-                  style={{
-                    background: glass ? 'rgba(6, 28, 20, 0.78)' : 'rgba(14, 34, 24, 0.92)',
-                    boxShadow: glass
-                      ? '0 1px 0 0 rgba(110, 231, 183, 0.25) inset, 0 0 0 0.5px rgba(52, 211, 153, 0.28)'
-                      : '0 0 0 1px rgba(52, 211, 153, 0.25)',
-                  }}
-                >
-                  <CheckCircle2 size={10} />
+                <div className="flex items-center rounded-full bg-black/60 p-1">
+                  <CacheBadge urn={track.urn} size={11} />
                 </div>
               )}
             </div>

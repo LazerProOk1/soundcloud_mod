@@ -125,12 +125,9 @@ export const AboutSection = React.memo(function AboutSection() {
                   key={host.id}
                   className="flex items-center justify-between gap-3 rounded-xl bg-white/[0.04] px-3.5 py-2.5"
                 >
-                  <div className="min-w-0">
-                    <p className="text-[13px] font-semibold text-white/85">{host.label}</p>
-                    <p className="truncate text-[11px] text-white/35">
-                      {host.url.replace(/^https?:\/\//, '')}
-                    </p>
-                  </div>
+                  <p className="min-w-0 truncate text-[13px] font-semibold text-white/85">
+                    {host.label}
+                  </p>
                   <span className="flex shrink-0 items-center gap-1.5 text-[12px] font-medium text-white/60">
                     <span
                       className={`h-1.5 w-1.5 rounded-full ${healthy ? 'bg-emerald-400' : 'bg-amber-400'}`}

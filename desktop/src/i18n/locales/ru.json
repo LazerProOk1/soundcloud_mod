@@ -15,6 +15,7 @@
     "myLibrary": "Моя медиатека",
     "waveSubtitle": "Поток под ваш вкус",
     "playlist": "Плейлист",
+    "playlistBy": "Плейлист · {{name}}",
     "playlistTracks": "Плейлист · {{count}} треков",
     "cachedCount": "{{count}} треков на диске"
   },
@@ -345,6 +346,8 @@
     "highQualityStreaming": "Высокое качество стрима",
     "highQualityStreamingDesc": "Стараться воспроизводить треки в максимально доступном качестве",
     "interface": "Интерфейс",
+    "sidebarLikedPlaylists": "Понравившиеся плейлисты в сайдбаре",
+    "sidebarLikedPlaylistsDesc": "Показывать лайкнутые плейлисты под вашими",
     "liquidGlass": "Стиль панелей",
     "panelStyle_liquid": "Liquid Glass",
     "panelStyle_gloss": "Глянец",

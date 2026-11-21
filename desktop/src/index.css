@@ -1381,29 +1381,34 @@ button:not(:disabled):active,
   initial-value: 0deg;
 }
 @keyframes cover-idle-tilt {
+  /* Rest, then dip one corner, another, and settle — like the cover is being pressed. */
   0%,
-  62%,
+  55%,
   100% {
     --idle-x: 0deg;
     --idle-y: 0deg;
   }
-  72% {
-    --idle-x: -9deg;
-    --idle-y: 5deg;
+  64% {
+    --idle-x: -11deg;
+    --idle-y: 11deg;
   }
-  82% {
-    --idle-x: 6deg;
-    --idle-y: -3deg;
+  74% {
+    --idle-x: 0deg;
+    --idle-y: 0deg;
   }
-  90% {
-    --idle-x: -2deg;
-    --idle-y: 1deg;
+  83% {
+    --idle-x: 10deg;
+    --idle-y: -9deg;
+  }
+  92% {
+    --idle-x: 0deg;
+    --idle-y: 0deg;
   }
 }
 .np-cover-img {
   animation:
     np-in 0.7s var(--ease-out-soft) backwards,
-    cover-idle-tilt 11s cubic-bezier(0.45, 0, 0.25, 1) 4s infinite;
+    cover-idle-tilt 12s cubic-bezier(0.45, 0, 0.25, 1) 4s infinite;
 }
 @keyframes np-in {
   from {
@@ -1638,4 +1643,10 @@ svg.lucide:not([stroke-width="0"]) {
     background: rgba(20, 20, 24, 0.94) !important;
     backdrop-filter: none;
   }
+}
+
+/* Card glare belongs to Liquid Glass; Gloss and Plain cards stay clean. */
+html:not(.liquid-glass) .glass-artwork::before,
+html:not(.liquid-glass) .glass-artwork::after {
+  display: none !important;
 }

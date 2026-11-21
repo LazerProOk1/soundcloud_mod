@@ -15,6 +15,7 @@
     "myLibrary": "My library",
     "waveSubtitle": "Endless mix for you",
     "playlist": "Playlist",
+    "playlistBy": "Playlist · {{name}}",
     "playlistTracks": "Playlist · {{count}} tracks",
     "cachedCount": "{{count}} tracks on disk"
   },
@@ -337,6 +338,8 @@
     "highQualityStreaming": "High quality streaming",
     "highQualityStreamingDesc": "Prefer the highest available quality during playback",
     "interface": "Interface",
+    "sidebarLikedPlaylists": "Liked playlists in the sidebar",
+    "sidebarLikedPlaylistsDesc": "Show playlists you liked under your own",
     "liquidGlass": "Panel style",
     "panelStyle_liquid": "Liquid Glass",
     "panelStyle_gloss": "Gloss",

@@ -866,7 +866,7 @@ const SleepTimerBtn = React.memo(() => {
                   onClick={() => set(min)}
                   className={`press h-10 rounded-xl text-[13px] font-semibold tabular-nums cursor-pointer ${
                     isSelected
-                      ? 'bg-accent text-white'
+                      ? 'bg-accent text-[var(--color-accent-contrast)]'
                       : 'bg-white/[0.06] text-white/80 hover:bg-white/[0.11] hover:text-white'
                   }`}
                 >
@@ -881,7 +881,7 @@ const SleepTimerBtn = React.memo(() => {
             onClick={setAfterTrack}
             className={`press mt-1.5 h-10 w-full rounded-xl text-[13px] font-semibold cursor-pointer ${
               afterTrack
-                ? 'bg-accent text-white'
+                ? 'bg-accent text-[var(--color-accent-contrast)]'
                 : 'bg-white/[0.06] text-white/80 hover:bg-white/[0.11] hover:text-white'
             }`}
           >
