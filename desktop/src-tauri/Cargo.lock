@@ -4270,7 +4270,6 @@ dependencies = [
  "tauri-plugin-opener",
  "tauri-plugin-single-instance",
  "tokio",
- "tracing",
  "url",
  "urlencoding",
  "warp",
