@@ -15,15 +15,12 @@ import {
 import { formatBytes } from '../../lib/formatters';
 import { Download, Loader2, Trash2, X } from '../../lib/icons';
 import { downloadTracksForOffline, isDownloadable } from '../../lib/offline-download';
-import { useSettingsStore } from '../../stores/settings';
+import { CACHE_LIMIT_GB, useSettingsStore } from '../../stores/settings';
 import { PILL_BTN } from '../ui/buttonClass';
 import { LiquidSwitch } from '../ui/LiquidSwitch';
 import { Segmented } from '../ui/Segmented';
 import { Skeleton } from '../ui/Skeleton';
 import { SettingRow, SettingsDivider, SettingsSection } from './SettingsKit';
-
-/** Audio cache limit choices in GB (0 = no limit). */
-const CACHE_LIMIT_GB = [1, 2, 5, 10, 20, 0];
 
 const CLEAR_BTN =
   'press flex h-9 items-center gap-2 rounded-full bar-control ui-danger px-4 text-[13px] font-semibold text-white/80 disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed';

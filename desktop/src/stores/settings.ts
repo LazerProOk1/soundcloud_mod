@@ -155,6 +155,16 @@ export interface SettingsState {
 
 const DEFAULT_EQ_GAINS = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 
+/** Audio cache limit choices in GB (0 = no limit). */
+export const CACHE_LIMIT_GB = [1, 2, 5, 10, 20, 0];
+
+/** Snaps a limit in MB to the closest preset, so the settings picker always shows a choice. */
+export function nearestCacheLimitMB(mb: number): number {
+  if (mb <= 0) return 0;
+  const presets = CACHE_LIMIT_GB.filter((gb) => gb > 0).map((gb) => gb * 1024);
+  return presets.reduce((best, p) => (Math.abs(p - mb) < Math.abs(best - mb) ? p : best));
+}
+
 const DEFAULTS = {
   accentColor: '#ff5500',
   bgPrimary: '#08080a',
@@ -266,7 +276,7 @@ export const useSettingsStore = create<SettingsState>()(
     {
       name: 'sc-settings',
       storage: createJSONStorage(() => tauriStorage),
-      version: 21,
+      version: 22,
       migrate: (persistedState) => {
         const prev = (persistedState ?? {}) as Partial<SettingsState> & {
           soundwaveDiversity?: number;
@@ -299,6 +309,10 @@ export const useSettingsStore = create<SettingsState>()(
           musicSources,
           // v20 → v21: on/off glass toggle → three panel styles.
           panelStyle: prev.panelStyle ?? (prev.liquidGlass ? 'gloss' : 'flat'),
+          // v21 → v22: limits outside the presets (old 8 GB) → nearest preset.
+          audioCacheLimitMB: nearestCacheLimitMB(
+            prev.audioCacheLimitMB ?? DEFAULTS.audioCacheLimitMB,
+          ),
         } as SettingsState;
       },
       partialize: (s) => ({

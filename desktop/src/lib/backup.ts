@@ -1,7 +1,7 @@
 import { changeAppLanguage } from '../i18n';
 import { useLibraryLocalStore } from '../stores/library-local';
 import { type Track, usePlayerStore } from '../stores/player';
-import { type SettingsState, useSettingsStore } from '../stores/settings';
+import { nearestCacheLimitMB, type SettingsState, useSettingsStore } from '../stores/settings';
 import {
   buildProfileBackupPayload,
   type ProfileBackupPayload,
@@ -60,7 +60,11 @@ export function restoreProfileBackupFromText(jsonText: string): boolean {
   if (!backup) return false;
 
   if (Object.keys(backup.settings).length > 0) {
-    useSettingsStore.setState(backup.settings as Partial<SettingsState>);
+    const settings = backup.settings as Partial<SettingsState>;
+    if (typeof settings.audioCacheLimitMB === 'number') {
+      settings.audioCacheLimitMB = nearestCacheLimitMB(settings.audioCacheLimitMB);
+    }
+    useSettingsStore.setState(settings);
     const nextLang = backup.settings.language;
     if (typeof nextLang === 'string' && nextLang.length > 0) {
       void changeAppLanguage(nextLang);
