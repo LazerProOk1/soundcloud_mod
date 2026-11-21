@@ -2,20 +2,20 @@ import { listen } from '@tauri-apps/api/event';
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { isCacheLikesRunning } from '../../lib/cache';
+import { cancelCacheLikes, isCacheLikesRunning } from '../../lib/cache';
 import {
   type CacheLikesProgress,
   countNotProtected,
   getLastRunFailed,
   useCacheKindsVersion,
 } from '../../lib/cache-kind';
-import { CheckCircle2, Download } from '../../lib/icons';
+import { CheckCircle2, Download, X } from '../../lib/icons';
 import { downloadTracksForOffline, isDownloadable } from '../../lib/offline-download';
 import type { Track } from '../../stores/player';
 
 /**
- * "Save for offline" for a list. States: something to download, downloading (progress ring,
- * not clickable) and done. Previews and blocked tracks are ignored, and tracks the last run
+ * "Save for offline" for a list. States: something to download, downloading (progress ring;
+ * a click cancels) and done. Previews and blocked tracks are ignored, and tracks the last run
  * could not fetch don't keep the button from reaching "done".
  */
 export function OfflineDownloadButton({ tracks }: { tracks: Track[] }) {
@@ -54,7 +54,11 @@ export function OfflineDownloadButton({ tracks }: { tracks: Track[] }) {
   const lastFailed = getLastRunFailed();
   const done = !running && missing !== null && missing <= lastFailed && wanted.length > 0;
   const start = () => {
-    if (running || done) return;
+    if (running) {
+      void cancelCacheLikes().catch(() => {});
+      return;
+    }
+    if (done) return;
     setProgress({ done: 0, total: 0 });
     toast.success(t('trackList.downloadQueued', { count: missing ?? wanted.length }));
     void downloadTracksForOffline(wanted).catch((e) => {
@@ -64,7 +68,7 @@ export function OfflineDownloadButton({ tracks }: { tracks: Track[] }) {
   };
 
   const label = running
-    ? t('trackList.downloading')
+    ? t('trackList.cancelDownload')
     : done
       ? lastFailed > 0 && missing
         ? t('trackList.downloadedExcept', { count: missing })
@@ -76,10 +80,10 @@ export function OfflineDownloadButton({ tracks }: { tracks: Track[] }) {
     <button
       type="button"
       onClick={start}
-      disabled={running || done}
+      disabled={done}
       title={label}
       aria-label={label}
-      className={`ui-icon press relative flex h-10 w-10 items-center justify-center rounded-full cursor-pointer disabled:cursor-default ${
+      className={`group ui-icon press relative flex h-10 w-10 items-center justify-center rounded-full cursor-pointer disabled:cursor-default ${
         done ? 'text-emerald-400' : running ? 'text-white' : 'text-white/60 hover:text-white'
       }`}
     >
@@ -87,32 +91,35 @@ export function OfflineDownloadButton({ tracks }: { tracks: Track[] }) {
         <CheckCircle2 size={24} />
       ) : running ? (
         // Progress ring: a faint track and an accent arc that fills as tracks land.
-        <svg width="28" height="28" viewBox="0 0 28 28" className="-rotate-90" aria-hidden>
-          <circle
-            cx="14"
-            cy="14"
-            r="11"
-            fill="none"
-            stroke="rgba(255,255,255,0.15)"
-            strokeWidth="3"
-          />
-          <circle
-            cx="14"
-            cy="14"
-            r="11"
-            fill="none"
-            stroke="var(--color-accent)"
-            strokeWidth="3"
-            strokeLinecap="round"
-            strokeDasharray={2 * Math.PI * 11}
-            strokeDashoffset={2 * Math.PI * 11 * (1 - Math.max(pct, 0.06))}
-            className={
-              pct === 0
-                ? 'origin-center animate-spin'
-                : 'transition-[stroke-dashoffset] duration-300'
-            }
-          />
-        </svg>
+        <>
+          <X size={14} className="absolute opacity-0 group-hover:opacity-100 transition-opacity" />
+          <svg width="28" height="28" viewBox="0 0 28 28" className="-rotate-90" aria-hidden>
+            <circle
+              cx="14"
+              cy="14"
+              r="11"
+              fill="none"
+              stroke="rgba(255,255,255,0.15)"
+              strokeWidth="3"
+            />
+            <circle
+              cx="14"
+              cy="14"
+              r="11"
+              fill="none"
+              stroke="var(--color-accent)"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeDasharray={2 * Math.PI * 11}
+              strokeDashoffset={2 * Math.PI * 11 * (1 - Math.max(pct, 0.06))}
+              className={
+                pct === 0
+                  ? 'origin-center animate-spin'
+                  : 'transition-[stroke-dashoffset] duration-300'
+              }
+            />
+          </svg>
+        </>
       ) : (
         <Download size={24} />
       )}

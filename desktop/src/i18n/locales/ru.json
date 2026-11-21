@@ -739,6 +739,7 @@
     "downloadedExcept_many": "Скачано — {{count}} треков недоступны",
     "downloadedExcept_other": "Скачано — {{count}} треков недоступны",
     "downloading": "Скачивается…",
-    "downloaded": "Всё скачано"
+    "downloaded": "Всё скачано",
+    "cancelDownload": "Отменить скачивание"
   }
 }

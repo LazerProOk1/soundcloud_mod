@@ -723,6 +723,7 @@
     "downloadedExcept_one": "Downloaded — {{count}} track is unavailable",
     "downloadedExcept_other": "Downloaded — {{count}} tracks are unavailable",
     "downloading": "Downloading…",
-    "downloaded": "Everything is downloaded"
+    "downloaded": "Everything is downloaded",
+    "cancelDownload": "Cancel download"
   }
 }
