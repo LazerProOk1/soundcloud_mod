@@ -646,6 +646,9 @@ textarea:focus-visible {
 .lyric-gap-dots {
   display: flex;
   gap: 12px;
+  /* Room on the left: the dots grow (scale up to 1.1) and the row breathes, so a dot sitting
+     flush at the column edge got its left side clipped. */
+  padding-left: 8px;
   transform-origin: left center;
 }
 .lyric-gap[data-state="active"] .lyric-gap-dots {
