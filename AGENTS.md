@@ -1,6 +1,7 @@
 # SoundCloud Mod (`LazerProOk1/soundcloud_mod`)
 
-Desktop SoundCloud client built with **Tauri 2**, **React 19 + TypeScript + Tailwind CSS 4**, and a **Rust** audio/cache engine (`desktop/`), paired with an **Axum + SQLx + Redis + Qdrant** backend (`backend/`).
+Desktop SoundCloud client built with **Tauri 2**, **React 19 + TypeScript + Tailwind CSS 4**, and a **Rust** audio/cache engine (`desktop/`). The app talks to an external API (`API_BASE` /
+`STREAMING_BASE` in `desktop/src/lib/constants.ts`); no server code lives in this repo.
 
 ## Commands
 
@@ -16,17 +17,10 @@ pnpm tauri build                                                     # Release b
 # Rust desktop crate (run from desktop/src-tauri/)
 cargo test --lib
 cargo clippy --all-targets
-
-# Backend crate (run from backend/)
-cargo test
-cargo clippy --all-targets
 ```
 
 ### Environment gotchas
 
-- **Backend does not build from this repo alone:** `backend/Cargo.toml` path-depends on `../tls-common` and
-  `../call/relay`, which are not checked in. CI skips the backend step until they exist. Backend edits can only be
-  checked statically here — say so explicitly when you finish.
 - **The UI only runs inside Tauri.** Opening `http://localhost:1420` in a normal browser gives a black screen
   (`invoke` is undefined). To drive the real window, start `tauri dev` with
   `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS=--remote-debugging-port=9333` (Windows) and attach over CDP.
@@ -39,7 +33,7 @@ cargo clippy --all-targets
 
 - `PLAN.md` (repo root, local only — excluded via `.git/info/exclude`) — the live backlog, if present. Read it
   before picking up work; remove finished items and add new findings as you go.
-- `docs/audit-2026-11-17.md`, `docs/backend-audit-2026-11-17.md` — audit reports with file:line evidence
+- `docs/audit-2026-11-17.md` — audit report with file:line evidence
   (historical; not kept up to date).
 
 ## Architecture & Directory Map
@@ -49,7 +43,6 @@ cargo clippy --all-targets
 - `desktop/src/lib/` — Audio bridge (`audio.ts`), disk/offline cache (`cache.ts`, `offline-index.ts`), streaming (`streaming.ts`), preset wallpapers (`wallpapers.ts`), JSON backup (`backup.ts`), aura helpers (`aura.ts`, `color.ts`), React Query hooks (`hooks.ts`).
 - `desktop/src/stores/` — Zustand stores (`auth.ts`, `player.ts`, `settings.ts`, `app-status.ts`).
 - `desktop/src-tauri/src/` — Native Rust engine: `audio/` (`rodio`, Symphonia/Opus, 10-band EQ, ReplayGain, FFT), `track_cache/` (LRU + protected likes + HLS/progressive downloader), `network/` (image cache), `discord_rpc.rs`.
-- `backend/src/modules/` — Axum handlers & services (`recommendations/`, `tracks/`, `auras/`, `subscriptions/`, `enrich/`, `lyrics/`).
 - `.github/workflows/ci.yml` & `desktop/src-tauri/tauri.conf.json` — CI checks and Windows (NSIS + Portable ZIP) / Ubuntu (DEB, AppImage, RPM) / Flatpak packaging.
 
 ## Coding Conventions
@@ -71,7 +64,7 @@ optional body, an optional footer.
 - **type:** `feat` · `fix` · `perf` · `refactor` · `style` (formatting only) · `test` · `docs` · `build` ·
   `ci` · `chore` · `revert`.
 - **scope** (optional, one word): `player`, `wave`, `library`, `search`, `settings`, `lyrics`, `offline`,
-  `ui`, `i18n`, `cache`, `audio`, `tauri`, `backend`, `deps`, `docs`, `ci`.
+  `ui`, `i18n`, `cache`, `audio`, `tauri`, `deps`, `docs`, `ci`.
 - **subject:** English, imperative, lowercase, no trailing period, ≤ 72 characters
   (`fix(library): use plural forms for track counts`, not `Fixed plurals.`).
 - **body:** what changed and *why*; wrap at 100 columns. Skip it for trivial changes.
@@ -98,7 +91,7 @@ optional body, an optional footer.
   instead of working around it.
 
 ### Ask First
-- Changing Tauri app identifier (`com.lazerprook1.soundcloudmod`), breaking persisted `tauriStorage` store schemas without migration, or modifying database SQL migrations in `backend/migrations/`.
+- Changing Tauri app identifier (`com.lazerprook1.soundcloudmod`), or breaking persisted `tauriStorage` store schemas without migration.
 - Adding a new npm or Cargo dependency.
 - Removing a user-facing feature, route or setting (even if it looks unused).
 

@@ -124,7 +124,6 @@ pnpm tauri build                   # установщик в src-tauri/target/re
 | Состояние и данные | Zustand, TanStack Query, dnd-kit |
 | Аудио | `rodio`, Symphonia, Opus, 10-полосный EQ, ReplayGain, FFT-анализатор |
 | Сборка | Vite, Biome, `cargo` |
-| Сервер | Rust, Axum, PostgreSQL, Redis, NATS, Qdrant |
 
 ## Структура репозитория
 
@@ -133,7 +132,6 @@ soundcloud_mod/
 ├── desktop/                 # Приложение
 │   ├── src/                 # React: страницы, компоненты, stores, lib
 │   └── src-tauri/           # Rust: audio, track_cache, network, discord, tray
-├── backend/                 # Серверная часть: прокси и кэш SoundCloud, рекомендации, лирика
 ├── docs/                    # Материалы для README и аудиты кодовой базы
 └── .github/                 # CI, Flatpak-манифест
 ```
