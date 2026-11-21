@@ -653,7 +653,10 @@
     "album": "Album",
     "empty": "Nothing here yet",
     "download": "Download for offline",
-    "downloadQueued": "Saving {{count}} tracks — they stay on disk when the cache is cleared",
+    "downloadQueued_one": "Saving {{count}} track — it stays on disk when the cache is cleared",
+    "downloadQueued_other": "Saving {{count}} tracks — they stay on disk when the cache is cleared",
+    "downloadedExcept_one": "Downloaded — {{count}} track is unavailable",
+    "downloadedExcept_other": "Downloaded — {{count}} tracks are unavailable",
     "downloading": "Downloading…",
     "downloaded": "Everything is downloaded"
   }

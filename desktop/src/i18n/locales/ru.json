@@ -665,7 +665,14 @@
     "album": "Альбом",
     "empty": "Здесь пока пусто",
     "download": "Скачать для офлайна",
-    "downloadQueued": "Сохраняем {{count}} треков — они не удалятся при очистке кэша",
+    "downloadQueued_one": "Сохраняем {{count}} трек — он не удалится при очистке кэша",
+    "downloadQueued_few": "Сохраняем {{count}} трека — они не удалятся при очистке кэша",
+    "downloadQueued_many": "Сохраняем {{count}} треков — они не удалятся при очистке кэша",
+    "downloadQueued_other": "Сохраняем {{count}} треков — они не удалятся при очистке кэша",
+    "downloadedExcept_one": "Скачано — {{count}} трек недоступен",
+    "downloadedExcept_few": "Скачано — {{count}} трека недоступны",
+    "downloadedExcept_many": "Скачано — {{count}} треков недоступны",
+    "downloadedExcept_other": "Скачано — {{count}} треков недоступны",
     "downloading": "Скачивается…",
     "downloaded": "Всё скачано"
   }
