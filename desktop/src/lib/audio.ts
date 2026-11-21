@@ -26,9 +26,16 @@ import { trackedInvoke as invoke } from './diagnostics';
 import { isUrnDisliked } from './dislikes';
 import { recordEvent } from './events';
 import { art } from './formatters';
+import { isDownloadable } from './offline-download';
 import { rememberRecentlyPlayed, rememberTracks } from './offline-index';
 import { getUrnCluster, recordClusterFeedback } from './recsFeedback';
-import { isRefusal, isRefusedDirect, rememberRefusedDirect } from './refused-tracks';
+import {
+  isRefusal,
+  isRefusedDirect,
+  isRefusedMirror,
+  rememberRefusedDirect,
+  rememberRefusedMirror,
+} from './refused-tracks';
 import { getArtistDisplay, getDisplayTitle } from './track-display';
 import { dedupeSongs, isVariant } from './track-variants';
 import { rankWave } from './wave-rank';
@@ -598,7 +605,17 @@ async function loadTrack(track: Track) {
     // "SoundCloud" = direct first, then our mirror right away: the mirror answers in a few
     // seconds for tracks SoundCloud won't give anonymously, while YouTube needs yt-dlp
     // (~7 s just to find the track), so it's tried only after both.
-    const steps = enabled.flatMap((id) =>
+    // A track SoundCloud marks as preview / blocked, or one the mirror already had no stream
+    // for, would spend ~8 s failing there: try the fallback sources first instead. SoundCloud
+    // stays last in case the flag was stale.
+    const scClosed = !isDownloadable(track) || isRefusedMirror(urn);
+    const order = scClosed
+      ? [
+          ...enabled.filter((id) => id !== 'soundcloud'),
+          ...enabled.filter((id) => id === 'soundcloud'),
+        ]
+      : enabled;
+    const steps = order.flatMap((id) =>
       id === 'soundcloud'
         ? [
             // Skip the direct attempt for tracks SoundCloud already refused recently.
@@ -611,7 +628,11 @@ async function loadTrack(track: Track) {
                       throw e;
                     }),
                 ]),
-            () => ensureTrackCached(urn, highQualityStreaming),
+            () =>
+              ensureTrackCached(urn, highQualityStreaming).catch((e) => {
+                if (isRefusal(e)) rememberRefusedMirror(urn);
+                throw e;
+              }),
           ]
         : [fromFallback(id)],
     );
