@@ -475,11 +475,24 @@
     "tracksCount_other": "{{count}} треков",
     "ymLikes": "Мне нравится — Яндекс Музыка",
     "run": "Импортировать",
-    "progress": "Ищем {{done}}/{{total}} · найдено {{found}}",
-    "done": "Плейлист создан: найдено {{found}} из {{total}}",
-    "nothingFound": "На SoundCloud ничего не нашлось",
+    "done": "«{{title}}»: найдено {{found}} из {{total}}, плейлист сохранён",
     "refused": "SoundCloud сейчас отклоняет запросы. Импорт остановлен, попробуйте позже.",
-    "button": "Импорт"
+    "button": "Импорт",
+    "sidebarProgress": "Импорт · {{done}} из {{total}}",
+    "sidebarDone": "Импорт · найдено {{found}} из {{total}}",
+    "page": {
+      "kind": "Импорт",
+      "gone": "Этого импорта больше нет.",
+      "searching": "Ищем на SoundCloud: {{done}} из {{total}} · найдено {{found}}. Можно закрыть страницу — поиск идёт в фоне.",
+      "paused": "Пауза: SoundCloud отклоняет запросы. Проверено {{done}} из {{total}}, найдено {{found}}.",
+      "done": "Найдено {{found}} из {{total}}. Найденное сохранено в плейлист SoundCloud.",
+      "play": "Слушать найденное",
+      "resume": "Продолжить",
+      "openPlaylist": "Плейлист на SoundCloud",
+      "delete": "Удалить",
+      "confirmDelete": "Точно удалить?",
+      "notFound": "Не найдено"
+    }
   },
   "transitions": {
     "title": "Переходы между треками",

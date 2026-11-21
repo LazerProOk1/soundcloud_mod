@@ -465,11 +465,24 @@
     "tracksCount_other": "{{count}} tracks",
     "ymLikes": "Liked on Yandex Music",
     "run": "Import",
-    "progress": "Searching {{done}}/{{total}} · found {{found}}",
-    "done": "Playlist created: {{found}} of {{total}} found",
-    "nothingFound": "Nothing was found on SoundCloud",
+    "done": "“{{title}}”: {{found}} of {{total}} found, playlist saved",
     "refused": "SoundCloud is refusing requests right now. Import stopped; try again later.",
-    "button": "Import"
+    "button": "Import",
+    "sidebarProgress": "Import · {{done}} of {{total}}",
+    "sidebarDone": "Import · {{found}} of {{total}} found",
+    "page": {
+      "kind": "Import",
+      "gone": "This import no longer exists.",
+      "searching": "Searching SoundCloud: {{done}} of {{total}} · {{found}} found. You can leave this page — the search runs in the background.",
+      "paused": "Paused: SoundCloud is refusing requests. Checked {{done}} of {{total}}, {{found}} found.",
+      "done": "{{found}} of {{total}} found. The found tracks are saved to a SoundCloud playlist.",
+      "play": "Play found",
+      "resume": "Continue",
+      "openPlaylist": "SoundCloud playlist",
+      "delete": "Delete",
+      "confirmDelete": "Delete for sure?",
+      "notFound": "Not found"
+    }
   },
   "transitions": {
     "title": "Transitions between tracks",

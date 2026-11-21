@@ -10,6 +10,7 @@ import { ThemeProvider } from './components/ThemeProvider';
 import { LiquidGlassDefs } from './components/ui/LiquidGlassDefs';
 import { ApiError } from './lib/api';
 import { CHECK_UPDATES } from './lib/constants';
+import { resumeImports } from './lib/link-import';
 import { initSleepTimer } from './lib/sleep-timer';
 import { checkForAppUpdate, type GithubRelease } from './lib/update-check';
 import { getAppMode, useAppStatusStore } from './stores/app-status';
@@ -50,6 +51,8 @@ function useStoresHydrated(): boolean {
 
 // Start the 1-second sleep-timer tick immediately (safe to call multiple times)
 initSleepTimer();
+// Imports that were still searching when the app closed carry on in the background.
+resumeImports();
 
 const Home = lazy(() => import('./pages/Home').then((module) => ({ default: module.Home })));
 const Library = lazy(() =>
@@ -74,6 +77,9 @@ const UserPage = lazy(() =>
 );
 const ArtistPage = lazy(() =>
   import('./pages/ArtistPage').then((module) => ({ default: module.ArtistPage })),
+);
+const ImportPage = lazy(() =>
+  import('./pages/ImportPage').then((module) => ({ default: module.ImportPage })),
 );
 const AlbumPage = lazy(() =>
   import('./pages/AlbumPage').then((module) => ({ default: module.AlbumPage })),
@@ -411,6 +417,14 @@ export default function App() {
                   element={
                     <RouteLoader>
                       <ArtistPage />
+                    </RouteLoader>
+                  }
+                />
+                <Route
+                  path="import/:id"
+                  element={
+                    <RouteLoader>
+                      <ImportPage />
                     </RouteLoader>
                   }
                 />

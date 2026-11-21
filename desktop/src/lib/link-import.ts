@@ -1,4 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
+import { toast } from 'sonner';
+import i18n from '../i18n';
+import { importCounts, useImportsStore } from '../stores/imports';
 import type { Track } from '../stores/player';
 import { ApiError, api } from './api';
 import { type ImportItem, matchScore } from './import-match';
@@ -44,49 +47,25 @@ export function isRefusal(e: unknown): boolean {
   return e instanceof ApiError && (e.status === 429 || e.status === 403);
 }
 
-async function findOnSoundCloud(item: ImportItem): Promise<string | null> {
-  if (item.urn) return item.urn;
-  return (await matchOnSoundCloud(item))?.urn ?? null;
-}
-
-export interface ImportProgress {
-  done: number;
-  total: number;
-  found: number;
-}
-
 const PLAYLIST_LIMIT = 500;
 /** Pause between searches so a big import does not look like a bot to SoundCloud. */
 const SEARCH_GAP_MS = 1000;
+const running = new Set<string>();
 
-/**
- * Finds every item on SoundCloud (one at a time, paced) and saves the hits as a new private
- * playlist. Returns the playlist URN and how many tracks were found.
- */
-export async function importToPlaylist(
-  title: string,
-  items: ImportItem[],
-  onProgress: (p: ImportProgress) => void,
-  signal: { cancelled: boolean },
-): Promise<{ urn: string | null; found: number; missing: ImportItem[] }> {
-  const urns: (string | null)[] = new Array(items.length).fill(null);
-  let found = 0;
-  // A refusal from SoundCloud throws out of here and aborts the whole import.
-  for (let i = 0; i < items.length && !signal.cancelled; i++) {
-    if (i > 0 && !items[i].urn) await new Promise((r) => setTimeout(r, SEARCH_GAP_MS));
-    urns[i] = await findOnSoundCloud(items[i]);
-    if (urns[i]) found++;
-    onProgress({ done: i + 1, total: items.length, found });
+async function findOnSoundCloud(item: ImportItem): Promise<Track | null> {
+  if (item.urn) {
+    return api<Track>(`/tracks/${encodeURIComponent(item.urn)}`, { silent: true }).catch(
+      () => null,
+    );
   }
+  return matchOnSoundCloud(item);
+}
 
-  const unique = [...new Set(urns.filter((u): u is string => !!u))];
-  const missing = items.filter((_, i) => !urns[i]);
-  if (signal.cancelled || unique.length === 0) return { urn: null, found, missing };
-
-  // SoundCloud playlists hold up to 500 tracks: big imports become "Title", "Title (2)", …
+/** Saves tracks as private playlists ("Title", "Title (2)", … — SoundCloud holds 500 each). */
+async function savePlaylists(title: string, urns: string[]): Promise<string | null> {
   let firstUrn: string | null = null;
-  for (let i = 0; i * PLAYLIST_LIMIT < unique.length; i++) {
-    const part = unique.slice(i * PLAYLIST_LIMIT, (i + 1) * PLAYLIST_LIMIT);
+  for (let i = 0; i * PLAYLIST_LIMIT < urns.length; i++) {
+    const part = urns.slice(i * PLAYLIST_LIMIT, (i + 1) * PLAYLIST_LIMIT);
     const created = await api<{ urn?: string }>('/playlists', {
       method: 'POST',
       body: JSON.stringify({
@@ -100,5 +79,64 @@ export async function importToPlaylist(
     firstUrn ??= created?.urn ?? null;
   }
   queryClient.invalidateQueries({ queryKey: ['me', 'playlists'] }).catch(() => undefined);
-  return { urn: firstUrn, found, missing };
+  return firstUrn;
+}
+
+/**
+ * Searches the pending rows of an import one at a time, in the background, and saves the found
+ * tracks as a SoundCloud playlist at the end. A refusal from SoundCloud pauses the import.
+ */
+export async function runImport(id: string): Promise<void> {
+  if (running.has(id)) return;
+  running.add(id);
+  const store = useImportsStore.getState;
+  try {
+    store().update(id, { status: 'running' });
+    let searched = 0;
+    for (;;) {
+      const job = store().jobs.find((j) => j.id === id);
+      if (!job) return; // removed while running
+      const index = job.rows.findIndex((r) => r.state === 'pending');
+      if (index < 0) break;
+      const row = job.rows[index];
+      if (searched > 0 && !row.urn) await new Promise((r) => setTimeout(r, SEARCH_GAP_MS));
+      let track: Track | null;
+      try {
+        track = await findOnSoundCloud(row);
+      } catch (e) {
+        if (isRefusal(e)) {
+          store().update(id, { status: 'paused' });
+          toast.error(i18n.t('import.refused'));
+          return;
+        }
+        track = null;
+      }
+      if (!row.urn) searched++;
+      store().setRow(id, index, track ? { state: 'found', track } : { state: 'missing' });
+    }
+
+    const job = store().jobs.find((j) => j.id === id);
+    if (!job) return;
+    const urns = [...new Set(job.rows.flatMap((r) => (r.track ? [r.track.urn] : [])))];
+    const playlistUrn = urns.length > 0 ? await savePlaylists(job.title, urns) : null;
+    store().update(id, { status: 'done', playlistUrn });
+    const { found, total } = importCounts(job);
+    toast.success(i18n.t('import.done', { found, total, title: job.title }));
+  } catch (e) {
+    // Saving the playlist failed: keep the found tracks, let the user retry.
+    store().update(id, { status: 'paused' });
+    toast.error(isRefusal(e) ? i18n.t('import.refused') : String(e));
+  } finally {
+    running.delete(id);
+  }
+}
+
+/** Picks up imports that were still searching when the app was closed. */
+export function resumeImports() {
+  const go = () => {
+    for (const j of useImportsStore.getState().jobs)
+      if (j.status === 'running') void runImport(j.id);
+  };
+  if (useImportsStore.persist.hasHydrated()) go();
+  else useImportsStore.persist.onFinishHydration(go);
 }

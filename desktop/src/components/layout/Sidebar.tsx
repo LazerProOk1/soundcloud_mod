@@ -14,6 +14,7 @@ import {
   PanelLeftOpen,
 } from '../../lib/icons';
 import { useAuthStore } from '../../stores/auth';
+import { importCounts, useImportsStore } from '../../stores/imports';
 import { useCachedUrnsStore } from '../../stores/cached-urns';
 import { useSettingsStore } from '../../stores/settings';
 import { Avatar } from '../ui/Avatar';
@@ -79,6 +80,7 @@ export const Sidebar = React.memo(() => {
   const { playlists: own } = useMyPlaylists(50);
   const showLiked = useSettingsStore((s) => s.sidebarLikedPlaylists);
   const { playlists: liked } = useMyLikedPlaylists(50);
+  const imports = useImportsStore((s) => s.jobs);
   // Own playlists first, then liked ones (a liked own playlist is listed once).
   const playlists = useMemo(() => {
     if (!showLiked) return own.map((p) => ({ p, mine: true }));
@@ -154,7 +156,26 @@ export const Sidebar = React.memo(() => {
           tile={gradientTile('#15803d', '#86efac', <Download size={18} />)}
         />
 
-        {playlists.length > 0 && !collapsed && <div className="h-px bg-white/[0.06] my-2 mx-2" />}
+        {playlists.length + imports.length > 0 && !collapsed && (
+          <div className="h-px bg-white/[0.06] my-2 mx-2" />
+        )}
+        {imports.map((job) => {
+          const c = importCounts(job);
+          return (
+            <Row
+              key={job.id}
+              to={`/import/${job.id}`}
+              title={job.title}
+              subtitle={
+                job.status === 'done'
+                  ? t('import.sidebarDone', { found: c.found, total: c.total })
+                  : t('import.sidebarProgress', { done: c.done, total: c.total })
+              }
+              collapsed={collapsed}
+              tile={gradientTile('#ff5500', '#7c3aed', <Download size={18} />)}
+            />
+          );
+        })}
         {playlists.map(({ p, mine }) => (
           <Row
             key={p.urn}
