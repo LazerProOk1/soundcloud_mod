@@ -506,8 +506,9 @@ const LyricsSourceBadge = React.memo(
               type="button"
               onClick={() => setWordMode(!wordMode)}
               aria-pressed={wordMode}
-              className={`bar-control text-[11px] font-semibold px-2.5 py-1 rounded-full cursor-pointer ${
-                wordMode ? 'is-active text-white' : 'text-white/60 hover:text-white'
+              // On: a white pill like every other toggle; off: the plain chip.
+              className={`text-[11px] font-semibold px-2.5 py-1 rounded-full cursor-pointer ${
+                wordMode ? 'ui-primary' : 'bar-control text-white/60 hover:text-white'
               }`}
             >
               {t('track.lyricsWordMode')}
