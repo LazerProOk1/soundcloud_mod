@@ -84,8 +84,8 @@ export const LikeButton = React.memo(function LikeButton({
         aria-label={title}
         className={`cursor-pointer rounded-full flex items-center justify-center transition-all duration-200 active:scale-90 shrink-0 ${
           liked
-            ? 'text-accent bg-accent/15 border border-accent/25'
-            : 'text-white/50 hover:text-white hover:bg-white/[0.08] border border-transparent'
+            ? 'text-accent hover:bg-white/[0.08]'
+            : 'text-white/50 hover:text-white hover:bg-white/[0.08]'
         } ${className || 'w-9 h-9'}`}
       >
         <Heart

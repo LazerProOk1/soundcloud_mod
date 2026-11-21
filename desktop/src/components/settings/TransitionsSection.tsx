@@ -2,6 +2,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { type CrossfadeCurve, useSettingsStore } from '../../stores/settings';
 import { LiquidSwitch } from '../ui/LiquidSwitch';
+import { RANGE_CLS } from '../ui/rangeClass';
 import { Segmented } from '../ui/Segmented';
 import { SettingRow, SettingsSection } from './SettingsKit';
 
@@ -98,7 +99,7 @@ export const TransitionsSection = React.memo(function TransitionsSection() {
                 step={1}
                 value={s.crossfadeDuration}
                 onChange={(e) => s.setCrossfadeDuration(Number(e.target.value))}
-                className="liquid-slider flex-1"
+                className={`${RANGE_CLS} flex-1`}
               />
               <span className="w-10 text-right text-[14px] tabular-nums text-white/80">
                 {s.crossfadeDuration} {t('common.sec', 'с')}

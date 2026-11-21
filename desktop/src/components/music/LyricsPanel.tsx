@@ -240,7 +240,8 @@ const Controls = React.memo(({ track }: { track: Track }) => {
           <ListPlus size={20} />
         </button>
       </AddToPlaylistDialog>
-      <FullscreenLikeButton track={track} />
+      {/* Dislike on the left, like on the right — the same order everywhere in the app. */}
+      <FullscreenDislikeButton track={track} />
       <button
         type="button"
         onClick={toggleShuffle}
@@ -272,7 +273,7 @@ const Controls = React.memo(({ track }: { track: Track }) => {
       >
         <PopIcon on={repeat}>{repeat === 'one' ? repeat1Icon16 : repeatIcon16}</PopIcon>
       </button>
-      <FullscreenDislikeButton track={track} />
+      <FullscreenLikeButton track={track} />
       <FullscreenOpenTrackButton track={track} />
     </div>
   );
@@ -842,10 +843,8 @@ const PanelTabButton = React.memo(
     <button
       type="button"
       onClick={onClick}
-      className={`px-3.5 py-2 rounded-xl text-[12px] font-medium transition-all duration-200 cursor-pointer ${
-        active
-          ? 'bg-white/[0.08] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]'
-          : 'text-white/35 hover:text-white/70 hover:bg-white/[0.04]'
+      className={`press h-8 rounded-full px-3.5 text-[12.5px] font-semibold transition-colors duration-200 cursor-pointer ${
+        active ? 'bg-white text-black' : 'text-white/60 hover:text-white'
       }`}
     >
       {children}
@@ -1300,13 +1299,9 @@ const LyricsPane = React.memo(({ track }: { track: Track }) => {
       <button
         type="button"
         onClick={startSearch}
-        className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[12px] font-medium cursor-pointer transition-all duration-200 mt-1"
-        style={{
-          background: 'rgba(255,255,255,0.04)',
-          border: '1px solid rgba(255,255,255,0.07)',
-          color: override ? 'var(--color-accent)' : 'rgba(255,255,255,0.35)',
-          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.07)',
-        }}
+        className={`bar-control press mt-1 flex h-9 items-center gap-2 rounded-full px-4 text-[13px] font-semibold cursor-pointer ${
+          override ? 'text-accent' : 'text-white/75 hover:text-white'
+        }`}
       >
         <Pencil size={12} />
         {override
@@ -1582,7 +1577,7 @@ export const LyricsPanel = React.memo(() => {
         className={`relative z-10 px-6 pt-5 pb-2 ${rightPanelOpen ? 'flex items-center justify-between gap-4' : 'flex items-center justify-center gap-4'}`}
         data-tauri-drag-region
       >
-        <div className="inline-flex items-center gap-1.5 rounded-full border border-white/[0.05] bg-white/[0.03] p-1">
+        <div className="ui-track inline-flex items-center gap-1 rounded-full p-1">
           <PanelTabButton
             active={rightPanelOpen && tab === 'lyrics'}
             onClick={() => {

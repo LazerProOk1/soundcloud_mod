@@ -548,7 +548,7 @@ export function SoundWavePage() {
             <button
               type="button"
               onClick={() => setTuneOpen(true)}
-              className="flex items-center gap-2 h-8 px-3.5 rounded-full text-[12px] font-semibold text-white/85 hover:text-white bg-white/[0.08] hover:bg-white/[0.14] border border-white/[0.1] cursor-pointer"
+              className="bar-control press flex items-center gap-2 h-8 px-3.5 rounded-full text-[12px] font-semibold text-white/85 hover:text-white cursor-pointer"
             >
               <SlidersHorizontal size={13} />
               {t('waveTune.open')}
@@ -557,11 +557,7 @@ export function SoundWavePage() {
               type="button"
               onClick={handleRefresh}
               disabled={spinning}
-              className="flex items-center gap-2 h-8 px-3.5 rounded-full text-[12px] font-semibold text-white/85 hover:text-white transition-all duration-200 cursor-pointer disabled:opacity-40 active:scale-95 select-none"
-              style={{
-                background: 'rgba(255,255,255,0.08)',
-                border: '1px solid rgba(255,255,255,0.1)',
-              }}
+              className="bar-control press flex items-center gap-2 h-8 px-3.5 rounded-full text-[12px] font-semibold text-white/85 hover:text-white cursor-pointer disabled:opacity-40 select-none"
             >
               <RefreshCw size={12} className={spinning ? 'animate-spin' : ''} />
               {t('soundwave.updateWave', 'Update wave')}

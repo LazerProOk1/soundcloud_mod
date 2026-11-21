@@ -11,7 +11,7 @@ export function Segmented<T extends string>({
   onChange: (v: T) => void;
 }) {
   return (
-    <div className="inline-flex flex-wrap gap-1 rounded-full bg-white/[0.06] p-1">
+    <div className="ui-track inline-flex flex-wrap gap-1 rounded-full p-1">
       {options.map((o) => (
         <button
           key={o.id}
