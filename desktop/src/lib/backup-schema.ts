@@ -28,6 +28,7 @@ export const SETTINGS_BACKUP_KEYS = [
   'soundwaveMode',
   'soundwaveVibe',
   'soundwaveHideLiked',
+  'soundwaveYtm',
   'lyricsVisualizer',
   'cacheListenedTracks',
   'crossfadeDuration',

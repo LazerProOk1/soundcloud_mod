@@ -75,6 +75,7 @@ import { useWaveTasteStore } from '../stores/wave-taste';
 const _waveUrns = new Set<string>();
 /** Fewer plays than this reads as a no-name upload in the wave. */
 const MIN_WAVE_PLAYS = 2000;
+const NO_TRACKS: Track[] = [];
 function _registerWave(urns: string[]) {
   for (const u of urns) _waveUrns.add(u);
 }
@@ -96,6 +97,7 @@ export function SoundWavePage() {
   const hideLiked = useSettingsStore((s) => s.soundwaveHideLiked);
   const setHideLiked = useSettingsStore((s) => s.setSoundwaveHideLiked);
   const hideVariants = useSettingsStore((s) => s.soundwaveHideVariants);
+  const useYtm = useSettingsStore((s) => s.soundwaveYtm);
   const setHideVariants = useSettingsStore((s) => s.setSoundwaveHideVariants);
   const waveVibe = useSettingsStore((s) => s.soundwaveVibe);
   const setWaveVibe = useSettingsStore((s) => s.setSoundwaveVibe);
@@ -212,9 +214,9 @@ export function SoundWavePage() {
     return out;
   }, [allLiked, seeds, refreshSeed]);
   const ytmKey = ytmSeeds.map((s) => s.urn).join(',');
-  const { data: ytmTracks = [] } = useQuery({
+  const { data: ytmData = NO_TRACKS } = useQuery({
     queryKey: ['wave-ytm', ytmKey],
-    enabled: isAuthenticated && ytmSeeds.length > 0,
+    enabled: isAuthenticated && useYtm && ytmSeeds.length > 0,
     staleTime: 30 * 60_000,
     queryFn: async () => {
       const radios = await Promise.all(
@@ -253,6 +255,8 @@ export function SoundWavePage() {
       return found;
     },
   });
+  // Off: ignore radio picks still in the query cache too.
+  const ytmTracks = useYtm ? ytmData : NO_TRACKS;
 
   const allTracks = useMemo(() => {
     const base = backendWorking ? rawAllTracks : localRecs;

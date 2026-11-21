@@ -3,6 +3,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Activity, Compass, Headphones, Moon, Play, Sparkles, X, Zap } from '../../../lib/icons';
 import { WAVE_VIBES, type WaveMode, type WaveVibeId } from '../../../lib/wave-vibes';
+import { useSettingsStore } from '../../../stores/settings';
 import { LiquidSwitch } from '../../ui/LiquidSwitch';
 
 const VIBE_ICON: Record<WaveVibeId, React.ReactNode> = {
@@ -99,6 +100,8 @@ export const WaveTuneDialog = React.memo(function WaveTuneDialog({
     onHideLikedChange(c !== 'familiar');
   };
   const lang = langChoice(languages);
+  const useYtm = useSettingsStore((s) => s.soundwaveYtm);
+  const setUseYtm = useSettingsStore((s) => s.setSoundwaveYtm);
   const setLang = (c: LangChoice) =>
     onLanguagesChange(c === 'any' ? [] : c === 'ru' ? ['ru'] : FOREIGN);
 
@@ -145,6 +148,20 @@ export const WaveTuneDialog = React.memo(function WaveTuneDialog({
                 <p className="text-[13px] text-white/50 mt-0.5">{t('waveTune.noVariantsDesc')}</p>
               </div>
               <LiquidSwitch checked={hideVariants} onChange={onHideVariantsChange} />
+            </div>
+
+            <div className="space-y-2">
+              <Group title={t('waveTune.source')}>
+                <Chip active={useYtm} onClick={() => setUseYtm(true)}>
+                  {t('waveTune.sourceYtm')}
+                </Chip>
+                <Chip active={!useYtm} onClick={() => setUseYtm(false)}>
+                  {t('waveTune.sourceSc')}
+                </Chip>
+              </Group>
+              <p className="text-[13px] text-white/50">
+                {t(useYtm ? 'waveTune.sourceYtmDesc' : 'waveTune.sourceScDesc')}
+              </p>
             </div>
 
             <Group title={t('waveTune.language')}>

@@ -531,7 +531,12 @@
     "noVariants": "No fan versions",
     "noVariantsDesc": "Hide slowed, sped up, remixes, nightcore, covers and reuploads of the same song",
     "reasonLiked": "From your favourites",
-    "reasonNew": "Picked for you"
+    "reasonNew": "Picked for you",
+    "source": "Where picks come from",
+    "sourceYtm": "YouTube Music + SoundCloud",
+    "sourceSc": "SoundCloud only",
+    "sourceYtmDesc": "YouTube Music radio built from your likes suggests what to play; the matching SoundCloud track is what plays. Usually closer to your taste, but now and then a different version of the song slips in. Not sure? Try both.",
+    "sourceScDesc": "Only SoundCloud's own recommendations: always the exact tracks and faster, but a weaker guess at your taste. Not sure? Try both."
   },
   "update": {
     "available": "Update available",
