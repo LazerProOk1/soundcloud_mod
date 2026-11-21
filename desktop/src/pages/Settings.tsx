@@ -1003,40 +1003,11 @@ const AudioDeviceSection = React.memo(function AudioDeviceSection() {
       <h3 className="text-[22px] font-bold text-white tracking-tight mb-4">
         {t('settings.audioDevice')}
       </h3>
-      <div className="flex gap-2 flex-wrap">
-        {sinks.map((sink) => (
-          <button
-            key={sink.name}
-            onClick={() => handleSwitch(sink.name)}
-            disabled={switching}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-[16px] text-[13px] font-semibold transition-all duration-200 cursor-pointer disabled:opacity-50 ${
-              sink.is_default ? 'text-white/92' : 'text-white/45 hover:text-white/70'
-            }`}
-            style={
-              sink.is_default
-                ? {
-                    background: 'rgba(255,255,255,0.08)',
-                    backdropFilter: 'blur(16px)',
-                    border: '1px solid var(--color-accent)',
-                    boxShadow: `
-                0 1px 0 0 rgba(255,255,255,0.22) inset,
-                0 -1px 0 0 rgba(0,0,0,0.22) inset,
-                0 0 12px var(--color-accent-glow, rgba(255,85,0,0.15)),
-                0 4px 12px rgba(0,0,0,0.18)
-              `,
-                  }
-                : {
-                    background: 'rgba(255,255,255,0.03)',
-                    border: '1px solid rgba(255,255,255,0.07)',
-                    boxShadow:
-                      '0 1px 0 0 rgba(255,255,255,0.09) inset, 0 -1px 0 0 rgba(0,0,0,0.16) inset',
-                  }
-            }
-          >
-            {sink.description}
-          </button>
-        ))}
-      </div>
+      <Segmented
+        value={sinks.find((s) => s.is_default)?.name ?? ''}
+        options={sinks.map((sink) => ({ id: sink.name, label: sink.description }))}
+        onChange={(name) => void handleSwitch(name)}
+      />
     </section>
   );
 });

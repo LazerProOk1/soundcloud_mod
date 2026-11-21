@@ -578,9 +578,10 @@ export function SoundWavePage() {
               disabled={allTracks.length === 0 && !isWaveTrack}
               ref={coverRef}
               style={{
-                // Tilt toward the cursor (like the cards), bass pulse and a slow sway.
+                // Tilt toward the cursor (like the cards), an occasional idle tilt (CSS), bass pulse
+                // and a slow sway.
                 transform:
-                  'perspective(700px) rotateY(var(--tx, 0deg)) rotateX(var(--ty, 0deg)) translateY(calc(var(--sway, 0) * 1px)) scale(calc(1 + var(--bass, 0) * 0.06))',
+                  'perspective(700px) rotateY(calc(var(--tx, 0deg) + var(--idle-x, 0deg))) rotateX(calc(var(--ty, 0deg) + var(--idle-y, 0deg))) translateY(calc(var(--sway, 0) * 1px)) scale(calc(1 + var(--bass, 0) * 0.06))',
                 transition: 'transform 0.12s linear',
               }}
               onPointerMove={(e) => {

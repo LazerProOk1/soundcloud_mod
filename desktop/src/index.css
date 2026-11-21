@@ -1369,8 +1369,41 @@ button:not(:disabled):active,
   transform: scale(0.88);
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
 }
+/* The wave cover rests, then now and then leans in 3D and settles back. */
+@property --idle-x {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+@property --idle-y {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+@keyframes cover-idle-tilt {
+  0%,
+  62%,
+  100% {
+    --idle-x: 0deg;
+    --idle-y: 0deg;
+  }
+  72% {
+    --idle-x: -9deg;
+    --idle-y: 5deg;
+  }
+  82% {
+    --idle-x: 6deg;
+    --idle-y: -3deg;
+  }
+  90% {
+    --idle-x: -2deg;
+    --idle-y: 1deg;
+  }
+}
 .np-cover-img {
-  animation: np-in 0.7s var(--ease-out-soft) backwards;
+  animation:
+    np-in 0.7s var(--ease-out-soft) backwards,
+    cover-idle-tilt 11s cubic-bezier(0.45, 0, 0.25, 1) 4s infinite;
 }
 @keyframes np-in {
   from {

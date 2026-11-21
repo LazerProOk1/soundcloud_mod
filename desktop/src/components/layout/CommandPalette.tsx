@@ -14,7 +14,6 @@ import { EQ_PRESETS } from '../../lib/equalizer';
 import {
   AudioLines,
   Clock,
-  Command,
   Compass,
   CornerDownLeft,
   Download,
@@ -484,7 +483,7 @@ export const CommandPalette = React.memo(function CommandPalette({
         <Dialog.Overlay className="dialog-overlay fixed inset-0 z-[90] bg-black/55 backdrop-blur-sm" />
         <Dialog.Content
           onKeyDown={handleKeyDown}
-          className="dialog-content fixed z-[90] top-[16%] left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-[580px] rounded-[28px] overflow-hidden border border-white/[0.12] bg-[#141418]/92 backdrop-blur-2xl shadow-[0_24px_80px_rgba(0,0,0,0.65),inset_0_1px_0_rgba(255,255,255,0.16)]"
+          className="dialog-content app-surface fixed z-[90] top-[16%] left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-[600px] rounded-2xl overflow-hidden"
         >
           <Dialog.Title className="sr-only">
             {t('commandPalette.title', 'Command Palette')}
@@ -497,8 +496,8 @@ export const CommandPalette = React.memo(function CommandPalette({
           </Dialog.Description>
 
           {/* Search Bar */}
-          <div className="flex items-center gap-3 px-5 py-4 border-b border-white/[0.07]">
-            <Command size={16} className="text-accent shrink-0" />
+          <div className="flex items-center gap-3 px-5 py-4 border-b border-white/[0.06]">
+            <Search size={18} className="text-white/45 shrink-0" />
             <input
               ref={inputRef}
               type="text"
@@ -511,9 +510,9 @@ export const CommandPalette = React.memo(function CommandPalette({
                 'commandPalette.placeholder',
                 'Search tracks, commands, EQ, themes...',
               )}
-              className="flex-1 bg-transparent text-[14px] text-white placeholder:text-white/30 outline-none"
+              className="flex-1 bg-transparent text-[16px] text-white placeholder:text-white/35 outline-none"
             />
-            <kbd className="text-[10px] font-mono px-2 py-0.5 rounded-md bg-white/[0.06] border border-white/[0.08] text-white/40 shrink-0">
+            <kbd className="text-[11px] px-2 py-0.5 rounded-md bg-white/[0.08] text-white/50 shrink-0">
               Esc
             </kbd>
           </div>
@@ -531,7 +530,7 @@ export const CommandPalette = React.memo(function CommandPalette({
 
             {groupedSections.map((section) => (
               <div key={section.group}>
-                <div className="px-3 pb-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-white/25">
+                <div className="px-3 pb-1.5 text-[12px] font-semibold text-white/40">
                   {t(GROUP_LABELS[section.group].key, GROUP_LABELS[section.group].fallback)}
                 </div>
                 <div className="space-y-0.5">
@@ -559,12 +558,10 @@ export const CommandPalette = React.memo(function CommandPalette({
           </div>
 
           {/* Footer Hints */}
-          <div className="px-5 py-2.5 border-t border-white/[0.06] bg-white/[0.015] flex items-center justify-between text-[11px] text-white/30">
+          <div className="px-5 py-2.5 border-t border-white/[0.06] flex items-center justify-between text-[12px] text-white/35">
             <div className="flex items-center gap-3">
               <span className="flex items-center gap-1">
-                <kbd className="px-1.5 py-0.5 rounded bg-white/[0.06] font-mono text-[10px]">
-                  ↑↓
-                </kbd>
+                <kbd className="px-1.5 py-0.5 rounded bg-white/[0.08] text-[11px]">↑↓</kbd>
                 {t('commandPalette.hintNavigate', 'navigate')}
               </span>
               <span className="flex items-center gap-1">
@@ -572,7 +569,7 @@ export const CommandPalette = React.memo(function CommandPalette({
                 {t('commandPalette.hintRun', 'run')}
               </span>
             </div>
-            <span className="font-mono text-[10px]">{shortcutHint}</span>
+            <span className="text-[11px]">{shortcutHint}</span>
           </div>
         </Dialog.Content>
       </Dialog.Portal>
@@ -597,29 +594,27 @@ const CommandRow = React.memo(function CommandRow({
       onMouseEnter={onHover}
       onClick={onSelect}
       className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors cursor-pointer ${
-        selected
-          ? 'bg-white/[0.09] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]'
-          : 'text-white/65 hover:bg-white/[0.05]'
+        selected ? 'bg-white/[0.09] text-white' : 'text-white/75 hover:bg-white/[0.05]'
       }`}
     >
       <div
         className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
-          selected ? 'bg-accent/20 text-accent' : 'bg-white/[0.05] text-white/45'
+          selected ? 'bg-white/[0.12] text-white' : 'bg-white/[0.05] text-white/55'
         }`}
       >
         {item.icon}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-[13px] font-medium truncate">{item.title}</p>
-        {item.subtitle && <p className="text-[11px] text-white/35 truncate">{item.subtitle}</p>}
+        <p className="text-[14px] font-medium truncate">{item.title}</p>
+        {item.subtitle && <p className="text-[12px] text-white/40 truncate">{item.subtitle}</p>}
       </div>
       {item.badge && (
-        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-accent/15 text-accent shrink-0">
+        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-white/[0.08] text-white/65 shrink-0">
           {item.badge}
         </span>
       )}
       {item.shortcut && (
-        <kbd className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/[0.06] border border-white/[0.08] text-white/40 shrink-0">
+        <kbd className="text-[11px] px-1.5 py-0.5 rounded-md bg-white/[0.08] text-white/50 shrink-0">
           {item.shortcut}
         </kbd>
       )}
