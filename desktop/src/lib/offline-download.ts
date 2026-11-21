@@ -2,6 +2,11 @@ import type { Track } from '../stores/player';
 import { useSettingsStore } from '../stores/settings';
 import { cacheLikedTracks, type LikeCacheEntry } from './cache';
 
+/** Tracks SoundCloud streams in full; previews and blocked ones can't be downloaded. */
+export function isDownloadable(track: Track): boolean {
+  return !track.access || track.access === 'playable';
+}
+
 /**
  * Saves tracks (and their lyrics) into the protected likes folder, which the cache limit never
  * cleans. The engine skips files it already has and only moves ones from the regular cache.

@@ -4,21 +4,21 @@ import { toast } from 'sonner';
 import { isCacheLikesRunning } from '../../lib/cache';
 import { countNotProtected } from '../../lib/cache-kind';
 import { CheckCircle2, Download } from '../../lib/icons';
-import { downloadTracksForOffline } from '../../lib/offline-download';
+import { downloadTracksForOffline, isDownloadable } from '../../lib/offline-download';
 import { useCachedUrnsStore } from '../../stores/cached-urns';
 import type { Track } from '../../stores/player';
 
 /**
  * "Save for offline" for a list. Three states: something to download, downloading (animated,
- * not clickable), and done (nothing left to download). Tracks SoundCloud refuses to stream
- * are ignored, otherwise the button would never reach "done".
+ * not clickable), and done (nothing left to download). Previews and blocked tracks are
+ * ignored, otherwise the button would never reach "done".
  */
 export function OfflineDownloadButton({ tracks }: { tracks: Track[] }) {
   const { t } = useTranslation();
   const onDisk = useCachedUrnsStore((s) => s.urns);
   const [running, setRunning] = useState(false);
   const [missing, setMissing] = useState<number | null>(null);
-  const wanted = useMemo(() => tracks.filter((tr) => tr.access !== 'blocked'), [tracks]);
+  const wanted = useMemo(() => tracks.filter(isDownloadable), [tracks]);
 
   useEffect(() => {
     void isCacheLikesRunning()
