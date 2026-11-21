@@ -74,7 +74,27 @@ import { useWaveTasteStore } from '../stores/wave-taste';
  * Cleared when the user starts playing from a non-wave source.            */
 const _waveUrns = new Set<string>();
 /** Fewer plays than this reads as a no-name upload in the wave. */
-const MIN_WAVE_PLAYS = 2000;
+const MIN_WAVE_PLAYS = 10_000;
+
+/** Folds case, ё and punctuation so "Монеточка" and "monetochka_official" can be compared. */
+const fold = (s: string) =>
+  s
+    .toLowerCase()
+    .replace(/ё/g, 'е')
+    .replace(/[^\p{L}\p{N}]+/gu, '');
+
+/**
+ * "Artist - Song" uploaded by someone who is not that artist, with no label metadata: a fan
+ * re-upload ("монеточка - нимфоманка" by nigyygf). The official upload is the one to play.
+ */
+function isReupload(tr: Track): boolean {
+  if (tr.publisher_metadata?.artist) return false;
+  const dash = tr.title.search(/\s[-–—]\s/);
+  if (dash <= 0) return false;
+  const named = fold(tr.title.slice(0, dash).split(/[,&×x]|\sfeat\.?\s|\sft\.?\s/i)[0] ?? '');
+  const uploader = fold(tr.user?.username ?? '');
+  return named.length >= 3 && !uploader.includes(named) && !named.includes(uploader);
+}
 const NO_TRACKS: Track[] = [];
 function _registerWave(urns: string[]) {
   for (const u of urns) _waveUrns.add(u);
@@ -154,7 +174,8 @@ export function SoundWavePage() {
     (tr: Track) =>
       (!hideLiked || (!tr.user_favorite && !isUrnLiked(tr.urn))) &&
       // Barely played uploads (re-uploads, demos, no-names) stay out unless you liked them.
-      ((tr.playback_count ?? MIN_WAVE_PLAYS) >= MIN_WAVE_PLAYS || isUrnLiked(tr.urn)) &&
+      (((tr.playback_count ?? MIN_WAVE_PLAYS) >= MIN_WAVE_PLAYS && !isReupload(tr)) ||
+        isUrnLiked(tr.urn)) &&
       // Previews and blocked tracks only play through the slow YouTube fallback: skip them.
       isDownloadable(tr) &&
       (!hideVariants || !isVariant(tr)) &&
