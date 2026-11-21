@@ -93,9 +93,11 @@ export const LiveSpectrumCanvas = React.memo(function LiveSpectrumCanvas({
       if (variant === 'dots') {
         // Dot grid: the louder the band, the more dots light up away from the middle line.
         const step = cssW / bars;
-        const dot = Math.max(1.5, Math.min(step * 0.32, 3));
-        const rows = Math.max(1, Math.floor(cssH / (dot * 3) / 2));
+        const dot = Math.max(1.5, Math.min(step * 0.3, 2.5));
+        const gapY = dot * 2.4;
         const mid = cssH / 2;
+        // Only as many rows as fit whole: the outermost dot must stay inside the canvas.
+        const rows = Math.max(0, Math.floor((mid - dot - 0.5) / gapY));
         for (let i = 0; i < bars; i++) {
           const v = Math.min(1, Math.max(0, display[i]));
           const lit = v * rows;
@@ -104,7 +106,7 @@ export const LiveSpectrumCanvas = React.memo(function LiveSpectrumCanvas({
             const on = Math.min(1, Math.max(0, lit - k + 1));
             const alpha = 0.3 + on * (0.7 - (k / (rows + 1)) * 0.3);
             ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha.toFixed(3)})`;
-            for (const y of k === 0 ? [mid] : [mid - k * dot * 3, mid + k * dot * 3]) {
+            for (const y of k === 0 ? [mid] : [mid - k * gapY, mid + k * gapY]) {
               ctx.beginPath();
               ctx.arc(x, y, dot, 0, Math.PI * 2);
               ctx.fill();

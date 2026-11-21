@@ -413,16 +413,13 @@ const TrackColumn = React.memo(({ track, maxArt }: { track: Track; maxArt?: stri
             <button
               type="button"
               onClick={() => setShowFullArt(true)}
-              className="absolute inset-0 bg-black/40 opacity-0 group-hover/art:opacity-100 transition-opacity duration-300 flex items-center justify-center text-white/90 backdrop-blur-[2px] cursor-pointer outline-none"
+              className="absolute inset-0 flex items-center justify-center bg-black/25 opacity-0 transition-opacity duration-300 group-hover/art:opacity-100 cursor-pointer outline-none"
             >
-              <div className="flex flex-col items-center gap-2 scale-90 group-hover/art:scale-100 transition-transform duration-300">
-                <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center border border-white/20">
-                  <Eye size={24} />
-                </div>
-                <span className="text-[11px] font-bold tracking-wider uppercase opacity-70">
-                  {t('track.viewArtwork')}
-                </span>
-              </div>
+              {/* Plain dim + one flat pill: no blur, so the cover stays sharp under the cursor. */}
+              <span className="flex h-10 items-center gap-2 rounded-full bg-black/60 px-4 text-[13px] font-semibold text-white shadow-[0_6px_20px_rgba(0,0,0,0.35)]">
+                <Eye size={16} />
+                {t('track.viewArtwork')}
+              </span>
             </button>
           </>
         ) : (
@@ -579,7 +576,10 @@ function buildItems(lines: LyricLine[]): LyricItem[] {
     const text = line.text.trim();
     if (!text) {
       // Empty LRC line = instrumental break; short ones are simply skipped.
-      if (end - line.time >= LYRIC_GAP_MIN_SECS) out.push(gap(line.time, end));
+      // A trailing empty line has no end: no countdown to show there.
+      if (Number.isFinite(end) && end - line.time >= LYRIC_GAP_MIN_SECS) {
+        out.push(gap(line.time, end));
+      }
       continue;
     }
     const parts = text.split(/\s+/);
@@ -687,6 +687,14 @@ const SyncedLyrics = React.memo(({ lines }: { lines: LyricLine[] }) => {
       const idx = itemAt(t);
       const prev = active;
       if (idx !== prev || jump) {
+        // A break that stops being active forgets its progress: no frozen "●●○ 1" left behind.
+        if (prev >= 0 && prev !== idx && items[prev]?.gap && lineEls[prev]) {
+          for (const dot of lineEls[prev].querySelectorAll<HTMLElement>('.lyric-gap-dots > i')) {
+            dot.style.removeProperty('--fill');
+          }
+          const count = lineEls[prev].querySelector<HTMLElement>('.lyric-gap-count');
+          if (count) count.textContent = '';
+        }
         active = idx;
         litCount = -1;
         for (let i = 0; i < lineEls.length; i++) {
