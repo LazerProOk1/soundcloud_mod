@@ -605,7 +605,30 @@
     "comingSoon": "Coming soon"
   },
   "discover": {
-    "subtitle": "Explore music tailored to your taste"
+    "subtitle": "Artists, albums and charts from the whole catalog",
+    "stats": "{{artists}} artists · {{albums}} albums",
+    "freshStat": "{{count}} new in the last {{days}} days",
+    "surprise": "Surprise me",
+    "spotlight": "In the spotlight",
+    "freshReleases": "Fresh releases",
+    "charts": "Genre charts",
+    "chartEmpty": "No chart for this genre right now",
+    "trendingArtists": "Trending artists",
+    "popularAlbums": "Popular albums",
+    "byYear": "Releases by year",
+    "byTag": "Artists by style",
+    "yourGenres": "From your genres",
+    "following": "New from people you follow",
+    "browse": "Full catalog",
+    "albums": "Albums",
+    "artists": "Artists",
+    "artist": "Artist",
+    "sortPopular": "Popular",
+    "sortRecent": "New",
+    "sortTrending": "Trending",
+    "sortAz": "A–Z",
+    "showMore": "Show more",
+    "listeners": "{{value}} monthly listeners"
   },
   "trackMenu": {
     "menuLabel": "Track actions",

@@ -617,7 +617,30 @@
     "comingSoon": "Скоро"
   },
   "discover": {
-    "subtitle": "Музыка, подобранная по вашему вкусу"
+    "subtitle": "Артисты, альбомы и чарты из всего каталога",
+    "stats": "Артистов: {{artists}} · альбомов: {{albums}}",
+    "freshStat": "новых за {{days}} дн.: {{count}}",
+    "surprise": "Удиви меня",
+    "spotlight": "В центре внимания",
+    "freshReleases": "Свежие релизы",
+    "charts": "Чарты по жанрам",
+    "chartEmpty": "Для этого жанра чарта пока нет",
+    "trendingArtists": "Артисты в тренде",
+    "popularAlbums": "Популярные альбомы",
+    "byYear": "Релизы по годам",
+    "byTag": "Артисты по стилям",
+    "yourGenres": "По вашим жанрам",
+    "following": "Новое от подписок",
+    "browse": "Весь каталог",
+    "albums": "Альбомы",
+    "artists": "Артисты",
+    "artist": "Артист",
+    "sortPopular": "Популярные",
+    "sortRecent": "Новые",
+    "sortTrending": "В тренде",
+    "sortAz": "А–Я",
+    "showMore": "Показать ещё",
+    "listeners": "Слушателей в месяц: {{value}}"
   },
   "trackMenu": {
     "menuLabel": "Действия с треком",
