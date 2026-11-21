@@ -1,0 +1,79 @@
+<!doctype html>
+<!-- Source of the NSIS installer art: sidebar.bmp (164x314) at 0,0 and header.bmp (150x57) at
+  200,0. Render at 2x (msedge --headless --force-device-scale-factor=2 --window-size=400,330
+  --screenshot), then crop and downscale each box to its size and save as 24-bit BMP. -->
+<html>
+<meta charset="utf-8" />
+<style>
+  @font-face {
+    font-family: Manrope;
+    src: url('../../public/fonts/Manrope-Variable.ttf');
+    font-weight: 200 800;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { width: 400px; height: 330px; background: #09090d; overflow: hidden; }
+  body { font-family: Manrope, system-ui, sans-serif; color: #fff; position: relative; }
+  .box { position: absolute; overflow: hidden; background: #09090d; }
+  .sidebar {
+    left: 0; top: 0; width: 164px; height: 314px;
+    background:
+      radial-gradient(150px 150px at 20% 8%, rgba(255, 85, 0, 0.55), transparent 70%),
+      radial-gradient(170px 170px at 100% 70%, rgba(124, 58, 237, 0.5), transparent 70%),
+      radial-gradient(120px 120px at 0% 100%, rgba(20, 184, 166, 0.25), transparent 70%),
+      #09090d;
+  }
+  .sidebar .icon {
+    position: absolute; left: 24px; top: 34px; width: 52px; height: 52px; border-radius: 13px;
+    box-shadow: 0 8px 24px rgba(255, 85, 0, 0.5);
+  }
+  .sidebar .name {
+    position: absolute; left: 24px; top: 104px; font-size: 20px; line-height: 1.05;
+    font-weight: 800; letter-spacing: -0.02em;
+  }
+  .sidebar .name span { color: #ff5500; }
+  .sidebar .tag {
+    position: absolute; left: 24px; top: 162px; font-size: 10.5px; line-height: 1.4;
+    font-weight: 600; color: rgba(255, 255, 255, 0.6); width: 120px;
+  }
+  .bars { position: absolute; left: 18px; right: 18px; bottom: 26px; height: 62px;
+    display: flex; align-items: flex-end; gap: 4px; }
+  .bars i {
+    flex: 1; border-radius: 3px;
+    background: linear-gradient(180deg, #ffb38a, #ff5500 55%, #7c3aed);
+    opacity: 0.9;
+  }
+  .header {
+    left: 200px; top: 0; width: 150px; height: 57px;
+    background:
+      radial-gradient(90px 60px at 10% 0%, rgba(255, 85, 0, 0.5), transparent 70%),
+      radial-gradient(90px 70px at 100% 100%, rgba(124, 58, 237, 0.45), transparent 70%),
+      #09090d;
+    display: flex; align-items: center; gap: 9px; padding-left: 12px;
+  }
+  .header img { width: 30px; height: 30px; border-radius: 8px; }
+  .header b { font-size: 13px; font-weight: 800; letter-spacing: -0.01em; line-height: 1.05; }
+  .header b span { display: block; color: #ff5500; }
+  .grain::after {
+    content: ''; position: absolute; inset: 0; opacity: 0.08; pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+</style>
+<body>
+  <div class="box sidebar grain">
+    <img class="icon" src="../icons/128x128@2x.png" alt="" />
+    <div class="name">SoundCloud<br /><span>Mod</span></div>
+    <div class="tag">Неофициальный клиент SoundCloud · Unofficial client</div>
+    <div class="bars">
+      <i style="height:30%"></i><i style="height:55%"></i><i style="height:40%"></i>
+      <i style="height:80%"></i><i style="height:62%"></i><i style="height:95%"></i>
+      <i style="height:70%"></i><i style="height:48%"></i><i style="height:85%"></i>
+      <i style="height:58%"></i><i style="height:36%"></i><i style="height:66%"></i>
+      <i style="height:44%"></i><i style="height:26%"></i>
+    </div>
+  </div>
+  <div class="box header grain">
+    <img src="../icons/128x128@2x.png" alt="" />
+    <b>SoundCloud<span>Mod</span></b>
+  </div>
+</body>
+</html>
