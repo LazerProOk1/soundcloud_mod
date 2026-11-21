@@ -1205,8 +1205,9 @@ const TrackInfoBody = React.memo(function TrackInfoBody({
           <span className="truncate">{artistDisplay.primary}</span>
         </p>
       </div>
-      <LikeButton trackUrn={track.urn} />
+      {/* Dislike on the left, like on the right — the same order everywhere in the app. */}
       <NowBarDislikeButton trackUrn={track.urn} />
+      <LikeButton trackUrn={track.urn} />
       <PlaybackQualityBadge />
     </div>
   );
