@@ -1,4 +1,6 @@
+import { invoke } from '@tauri-apps/api/core';
 import { fetch as tauriFetch } from '@tauri-apps/plugin-http';
+import { check } from '@tauri-apps/plugin-updater';
 import i18n from '../i18n';
 import { APP_VERSION, GITHUB_OWNER, GITHUB_REPO, GITHUB_REPO_EN } from './constants';
 import { isNewerVersion } from './semver';
@@ -45,4 +47,29 @@ export async function checkForAppUpdate(): Promise<GithubRelease | null> {
   }
 
   return primaryRelease;
+}
+
+/** True when this install can update in place (NSIS install or AppImage). */
+export function canSelfUpdate(): Promise<boolean> {
+  return invoke<boolean>('can_self_update').catch(() => false);
+}
+
+/**
+ * Downloads the signed update, installs it and restarts. Resolves false when the release has
+ * no updater manifest, so the caller can fall back to the release page.
+ */
+export async function installAppUpdate(onProgress: (fraction: number) => void): Promise<boolean> {
+  const update = await check();
+  if (!update) return false;
+  let total = 0;
+  let received = 0;
+  await update.downloadAndInstall((event) => {
+    if (event.event === 'Started') total = event.data.contentLength ?? 0;
+    if (event.event === 'Progress' && total > 0) {
+      received += event.data.chunkLength;
+      onProgress(received / total);
+    }
+  });
+  await invoke('restart_app');
+  return true;
 }

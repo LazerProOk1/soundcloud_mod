@@ -25,8 +25,17 @@
       "csp": null
     }
   },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDcyMDM5RkYzOEUwNTAwMjgKUldRb0FBV084NThEY2lEaW94ZkQ4WlUyOW5nWXRZSFVPSmwxTE9WN0V5cmN5VTc3UWZzT1l2ejUK",
+      "endpoints": [
+        "https://github.com/LazerProOk1/soundcloud_mod/releases/latest/download/latest.json"
+      ]
+    }
+  },
   "bundle": {
     "active": true,
+    "createUpdaterArtifacts": true,
     "targets": "all",
     "publisher": "LazerProOk1",
     "copyright": "© 2026 LazerProOk1",

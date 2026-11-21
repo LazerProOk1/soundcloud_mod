@@ -77,6 +77,7 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .register_asynchronous_uri_scheme_protocol("scproxy", |_ctx, request, responder| {
             let Some(state) = network::proxy::STATE.get() else {
                 responder.respond(
@@ -180,6 +181,8 @@ pub fn run() {
             set_window_corner_preference,
             network::server::get_server_ports,
             app::diagnostics::diagnostics_log,
+            app::update::can_self_update,
+            app::update::restart_app,
             discord::discord_connect,
             discord::discord_disconnect,
             discord::discord_set_activity,

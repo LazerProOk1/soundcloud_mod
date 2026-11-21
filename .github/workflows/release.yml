@@ -64,6 +64,9 @@ jobs:
 
       - name: Build Tauri
         uses: tauri-apps/tauri-action@v0
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         with:
           projectPath: desktop
           args: ${{ matrix.args }}
@@ -89,6 +92,7 @@ jobs:
           New-Item -ItemType Directory -Force -Path "release-assets" | Out-Null
           Compress-Archive -Path "$portableDir/*" -DestinationPath "release-assets/SoundCloud-Mod-v$version-windows-x64-portable.zip" -Force
           Copy-Item "desktop/src-tauri/target/release/bundle/nsis/*.exe" "release-assets/" -Force
+          Copy-Item "desktop/src-tauri/target/release/bundle/nsis/*.exe.sig" "release-assets/" -Force
           Copy-Item "desktop/src-tauri/target/release/bundle/msi/*.msi" "release-assets/" -Force
 
       # Tauri links .DirIcon to an absolute build-machine path, so it dangles inside the AppImage
@@ -99,6 +103,8 @@ jobs:
         env:
           APPIMAGE_EXTRACT_AND_RUN: 1
           ARCH: x86_64
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
         run: |
           wget -q https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-x86_64.AppImage -O "$RUNNER_TEMP/appimagetool"
           chmod +x "$RUNNER_TEMP/appimagetool"
@@ -108,7 +114,10 @@ jobs:
             cp --remove-destination "squashfs-root/$icon.png" squashfs-root/.DirIcon
             test -s squashfs-root/.DirIcon
             "$RUNNER_TEMP/appimagetool" squashfs-root "$img"
-            rm -rf squashfs-root
+            rm -rf squashfs-root "$img.sig"
+            # Repacking changed the bytes, so the updater signature has to be made again.
+            "$GITHUB_WORKSPACE/desktop/node_modules/.bin/tauri" signer sign "$img"
+            test -s "$img.sig"
           done
 
       - name: Stage Ubuntu release assets
@@ -117,6 +126,7 @@ jobs:
           mkdir -p release-assets
           cp desktop/src-tauri/target/release/bundle/deb/*.deb release-assets/
           cp desktop/src-tauri/target/release/bundle/appimage/*.AppImage release-assets/
+          cp desktop/src-tauri/target/release/bundle/appimage/*.AppImage.sig release-assets/
           cp desktop/src-tauri/target/release/bundle/rpm/*.rpm release-assets/
 
       - name: Upload release assets
@@ -125,3 +135,33 @@ jobs:
         with:
           files: release-assets/*
           generate_release_notes: true
+
+  # The in-app updater reads latest.json from the newest release. Built from the uploaded
+  # signatures, so the repacked AppImage is listed with its final signature.
+  updater-manifest:
+    name: Updater manifest
+    needs: build-and-release
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Publish latest.json
+        run: |
+          tag="$GITHUB_REF_NAME"
+          gh release download "$tag" -R "$GITHUB_REPOSITORY" -p '*.sig' -D sigs
+          base="https://github.com/$GITHUB_REPOSITORY/releases/download/$tag"
+          entry() {
+            sig=$(ls sigs/$1 | head -1)
+            jq -n --arg s "$(cat "$sig")" --arg u "$base/$(basename "${sig%.sig}")" \
+              '{signature: $s, url: $u}'
+          }
+          win=$(entry '*-setup.exe.sig')
+          linux=$(entry '*.AppImage.sig')
+          jq -n --arg v "${tag#v}" --arg d "$(date -u +%FT%TZ)" \
+            --argjson win "$win" --argjson linux "$linux" \
+            '{version: $v, notes: "", pub_date: $d, platforms: {
+              "windows-x86_64": $win, "windows-x86_64-nsis": $win,
+              "linux-x86_64": $linux, "linux-x86_64-appimage": $linux}}' > latest.json
+          cat latest.json
+          gh release upload "$tag" latest.json -R "$GITHUB_REPOSITORY" --clobber

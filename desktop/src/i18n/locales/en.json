@@ -524,7 +524,10 @@
   "update": {
     "available": "Update available",
     "later": "Later",
-    "download": "Download"
+    "download": "Download",
+    "install": "Install and restart",
+    "installing": "Downloading {{percent}}%",
+    "installFailed": "Couldn't install the update, opening the release page"
   },
   "common": {
     "loading": "Loading...",

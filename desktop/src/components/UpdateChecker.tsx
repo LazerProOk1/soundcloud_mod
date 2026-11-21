@@ -1,10 +1,16 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { proxiedAssetUrl } from '../lib/asset-url';
 import { APP_VERSION } from '../lib/constants';
-import { AlertCircle, ExternalLink, Sparkles, X } from '../lib/icons';
+import { AlertCircle, ExternalLink, Loader2, Sparkles, X } from '../lib/icons';
 import { openExternalUrl } from '../lib/open-external';
-import { type GithubRelease, stripLeadingV } from '../lib/update-check';
+import {
+  canSelfUpdate,
+  type GithubRelease,
+  installAppUpdate,
+  stripLeadingV,
+} from '../lib/update-check';
 
 function renderInlineMarkdown(text: string, keyPrefix: string) {
   const parts: React.ReactNode[] = [];
@@ -156,6 +162,26 @@ export function UpdateChecker({
 }) {
   const { t } = useTranslation();
   const renderedNotes = useMemo(() => renderReleaseBody(release.body), [release.body]);
+  const [selfUpdate, setSelfUpdate] = useState(false);
+  // null = idle, otherwise download progress 0..1.
+  const [progress, setProgress] = useState<number | null>(null);
+
+  useEffect(() => {
+    void canSelfUpdate().then(setSelfUpdate);
+  }, []);
+
+  const install = async () => {
+    setProgress(0);
+    try {
+      if (!(await installAppUpdate(setProgress))) openExternalUrl(release.html_url);
+    } catch (e) {
+      console.error('[update]', e);
+      toast.error(t('update.installFailed'));
+      openExternalUrl(release.html_url);
+    } finally {
+      setProgress(null);
+    }
+  };
 
   if (!release) return null;
 
@@ -209,11 +235,23 @@ export function UpdateChecker({
           </button>
           <button
             type="button"
-            onClick={() => openExternalUrl(release.html_url)}
-            className="flex-1 py-2.5 rounded-xl bg-accent hover:bg-accent-hover text-[13px] text-accent-contrast font-semibold transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+            disabled={progress !== null}
+            onClick={() => (selfUpdate ? void install() : openExternalUrl(release.html_url))}
+            className="flex-1 py-2.5 rounded-xl bg-accent hover:bg-accent-hover text-[13px] text-accent-contrast font-semibold transition-colors cursor-pointer disabled:cursor-default flex items-center justify-center gap-1.5"
           >
-            {t('update.download')}
-            <ExternalLink size={13} />
+            {progress !== null ? (
+              <>
+                <Loader2 size={13} className="animate-spin" />
+                {t('update.installing', { percent: Math.round(progress * 100) })}
+              </>
+            ) : selfUpdate ? (
+              t('update.install')
+            ) : (
+              <>
+                {t('update.download')}
+                <ExternalLink size={13} />
+              </>
+            )}
           </button>
         </div>
       </div>
