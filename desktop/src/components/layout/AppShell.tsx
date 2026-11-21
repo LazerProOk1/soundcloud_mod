@@ -1,7 +1,7 @@
 import * as Dialog from '@radix-ui/react-dialog';
 import React, { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate } from 'react-router-dom';
 import { useShallow } from 'zustand/shallow';
 import { getCurrentTime, getDuration, handlePrev, seek } from '../../lib/audio';
 import { getWallpaperUrl } from '../../lib/cache';
@@ -237,9 +237,6 @@ export const AppShell = React.memo(() => {
   const mainRef = useRef<HTMLElement>(null);
   useLyricsPrefetch();
 
-  const location = useLocation();
-  const isOnSoundwave = location.pathname.startsWith('/soundwave');
-
   const [queueOpen, setQueueOpen] = useState(false);
   const [kbOpen, setKbOpen] = useState(false);
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
@@ -423,9 +420,9 @@ export const AppShell = React.memo(() => {
             <StableOutlet />
           </div>
         </main>
-        {nowPlayingPanel && !isOnSoundwave && <NowPlayingPanel onOpenQueue={onQueueOpen} />}
+        {nowPlayingPanel && <NowPlayingPanel onOpenQueue={onQueueOpen} />}
       </div>
-      {!isOnSoundwave && <NowPlayingBar onQueueToggle={onQueueToggle} queueOpen={queueOpen} />}
+      <NowPlayingBar onQueueToggle={onQueueToggle} queueOpen={queueOpen} />
       {queueOpen && (
         <Suspense fallback={null}>
           <QueuePanel open={queueOpen} onClose={onQueueClose} />

@@ -87,9 +87,6 @@ const LikedPage = lazy(() =>
 const HistoryPage = lazy(() =>
   import('./pages/HistoryPage').then((module) => ({ default: module.HistoryPage })),
 );
-const SoundWavePage = lazy(() =>
-  import('./pages/SoundWavePage').then((module) => ({ default: module.SoundWavePage })),
-);
 const UpdateChecker = lazy(() =>
   import('./components/UpdateChecker').then((module) => ({ default: module.UpdateChecker })),
 );
@@ -433,14 +430,8 @@ export default function App() {
                     </RouteLoader>
                   }
                 />
-                <Route
-                  path="soundwave"
-                  element={
-                    <RouteLoader>
-                      <SoundWavePage />
-                    </RouteLoader>
-                  }
-                />
+                {/* SoundWave lives at the top of Home; the old separate page redirects there. */}
+                <Route path="soundwave" element={<Navigate to="/home" replace />} />
                 <Route
                   path="settings"
                   element={

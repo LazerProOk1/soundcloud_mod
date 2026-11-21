@@ -131,10 +131,10 @@ export const CommandPalette = React.memo(function CommandPalette({
         id: 'nav-soundwave',
         group: 'navigation',
         title: t('nav.soundwave'),
-        subtitle: '/soundwave',
+        subtitle: '/home',
         keywords: ['soundwave', 'wave', 'radio', 'волна', 'поток'],
         icon: <AudioLines size={15} />,
-        run: () => navigate('/soundwave'),
+        run: () => navigate('/home'),
       },
       {
         id: 'nav-discover',
@@ -278,7 +278,7 @@ export const CommandPalette = React.memo(function CommandPalette({
         icon: <AudioLines size={15} />,
         run: () => {
           settings.setSoundwaveVibe(vibeItem.id);
-          navigate('/soundwave');
+          navigate('/home');
         },
       });
     }

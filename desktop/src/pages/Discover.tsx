@@ -129,7 +129,7 @@ function DiscoverHero() {
             {t('discover.surprise')}
           </button>
         )}
-        <button type="button" onClick={() => navigate('/soundwave')} className={button}>
+        <button type="button" onClick={() => navigate('/home')} className={button}>
           <AudioLines size={16} style={{ color: 'var(--color-accent)' }} />
           {t('nav.soundwave')}
         </button>
