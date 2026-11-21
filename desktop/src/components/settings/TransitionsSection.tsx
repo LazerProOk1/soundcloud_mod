@@ -122,9 +122,6 @@ export const TransitionsSection = React.memo(function TransitionsSection() {
           </SettingRow>
         </>
       )}
-      <SettingRow title={t('transitions.trimSilence')} desc={t('transitions.trimSilenceDesc')}>
-        <LiquidSwitch checked={s.trimSilence} onChange={s.setTrimSilence} />
-      </SettingRow>
       <SettingRow title={t('transitions.onSkip')} desc={t('transitions.onSkipDesc')}>
         <LiquidSwitch checked={s.crossfadeOnSkip} onChange={s.setCrossfadeOnSkip} />
       </SettingRow>

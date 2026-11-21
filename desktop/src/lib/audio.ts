@@ -125,13 +125,6 @@ async function loadAnalysis(urn: string, path: string, gen: number) {
   });
 }
 
-/** Where the music ends when trimming silence (else the real end). */
-function musicEnd() {
-  const a = currentAnalysis;
-  if (!useSettingsStore.getState().trimSilence || !a) return cachedDuration;
-  return a.musicEndSecs > 1 && a.musicEndSecs < cachedDuration ? a.musicEndSecs : cachedDuration;
-}
-
 const CURVE_ID: Record<CrossfadeCurve, number> = { equal: 0, linear: 1, scurve: 2 };
 
 /** Fade-in shape for t in 0..1, mirroring Rust's fade-out of the previous track. */
@@ -768,11 +761,6 @@ function afterLoad(track: Track, gen: number) {
   // audio buffer fires at user volume before the IPC set-volume arrives.
   const crossfadeSecs = useSettingsStore.getState().crossfadeDuration;
   handoffPending = false;
-  // Trim silence: start from the first note.
-  const startAt = currentAnalysis?.musicStartSecs ?? 0;
-  if (useSettingsStore.getState().trimSilence && startAt >= 0.3 && cachedTime < startAt) {
-    seek(startAt);
-  }
   if (crossfading && crossfadeSecs > 0 && isPlaying) {
     const userVolume = usePlayerStore.getState().volume;
     const curve = useSettingsStore.getState().crossfadeCurve;
@@ -859,8 +847,7 @@ tauriListen<number>('audio:tick', (event) => {
     player.repeat !== 'one' &&
     cachedDuration > crossfadeSecs * 2
   ) {
-    const end = musicEnd();
-    const remaining = end - cachedTime;
+    const remaining = cachedDuration - cachedTime;
     const nextTrack = player.queue[player.queueIndex + 1];
     const keepGapless = crossfadeKeepAlbums && sameAlbum(player.currentTrack, nextTrack);
     // The track fades out by itself: start the transition together with that fade
@@ -881,25 +868,8 @@ tauriListen<number>('audio:tick', (event) => {
     }
   }
 
-  // Trim silence without crossfade: move on as soon as the music ends.
-  const end = musicEnd();
-  if (
-    crossfadeSecs === 0 &&
-    !handoffPending &&
-    player.isPlaying &&
-    end < cachedDuration - 0.5 &&
-    cachedTime >= end
-  ) {
-    handoffPending = true;
-    setTimeout(() => {
-      handoffPending = false;
-    }, 15000);
-    recordFullPlay();
-    handleTrackEnd();
-  }
-
-  // Analyse the next track ahead of time, so its silence is trimmed as soon as it starts.
-  if (currentUrn && upcomingAnalyzedFor !== currentUrn && end - cachedTime < 45) {
+  // Analyse the next track ahead of time, so its natural fade-out is known when it plays.
+  if (currentUrn && upcomingAnalyzedFor !== currentUrn && cachedDuration - cachedTime < 45) {
     upcomingAnalyzedFor = currentUrn;
     const next = player.queue[player.queueIndex + 1];
     if (next?.urn) {

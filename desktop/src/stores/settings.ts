@@ -109,9 +109,6 @@ export interface SettingsState {
   crossfadeOnSkip: boolean;
   /** Tracks of the same album play back to back, without a crossfade. */
   crossfadeKeepAlbums: boolean;
-  /** Skip silence at the start and end of tracks. */
-  trimSilence: boolean;
-  setTrimSilence: (v: boolean) => void;
   setCrossfadeCurve: (v: CrossfadeCurve) => void;
   setCrossfadeOnSkip: (v: boolean) => void;
   setCrossfadeKeepAlbums: (v: boolean) => void;
@@ -202,7 +199,6 @@ const DEFAULTS = {
   crossfadeCurve: 'equal' as CrossfadeCurve,
   crossfadeOnSkip: true,
   crossfadeKeepAlbums: true,
-  trimSilence: true,
   artistWaveCollapsed: false,
   // Frosted glass by default; Plain and Liquid Glass are opt-in.
   panelStyle: 'gloss' as PanelStyle,
@@ -257,7 +253,6 @@ export const useSettingsStore = create<SettingsState>()(
       setCrossfadeCurve: (crossfadeCurve) => set({ crossfadeCurve }),
       setCrossfadeOnSkip: (crossfadeOnSkip) => set({ crossfadeOnSkip }),
       setCrossfadeKeepAlbums: (crossfadeKeepAlbums) => set({ crossfadeKeepAlbums }),
-      setTrimSilence: (trimSilence) => set({ trimSilence }),
       setCacheListenedTracks: (cacheListenedTracks) => set({ cacheListenedTracks }),
       setCrossfadeDuration: (crossfadeDuration) => set({ crossfadeDuration }),
       setArtistWaveCollapsed: (artistWaveCollapsed) => set({ artistWaveCollapsed }),
@@ -351,7 +346,6 @@ export const useSettingsStore = create<SettingsState>()(
         crossfadeCurve: s.crossfadeCurve,
         crossfadeOnSkip: s.crossfadeOnSkip,
         crossfadeKeepAlbums: s.crossfadeKeepAlbums,
-        trimSilence: s.trimSilence,
         artistWaveCollapsed: s.artistWaveCollapsed,
         panelStyle: s.panelStyle,
         sidebarLikedPlaylists: s.sidebarLikedPlaylists,
