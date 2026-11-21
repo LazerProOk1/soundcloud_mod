@@ -39,6 +39,18 @@ export const DynamicBackground = React.memo(({ blendMode = false }: DynamicBackg
   const colors = useArtworkColor(artwork);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Liquid Glass panels catch the artwork colour on their lit corner and outer glow.
+  useEffect(() => {
+    const root = document.documentElement.style;
+    if (colors) {
+      root.setProperty('--art-tint', rgbToCss(colors.dominant, 0.16));
+      root.setProperty('--art-glow', rgbToCss(colors.dominant, 0.45));
+    } else {
+      root.removeProperty('--art-tint');
+      root.removeProperty('--art-glow');
+    }
+  }, [colors]);
+
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;

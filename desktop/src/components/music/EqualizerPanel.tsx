@@ -188,7 +188,7 @@ export const EqualizerPanel = React.memo(function EqualizerPanel({
           onOpenAutoFocus={(e) => e.preventDefault()}
           className="z-[200] w-[480px] max-w-[95vw] origin-bottom-right outline-none data-[state=open]:animate-fade-in-up"
         >
-          <div className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#141416]/95 shadow-[0_24px_64px_rgba(0,0,0,0.5)] backdrop-blur-xl">
+          <div className="app-surface relative overflow-hidden rounded-2xl">
             {/* Header */}
             <div className="flex items-center justify-between px-6 pt-5 pb-4">
               <div className="flex items-center gap-3">

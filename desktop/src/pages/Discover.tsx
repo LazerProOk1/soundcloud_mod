@@ -93,7 +93,7 @@ function DiscoverHero() {
   };
 
   const button =
-    'press inline-flex h-10 items-center gap-2 rounded-full bg-white/[0.07] px-4 text-[13px] font-semibold text-white/85 hover:bg-white/[0.12] hover:text-white cursor-pointer';
+    'press inline-flex h-10 items-center gap-2 rounded-full bar-control px-4 text-[13px] font-semibold text-white/85 hover:text-white cursor-pointer';
 
   return (
     <section className="flex flex-wrap items-end justify-between gap-4 pt-1">
