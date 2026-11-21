@@ -14,11 +14,11 @@ import { type MusicSourceId, type PanelStyle, useSettingsStore } from '../../sto
 import { LiquidSwitch } from '../ui/LiquidSwitch';
 import { RANGE_CLS } from '../ui/rangeClass';
 import { Segmented } from '../ui/Segmented';
+import { PILL_BTN } from '../ui/buttonClass';
 
-const btnCls =
-  'px-3 py-1.5 rounded-lg text-[12px] font-medium text-white/70 bg-white/[0.05] border border-white/[0.08] hover:bg-white/[0.09] hover:text-white transition-colors cursor-pointer';
+const btnCls = PILL_BTN;
 const inputCls =
-  'flex-1 min-w-0 px-3 py-1.5 rounded-lg text-[13px] text-white/85 bg-white/[0.04] border border-white/[0.08] outline-none focus:border-white/25';
+  'h-9 flex-1 min-w-0 rounded-full border border-transparent bg-white/[0.07] px-4 text-[13px] text-white/85 outline-none placeholder:text-white/35 focus:border-white/25';
 
 const PANEL_STYLES: PanelStyle[] = ['liquid', 'gloss', 'flat'];
 

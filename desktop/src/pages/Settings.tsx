@@ -9,6 +9,7 @@ import { TransitionsSection } from '../components/settings/TransitionsSection';
 import { LiquidSwitch } from '../components/ui/LiquidSwitch.tsx';
 import { RANGE_CLS } from '../components/ui/rangeClass';
 import { Segmented } from '../components/ui/Segmented';
+import { PILL_BTN } from '../components/ui/buttonClass';
 import { Skeleton } from '../components/ui/Skeleton.tsx';
 import { changeAppLanguage } from '../i18n';
 import { switchAudioDevice } from '../lib/audio';
@@ -359,9 +360,9 @@ const CacheSection = React.memo(function CacheSection() {
               type="button"
               onClick={handleClearTempCache}
               disabled={clearingTemp || clearingAudio || clearingImages}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-white/[0.05] text-white/65 hover:text-white hover:bg-white/[0.09] border border-white/[0.07] transition-all duration-200 disabled:opacity-40 cursor-pointer disabled:cursor-not-allowed"
+              className={PILL_BTN}
             >
-              {clearingTemp ? <Loader2 size={11} className="animate-spin" /> : <Trash2 size={11} />}
+              {clearingTemp ? <Loader2 size={14} className="animate-spin" /> : <Trash2 size={14} />}
               {t('settings.clearTempCache')}
             </button>
           )}
@@ -659,7 +660,7 @@ const WallpaperPicker = React.memo(function WallpaperPicker() {
           <button
             onClick={handleDownloadUrl}
             disabled={downloading || !urlInput.trim()}
-            className="px-4 py-2.5 rounded-xl text-[12px] font-semibold bg-white/[0.08] text-white/70 hover:bg-white/[0.12] border border-white/[0.06] transition-all disabled:opacity-30 cursor-pointer disabled:cursor-not-allowed"
+            className={PILL_BTN}
           >
             {downloading ? <Loader2 size={14} className="animate-spin" /> : t('settings.download')}
           </button>
@@ -1213,19 +1214,11 @@ const BackupSection = React.memo(function BackupSection() {
         <p className="text-[11px] text-white/30 mt-1">{t('settings.backupDesc')}</p>
       </div>
       <div className="flex flex-wrap items-center gap-3">
-        <button
-          type="button"
-          onClick={handleExport}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-[12px] font-semibold bg-white/[0.06] text-white/80 hover:text-white hover:bg-white/[0.1] border border-white/[0.06] hover:border-white/[0.12] transition-all duration-200 cursor-pointer"
-        >
+        <button type="button" onClick={handleExport} className={PILL_BTN}>
           <Download size={13} />
           {t('settings.exportBackup')}
         </button>
-        <button
-          type="button"
-          onClick={() => fileRef.current?.click()}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl text-[12px] font-semibold bg-white/[0.06] text-white/80 hover:text-white hover:bg-white/[0.1] border border-white/[0.06] hover:border-white/[0.12] transition-all duration-200 cursor-pointer"
-        >
+        <button type="button" onClick={() => fileRef.current?.click()} className={PILL_BTN}>
           <Upload size={13} />
           {t('settings.importBackup')}
         </button>

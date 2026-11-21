@@ -1,12 +1,10 @@
 import { useQueryClient } from '@tanstack/react-query';
 import React, { useEffect, useRef, useState } from 'react';
 import { api } from '../../lib/api';
-import { hexToRgba } from '../../lib/color';
 import { invalidateAllLikesCache } from '../../lib/hooks';
 import { Heart } from '../../lib/icons';
 import { optimisticToggleLike, setLikedUrn, useLiked } from '../../lib/likes';
 import type { Track } from '../../stores/player';
-import { useSettingsStore } from '../../stores/settings';
 
 export const LikeButton = React.memo(function LikeButton({
   track,
@@ -22,7 +20,6 @@ export const LikeButton = React.memo(function LikeButton({
   title?: string;
 }) {
   const liked = useLiked(track.urn);
-  const accentColor = useSettingsStore((s) => s.accentColor);
   const [popping, setPopping] = useState(false);
   const prevLikedRef = useRef(liked);
 
@@ -65,19 +62,9 @@ export const LikeButton = React.memo(function LikeButton({
         onClick={toggle}
         title={title}
         aria-label={title}
-        className={`cursor-pointer absolute top-2 left-2 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-95 ${
-          liked
-            ? 'opacity-90 group-hover:opacity-100 translate-y-0'
-            : 'opacity-0 group-hover:opacity-100 translate-y-1 group-hover:translate-y-0'
+        className={`press absolute top-2 left-2 w-8 h-8 rounded-full flex items-center justify-center bg-black/55 hover:bg-black/75 cursor-pointer transition-opacity duration-200 ${
+          liked ? 'text-accent' : 'text-white opacity-0 group-hover:opacity-100'
         } ${className}`}
-        style={{
-          /* Translucent tinted pill — crisp without stacking nested backdrop-filters per card */
-          background: liked ? hexToRgba(accentColor, 0.92) : hexToRgba(accentColor, 0.72),
-          boxShadow: liked
-            ? `0 1px 0 0 rgba(255,255,255,0.35) inset, 0 -1px 0 0 rgba(0,0,0,0.25) inset, 0 4px 14px ${hexToRgba(accentColor, 0.5)}`
-            : `0 1px 0 0 rgba(255,255,255,0.28) inset, 0 -1px 0 0 rgba(0,0,0,0.20) inset, 0 2px 10px ${hexToRgba(accentColor, 0.3)}`,
-          color: 'white',
-        }}
       >
         <Heart
           size={size ?? 14}

@@ -289,14 +289,8 @@ export const TrackCard = React.memo(
               <button
                 type="button"
                 onClick={(e) => e.stopPropagation()}
-                className="cursor-pointer w-8 h-8 rounded-full flex items-center justify-center text-white transition-all duration-200 hover:scale-110 active:scale-95"
+                className="press w-8 h-8 rounded-full flex items-center justify-center bg-black/55 text-white hover:bg-black/75 cursor-pointer"
                 title={t('playlist.addToPlaylist')}
-                style={{
-                  background: glass ? 'rgba(20,20,26,0.72)' : 'rgba(30,30,36,0.92)',
-                  boxShadow: glass
-                    ? '0 1px 0 0 rgba(255,255,255,0.32) inset, 0 -1px 0 0 rgba(0,0,0,0.22) inset, 0 2px 10px rgba(0,0,0,0.32)'
-                    : '0 0 0 1px rgba(255,255,255,0.12), 0 2px 8px rgba(0,0,0,0.28)',
-                }}
               >
                 <ListPlus size={14} />
               </button>
@@ -304,14 +298,8 @@ export const TrackCard = React.memo(
             <button
               type="button"
               onClick={handleAddToQueue}
-              className="cursor-pointer w-8 h-8 rounded-full flex items-center justify-center text-white transition-all duration-200 hover:scale-110 active:scale-95"
+              className="press w-8 h-8 rounded-full flex items-center justify-center bg-black/55 text-white hover:bg-black/75 cursor-pointer"
               title={t('player.addToQueue')}
-              style={{
-                background: glass ? 'rgba(20,20,26,0.72)' : 'rgba(30,30,36,0.92)',
-                boxShadow: glass
-                  ? '0 1px 0 0 rgba(255,255,255,0.32) inset, 0 -1px 0 0 rgba(0,0,0,0.22) inset, 0 2px 10px rgba(0,0,0,0.32)'
-                  : '0 0 0 1px rgba(255,255,255,0.12), 0 2px 8px rgba(0,0,0,0.28)',
-              }}
             >
               <ListMusic size={14} />
             </button>
@@ -359,7 +347,7 @@ export const TrackCard = React.memo(
           ) : (
             track.playback_count != null && (
               <p className="text-[10px] text-white/15 mt-1 tabular-nums">
-                {fc(track.playback_count)} plays
+                {fc(track.playback_count)} {t('track.plays')}
               </p>
             )
           )}
