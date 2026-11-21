@@ -181,7 +181,7 @@ test('en and ru locale files stay structurally valid and aligned on updated sect
   const en = JSON.parse(fs.readFileSync(path.join(localesDir, 'en.json'), 'utf8'));
   const ru = JSON.parse(fs.readFileSync(path.join(localesDir, 'ru.json'), 'utf8'));
 
-  for (const key of ['starBadge', 'starProfile', 'auraTitle', 'auraCustom']) {
+  for (const key of ['profile']) {
     assert.ok(en.user[key], `Missing en.user.${key}`);
     assert.ok(ru.user[key], `Missing ru.user.${key}`);
   }

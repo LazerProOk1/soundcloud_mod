@@ -183,10 +183,7 @@
     "noFollowers": "Подписчиков пока нет.",
     "noFollowings": "Подписок пока нет.",
     "verifiedArtist": "Верифицированный артист",
-    "starBadge": "Star",
-    "starProfile": "Star · Профиль",
-    "auraTitle": "Аура",
-    "auraCustom": "Свой цвет"
+    "profile": "Профиль"
   },
   "library": {
     "tracksCount_one": "{{value}} трек",

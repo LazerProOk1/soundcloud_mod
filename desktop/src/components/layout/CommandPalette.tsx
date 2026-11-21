@@ -188,8 +188,8 @@ export const CommandPalette = React.memo(function CommandPalette({
         id: 'nav-profile',
         group: 'navigation',
         title: user.username,
-        subtitle: t('user.starProfile', 'Star · Profile'),
-        keywords: ['profile', 'user', 'star', 'aura', 'профиль', 'аура'],
+        subtitle: t('user.profile', 'Profile'),
+        keywords: ['profile', 'user', 'профиль'],
         icon: <User size={15} />,
         run: () => navigate(`/user/${encodeURIComponent(user.urn)}`),
       });

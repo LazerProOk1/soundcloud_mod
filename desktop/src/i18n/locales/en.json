@@ -183,10 +183,7 @@
     "noFollowers": "No followers found.",
     "noFollowings": "No followings found.",
     "verifiedArtist": "Verified Artist",
-    "starBadge": "Star",
-    "starProfile": "Star · Profile",
-    "auraTitle": "Aura",
-    "auraCustom": "Custom"
+    "profile": "Profile"
   },
   "library": {
     "tracksCount_one": "{{value}} track",
