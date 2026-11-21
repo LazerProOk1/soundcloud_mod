@@ -32,7 +32,12 @@ export async function matchOnSoundCloud(item: ImportItem): Promise<Track | null>
     let best: { track: Track; score: number } | null = null;
     for (const tr of res.collection ?? []) {
       const score = matchScore(item, tr);
-      if (score >= 2 && (!best || score > best.score)) best = { track: tr, score };
+      if (score < 2) continue;
+      // Same score: the more played upload is usually the official one, not a re-upload.
+      const plays = (t: Track) => t.playback_count ?? 0;
+      if (!best || score > best.score || (score === best.score && plays(tr) > plays(best.track))) {
+        best = { track: tr, score };
+      }
     }
     return best?.track ?? null;
   } catch (e) {

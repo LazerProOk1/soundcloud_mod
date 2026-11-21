@@ -27,7 +27,12 @@ import { handlePrev } from '../lib/audio';
 import { toggleDislike } from '../lib/dislikes';
 import { recordEvent } from '../lib/events';
 import { art, dur } from '../lib/formatters';
-import { useLikedTracks, useRecommendedTracks, useRelatedPool } from '../lib/hooks';
+import {
+  ALL_LIKES_PAGE_SIZE,
+  useLikedTracks,
+  useRecommendedTracks,
+  useRelatedPool,
+} from '../lib/hooks';
 import {
   AudioLines,
   Loader2,
@@ -67,6 +72,8 @@ import { useWaveTasteStore } from '../stores/wave-taste';
  * even after infinite-wave refill adds tracks not in the initial cluster.
  * Cleared when the user starts playing from a non-wave source.            */
 const _waveUrns = new Set<string>();
+/** Fewer plays than this reads as a no-name upload in the wave. */
+const MIN_WAVE_PLAYS = 2000;
 function _registerWave(urns: string[]) {
   for (const u of urns) _waveUrns.add(u);
 }
@@ -132,6 +139,8 @@ export function SoundWavePage() {
 
   /* Fallback: liked → related pool */
   const likedQuery = useLikedTracks(60);
+  // Radio seeds come from the whole library, not only the latest likes.
+  const allLiked = useLikedTracks(ALL_LIKES_PAGE_SIZE, true).tracks;
   const { data: relatedPool } = useRelatedPool(likedQuery.tracks);
   const localRecs = useRecommendedTracks(relatedPool, 40);
 
@@ -141,6 +150,8 @@ export function SoundWavePage() {
   const waveFilter = useCallback(
     (tr: Track) =>
       (!hideLiked || (!tr.user_favorite && !isUrnLiked(tr.urn))) &&
+      // Barely played uploads (re-uploads, demos, no-names) stay out unless you liked them.
+      ((tr.playback_count ?? MIN_WAVE_PLAYS) >= MIN_WAVE_PLAYS || isUrnLiked(tr.urn)) &&
       (!hideVariants || !isVariant(tr)) &&
       matchesLanguages(tr, stableLanguages),
     [hideLiked, hideVariants, stableLanguages],
@@ -184,17 +195,19 @@ export function SoundWavePage() {
   /* "New" like Justify: YouTube Music radio of a few of your tracks, matched on
      SoundCloud. Much closer to your taste than SoundCloud's own recommendations. */
   const ytmSeeds = useMemo(() => {
-    const liked = [...likedQuery.tracks]
+    const liked = [...allLiked]
       .map((tr) => ({ tr, k: hashKey(`${tr.urn}:ytm:${refreshSeed}`) }))
       .sort((a, b) => a.k - b.k)
       .map((x) => x.tr);
     const out: Track[] = [];
-    for (const tr of [...seeds.slice(0, 2), ...liked]) {
-      if (out.length >= 3) break;
+    // One "More like this" pick, the rest spread over all likes: a single recent track
+    // must not steer the whole wave.
+    for (const tr of [...seeds.slice(0, 1), ...liked]) {
+      if (out.length >= 5) break;
       if (!out.some((o) => o.urn === tr.urn)) out.push(tr);
     }
     return out;
-  }, [likedQuery.tracks, seeds, refreshSeed]);
+  }, [allLiked, seeds, refreshSeed]);
   const ytmKey = ytmSeeds.map((s) => s.urn).join(',');
   const { data: ytmTracks = [] } = useQuery({
     queryKey: ['wave-ytm', ytmKey],
