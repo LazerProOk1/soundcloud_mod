@@ -109,20 +109,14 @@ const EngagementChip = React.memo(function EngagementChip({
   onClick: () => void;
 }) {
   const tone = activeTone === 'accent' ? 'text-accent' : 'text-emerald-400';
-  const toneBg =
-    activeTone === 'accent'
-      ? 'bg-accent/15 border-accent/25'
-      : 'bg-emerald-500/15 border-emerald-500/25';
 
   return (
     <button
       type="button"
       onClick={onClick}
       title={label}
-      className={`inline-flex items-center gap-1.5 px-3 h-10 rounded-xl text-[12.5px] font-semibold tabular-nums transition-all duration-200 ease-[var(--ease-apple)] cursor-pointer border ${
-        active
-          ? `${toneBg} ${tone}`
-          : 'glass-flat border-white/[0.06] text-white/65 hover:bg-white/[0.07] hover:text-white/90 hover:border-white/[0.1]'
+      className={`bar-control press inline-flex h-10 items-center gap-1.5 rounded-full px-3.5 text-[12.5px] font-semibold tabular-nums cursor-pointer ${
+        active ? tone : 'text-white/70 hover:text-white'
       }`}
     >
       {icon}
@@ -221,12 +215,12 @@ const IconAction = React.memo(function IconAction({
   active?: boolean;
 }) {
   const base =
-    'inline-flex items-center justify-center w-10 h-10 rounded-xl transition-all duration-200 ease-[var(--ease-apple)] cursor-pointer';
+    'press inline-flex items-center justify-center w-9 h-9 rounded-full transition-colors duration-200 cursor-pointer';
   const tone = danger
     ? 'text-white/55 hover:text-red-400 hover:bg-red-500/10'
     : active
-      ? 'text-accent bg-accent/15'
-      : 'text-white/60 hover:text-white/95 hover:bg-white/[0.07]';
+      ? 'text-accent hover:bg-white/[0.08]'
+      : 'text-white/65 hover:text-white hover:bg-white/[0.08]';
   return (
     <button
       type="button"
@@ -704,13 +698,7 @@ export const TrackPage = React.memo(() => {
               </div>
 
               {/* Utility rail: glass container with icon-only actions */}
-              <div
-                className="flex items-center gap-0.5 h-11 px-1.5 rounded-2xl"
-                style={{
-                  background: 'rgba(255,255,255,0.035)',
-                  border: '1px solid rgba(255,255,255,0.06)',
-                }}
-              >
+              <div className="ui-track flex h-10 items-center gap-0.5 rounded-full px-0.5">
                 <IconAction
                   icon={<Music size={16} />}
                   label={t('track.lyrics')}
@@ -722,7 +710,7 @@ export const TrackPage = React.memo(() => {
                     type="button"
                     title={t('playlist.addToPlaylist')}
                     aria-label={t('playlist.addToPlaylist')}
-                    className="inline-flex items-center justify-center w-10 h-10 rounded-xl text-white/60 hover:text-white/95 hover:bg-white/[0.07] transition-all duration-200 cursor-pointer"
+                    className="press inline-flex items-center justify-center w-9 h-9 rounded-full text-white/65 hover:text-white hover:bg-white/[0.08] transition-colors duration-200 cursor-pointer"
                   >
                     <ListPlus size={16} />
                   </button>
