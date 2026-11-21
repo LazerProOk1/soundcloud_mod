@@ -89,11 +89,15 @@ jobs:
           Run "SoundCloud Mod.exe" directly — no installation required.
           Requires Microsoft Edge WebView2 Runtime (pre-installed on Windows 11 and modern Windows 10).
           "@ | Set-Content -Path "$portableDir/README-PORTABLE.txt" -Encoding UTF8
+          # One naming scheme; GitHub lists assets by name, so "Installer" comes first.
+          $out = "release-assets/SoundCloud-Mod-$version"
+          $bundle = "desktop/src-tauri/target/release/bundle"
           New-Item -ItemType Directory -Force -Path "release-assets" | Out-Null
-          Compress-Archive -Path "$portableDir/*" -DestinationPath "release-assets/SoundCloud-Mod-v$version-windows-x64-portable.zip" -Force
-          Copy-Item "desktop/src-tauri/target/release/bundle/nsis/*.exe" "release-assets/" -Force
-          Copy-Item "desktop/src-tauri/target/release/bundle/nsis/*.exe.sig" "release-assets/" -Force
-          Copy-Item "desktop/src-tauri/target/release/bundle/msi/*.msi" "release-assets/" -Force
+          Compress-Archive -Path "$portableDir/*" -DestinationPath "$out-Portable-Windows-x64.zip" -Force
+          $setup = Get-ChildItem "$bundle/nsis/*-setup.exe" | Select-Object -First 1
+          Copy-Item $setup.FullName "$out-Installer-Windows-x64.exe"
+          Copy-Item "$($setup.FullName).sig" "$out-Installer-Windows-x64.exe.sig"
+          Copy-Item (Get-ChildItem "$bundle/msi/*.msi" | Select-Object -First 1).FullName "$out-Windows-x64.msi"
 
       # Tauri links .DirIcon to an absolute build-machine path, so it dangles inside the AppImage
       # and the AppImage catalog rejects it. Replace the link with the real PNG and repack.
@@ -123,11 +127,14 @@ jobs:
       - name: Stage Ubuntu release assets
         if: matrix.job_name == 'ubuntu'
         run: |
+          version=$(jq -r .version desktop/src-tauri/tauri.conf.json)
+          out="release-assets/SoundCloud-Mod-$version-Linux"
+          bundle=desktop/src-tauri/target/release/bundle
           mkdir -p release-assets
-          cp desktop/src-tauri/target/release/bundle/deb/*.deb release-assets/
-          cp desktop/src-tauri/target/release/bundle/appimage/*.AppImage release-assets/
-          cp desktop/src-tauri/target/release/bundle/appimage/*.AppImage.sig release-assets/
-          cp desktop/src-tauri/target/release/bundle/rpm/*.rpm release-assets/
+          cp $bundle/deb/*.deb "$out-amd64.deb"
+          cp $bundle/appimage/*.AppImage "$out-x86_64.AppImage"
+          cp $bundle/appimage/*.AppImage.sig "$out-x86_64.AppImage.sig"
+          cp $bundle/rpm/*.rpm "$out-x86_64.rpm"
 
       - name: Upload release assets
         uses: softprops/action-gh-release@v2
@@ -135,6 +142,15 @@ jobs:
         with:
           files: release-assets/*
           generate_release_notes: true
+          body: |
+            ### Какой файл скачать
+
+            **Windows:** `Installer-Windows-x64.exe` — обычная установка, дальше приложение
+            обновляется само. `Portable-Windows-x64.zip` — без установки, обновлять вручную.
+            `.msi` — для развёртывания на нескольких компьютерах.
+
+            **Linux:** `.AppImage` (обновляется само), `.deb` для Ubuntu/Debian, `.rpm` для
+            Fedora/openSUSE.
 
   # The in-app updater reads latest.json from the newest release. Built from the uploaded
   # signatures, so the repacked AppImage is listed with its final signature.
@@ -156,7 +172,7 @@ jobs:
             jq -n --arg s "$(cat "$sig")" --arg u "$base/$(basename "${sig%.sig}")" \
               '{signature: $s, url: $u}'
           }
-          win=$(entry '*-setup.exe.sig')
+          win=$(entry '*-Installer-Windows-x64.exe.sig')
           linux=$(entry '*.AppImage.sig')
           jq -n --arg v "${tag#v}" --arg d "$(date -u +%FT%TZ)" \
             --argjson win "$win" --argjson linux "$linux" \
