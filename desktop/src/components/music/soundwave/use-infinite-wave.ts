@@ -1,19 +1,25 @@
 import { useEffect, useRef } from 'react';
 import { fetchSmartWave, type SmartWaveSeedKind, sendWaveFeedback } from '../../../lib/soundwave';
+import { songKey } from '../../../lib/track-variants';
 import type { Track } from '../../../stores/player';
 import { usePlayerStore } from '../../../stores/player';
 
 /**
- * Бесконечная SmartWave-волна на стороне клиента.
+ * Refill subscriptions by wave key. They outlive the component on purpose: the wave keeps
+ * going after the listener leaves its page. A new mount for the same key replaces the old one.
+ * ponytail: one live subscription per wave ever opened (user + each artist); each is a cheap
+ * check on player updates. Drop the oldest ones if this ever grows large.
+ */
+const liveRefills = new Map<string, () => void>();
+
+/**
+ * Endless SmartWave on the client.
  *
- * 1. Хук владеет cursor'ом — серверным токеном, который помнит уже отданное
- *    и адаптивные веса arm'ов. После каждой подгрузки cursor обновляется.
- *    Если Redis грохнули — сервер начнёт новую сессию, для UX незаметно.
- * 2. Refill срабатывает только если играет наш трек и в очереди осталось
- *    меньше `minTail` хвоста. `ownedRef` — Set urn'ов, которые мы положили;
- *    чужие очереди (плейлисты, лайки) не триггерят refill.
- * 3. Feedback (dis/pos) накапливается между refill'ами; перед следующим
- *    fetch шлём батч, сервер пересчитает веса arm'ов.
+ * 1. The hook owns the cursor: a server token that remembers what was served and the adaptive
+ *    arm weights. It is updated after every refill; if the server lost it, a new session starts.
+ * 2. A refill runs only while one of our tracks plays and fewer than `minTail` remain in the
+ *    queue. Other queues (playlists, likes) never trigger it.
+ * 3. Feedback (negative / positive) piles up between refills and is sent before the next fetch.
  */
 export function useInfiniteWave(opts: {
   enabled: boolean;
@@ -81,9 +87,12 @@ export function useInfiniteWave(opts: {
   }, [initialTracks]);
 
   useEffect(() => {
+    const key = `${seedKind}:${seedId ?? ''}`;
+    liveRefills.get(key)?.();
+    liveRefills.delete(key);
     if (!enabled) return;
 
-    return usePlayerStore.subscribe((state) => {
+    const unsubscribe = usePlayerStore.subscribe((state) => {
       const { queue, queueIndex, currentTrack, isPlaying } = state;
       if (!currentTrack) return;
       if (!ownedRef.current.has(currentTrack.urn) && !ownsRef.current?.(currentTrack.urn)) return;
@@ -115,9 +124,14 @@ export function useInfiniteWave(opts: {
           });
           if (batch.cursor) cursorRef.current = batch.cursor;
           const filterFn = filterRef.current;
-          const existing = new Set(usePlayerStore.getState().queue.map((t) => t.urn));
+          const queued = usePlayerStore.getState().queue;
+          const existing = new Set(queued.map((t) => t.urn));
+          // Another upload of a song already in the queue is a repeat too.
+          const songs = new Set(queued.map(songKey).filter((k) => k.length >= 6));
           const pick = (list: Track[]) =>
-            list.filter((t) => !existing.has(t.urn) && (!filterFn || filterFn(t)));
+            list.filter(
+              (t) => !existing.has(t.urn) && !songs.has(songKey(t)) && (!filterFn || filterFn(t)),
+            );
           // The local pool (YouTube Music radio, "more like this", liked) comes first:
           // it's what the listener's taste picked. The server batch only fills the gaps.
           let fresh = pick(fallbackRef.current?.() ?? []).slice(0, batchLimit);
@@ -138,6 +152,8 @@ export function useInfiniteWave(opts: {
         }
       })();
     });
+    liveRefills.set(key, unsubscribe);
+    // No cleanup: the subscription stays alive after unmount (see liveRefills).
   }, [enabled, seedKind, seedId, minTail, batchLimit]);
 
   return {

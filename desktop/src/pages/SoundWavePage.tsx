@@ -401,6 +401,16 @@ export function SoundWavePage() {
 
   const handlePlayFromWave = useCallback(
     (track: Track) => {
+      // Already queued after the current track: just jump there. Re-playing the whole queue
+      // would reshuffle it (with shuffle on) and bring back tracks already heard.
+      const { queueIndex, playFromQueue } = usePlayerStore.getState();
+      const ahead = isWaveTrack
+        ? queue.findIndex((tr, i) => i > queueIndex && tr.urn === track.urn)
+        : -1;
+      if (ahead >= 0) {
+        playFromQueue(ahead);
+        return;
+      }
       const source = isWaveTrack && queue.length > 0 ? queue : allTracks;
       const list = source.some((tr) => tr.urn === track.urn) ? source : [track, ...source];
       _waveUrns.clear();
