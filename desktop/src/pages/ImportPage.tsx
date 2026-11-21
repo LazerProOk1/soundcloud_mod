@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { TrackListPage } from '../components/music/TrackListPage';
 import { TrackTableRow } from '../components/music/TrackTableRow';
+import { ALL_LIKES_PAGE_SIZE, useLikedTracks } from '../lib/hooks';
 import { Download, ExternalLink, Loader2, Trash2, X } from '../lib/icons';
 import { runImport } from '../lib/link-import';
 import { type ImportRow, importCounts, useImportsStore } from '../stores/imports';
@@ -15,6 +16,8 @@ export function ImportPage() {
   const { id = '' } = useParams();
   const job = useImportsStore((s) => s.jobs.find((j) => j.id === id));
   const [confirmDelete, setConfirmDelete] = useState(false);
+  // Saved rows carry no "liked" flag: load the likes so hearts show for songs liked before.
+  useLikedTracks(ALL_LIKES_PAGE_SIZE, true);
 
   // Found tracks, once each: they are what plays, shuffles and goes offline.
   const tracks = useMemo(() => {
