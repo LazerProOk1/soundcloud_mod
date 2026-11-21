@@ -44,7 +44,7 @@ const Row = React.memo(function Row({ to, title, subtitle, collapsed, tile }: Ro
       title={collapsed ? title : undefined}
       className={`group flex items-center gap-3 rounded-lg p-1.5 transition-colors duration-150 ${
         collapsed ? 'justify-center' : ''
-      } ${isActive ? 'bg-white/[0.08]' : 'hover:bg-white/[0.05]'}`}
+      } ${isActive ? 'ui-row-active' : 'hover:bg-white/[0.05]'}`}
     >
       <div className="w-11 h-11 rounded-md overflow-hidden shrink-0 bg-white/[0.06]">{tile}</div>
       {!collapsed && (
@@ -181,7 +181,7 @@ export const Sidebar = React.memo(() => {
             className={({ isActive }) =>
               `flex items-center gap-2.5 p-1.5 rounded-lg transition-colors ${
                 collapsed ? 'justify-center' : ''
-              } ${isActive ? 'bg-white/[0.08]' : 'hover:bg-white/[0.05]'}`
+              } ${isActive ? 'ui-row-active' : 'hover:bg-white/[0.05]'}`
             }
           >
             <Avatar src={user.avatar_url} alt={user.username} size={28} />

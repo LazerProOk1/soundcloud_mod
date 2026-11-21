@@ -99,7 +99,7 @@ export function Pills<T extends string | number>({
           onClick={() => onChange(item)}
           className={`press h-8 rounded-full px-3.5 text-[13px] font-semibold capitalize cursor-pointer ${
             value === item
-              ? 'bg-white text-black'
+              ? 'ui-selected'
               : 'bg-white/[0.06] text-white/75 hover:bg-white/[0.11] hover:text-white'
           }`}
         >

@@ -19,7 +19,7 @@ export function Segmented<T extends string>({
           onClick={() => onChange(o.id)}
           aria-pressed={value === o.id}
           className={`press flex h-9 items-center gap-2 rounded-full px-4 text-[13px] font-semibold cursor-pointer ${
-            value === o.id ? 'bg-white text-black' : 'text-white/70 hover:text-white'
+            value === o.id ? 'ui-selected' : 'text-white/70 hover:text-white'
           }`}
         >
           {o.icon}

@@ -124,7 +124,7 @@ const PresetBtn = React.memo(function PresetBtn({
       type="button"
       onClick={() => onClick(id)}
       className={`press h-8 rounded-full px-3.5 text-[12px] font-semibold cursor-pointer ${
-        active ? 'bg-white text-black' : 'bar-control text-white/75 hover:text-white'
+        active ? 'ui-selected' : 'bar-control text-white/75 hover:text-white'
       }`}
     >
       {label}

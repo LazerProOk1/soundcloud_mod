@@ -816,7 +816,7 @@ const PanelTabButton = React.memo(
       type="button"
       onClick={onClick}
       className={`press h-8 rounded-full px-3.5 text-[12.5px] font-semibold transition-colors duration-200 cursor-pointer ${
-        active ? 'bg-white text-black' : 'text-white/60 hover:text-white'
+        active ? 'ui-selected' : 'text-white/60 hover:text-white'
       }`}
     >
       {children}

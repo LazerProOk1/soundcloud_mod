@@ -240,7 +240,7 @@ export const OfflinePage = React.memo(() => {
       onClick={() => setActiveSection(key)}
       aria-pressed={activeSection === key}
       className={`h-8 px-3.5 rounded-full text-[13px] font-semibold cursor-pointer transition-colors ${
-        activeSection === key ? 'bg-white text-black' : 'bar-control text-white/80'
+        activeSection === key ? 'ui-selected' : 'bar-control text-white/80'
       }`}
     >
       {label} · {count}

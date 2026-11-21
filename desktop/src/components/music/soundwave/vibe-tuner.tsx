@@ -71,7 +71,7 @@ export const VibeTuner = React.memo(function VibeTuner({
               aria-pressed={active}
               className={`rounded-full font-semibold transition-all duration-200 cursor-pointer select-none ${
                 compact ? 'px-2.5 py-1 text-[10.5px]' : 'px-3 py-1 text-[11px]'
-              } ${active ? 'bg-white text-black' : 'text-white/60 hover:text-white'}`}
+              } ${active ? 'ui-selected' : 'text-white/60 hover:text-white'}`}
             >
               {t(`soundwave.modes.${m}`)}
             </button>
