@@ -83,7 +83,7 @@ export const CommandPalette = React.memo(function CommandPalette({
   const highQualityStreaming = useSettingsStore((s) => s.highQualityStreaming);
   const themePreset = useSettingsStore((s) => s.themePreset);
   const backgroundImage = useSettingsStore((s) => s.backgroundImage);
-  const liquidGlass = useSettingsStore((s) => s.liquidGlass);
+  const panelStyle = useSettingsStore((s) => s.panelStyle);
   const soundwaveVibe = useSettingsStore((s) => s.soundwaveVibe);
 
   useEffect(() => {
@@ -347,10 +347,14 @@ export const CommandPalette = React.memo(function CommandPalette({
         id: 'app-liquid-glass',
         group: 'appearance',
         title: t('settings.liquidGlass'),
-        badge: liquidGlass ? 'ON' : 'OFF',
+        badge: t(`settings.panelStyle_${panelStyle}`),
         keywords: ['liquid', 'glass', 'blur', 'performance', 'стекло', 'размытие'],
         icon: <Sparkles size={15} />,
-        run: () => settings.setLiquidGlass(!liquidGlass),
+        // Cycles Plain → Gloss → Liquid Glass.
+        run: () =>
+          settings.setPanelStyle(
+            panelStyle === 'flat' ? 'gloss' : panelStyle === 'gloss' ? 'liquid' : 'flat',
+          ),
       },
       {
         id: 'app-lang',
@@ -407,7 +411,7 @@ export const CommandPalette = React.memo(function CommandPalette({
     highQualityStreaming,
     themePreset,
     backgroundImage,
-    liquidGlass,
+    panelStyle,
     soundwaveVibe,
   ]);
 

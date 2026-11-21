@@ -48,6 +48,7 @@ export const THEME_PRESETS: Record<Exclude<ThemePreset, 'custom'>, ThemePresetDe
 };
 
 export type CrossfadeCurve = 'equal' | 'linear' | 'scurve';
+export type PanelStyle = 'flat' | 'gloss' | 'liquid';
 export type MusicSourceId = 'soundcloud' | 'zaycev' | 'youtube';
 export interface MusicSource {
   id: MusicSourceId;
@@ -116,7 +117,8 @@ export interface SettingsState {
   setCrossfadeKeepAlbums: (v: boolean) => void;
   artistWaveCollapsed: boolean;
   /** Liquid Glass (frosted-glass / backdrop-filter) UI effects */
-  liquidGlass: boolean;
+  /** Panel look: flat (opaque), gloss (light frost) or liquid (see-through glass). */
+  panelStyle: PanelStyle;
   setAccentColor: (color: string) => void;
   setThemePreset: (id: ThemePreset) => void;
   setBackgroundImage: (url: string) => void;
@@ -144,7 +146,7 @@ export interface SettingsState {
   setCacheListenedTracks: (v: boolean) => void;
   setCrossfadeDuration: (secs: number) => void;
   setArtistWaveCollapsed: (v: boolean) => void;
-  setLiquidGlass: (v: boolean) => void;
+  setPanelStyle: (v: PanelStyle) => void;
   resetTheme: () => void;
 }
 
@@ -190,7 +192,7 @@ const DEFAULTS = {
   trimSilence: true,
   artistWaveCollapsed: false,
   // Classic (flat, calm) look by default; Liquid Glass is opt-in.
-  liquidGlass: false,
+  panelStyle: 'flat' as PanelStyle,
 };
 
 export const useSettingsStore = create<SettingsState>()(
@@ -245,7 +247,7 @@ export const useSettingsStore = create<SettingsState>()(
       setCacheListenedTracks: (cacheListenedTracks) => set({ cacheListenedTracks }),
       setCrossfadeDuration: (crossfadeDuration) => set({ crossfadeDuration }),
       setArtistWaveCollapsed: (artistWaveCollapsed) => set({ artistWaveCollapsed }),
-      setLiquidGlass: (liquidGlass) => set({ liquidGlass }),
+      setPanelStyle: (panelStyle) => set({ panelStyle }),
       resetTheme: () =>
         set({
           accentColor: DEFAULTS.accentColor,
@@ -259,11 +261,12 @@ export const useSettingsStore = create<SettingsState>()(
     {
       name: 'sc-settings',
       storage: createJSONStorage(() => tauriStorage),
-      version: 20,
+      version: 21,
       migrate: (persistedState) => {
         const prev = (persistedState ?? {}) as Partial<SettingsState> & {
           soundwaveDiversity?: number;
           primarySource?: 'soundcloud' | 'zaycev';
+          liquidGlass?: boolean;
         };
         // v18 → v19: single "primary source" → ordered source list.
         // v19 → v20: Audius removed — drop sources that no longer exist.
@@ -289,6 +292,8 @@ export const useSettingsStore = create<SettingsState>()(
           ...prev,
           soundwaveMode: prev.soundwaveMode ?? inferredMode,
           musicSources,
+          // v20 → v21: on/off glass toggle → three panel styles.
+          panelStyle: prev.panelStyle ?? (prev.liquidGlass ? 'gloss' : 'flat'),
         } as SettingsState;
       },
       partialize: (s) => ({
@@ -329,7 +334,7 @@ export const useSettingsStore = create<SettingsState>()(
         crossfadeKeepAlbums: s.crossfadeKeepAlbums,
         trimSilence: s.trimSilence,
         artistWaveCollapsed: s.artistWaveCollapsed,
-        liquidGlass: s.liquidGlass,
+        panelStyle: s.panelStyle,
       }),
     },
   ),

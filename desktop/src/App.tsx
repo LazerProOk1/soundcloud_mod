@@ -134,7 +134,7 @@ export default function App() {
   );
 
   const isMini = useMiniPlayerStore((s) => s.isMini);
-  const liquidGlass = useSettingsStore((s) => s.liquidGlass);
+  const panelStyle = useSettingsStore((s) => s.panelStyle);
   const hasLocalSession = Boolean(sessionId);
   const canUseMainShell = isAuthenticated || hasLocalSession;
   // Toggle body.mini so CSS can make #root transparent (enables real backdrop-filter glass)
@@ -143,10 +143,12 @@ export default function App() {
     document.body.classList.toggle('mini', isMini);
   }, [isMini]);
 
-  // Respect user's Liquid Glass preference (adds html.no-glass when disabled)
+  // Panel style: html.no-glass = flat, html.liquid-glass = see-through glass, neither = gloss.
   useEffect(() => {
-    document.documentElement.classList.toggle('no-glass', !liquidGlass);
-  }, [liquidGlass]);
+    const root = document.documentElement.classList;
+    root.toggle('no-glass', panelStyle === 'flat');
+    root.toggle('liquid-glass', panelStyle === 'liquid');
+  }, [panelStyle]);
 
   useEffect(() => {
     void useCachedUrnsStore.getState().hydrate();

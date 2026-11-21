@@ -1074,7 +1074,7 @@ export function useDiscoverData(pool: RelatedPool | undefined, likedTracks: Trac
 
 /** Liquid Glass styling on/off (Settings → Interface). Off = classic flat look. */
 export function useLiquidGlass() {
-  return useSettingsStore((s) => s.liquidGlass);
+  return useSettingsStore((s) => s.panelStyle !== 'flat');
 }
 
 export function useInfiniteScroll(

@@ -37,6 +37,8 @@
     "pitchModeAutoShort": "Auto",
     "pitchModeManual": "Manual pitch",
     "pitchModeManualShort": "Manual",
+    "queueEmpty": "The queue is empty",
+    "openLyrics": "Open lyrics",
     "sleepTimer": "Sleep timer",
     "sleepAfterTrack": "After current track",
     "sleepAfterTrackShort": "after track",
@@ -335,8 +337,13 @@
     "highQualityStreaming": "High quality streaming",
     "highQualityStreamingDesc": "Prefer the highest available quality during playback",
     "interface": "Interface",
-    "liquidGlass": "Gloss",
-    "liquidGlassDesc": "Frosted translucent panels with soft highlights. Turn off for flat panels and the most FPS",
+    "liquidGlass": "Panel style",
+    "panelStyle_liquid": "Liquid Glass",
+    "panelStyle_gloss": "Gloss",
+    "panelStyle_flat": "Plain",
+    "panelStyleDesc_liquid": "See-through glass with refraction and highlights. The heaviest on the GPU",
+    "panelStyleDesc_gloss": "Nearly opaque panels with a light frost",
+    "panelStyleDesc_flat": "Fully opaque panels — the fastest",
     "uiScale": "Interface scale",
     "uiScaleDesc": "Also Ctrl + mouse wheel and Ctrl +/−/0",
     "uiScaleToast": "Scale {{value}}%",
@@ -635,6 +642,7 @@
     "settings": "Settings"
   },
   "trackList": {
+    "loadFailed": "Could not load the tracks",
     "meta": "{{count}} tracks, {{duration}}",
     "shuffle": "Shuffle",
     "searchHere": "Search in this list",
@@ -642,7 +650,8 @@
     "album": "Album",
     "empty": "Nothing here yet",
     "download": "Download for offline",
-    "allDownloaded": "All {{count}} tracks are already downloaded",
-    "downloadStarted": "Downloading {{count}} new, {{done}} already on disk — progress in Offline"
+    "downloadQueued": "Saving {{count}} tracks — they stay on disk when the cache is cleared",
+    "downloading": "Downloading…",
+    "downloaded": "Everything is downloaded"
   }
 }

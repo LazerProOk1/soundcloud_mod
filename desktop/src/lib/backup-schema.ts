@@ -32,7 +32,7 @@ export const SETTINGS_BACKUP_KEYS = [
   'cacheListenedTracks',
   'crossfadeDuration',
   'artistWaveCollapsed',
-  'liquidGlass',
+  'panelStyle',
 ] as const;
 
 export interface ProfileBackupPayload {

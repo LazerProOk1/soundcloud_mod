@@ -87,7 +87,7 @@ test('parseProfileBackupPayload rejects invalid headers and clamps player values
     version: BACKUP_VERSION,
     exportedAt: '2026-11-15T00:00:00.000Z',
     settings: {
-      liquidGlass: false,
+      panelStyle: 'flat',
       injectedKey: 'ignored',
     },
     libraryLocal: {
@@ -107,7 +107,7 @@ test('parseProfileBackupPayload rejects invalid headers and clamps player values
   });
 
   assert.ok(parsed);
-  assert.equal(parsed.settings.liquidGlass, false);
+  assert.equal(parsed.settings.panelStyle, 'flat');
   assert.equal('injectedKey' in parsed.settings, false);
   assert.equal(parsed.libraryLocal.superlikes.length, 1);
   assert.equal(parsed.libraryLocal.disliked.length, 0);
@@ -202,9 +202,9 @@ test('en and ru locale files stay structurally valid and aligned on updated sect
     assert.ok(ru.soundwave.modes?.[mode], `Missing ru.soundwave.modes.${mode}`);
   }
   assert.ok(en.settings.liquidGlass);
-  assert.ok(en.settings.liquidGlassDesc);
+  assert.ok(en.settings.panelStyleDesc_liquid);
   assert.ok(ru.settings.liquidGlass);
-  assert.ok(ru.settings.liquidGlassDesc);
+  assert.ok(ru.settings.panelStyleDesc_liquid);
 
   assert.ok(en.offline.cachedBadge);
   assert.ok(ru.offline.cachedBadge);
@@ -372,7 +372,7 @@ test('backup-schema includes soundwaveVibe and soundwaveMode', () => {
     settings: {
       soundwaveVibe: 'night',
       soundwaveMode: 'diverse',
-      liquidGlass: false,
+      panelStyle: 'flat',
     },
     libraryLocal: { superlikes: [], disliked: [], likesTop: [], likesBottom: [] },
     playerPreferences: {},
@@ -381,7 +381,7 @@ test('backup-schema includes soundwaveVibe and soundwaveMode', () => {
   assert.ok(parsed);
   assert.equal(parsed.settings.soundwaveVibe, 'night');
   assert.equal(parsed.settings.soundwaveMode, 'diverse');
-  assert.equal(parsed.settings.liquidGlass, false);
+  assert.equal(parsed.settings.panelStyle, 'flat');
 });
 
 test('accent picker colour round trip', () => {

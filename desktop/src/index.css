@@ -213,7 +213,7 @@ body,
     background-color 150ms ease;
 }
 .press:active {
-  transform: scale(0.86);
+  transform: scale(0.94);
 }
 /* Big tiles (themes, wallpapers): a squeeze that size reads as a jump, so keep it subtle. */
 .press-soft {
@@ -1464,14 +1464,16 @@ svg.lucide:not([stroke-width="0"]) {
 
 /* Shared surface for dialogs and side panels: our own look in both modes —
    frosted glass with Liquid Glass on, a solid dark panel in the classic look. */
+/* Panel surfaces in three styles (Settings → Interface):
+   - Gloss (default): nearly opaque with a light frost.
+   - Liquid Glass (.liquid-glass on <html>): see-through glass with refraction, defined below.
+   - Plain (.no-glass): fully opaque. */
 .app-surface {
-  background: rgba(22, 22, 27, 0.74);
-  backdrop-filter: blur(36px) saturate(170%);
-  -webkit-backdrop-filter: blur(36px) saturate(170%);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 24px 60px rgba(0, 0, 0, 0.55);
+  background: rgba(20, 20, 24, 0.94);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.5);
 }
 .no-glass .app-surface {
   background: #1b1b1f;
@@ -1538,4 +1540,69 @@ svg.lucide:not([stroke-width="0"]) {
   border-radius: 50%;
   background: #fff;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* ── Download in progress: the arrow keeps dropping ─────────── */
+@keyframes download-nudge {
+  0%,
+  100% {
+    transform: translateY(-2px);
+    opacity: 1;
+  }
+  50% {
+    transform: translateY(3px);
+    opacity: 0.6;
+  }
+}
+.download-nudge {
+  animation: download-nudge 1.1s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .download-nudge {
+    animation: none;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════
+   LIQUID GLASS — html.liquid-glass (Settings → Interface → Panel style)
+   See-through panels: the wallpaper / cover colours behind are blurred and bent by
+   #lg-refract, with a bright rim on top. The plain blur line comes first so engines
+   without url() backdrop filters still get glass.
+   ══════════════════════════════════════════════════════════════ */
+.liquid-glass .liquid-panel-heavy,
+.liquid-glass .app-surface,
+.liquid-glass [data-radix-popper-content-wrapper] > [role="dialog"] {
+  background: rgba(255, 255, 255, 0.055) !important;
+  border: 1px solid rgba(255, 255, 255, 0.14) !important;
+  backdrop-filter: blur(14px) saturate(180%);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  backdrop-filter: url(#lg-refract) blur(14px) saturate(180%) brightness(1.06);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.38),
+    inset 1px 0 0 rgba(255, 255, 255, 0.14),
+    inset -1px 0 0 rgba(255, 255, 255, 0.06),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.05),
+    0 18px 50px rgba(0, 0, 0, 0.4) !important;
+}
+/* A soft specular sweep along the top edge. */
+.liquid-glass .liquid-panel-heavy::after,
+.liquid-glass .app-surface::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.16) 0%,
+    rgba(255, 255, 255, 0.03) 18%,
+    transparent 40%
+  );
+}
+@media (prefers-reduced-transparency: reduce) {
+  .liquid-glass .liquid-panel-heavy,
+  .liquid-glass .app-surface {
+    background: rgba(20, 20, 24, 0.94) !important;
+    backdrop-filter: none;
+  }
 }

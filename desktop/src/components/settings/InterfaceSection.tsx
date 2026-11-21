@@ -10,26 +10,35 @@ import {
   sanitizeFontName,
 } from '../../lib/interface-font';
 import { UI_SCALE_MAX, UI_SCALE_MIN, UI_SCALE_STEP } from '../../lib/ui-scale';
-import { type MusicSourceId, useSettingsStore } from '../../stores/settings';
+import { type MusicSourceId, type PanelStyle, useSettingsStore } from '../../stores/settings';
 import { LiquidSwitch } from '../ui/LiquidSwitch';
 import { RANGE_CLS } from '../ui/rangeClass';
+import { Segmented } from '../ui/Segmented';
 
 const btnCls =
   'px-3 py-1.5 rounded-lg text-[12px] font-medium text-white/70 bg-white/[0.05] border border-white/[0.08] hover:bg-white/[0.09] hover:text-white transition-colors cursor-pointer';
 const inputCls =
   'flex-1 min-w-0 px-3 py-1.5 rounded-lg text-[13px] text-white/85 bg-white/[0.04] border border-white/[0.08] outline-none focus:border-white/25';
 
+const PANEL_STYLES: PanelStyle[] = ['liquid', 'gloss', 'flat'];
+
 const LiquidGlassRow = React.memo(function LiquidGlassRow() {
   const { t } = useTranslation();
-  const liquidGlass = useSettingsStore((s) => s.liquidGlass);
-  const setLiquidGlass = useSettingsStore((s) => s.setLiquidGlass);
+  const panelStyle = useSettingsStore((s) => s.panelStyle);
+  const setPanelStyle = useSettingsStore((s) => s.setPanelStyle);
   return (
-    <div className="flex items-center justify-between gap-4">
+    <div className="space-y-3">
       <div>
         <p className="text-[13px] text-white/70 font-medium">{t('settings.liquidGlass')}</p>
-        <p className="text-[11px] text-white/30 mt-0.5">{t('settings.liquidGlassDesc')}</p>
+        <p className="text-[11px] text-white/30 mt-0.5">
+          {t(`settings.panelStyleDesc_${panelStyle}`)}
+        </p>
       </div>
-      <LiquidSwitch checked={liquidGlass} onChange={setLiquidGlass} />
+      <Segmented
+        value={panelStyle}
+        options={PANEL_STYLES.map((id) => ({ id, label: t(`settings.panelStyle_${id}`) }))}
+        onChange={setPanelStyle}
+      />
     </div>
   );
 });
@@ -203,23 +212,7 @@ const SourceRow = React.memo(function SourceRow() {
               >
                 <ChevronDown size={16} />
               </button>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={src.enabled}
-                onClick={() => toggle(i)}
-                className={`relative w-10 h-6 rounded-full cursor-pointer transition-colors ${
-                  src.enabled ? 'bg-accent' : 'bg-white/[0.15]'
-                }`}
-              >
-                <span
-                  className="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow"
-                  style={{
-                    transform: `translateX(${src.enabled ? 16 : 0}px)`,
-                    transition: 'transform 0.4s var(--spring-bouncy)',
-                  }}
-                />
-              </button>
+              <LiquidSwitch checked={src.enabled} onChange={() => toggle(i)} />
             </div>
           );
         })}

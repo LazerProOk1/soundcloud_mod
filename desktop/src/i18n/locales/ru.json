@@ -37,6 +37,8 @@
     "pitchModeAutoShort": "Авто",
     "pitchModeManual": "Ручной питч",
     "pitchModeManualShort": "Вручную",
+    "queueEmpty": "Очередь пуста",
+    "openLyrics": "Открыть текст",
     "sleepTimer": "Таймер сна",
     "sleepAfterTrack": "После текущего трека",
     "sleepAfterTrackShort": "после трека",
@@ -343,8 +345,13 @@
     "highQualityStreaming": "Высокое качество стрима",
     "highQualityStreamingDesc": "Стараться воспроизводить треки в максимально доступном качестве",
     "interface": "Интерфейс",
-    "liquidGlass": "Глянец",
-    "liquidGlassDesc": "Полупрозрачные матовые панели с мягкими бликами. Выключите для плоских панелей и максимального FPS",
+    "liquidGlass": "Стиль панелей",
+    "panelStyle_liquid": "Liquid Glass",
+    "panelStyle_gloss": "Глянец",
+    "panelStyle_flat": "Просто",
+    "panelStyleDesc_liquid": "Прозрачное стекло с преломлением и бликами. Самый тяжёлый для видеокарты",
+    "panelStyleDesc_gloss": "Почти плотные панели с лёгким матовым стеклом",
+    "panelStyleDesc_flat": "Полностью плотные панели — самый быстрый",
     "uiScale": "Масштаб интерфейса",
     "uiScaleDesc": "Также Ctrl + колесо мыши и Ctrl +/−/0",
     "uiScaleToast": "Масштаб {{value}}%",
@@ -647,6 +654,7 @@
     "settings": "Настройки"
   },
   "trackList": {
+    "loadFailed": "Не удалось загрузить треки",
     "meta": "{{count}} треков, {{duration}}",
     "shuffle": "Перемешать",
     "searchHere": "Искать в списке",
@@ -654,7 +662,8 @@
     "album": "Альбом",
     "empty": "Здесь пока пусто",
     "download": "Скачать для офлайна",
-    "allDownloaded": "Все {{count}} треков уже скачаны",
-    "downloadStarted": "Скачиваем {{count}} новых, ещё {{done}} уже на диске — прогресс в «Офлайн»"
+    "downloadQueued": "Сохраняем {{count}} треков — они не удалятся при очистке кэша",
+    "downloading": "Скачивается…",
+    "downloaded": "Всё скачано"
   }
 }
