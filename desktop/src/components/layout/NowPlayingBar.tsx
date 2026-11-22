@@ -502,7 +502,7 @@ export function NowBarDislikeButton({ trackUrn }: { trackUrn: string }) {
       onClick={toggle}
       title={disliked ? t('track.removeDislike') : t('track.dislike')}
       className={`ui-icon w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all duration-200 cursor-pointer ${
-        disliked ? 'text-rose-400' : 'text-white/30 hover:text-white/60'
+        disliked ? 'text-white' : 'text-white/30 hover:text-white/60'
       }`}
     >
       <ThumbsDown size={16} fill={disliked ? 'currentColor' : 'none'} />

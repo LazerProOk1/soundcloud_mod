@@ -154,7 +154,7 @@ const FullscreenDislikeButton = React.memo(({ track }: { track: Track }) => {
       onClick={toggle}
       title={disliked ? t('track.removeDislike') : t('track.dislike')}
       className={`press w-11 h-11 rounded-full flex items-center justify-center cursor-pointer ui-icon outline-none ${
-        disliked ? 'text-rose-400' : 'text-white/30 hover:text-white/60'
+        disliked ? 'text-white' : 'text-white/30 hover:text-white/60'
       }`}
     >
       <PopIcon on={disliked}>
