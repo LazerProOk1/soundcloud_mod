@@ -104,6 +104,8 @@ interface TrackAnalysis {
 }
 /** Analysis of the playing track; null until known. */
 let currentAnalysis: TrackAnalysis | null = null;
+/** Disliked tracks skipped in a row (see the player subscription). */
+let dislikedSkips = 0;
 /** The upcoming track's analysis was already requested for this current track. */
 let upcomingAnalyzedFor: string | null = null;
 
@@ -750,7 +752,6 @@ function afterLoad(track: Track, gen: number) {
     return;
   }
   hasTrack = true;
-  useWaveTasteStore.getState().played(track);
 
   const historyTrack =
     usePlayerStore.getState().currentTrack?.urn === track.urn
@@ -1000,7 +1001,9 @@ usePlayerStore.subscribe((state, prev) => {
     lastEndedUrn = null;
 
     if (state.currentTrack) {
-      // Автоскип дизлайкнутых треков: пропускаем без загрузки/плэя.
+      // Disliked tracks are skipped without loading. The skip runs on the next tick, not inside
+      // this listener: a queue of disliked tracks (or one on repeat) used to recurse until the
+      // stack overflowed and the window went black. A full lap of skips stops playback.
       if (isUrnDisliked(state.currentTrack.urn)) {
         currentUrn = null;
         fallbackDuration = 0;
@@ -1009,9 +1012,17 @@ usePlayerStore.subscribe((state, prev) => {
         hasTrack = false;
         usePlayerStore.getState().setPlaybackTransport(null, null);
         notify();
-        usePlayerStore.getState().next();
+        dislikedSkips += 1;
+        const { queue } = usePlayerStore.getState();
+        if (dislikedSkips > Math.max(1, queue.length)) {
+          dislikedSkips = 0;
+          usePlayerStore.getState().pause();
+        } else {
+          setTimeout(() => usePlayerStore.getState().next(), 0);
+        }
         return;
       }
+      dislikedSkips = 0;
       // Manual skip while playing: let the previous track fade out quickly instead of cutting.
       if (
         !crossfading &&

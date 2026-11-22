@@ -96,8 +96,8 @@ function _registerWave(urns: string[]) {
 }
 
 /* Listening memory, on any page: a wave track that really played for HEARD_AFTER_SECS rests
-   for days (see wave-rank), one left early counts as a skip, one played to the end as
-   finished. Time is counted only while playing, so a paused track isn't "heard". */
+   for days (see wave-rank). Time is counted only while playing, so a paused track isn't
+   "heard". Skips and finished tracks are recorded by the audio engine (lib/audio.ts). */
 const HEARD_AFTER_SECS = 3;
 let listening: { track: Track; ms: number; since: number | null; heard: boolean } | null = null;
 let heardTimer: ReturnType<typeof setTimeout> | null = null;
@@ -130,14 +130,7 @@ usePlayerStore.subscribe((s, prev) => {
   const changed = s.currentTrack?.urn !== prev.currentTrack?.urn;
   if (changed || s.isPlaying !== prev.isPlaying) pauseClock();
   if (changed) {
-    const done = listening;
     listening = null;
-    if (done) {
-      const secs = done.ms / 1000;
-      const taste = useWaveTasteStore.getState();
-      if (secs >= (done.track.duration ?? 0) / 1000 - 8) taste.finished(done.track);
-      else taste.skipped(done.track, secs);
-    }
     if (s.currentTrack && _waveUrns.has(s.currentTrack.urn)) {
       listening = { track: s.currentTrack, ms: 0, since: null, heard: false };
     }
