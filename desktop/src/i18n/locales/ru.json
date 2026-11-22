@@ -622,7 +622,7 @@
     "mainAccount": "Основной",
     "demoAccount": "Демо",
     "wave": {
-      "title": "Саунд Волна",
+      "title": "SoundWave",
       "desc": "Собрали сетку вокруг {{name}}: треки артиста и тех, кого ставят рядом.",
       "playAll": "Слушать волну",
       "pause": "Пауза",
@@ -662,7 +662,8 @@
       "ep": "EP",
       "single": "Сингл",
       "compilation": "Сборник"
-    }
+    },
+    "moreLinks": "+{{count}}"
   },
   "album": {
     "playAlbum": "Играть альбом",

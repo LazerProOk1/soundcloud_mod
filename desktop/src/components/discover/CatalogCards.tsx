@@ -5,8 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import type { CatalogAlbum, CatalogArtist, SpotlightItem } from '../../lib/discover';
 import { fc } from '../../lib/formatters';
 import { ChevronRight, Disc3 } from '../../lib/icons';
-import { Avatar } from '../ui/Avatar';
 import { HorizontalScroll } from '../ui/HorizontalScroll';
+import { LetterAvatar } from '../ui/LetterAvatar';
 import { ShelfSkeleton } from '../ui/ShelfSkeleton';
 
 /** Every catalog section, for its colour and its one-line subtitle (`discover.sub.<id>`). */
@@ -182,6 +182,8 @@ export const AlbumTile = memo(function AlbumTile({
   );
 });
 
+const MIN_LISTENERS = 100;
+
 export const ArtistTile = memo(function ArtistTile({
   artist,
   className = 'w-[160px] shrink-0',
@@ -198,21 +200,20 @@ export const ArtistTile = memo(function ArtistTile({
       onClick={() => navigate(`/artist/${encodeURIComponent(artist.id)}`)}
       className={`group flex flex-col items-center gap-3 text-center cursor-pointer select-none ${className}`}
     >
-      <div className="w-full">
-        {artist.avatar_url ? (
-          <Cover src={artist.avatar_url} alt={artist.name} round />
-        ) : (
-          <div className="flex aspect-square w-full items-center justify-center">
-            <Avatar alt={artist.name} size={120} />
-          </div>
-        )}
-      </div>
+      <LetterAvatar
+        name={artist.name}
+        src={artist.avatar_url}
+        className="aspect-square w-full shadow-[0_8px_24px_rgba(0,0,0,0.35)]"
+      />
       <div className="w-full min-w-0 px-1">
         <p className="truncate text-[14px] font-semibold text-white/90 group-hover:text-white">
           {artist.name}
         </p>
         <p className="mt-1 truncate text-[12px] text-white/40">
-          {listeners > 0 ? t('discover.listeners', { value: fc(listeners) }) : t('discover.artist')}
+          {/* A handful of listeners reads as noise ("1 monthly listener"). */}
+          {listeners >= MIN_LISTENERS
+            ? t('discover.listeners', { value: fc(listeners) })
+            : t('discover.artist')}
         </p>
       </div>
     </button>

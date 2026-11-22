@@ -10,7 +10,6 @@ import {
   pauseWhite14,
   playBlack14,
   playWhite14,
-  Sparkles,
   Star,
 } from '../../../lib/icons';
 import { usePlayerStore } from '../../../stores/player';
@@ -161,10 +160,6 @@ export const ArtistSoundWave = React.memo(function ArtistSoundWave({
             <div className="flex items-center gap-2 min-w-0">
               <span className="text-[16px] font-bold text-white truncate leading-tight">
                 {t('artist.wave.title')}
-              </span>
-              <span className="inline-flex items-center gap-1 h-5 px-2 rounded-full bar-control text-[11px] font-semibold text-white/70 shrink-0">
-                <Sparkles size={10} />
-                AI
               </span>
             </div>
             <p className="text-[13px] text-white/50 truncate" title={artistName}>

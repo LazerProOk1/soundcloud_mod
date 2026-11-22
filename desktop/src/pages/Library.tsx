@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Link, useSearchParams } from 'react-router-dom';
 import { PlaylistTile } from '../components/layout/Sidebar';
 import { TrackTableRow } from '../components/music/TrackTableRow';
+import { LetterAvatar } from '../components/ui/LetterAvatar';
 import { toggleDislike } from '../lib/dislikes';
 import { art } from '../lib/formatters';
 import {
@@ -301,36 +302,18 @@ function Cover({ item, className }: { item: Item; className: string }) {
       </div>
     );
   }
-  if (item.user) return <ArtistAvatar user={item.user} className={className} />;
+  if (item.user)
+    return (
+      <LetterAvatar
+        name={item.user.username}
+        src={art(item.user.avatar_url, 't300x300')}
+        className={className}
+      />
+    );
   const p = item.playlist;
   return (
     <div className={`${className} overflow-hidden bg-white/[0.06]`}>
       {p && <PlaylistTile urn={p.urn} artwork={p.artwork_url ?? p.tracks?.[0]?.artwork_url} />}
-    </div>
-  );
-}
-
-/** Round avatar; the first letter of the name when there is no picture or it fails to load. */
-function ArtistAvatar({ user, className }: { user: SCUser; className: string }) {
-  const src = art(user.avatar_url, 't300x300');
-  const [failed, setFailed] = useState(false);
-  return (
-    <div
-      className={`${className} [container-type:size] rounded-full overflow-hidden bg-gradient-to-br from-white/[0.12] to-white/[0.03] flex items-center justify-center`}
-    >
-      {src && !failed ? (
-        <img
-          src={src}
-          alt=""
-          className="w-full h-full object-cover"
-          loading="lazy"
-          onError={() => setFailed(true)}
-        />
-      ) : (
-        <span className="text-[40cqw] leading-none font-bold text-white/70">
-          {user.username.trim().charAt(0).toUpperCase()}
-        </span>
-      )}
     </div>
   );
 }

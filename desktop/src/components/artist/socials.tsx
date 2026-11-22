@@ -70,6 +70,9 @@ export function SocialIcon({
 export function socialLabel(kind: string) {
   const k = kind.toLowerCase();
   if (k === 'apple_music') return 'Apple Music';
+  if (k === 'youtube') return 'YouTube';
+  if (k === 'tiktok') return 'TikTok';
+  if (k === 'soundcloud') return 'SoundCloud';
   if (k === 'lastfm') return 'Last.fm';
   if (k === 'twitter' || k === 'x') return 'Twitter';
   if (k === 'musicbrainz') return 'MusicBrainz';

@@ -606,7 +606,7 @@
     "mainAccount": "Main",
     "demoAccount": "Demo",
     "wave": {
-      "title": "Sound Wave",
+      "title": "SoundWave",
       "desc": "We built a grid around {{name}}: their tracks and the ones played alongside.",
       "playAll": "Play wave",
       "pause": "Pause",
@@ -646,7 +646,8 @@
       "ep": "EP",
       "single": "Single",
       "compilation": "Compilation"
-    }
+    },
+    "moreLinks": "+{{count}}"
   },
   "album": {
     "playAlbum": "Play Album",

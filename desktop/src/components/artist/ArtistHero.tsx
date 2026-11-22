@@ -7,6 +7,7 @@ import { GlassHeroPanel } from '../ui/GlassHeroPanel';
 import { AvatarArtifact } from '../user/AvatarArtifact';
 import { StatOrb } from '../user/StatOrb';
 import { InfoChip, VerifiedBadge } from '../user/UserChips';
+import { uniqueSocials } from './social-links';
 import { SocialIcon, socialLabel } from './socials';
 import type { ArtistDetail } from './types';
 
@@ -38,9 +39,17 @@ const ScAccountChip = memo(
   },
 );
 
+const HERO_LINKS = 5;
+
 function ArtistHeroImpl({ artist }: { artist: ArtistDetail }) {
   const { t } = useTranslation();
   const [bioExpanded, setBioExpanded] = useState(false);
+  const [allLinks, setAllLinks] = useState(false);
+  const socials = uniqueSocials(artist.socials, artist.sc_accounts.length > 0);
+  // The hero shows the main few; the rest wait behind "+N" (the About tab lists them all).
+  const shownSocials = allLinks ? socials : socials.slice(0, HERO_LINKS);
+  // A one- or two-line bio has nothing to expand.
+  const longBio = !!artist.bio && (artist.bio.length > 160 || artist.bio.includes('\n'));
 
   return (
     <GlassHeroPanel>
@@ -62,7 +71,10 @@ function ArtistHeroImpl({ artist }: { artist: ArtistDetail }) {
             {artist.name}
           </h1>
 
-          {artist.bio && (
+          {artist.bio && !longBio && (
+            <p className="text-[14px] text-white/65 leading-relaxed max-w-2xl">{artist.bio}</p>
+          )}
+          {longBio && (
             <button
               type="button"
               onClick={() => setBioExpanded((v) => !v)}
@@ -85,7 +97,7 @@ function ArtistHeroImpl({ artist }: { artist: ArtistDetail }) {
             </button>
           )}
 
-          {(artist.socials.length > 0 || artist.sc_accounts.length > 0) && (
+          {(socials.length > 0 || artist.sc_accounts.length > 0) && (
             <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
               {artist.sc_accounts.map((acc) => (
                 <ScAccountChip
@@ -95,9 +107,14 @@ function ArtistHeroImpl({ artist }: { artist: ArtistDetail }) {
                   verified={acc.verified}
                 />
               ))}
-              {artist.socials.map((s) => (
+              {shownSocials.map((s) => (
                 <SocialChip key={s.url} kind={s.kind} url={s.url} title={socialLabel(s.kind)} />
               ))}
+              {!allLinks && socials.length > HERO_LINKS && (
+                <button type="button" onClick={() => setAllLinks(true)} className={PILL_BTN}>
+                  {t('artist.moreLinks', { count: socials.length - HERO_LINKS })}
+                </button>
+              )}
             </div>
           )}
         </div>
