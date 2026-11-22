@@ -34,6 +34,52 @@ function getSafeWindow() {
   }
 }
 
+/** Maximize / restore: the glyph follows the window state, like Windows' own caption. */
+function MaximizeButton({ win }: { win: ReturnType<typeof getCurrentWindow> }) {
+  const { t } = useTranslation();
+  const [maximized, setMaximized] = React.useState(false);
+  React.useEffect(() => {
+    const sync = () =>
+      void win
+        .isMaximized()
+        .then(setMaximized)
+        .catch(() => {});
+    sync();
+    const off = win.onResized(sync);
+    return () => {
+      void off.then((fn) => fn());
+    };
+  }, [win]);
+  const label = maximized ? t('window.restore') : t('window.maximize');
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      className={capBtn}
+      onClick={() => win.toggleMaximize()}
+    >
+      {maximized ? (
+        // Two overlapping squares: "restore down".
+        <svg
+          width="12"
+          height="12"
+          viewBox="0 0 12 12"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.2"
+          aria-hidden
+        >
+          <rect x="1" y="3.5" width="7.5" height="7.5" rx="1" />
+          <path d="M3.5 3.5V2a1 1 0 0 1 1-1H10a1 1 0 0 1 1 1v5.5a1 1 0 0 1-1 1H8.5" />
+        </svg>
+      ) : (
+        <Square size={12} />
+      )}
+    </button>
+  );
+}
+
 const Brand = React.memo(() => {
   const isPlaying = usePlayerStore((s) => s.isPlaying);
   return (
@@ -199,14 +245,7 @@ export const Titlebar = React.memo(() => {
             >
               <Minus size={16} />
             </button>
-            <button
-              type="button"
-              aria-label="Maximize"
-              className={capBtn}
-              onClick={() => win.toggleMaximize()}
-            >
-              <Square size={12} />
-            </button>
+            <MaximizeButton win={win} />
             <button
               type="button"
               aria-label="Close"

@@ -743,5 +743,9 @@
     "downloading": "Скачивается…",
     "downloaded": "Всё скачано",
     "cancelDownload": "Отменить скачивание"
+  },
+  "window": {
+    "maximize": "Развернуть",
+    "restore": "Свернуть в окно"
   }
 }

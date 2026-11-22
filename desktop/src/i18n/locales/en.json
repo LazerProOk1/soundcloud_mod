@@ -727,5 +727,9 @@
     "downloading": "Downloading…",
     "downloaded": "Everything is downloaded",
     "cancelDownload": "Cancel download"
+  },
+  "window": {
+    "maximize": "Maximize",
+    "restore": "Restore down"
   }
 }
