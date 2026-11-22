@@ -1,664 +1,463 @@
 import { useQueryClient } from '@tanstack/react-query';
-import React, { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
+import React, { useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useSearchParams } from 'react-router-dom';
-import { PlaylistCard } from '../components/music/PlaylistCard';
-import { Segmented } from '../components/ui/Segmented';
-import { VirtualGrid } from '../components/ui/VirtualGrid';
+import { Link, useSearchParams } from 'react-router-dom';
+import { PlaylistTile } from '../components/layout/Sidebar';
 import { TrackTableRow } from '../components/music/TrackTableRow';
-import { VirtualList } from '../components/ui/VirtualList';
-import { UserCard } from '../components/user/UserCard';
-import { api } from '../lib/api';
 import { toggleDislike } from '../lib/dislikes';
-import { art, fc } from '../lib/formatters';
-import { historyDateLabel, historyEntryToTrack } from '../lib/history';
+import { art } from '../lib/formatters';
 import {
-  ALL_LIKES_PAGE_SIZE,
-  fetchAllLikedTracks,
-  type HistoryEntry,
-  useHistory,
-  useInfiniteScroll,
-  useLikedTracks,
+  type Playlist,
+  type SCUser,
   useMyFollowings,
   useMyLikedPlaylists,
   useMyPlaylists,
 } from '../lib/hooks';
-import { Heart, Loader2, playBlack20ml1, Search as SearchIcon, Users, X } from '../lib/icons';
-import { getOfflineLikedTracks } from '../lib/offline-index';
-import { useTrackPlay } from '../lib/useTrackPlay';
+import {
+  ArrowLeft,
+  ChevronRight,
+  Clock,
+  Download,
+  Heart,
+  LayoutGrid,
+  List,
+  Loader2,
+  Search as SearchIcon,
+  ThumbsDown,
+  X,
+} from '../lib/icons';
 import { useAuthStore } from '../stores/auth';
-import { orderLikes, useLibraryLocalStore } from '../stores/library-local';
+import { importCounts, useImportsStore } from '../stores/imports';
+import { useLibraryLocalStore } from '../stores/library-local';
 import type { Track } from '../stores/player';
-import { usePlayerStore } from '../stores/player';
 
-/* ── Components ───────────────────────────────────────────── */
+type Kind = 'playlist' | 'artist' | 'album' | 'import';
+type Filter = 'all' | Kind;
+type Sort = 'recent' | 'az';
+type View = 'grid' | 'list';
 
-/** A library row: the shared track row (cache badge, like, menu, now playing). `onPlay` runs
- *  when a track that isn't current starts, e.g. to load the rest of the likes for the queue. */
-const LibraryTrackRow = React.memo(function LibraryTrackRow({
-  track,
-  index,
-  queue,
-  onPlay,
-}: {
-  track: Track;
-  index: number;
-  queue: Track[];
-  onPlay?: () => void;
+interface Item {
+  key: string;
+  kind: Kind;
+  title: string;
+  subtitle: string;
+  to: string;
+  playlist?: Playlist;
+  user?: SCUser;
+}
+
+const ALBUM_TYPES = /album|^ep$|single|compilation/i;
+
+/** Remembered per device: how the library is shown. */
+const VIEW_KEY = 'sc-library-view';
+
+/** Loads every page of an infinite list (collections are small). */
+function useAllPages(q: {
+  hasNextPage?: boolean;
+  isFetchingNextPage?: boolean;
+  fetchNextPage: () => unknown;
 }) {
-  const { isThis } = useTrackPlay(track, queue);
-  return (
-    <div onClickCapture={() => !isThis && onPlay?.()}>
-      <TrackTableRow track={track} index={index} queue={queue} />
-    </div>
-  );
+  useEffect(() => {
+    if (q.hasNextPage && !q.isFetchingNextPage) void q.fetchNextPage();
+  }, [q.hasNextPage, q.isFetchingNextPage, q.fetchNextPage]);
+}
+
+/* ── Page ─────────────────────────────────────────────────── */
+
+export const Library = React.memo(() => {
+  const user = useAuthStore((s) => s.user);
+  const [params] = useSearchParams();
+  if (!user) return null;
+  return params.get('show') === 'dislikes' ? <DislikesView /> : <Collection />;
 });
 
-/* ── Isolated Hero ────────────────────────────────────────── */
-
-const LibraryHero = React.memo(function LibraryHero({
-  onTabLikes,
-  onTabFollowing,
-}: {
-  onTabLikes: () => void;
-  onTabFollowing: () => void;
-}) {
+/** Everything you keep, except single tracks (those live in Liked tracks and History). */
+function Collection() {
   const { t } = useTranslation();
-  const user = useAuthStore((s) => s.user);
-  const { tracks: likedTracks } = useLikedTracks();
-  const { users: followings } = useMyFollowings();
-  const [shuffleLoading, setShuffleLoading] = useState(false);
-
-  const handleShuffleLikes = async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (shuffleLoading) return;
-
-    if (!usePlayerStore.getState().shuffle) {
-      usePlayerStore.setState({ shuffle: true });
-    }
-
-    const seen = new Set<string>();
-    let started = false;
-
-    // Мгновенный старт с уже загруженных треков (первая страница useLikedTracks)
-    if (likedTracks.length > 0) {
-      for (const t of likedTracks) seen.add(t.urn);
-      const random = likedTracks[Math.floor(Math.random() * likedTracks.length)];
-      usePlayerStore.getState().play(random, likedTracks);
-      started = true;
-    } else {
-      setShuffleLoading(true);
-    }
-
+  const [filter, setFilter] = useState<Filter>('all');
+  const [sort, setSort] = useState<Sort>('recent');
+  const [view, setView] = useState<View>(() => {
     try {
-      await fetchAllLikedTracks(200, (page) => {
-        const fresh = page.filter((t) => !seen.has(t.urn));
-        for (const t of fresh) seen.add(t.urn);
-        if (fresh.length === 0) return;
+      return localStorage.getItem(VIEW_KEY) === 'list' ? 'list' : 'grid';
+    } catch {
+      return 'grid';
+    }
+  });
+  const [query, setQuery] = useState('');
+  const q = useDeferredValue(query).trim().toLowerCase();
 
-        if (!started) {
-          const random = fresh[Math.floor(Math.random() * fresh.length)];
-          usePlayerStore.getState().play(random, fresh);
-          started = true;
-          setShuffleLoading(false);
-        } else {
-          usePlayerStore.getState().addToQueue(fresh);
-        }
+  const own = useMyPlaylists(50);
+  const liked = useMyLikedPlaylists(50);
+  const follows = useMyFollowings(50);
+  useAllPages(own);
+  useAllPages(liked);
+  useAllPages(follows);
+  const imports = useImportsStore((s) => s.jobs);
+  const loading = own.isLoading || liked.isLoading || follows.isLoading;
+
+  const items = useMemo(() => {
+    const out: Item[] = [];
+    for (const job of imports) {
+      const c = importCounts(job);
+      out.push({
+        key: job.id,
+        kind: 'import',
+        title: job.title,
+        subtitle:
+          job.status === 'done'
+            ? t('import.sidebarDone', { found: c.found, total: c.total })
+            : t('import.sidebarProgress', { done: c.done, total: c.total }),
+        to: `/import/${job.id}`,
       });
-    } finally {
-      setShuffleLoading(false);
+    }
+    const ownUrns = new Set(own.playlists.map((p) => p.urn));
+    const ownSorted = [...own.playlists].sort(
+      (a, b) =>
+        Date.parse(b.last_modified || b.created_at) - Date.parse(a.last_modified || a.created_at),
+    );
+    for (const p of ownSorted) {
+      out.push({
+        key: p.urn,
+        kind: 'playlist',
+        title: p.title,
+        subtitle: t('library.byYou'),
+        to: `/playlist/${encodeURIComponent(p.urn)}`,
+        playlist: p,
+      });
+    }
+    for (const p of liked.playlists) {
+      if (ownUrns.has(p.urn)) continue;
+      const album = ALBUM_TYPES.test(p.playlist_type ?? '');
+      out.push({
+        key: p.urn,
+        kind: album ? 'album' : 'playlist',
+        title: p.title,
+        subtitle: t(album ? 'library.albumBy' : 'library.playlistBy', {
+          name: p.user?.username ?? '',
+        }),
+        to: `/playlist/${encodeURIComponent(p.urn)}`,
+        playlist: p,
+      });
+    }
+    for (const u of follows.users) {
+      out.push({
+        key: u.urn,
+        kind: 'artist',
+        title: u.username,
+        subtitle: t('library.artist'),
+        to: `/user/${encodeURIComponent(u.urn)}`,
+        user: u,
+      });
+    }
+    return out;
+  }, [imports, own.playlists, liked.playlists, follows.users, t]);
+
+  const shown = useMemo(() => {
+    let list = filter === 'all' ? items : items.filter((i) => i.kind === filter);
+    if (q) {
+      list = list.filter(
+        (i) => i.title.toLowerCase().includes(q) || i.subtitle.toLowerCase().includes(q),
+      );
+    }
+    if (sort === 'az') list = [...list].sort((a, b) => a.title.localeCompare(b.title));
+    return list;
+  }, [items, filter, q, sort]);
+
+  const counts = useMemo(() => {
+    const c: Record<Kind, number> = { playlist: 0, artist: 0, album: 0, import: 0 };
+    for (const i of items) c[i.kind]++;
+    return c;
+  }, [items]);
+
+  const chips: { id: Filter; label: string }[] = [
+    { id: 'all', label: t('library.all') },
+    { id: 'playlist', label: t('library.playlists') },
+    { id: 'artist', label: t('library.artists') },
+    { id: 'album', label: t('library.albums') },
+    { id: 'import', label: t('library.imports') },
+  ];
+
+  const setViewSaved = (v: View) => {
+    setView(v);
+    try {
+      localStorage.setItem(VIEW_KEY, v);
+    } catch {
+      /* per-device convenience only */
     }
   };
 
-  if (!user) return null;
-
   return (
-    <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
-      {/* Liked tracks: same indigo tile as on Home and in the sidebar */}
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={onTabLikes}
-        onKeyDown={(e) => e.key === 'Enter' && onTabLikes()}
-        className="group relative flex h-[200px] cursor-pointer flex-col justify-between overflow-hidden rounded-2xl p-6 transition-[filter] duration-200 hover:brightness-110"
-        style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #818cf8 60%, #a5b4fc 100%)' }}
-      >
-        <div>
-          <Heart size={26} fill="white" stroke="none" />
-          <h2 className="mt-4 text-[28px] font-bold leading-tight tracking-tight text-white">
-            {t('library.likedTracks')}
-          </h2>
-          <p className="mt-1 text-[14px] font-medium text-white/80">
-            {t('library.tracksCount', {
-              count: user.public_favorites_count ?? 0,
-              value: fc(user.public_favorites_count),
-            })}
-          </p>
-        </div>
-        <div className="flex items-center justify-between">
-          <div className="flex -space-x-2.5">
-            {likedTracks.slice(0, 4).map((track) => (
-              <img
-                key={track.id}
-                src={art(track.artwork_url, 't200x200') || ''}
-                alt=""
-                className="h-9 w-9 rounded-full object-cover ring-2 ring-[#5b54e8]"
-              />
-            ))}
-          </div>
-          <button
-            type="button"
-            onClick={handleShuffleLikes}
-            disabled={shuffleLoading}
-            className="press flex h-12 w-12 items-center justify-center rounded-full ui-primary shadow-lg hover:scale-105 disabled:opacity-60 cursor-pointer"
-          >
-            {shuffleLoading ? <Loader2 size={20} className="animate-spin" /> : playBlack20ml1}
-          </button>
-        </div>
-      </div>
+    <div className="px-8 py-8 page-enter">
+      <header className="mb-6">
+        <h1 className="text-[34px] font-extrabold tracking-tight text-white">
+          {t('sidebar.myLibrary')}
+        </h1>
+        <p className="mt-1 text-[14px] text-white/55">
+          {(['playlist', 'artist', 'album'] as const)
+            .filter((k) => counts[k] > 0)
+            .map((k) => t(`library.count.${k}`, { count: counts[k] }))
+            .join(' · ')}
+        </p>
+      </header>
 
-      {/* Following */}
-      <div
-        role="button"
-        tabIndex={0}
-        onClick={onTabFollowing}
-        onKeyDown={(e) => e.key === 'Enter' && onTabFollowing()}
-        className="relative flex h-[200px] cursor-pointer flex-col justify-between overflow-hidden rounded-2xl ui-card p-6"
-      >
-        <div>
-          <Users size={26} className="text-white/80" />
-          <h2 className="mt-4 text-[28px] font-bold leading-tight tracking-tight text-white">
-            {t('nav.following')}
-          </h2>
-          <p className="mt-1 text-[14px] font-medium text-white/55">
-            {t('library.usersCount', {
-              count: user.followings_count ?? 0,
-              value: fc(user.followings_count),
-            })}
-          </p>
-        </div>
-        <div className="flex -space-x-3">
-          {followings.slice(0, 7).map((u) => (
-            <img
-              key={u.id}
-              src={art(u.avatar_url, 't200x200') || ''}
-              alt=""
-              className="h-11 w-11 rounded-full bg-neutral-800 object-cover ring-2 ring-[#1c1c20]"
-            />
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-});
-
-/* ── Isolated Tab Content ────────────────────────────────── */
-
-/* Each tab is its own component — only fetches its own data */
-
-const DislikesTab = React.memo(function DislikesTab({ filter }: { filter: string }) {
-  const { t } = useTranslation();
-  const qc = useQueryClient();
-  const all = useLibraryLocalStore((s) => s.disliked);
-  const tracks = useMemo(() => {
-    if (!filter) return all;
-    const q = filter.toLowerCase();
-    return all.filter(
-      (tr) => tr.title.toLowerCase().includes(q) || tr.user?.username?.toLowerCase().includes(q),
-    );
-  }, [all, filter]);
-
-  if (tracks.length === 0) {
-    return (
-      <div className="py-20 text-center text-white/25 text-[13px]">
-        {filter ? t('library.noMatches') : t('library.noDislikes')}
-      </div>
-    );
-  }
-  return (
-    <div className="flex flex-col gap-1 min-h-[400px]">
-      {tracks.map((track, i) => (
-        <div key={track.urn} className="flex items-center gap-2">
-          <div className="flex-1 min-w-0">
-            {/* Played on its own: a disliked track starts only when picked here. */}
-            <LibraryTrackRow track={track} index={i} queue={[track]} />
-          </div>
-          <button
-            type="button"
-            title={t('library.undislike')}
-            onClick={() => void toggleDislike(qc, track, false)}
-            className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-white/40 hover:text-white ui-icon transition-colors cursor-pointer"
-          >
-            <X size={16} />
-          </button>
-        </div>
-      ))}
-    </div>
-  );
-});
-
-const LikesTab = React.memo(function LikesTab({ filter }: { filter: string }) {
-  const { t } = useTranslation();
-  const likesQuery = useLikedTracks(ALL_LIKES_PAGE_SIZE, true);
-  const { tracks: likedTracks, isLoading } = likesQuery;
-  const [offlineTracks, setOfflineTracks] = useState<Track[]>([]);
-
-  useEffect(() => {
-    getOfflineLikedTracks()
-      .then(setOfflineTracks)
-      .catch(() => {});
-  }, []);
-
-  // Show fresh data if available; offline data as placeholder while initial load
-  const serverTracks =
-    likedTracks.length > 0 ? likedTracks : isLoading ? offlineTracks : likedTracks;
-  const likesTop = useLibraryLocalStore((s) => s.likesTop);
-  const likesBottom = useLibraryLocalStore((s) => s.likesBottom);
-  const resetLikesOrder = useLibraryLocalStore((s) => s.resetLikesOrder);
-  const tracks = useMemo(
-    () => orderLikes(serverTracks, likesTop, likesBottom),
-    [serverTracks, likesTop, likesBottom],
-  );
-  const customOrder = likesTop.length > 0 || likesBottom.length > 0;
-
-  const filtered = useMemo(() => {
-    if (!filter) return tracks;
-    const q = filter.toLowerCase();
-    return tracks.filter(
-      (t) => t.title.toLowerCase().includes(q) || t.user.username.toLowerCase().includes(q),
-    );
-  }, [tracks, filter]);
-
-  const expandQueue = React.useCallback(() => {
-    const seen = new Set<string>(usePlayerStore.getState().queue.map((t) => t.urn));
-    fetchAllLikedTracks(200, (page) => {
-      const fresh = page.filter((t) => !seen.has(t.urn));
-      for (const t of fresh) seen.add(t.urn);
-      if (fresh.length > 0) usePlayerStore.getState().addToQueue(fresh);
-    }).catch(() => {});
-  }, []);
-
-  return (
-    <div className="min-h-[400px]">
-      {customOrder && !filter && (
-        <div className="flex justify-end mb-2">
-          <button
-            type="button"
-            onClick={resetLikesOrder}
-            className="text-[12px] text-white/45 hover:text-white/80 transition-colors cursor-pointer"
-          >
-            {t('library.resetOrder')}
-          </button>
-        </div>
-      )}
-      <div className="flex flex-col gap-1">
-        {isLoading && tracks.length === 0 ? (
-          <div className="flex justify-center py-20">
-            <Loader2 size={32} className="animate-spin text-white/20" />
-          </div>
-        ) : filtered.length > 0 ? (
-          <VirtualList
-            items={filtered}
-            rowHeight={56}
-            overscan={8}
-            className="flex flex-col gap-1"
-            disabled={filtered.length < 40}
-            getItemKey={(track) => track.urn}
-            renderItem={(track, i) => (
-              <LibraryTrackRow track={track} index={i} queue={filtered} onPlay={expandQueue} />
-            )}
+      <div className="flex flex-wrap items-center gap-2 mb-6">
+        {chips.map((c) =>
+          c.id === 'all' || counts[c.id] > 0 ? (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => setFilter(c.id)}
+              className={`h-9 px-4 rounded-full text-[13px] font-semibold cursor-pointer transition-colors ${
+                filter === c.id ? 'ui-selected' : 'bar-control text-white'
+              }`}
+            >
+              {c.label}
+            </button>
+          ) : null,
+        )}
+        <div className="flex-1" />
+        <div className="relative w-[240px] max-w-full">
+          <SearchIcon
+            size={15}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-white/35 pointer-events-none"
           />
-        ) : (
-          <div className="py-20 text-center text-white/20">
-            {filter && likesQuery.hasNextPage
-              ? t('common.loading')
-              : filter
-                ? t('library.noMatches')
-                : t('library.noLikedTracks')}
-          </div>
-        )}
-      </div>
-      {!filter ? (
-        <div className="h-12 flex items-center justify-center mt-4">
-          {likesQuery.isFetchingNextPage && (
-            <Loader2 size={20} className="text-white/15 animate-spin" />
-          )}
-        </div>
-      ) : likesQuery.isFetchingNextPage ? (
-        <div className="h-12 flex items-center justify-center mt-4">
-          <Loader2 size={20} className="text-white/15 animate-spin" />
-        </div>
-      ) : null}
-    </div>
-  );
-});
-
-const FollowingTab = React.memo(function FollowingTab({ filter }: { filter: string }) {
-  const { t } = useTranslation();
-  const followingsQuery = useMyFollowings();
-  const { users: followings, isLoading } = followingsQuery;
-  const sentinelRef = useInfiniteScroll(
-    !!followingsQuery.hasNextPage,
-    !!followingsQuery.isFetchingNextPage,
-    followingsQuery.fetchNextPage,
-  );
-
-  // Auto-fetch remaining pages when filtering
-  useEffect(() => {
-    if (filter && followingsQuery.hasNextPage && !followingsQuery.isFetchingNextPage) {
-      followingsQuery.fetchNextPage();
-    }
-  }, [filter, followingsQuery.hasNextPage, followingsQuery.isFetchingNextPage]);
-
-  const filtered = useMemo(() => {
-    if (!filter) return followings;
-    const q = filter.toLowerCase();
-    return followings.filter((u) => u.username.toLowerCase().includes(q));
-  }, [followings, filter]);
-
-  return (
-    <div className="min-h-[400px]">
-      {isLoading ? (
-        <div className="flex justify-center py-20">
-          <Loader2 size={32} className="animate-spin text-white/20" />
-        </div>
-      ) : filtered.length > 0 ? (
-        <VirtualGrid
-          items={filtered}
-          itemHeight={220}
-          minColumnWidth={160}
-          gap={16}
-          overscan={3}
-          disabled={filtered.length < 30}
-          getItemKey={(user) => user.urn}
-          renderItem={(user) => <UserCard user={user} />}
-        />
-      ) : (
-        <div className="py-20 text-center text-white/20">
-          {filter ? t('library.noMatches') : t('library.notFollowing')}
-        </div>
-      )}
-      {!filter && (
-        <div ref={sentinelRef} className="h-12 flex items-center justify-center mt-4">
-          {followingsQuery.isFetchingNextPage && (
-            <Loader2 size={20} className="text-white/15 animate-spin" />
-          )}
-        </div>
-      )}
-    </div>
-  );
-});
-
-const PlaylistsTab = React.memo(function PlaylistsTab({ filter }: { filter: string }) {
-  const { t } = useTranslation();
-  const myPlaylistsQuery = useMyPlaylists();
-  const likedPlaylistsQuery = useMyLikedPlaylists();
-  const createdPlaylists = myPlaylistsQuery.playlists;
-  const likedPlaylists = likedPlaylistsQuery.playlists;
-
-  const filteredCreated = useMemo(() => {
-    if (!filter) return createdPlaylists;
-    const q = filter.toLowerCase();
-    return createdPlaylists.filter((p) => p.title.toLowerCase().includes(q));
-  }, [createdPlaylists, filter]);
-
-  const filteredLiked = useMemo(() => {
-    if (!filter) return likedPlaylists;
-    const q = filter.toLowerCase();
-    return likedPlaylists.filter((p) => p.title.toLowerCase().includes(q));
-  }, [likedPlaylists, filter]);
-
-  const hasNextPage = likedPlaylistsQuery.hasNextPage || myPlaylistsQuery.hasNextPage;
-  const isFetchingNextPage =
-    likedPlaylistsQuery.isFetchingNextPage || myPlaylistsQuery.isFetchingNextPage;
-  const fetchNextPage = likedPlaylistsQuery.hasNextPage
-    ? likedPlaylistsQuery.fetchNextPage
-    : myPlaylistsQuery.fetchNextPage;
-  const sentinelRef = useInfiniteScroll(!!hasNextPage, !!isFetchingNextPage, fetchNextPage);
-
-  // Auto-fetch remaining pages when filtering
-  useEffect(() => {
-    if (filter && hasNextPage && !isFetchingNextPage) {
-      fetchNextPage();
-    }
-  }, [filter, hasNextPage, isFetchingNextPage]);
-
-  return (
-    <div className="min-h-[400px]">
-      <div className="space-y-10">
-        {myPlaylistsQuery.isLoading ? (
-          <div className="flex justify-center py-10">
-            <Loader2 size={24} className="animate-spin text-white/20" />
-          </div>
-        ) : filteredCreated.length > 0 ? (
-          <section>
-            <h3 className="text-lg font-bold text-white/80 mb-5 px-1">
-              {t('library.yourPlaylists')}
-            </h3>
-            <VirtualGrid
-              items={filteredCreated}
-              itemHeight={320}
-              minColumnWidth={180}
-              gap={24}
-              overscan={3}
-              disabled={filteredCreated.length < 30}
-              getItemKey={(playlist) => playlist.urn}
-              renderItem={(playlist) => <PlaylistCard playlist={playlist} />}
-            />
-          </section>
-        ) : null}
-
-        {likedPlaylistsQuery.isLoading ? (
-          <div className="flex justify-center py-10">
-            <Loader2 size={24} className="animate-spin text-white/20" />
-          </div>
-        ) : filteredLiked.length > 0 ? (
-          <section>
-            <h3 className="text-lg font-bold text-white/80 mb-5 px-1">
-              {t('library.likedPlaylists')}
-            </h3>
-            <VirtualGrid
-              items={filteredLiked}
-              itemHeight={320}
-              minColumnWidth={180}
-              gap={24}
-              overscan={3}
-              disabled={filteredLiked.length < 30}
-              getItemKey={(playlist) => playlist.urn}
-              renderItem={(playlist) => <PlaylistCard playlist={playlist} />}
-            />
-          </section>
-        ) : null}
-
-        {!myPlaylistsQuery.isLoading &&
-          !likedPlaylistsQuery.isLoading &&
-          filteredCreated.length === 0 &&
-          filteredLiked.length === 0 && (
-            <div className="py-20 text-center text-white/20">
-              {filter ? t('library.noMatches') : t('library.noPlaylists')}
-            </div>
-          )}
-      </div>
-      {!filter && (
-        <div ref={sentinelRef} className="h-12 flex items-center justify-center mt-4">
-          {isFetchingNextPage && <Loader2 size={20} className="text-white/15 animate-spin" />}
-        </div>
-      )}
-    </div>
-  );
-});
-
-/* ── History Tab ──────────────────────────────────────────── */
-
-const HistoryTab = React.memo(function HistoryTab() {
-  const { t } = useTranslation();
-  const historyQuery = useHistory();
-  const { entries, isLoading } = historyQuery;
-  const sentinelRef = useInfiniteScroll(
-    !!historyQuery.hasNextPage,
-    !!historyQuery.isFetchingNextPage,
-    historyQuery.fetchNextPage,
-  );
-
-  const handleClearHistory = useCallback(async () => {
-    await api('/history', { method: 'DELETE' });
-    historyQuery.refetch();
-  }, [historyQuery]);
-
-  const rows = useMemo(() => {
-    const flat: Array<
-      | { type: 'header'; id: string; label: string }
-      | { type: 'entry'; id: string; entry: HistoryEntry; index: number }
-    > = [];
-    let currentLabel = '';
-
-    for (const [index, entry] of entries.entries()) {
-      const label = historyDateLabel(entry.playedAt, t);
-      if (label !== currentLabel) {
-        currentLabel = label;
-        flat.push({ type: 'header', id: `header:${label}`, label });
-      }
-      flat.push({ type: 'entry', id: entry.id, entry, index });
-    }
-
-    return flat;
-  }, [entries, t]);
-  const historyTracks = useMemo(() => entries.map(historyEntryToTrack), [entries]);
-
-  return (
-    <div className="min-h-[400px]">
-      {entries.length > 0 && (
-        <div className="flex justify-end mb-4">
-          <button
-            onClick={handleClearHistory}
-            className="text-[12px] text-white/30 hover:text-red-400 transition-colors cursor-pointer"
-          >
-            {t('library.clearHistory')}
-          </button>
-        </div>
-      )}
-
-      {isLoading ? (
-        <div className="flex justify-center py-20">
-          <Loader2 size={32} className="animate-spin text-white/20" />
-        </div>
-      ) : rows.length > 0 ? (
-        <VirtualList
-          items={rows}
-          rowHeight={56}
-          overscan={10}
-          className="flex flex-col"
-          disabled={rows.length < 60}
-          getItemKey={(row) => row.id}
-          renderItem={(row) =>
-            row.type === 'header' ? (
-              <div className="py-3">
-                <h3 className="text-[13px] font-bold text-white/30 uppercase tracking-wider px-1">
-                  {row.label}
-                </h3>
-              </div>
-            ) : (
-              <TrackTableRow
-                track={historyTracks[row.index]}
-                index={row.index}
-                queue={historyTracks}
-              />
-            )
-          }
-        />
-      ) : (
-        <div className="py-20 text-center text-white/20">{t('library.historyEmpty')}</div>
-      )}
-
-      <div ref={sentinelRef} className="h-12 flex items-center justify-center mt-4">
-        {historyQuery.isFetchingNextPage && (
-          <Loader2 size={20} className="text-white/15 animate-spin" />
-        )}
-      </div>
-    </div>
-  );
-});
-
-/* ── Main Page ────────────────────────────────────────────── */
-
-export const Library = React.memo(() => {
-  const { t } = useTranslation();
-  const [searchParams] = useSearchParams();
-  const tabParam = searchParams.get('tab') as
-    | 'playlists'
-    | 'likes'
-    | 'following'
-    | 'history'
-    | 'disliked'
-    | null;
-  const [activeTab, setActiveTab] = useState<
-    'playlists' | 'likes' | 'following' | 'history' | 'disliked'
-  >(tabParam || 'likes');
-  const [filter, setFilter] = useState('');
-
-  // Sync tab from URL param
-  useEffect(() => {
-    if (tabParam && tabParam !== activeTab) setActiveTab(tabParam);
-  }, [tabParam]);
-  const deferredFilter = useDeferredValue(filter);
-  const user = useAuthStore((s) => s.user);
-
-  const onTabLikes = React.useCallback(() => setActiveTab('likes'), []);
-  const onTabFollowing = React.useCallback(() => setActiveTab('following'), []);
-
-  const tabs = [
-    { id: 'playlists', label: t('search.playlists') },
-    { id: 'likes', label: t('library.likedTracks') },
-    { id: 'following', label: t('nav.following') },
-    { id: 'history', label: t('library.history') },
-    { id: 'disliked', label: t('library.dislikes') },
-  ] as const;
-
-  if (!user) return null;
-
-  return (
-    <div className="p-6 pb-4 space-y-8 page-enter">
-      <LibraryHero onTabLikes={onTabLikes} onTabFollowing={onTabFollowing} />
-
-      {/* Tabs + Search */}
-      <div className="flex items-center gap-4 flex-wrap">
-        <Segmented
-          value={activeTab}
-          options={tabs.map((tab) => ({ id: tab.id, label: tab.label }))}
-          onChange={(id) => {
-            setActiveTab(id);
-            setFilter('');
-          }}
-        />
-
-        <div className="relative flex-1 min-w-[200px] max-w-[320px]">
-          <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-            <SearchIcon size={15} className="text-white/30" />
-          </div>
           <input
-            type="text"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            placeholder={t('library.filter')}
-            className="h-10 w-full rounded-full bar-control pl-9 pr-8 text-[13px] text-white/85 outline-none transition-colors placeholder:text-white/35 focus:outline focus:outline-white/25"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder={t('library.searchHere')}
+            className="h-9 w-full rounded-full bar-control pl-9 pr-8 text-[13px] text-white outline-none placeholder:text-white/35 focus:outline focus:outline-white/25"
           />
-          {filter && (
+          {query && (
             <button
               type="button"
-              onClick={() => setFilter('')}
-              className="absolute inset-y-0 right-2 flex items-center text-white/30 hover:text-white/60 cursor-pointer transition-colors"
+              onClick={() => setQuery('')}
+              title={t('common.clear')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-white/40 hover:text-white cursor-pointer"
             >
               <X size={14} />
             </button>
           )}
         </div>
+        <button
+          type="button"
+          onClick={() => setSort(sort === 'recent' ? 'az' : 'recent')}
+          className="h-9 px-4 rounded-full bar-control text-[13px] font-semibold text-white cursor-pointer"
+        >
+          {sort === 'recent' ? t('library.sortRecent') : t('library.sortAz')}
+        </button>
+        <div className="flex rounded-full ui-track p-0.5">
+          {(['grid', 'list'] as const).map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => setViewSaved(v)}
+              title={t(v === 'grid' ? 'library.viewGrid' : 'library.viewList')}
+              className={`w-8 h-8 rounded-full flex items-center justify-center cursor-pointer ${
+                view === v ? 'ui-selected' : 'text-white/60 hover:text-white'
+              }`}
+            >
+              {v === 'grid' ? <LayoutGrid size={15} /> : <List size={15} />}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {activeTab === 'likes' && <LikesTab filter={deferredFilter} />}
-      {activeTab === 'following' && <FollowingTab filter={deferredFilter} />}
-      {activeTab === 'playlists' && <PlaylistsTab filter={deferredFilter} />}
-      {activeTab === 'history' && <HistoryTab />}
-      {activeTab === 'disliked' && <DislikesTab filter={deferredFilter} />}
+      {loading && items.length === 0 ? (
+        <div className="flex justify-center py-20 text-white/30">
+          <Loader2 size={28} className="animate-spin" />
+        </div>
+      ) : shown.length === 0 ? (
+        <p className="py-20 text-center text-[14px] text-white/40">
+          {q ? t('library.noMatches') : t('library.empty')}
+        </p>
+      ) : view === 'grid' ? (
+        <div className="grid gap-x-4 gap-y-6 grid-cols-[repeat(auto-fill,minmax(168px,1fr))]">
+          {shown.map((item) => (
+            <GridCard key={item.key} item={item} />
+          ))}
+        </div>
+      ) : (
+        <div className="flex flex-col">
+          {shown.map((item) => (
+            <ListRow key={item.key} item={item} />
+          ))}
+        </div>
+      )}
+
+      <MoreLinks />
     </div>
   );
+}
+
+/* ── Items ────────────────────────────────────────────────── */
+
+function Cover({ item, className }: { item: Item; className: string }) {
+  if (item.kind === 'import') {
+    return (
+      <div
+        className={`${className} flex items-center justify-center bg-gradient-to-br from-[#ff5500] to-[#7c3aed] text-white`}
+      >
+        <Download size={28} />
+      </div>
+    );
+  }
+  if (item.user) return <ArtistAvatar user={item.user} className={className} />;
+  const p = item.playlist;
+  return (
+    <div className={`${className} overflow-hidden bg-white/[0.06]`}>
+      {p && <PlaylistTile urn={p.urn} artwork={p.artwork_url ?? p.tracks?.[0]?.artwork_url} />}
+    </div>
+  );
+}
+
+/** Round avatar; the first letter of the name when there is no picture or it fails to load. */
+function ArtistAvatar({ user, className }: { user: SCUser; className: string }) {
+  const src = art(user.avatar_url, 't300x300');
+  const [failed, setFailed] = useState(false);
+  return (
+    <div
+      className={`${className} [container-type:size] rounded-full overflow-hidden bg-gradient-to-br from-white/[0.12] to-white/[0.03] flex items-center justify-center`}
+    >
+      {src && !failed ? (
+        <img
+          src={src}
+          alt=""
+          className="w-full h-full object-cover"
+          loading="lazy"
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        <span className="text-[40cqw] leading-none font-bold text-white/70">
+          {user.username.trim().charAt(0).toUpperCase()}
+        </span>
+      )}
+    </div>
+  );
+}
+
+function GridCard({ item }: { item: Item }) {
+  return (
+    <Link
+      to={item.to}
+      className="group block p-2 -m-2 rounded-xl hover:bg-white/[0.05] transition-colors"
+    >
+      <Cover
+        item={item}
+        className={`aspect-square w-full shadow-[0_8px_24px_rgba(0,0,0,0.35)] ${
+          item.kind === 'artist' ? 'rounded-full' : 'rounded-lg'
+        }`}
+      />
+      <p className="mt-3 truncate text-[14px] font-semibold text-white">{item.title}</p>
+      <p className="mt-0.5 truncate text-[13px] text-white/50">{item.subtitle}</p>
+    </Link>
+  );
+}
+
+function ListRow({ item }: { item: Item }) {
+  return (
+    <Link
+      to={item.to}
+      className="flex items-center gap-3 h-14 px-2 rounded-lg hover:bg-white/[0.05] transition-colors"
+    >
+      <Cover
+        item={item}
+        className={`w-11 h-11 shrink-0 ${item.kind === 'artist' ? 'rounded-full' : 'rounded-md'}`}
+      />
+      <span className="min-w-0">
+        <span className="block truncate text-[14px] font-medium text-white">{item.title}</span>
+        <span className="block truncate text-[13px] text-white/50">{item.subtitle}</span>
+      </span>
+    </Link>
+  );
+}
+
+/** Single tracks have their own pages; dislikes live only here. */
+function MoreLinks() {
+  const { t } = useTranslation();
+  const dislikes = useLibraryLocalStore((s) => s.disliked.length);
+  const links = [
+    {
+      to: '/liked',
+      icon: <Heart size={16} fill="currentColor" />,
+      label: t('library.likedTracks'),
+    },
+    { to: '/history', icon: <Clock size={16} />, label: t('library.history') },
+    {
+      to: '/library?show=dislikes',
+      icon: <ThumbsDown size={16} />,
+      label: t('library.dislikes'),
+      count: dislikes,
+    },
+  ];
+  return (
+    <div className="mt-12 pt-6 border-t border-white/[0.06] flex flex-wrap gap-2">
+      {links.map((l) => (
+        <Link
+          key={l.to}
+          to={l.to}
+          className="flex items-center gap-2 h-10 pl-3 pr-3.5 rounded-full bar-control text-[13px] font-semibold text-white"
+        >
+          <span className="text-white/70">{l.icon}</span>
+          {l.label}
+          {l.count ? <span className="text-white/45 tabular-nums">{l.count}</span> : null}
+          <ChevronRight size={14} className="text-white/40" />
+        </Link>
+      ))}
+    </div>
+  );
+}
+
+/* ── Dislikes ─────────────────────────────────────────────── */
+
+/** A dislikes row plays the picked track on its own. */
+const DislikeRow = React.memo(function DislikeRow({
+  track,
+  index,
+}: {
+  track: Track;
+  index: number;
+}) {
+  const queue = useMemo(() => [track], [track]);
+  return <TrackTableRow track={track} index={index} queue={queue} />;
 });
+
+function DislikesView() {
+  const { t } = useTranslation();
+  const qc = useQueryClient();
+  const tracks = useLibraryLocalStore((s) => s.disliked);
+  return (
+    <div className="px-8 py-8 page-enter">
+      <Link
+        to="/library"
+        className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-white/60 hover:text-white mb-4"
+      >
+        <ArrowLeft size={15} />
+        {t('sidebar.myLibrary')}
+      </Link>
+      <h1 className="text-[34px] font-extrabold tracking-tight text-white mb-6">
+        {t('library.dislikes')}
+      </h1>
+      {tracks.length === 0 ? (
+        <p className="py-20 text-center text-[14px] text-white/40">{t('library.noDislikes')}</p>
+      ) : (
+        <div className="flex flex-col gap-1">
+          {tracks.map((track, i) => (
+            <div key={track.urn} className="flex items-center gap-2">
+              <div className="flex-1 min-w-0">
+                <DislikeRow track={track} index={i} />
+              </div>
+              <button
+                type="button"
+                title={t('library.undislike')}
+                onClick={() => void toggleDislike(qc, track, false)}
+                className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-white/40 hover:text-white ui-icon cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

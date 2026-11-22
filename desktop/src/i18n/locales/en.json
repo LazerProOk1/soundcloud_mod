@@ -210,7 +210,30 @@
     "dislikes": "Dislikes",
     "noDislikes": "Tracks you dislike will show up here",
     "undislike": "Remove dislike",
-    "resetOrder": "Reset my order"
+    "resetOrder": "Reset my order",
+    "byYou": "Playlist · you",
+    "playlistBy": "Playlist · {{name}}",
+    "albumBy": "Album · {{name}}",
+    "artist": "Artist",
+    "all": "All",
+    "playlists": "Playlists",
+    "artists": "Artists",
+    "albums": "Albums",
+    "imports": "Imports",
+    "searchHere": "Search your library",
+    "sortRecent": "Recent",
+    "sortAz": "A–Z",
+    "viewGrid": "Grid",
+    "viewList": "List",
+    "empty": "Your playlists, artists and albums will show up here",
+    "count": {
+      "playlist_one": "{{count}} playlist",
+      "playlist_other": "{{count}} playlists",
+      "artist_one": "{{count}} artist",
+      "artist_other": "{{count}} artists",
+      "album_one": "{{count}} album",
+      "album_other": "{{count}} albums"
+    }
   },
   "home": {
     "freshReleases": "Fresh Releases",

@@ -158,10 +158,10 @@ export const CommandPalette = React.memo(function CommandPalette({
         id: 'nav-history',
         group: 'navigation',
         title: t('library.history'),
-        subtitle: '/library?tab=history',
+        subtitle: '/history',
         keywords: ['history', 'recent', 'история', 'недавние'],
         icon: <Clock size={15} />,
-        run: () => navigate('/library?tab=history'),
+        run: () => navigate('/history'),
       },
       {
         id: 'nav-offline',

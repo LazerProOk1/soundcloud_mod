@@ -91,6 +91,9 @@ import {
   Wifi as _Wifi,
   X as _X,
   Zap as _Zap,
+  ArrowLeft as _ArrowLeft,
+  LayoutGrid as _LayoutGrid,
+  List as _List,
 } from 'lucide-react';
 import { memo } from 'react';
 import { siInstagram, siX, siYoutube } from 'simple-icons';
@@ -140,6 +143,9 @@ export const GripVertical = memo(_GripVertical);
 export const Hash = memo(_Hash);
 export const Headphones = memo(_Headphones);
 export const Heart = memo(_Heart);
+export const ArrowLeft = memo(_ArrowLeft);
+export const LayoutGrid = memo(_LayoutGrid);
+export const List = memo(_List);
 export const Home = memo(_Home);
 export const Info = memo(_Info);
 export const Instagram = memo(({ size, className }: { size?: number; className?: string }) => (
