@@ -317,7 +317,7 @@
     "audioCacheLimit": "Audio cache limit",
     "audioCacheLimitDesc": "Older cached tracks are deleted automatically when the limit is exceeded",
     "clearCache": "Clear",
-    "clearTempCache": "Clear temp cache",
+    "clearTempCache": "Clear all but likes",
     "tempCacheCleared": "Temporary cache cleared, likes kept",
     "cacheCleared": "Cache cleared",
     "backup": "Backup",
@@ -414,7 +414,8 @@
     "navDiscord": "Discord",
     "about": "About",
     "cacheListenedTracks": "Cache listened tracks",
-    "cacheListenedTracksDesc": "Save metadata and artwork to offline storage while listening"
+    "cacheListenedTracksDesc": "Save metadata and artwork to offline storage while listening",
+    "cacheLikesOnDisk": "Already on disk: {{done}} of {{total}}"
   },
   "eq": {
     "title": "Equalizer",

@@ -331,7 +331,7 @@
     "audioCacheLimit": "Лимит аудиокэша",
     "audioCacheLimitDesc": "Старые кэшированные треки будут удаляться автоматически при превышении лимита",
     "clearCache": "Очистить",
-    "clearTempCache": "Очистить временный",
+    "clearTempCache": "Очистить всё, кроме лайков",
     "tempCacheCleared": "Временный кэш очищен, лайки сохранены",
     "cacheCleared": "Кэш очищен",
     "backup": "Резервная копия",
@@ -428,7 +428,8 @@
     "navDiscord": "Discord",
     "about": "О программе",
     "cacheListenedTracks": "Кэш прослушанных треков",
-    "cacheListenedTracksDesc": "Сохранять метаданные и обложки в офлайн-хранилище при прослушивании"
+    "cacheListenedTracksDesc": "Сохранять метаданные и обложки в офлайн-хранилище при прослушивании",
+    "cacheLikesOnDisk": "Уже на диске: {{done}} из {{total}}"
   },
   "eq": {
     "title": "Эквалайзер",

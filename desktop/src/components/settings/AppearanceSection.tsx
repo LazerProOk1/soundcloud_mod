@@ -424,9 +424,20 @@ function AppearancePreview({
     <div
       aria-hidden
       className="relative h-36 overflow-hidden rounded-2xl bg-[#101012] bg-cover bg-center shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)]"
-      style={url ? { backgroundImage: `url("${url}")` } : undefined}
+      style={{
+        // Without a wallpaper the app glows with the accent; show that instead of a blank top.
+        backgroundImage: url
+          ? `url("${url}")`
+          : `radial-gradient(120% 90% at 15% 0%, ${accent}40, transparent 60%)`,
+      }}
     >
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+      {/* A row of filter chips, the selected one in the accent, like the library header. */}
+      <div className="absolute left-4 top-4 flex gap-2">
+        <span className="h-6 w-16 rounded-full" style={{ background: accent }} />
+        <span className="h-6 w-20 rounded-full bg-white/15 backdrop-blur-md" />
+        <span className="h-6 w-14 rounded-full bg-white/15 backdrop-blur-md" />
+      </div>
       <div className="absolute inset-x-4 bottom-4 flex items-center gap-3 rounded-xl bg-black/45 p-3 backdrop-blur-md">
         <div
           className="h-11 w-11 shrink-0 rounded-lg"

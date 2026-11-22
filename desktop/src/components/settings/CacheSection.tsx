@@ -13,8 +13,10 @@ import {
   isCacheLikesRunning,
 } from '../../lib/cache';
 import { formatBytes } from '../../lib/formatters';
+import { ALL_LIKES_PAGE_SIZE, useLikedTracks } from '../../lib/hooks';
 import { Download, Loader2, Trash2, X } from '../../lib/icons';
 import { downloadTracksForOffline, isDownloadable } from '../../lib/offline-download';
+import { hasCachedTrack, useCachedUrnsStore } from '../../stores/cached-urns';
 import { CACHE_LIMIT_GB, useSettingsStore } from '../../stores/settings';
 import { PILL_BTN } from '../ui/buttonClass';
 import { LiquidSwitch } from '../ui/LiquidSwitch';
@@ -69,6 +71,13 @@ function CacheLikesRow({ onDone }: { onDone: () => void }) {
   const { t } = useTranslation();
   const [running, setRunning] = useState(false);
   const [progress, setProgress] = useState<Progress | null>(null);
+  // How many likes are already on disk (either cache counts: both play offline).
+  const cachedUrns = useCachedUrnsStore((s) => s.urns);
+  // Same list as the likes page (shared query); previews and blocked tracks can't be saved.
+  const likedUrns = useLikedTracks(ALL_LIKES_PAGE_SIZE, true)
+    .tracks.filter(isDownloadable)
+    .map((tr) => tr.urn);
+  const onDisk = likedUrns.filter((u) => hasCachedTrack(cachedUrns, u)).length;
 
   useEffect(() => {
     void isCacheLikesRunning().then((r) => {
@@ -161,10 +170,17 @@ function CacheLikesRow({ onDone }: { onDone: () => void }) {
           </button>
         </div>
       ) : (
-        <button type="button" onClick={() => void start()} className={PILL_BTN}>
-          <Download size={12} />
-          {t('settings.cacheLikes')}
-        </button>
+        <div className="flex flex-wrap items-center gap-3">
+          <button type="button" onClick={() => void start()} className={PILL_BTN}>
+            <Download size={12} />
+            {t('settings.cacheLikes')}
+          </button>
+          {likedUrns.length > 0 && (
+            <span className="text-[12px] tabular-nums text-white/50">
+              {t('settings.cacheLikesOnDisk', { done: onDisk, total: likedUrns.length })}
+            </span>
+          )}
+        </div>
       )}
     </SettingRow>
   );
