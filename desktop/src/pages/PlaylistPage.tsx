@@ -144,7 +144,12 @@ export const PlaylistPage = React.memo(() => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const myUrn = useAuthStore((s) => s.user?.urn);
-  const { data: livePlaylist, isLoading: playlistLoading } = usePlaylist(urn);
+  const {
+    data: livePlaylist,
+    isLoading: playlistLoading,
+    isError: playlistFailed,
+    refetch: refetchPlaylist,
+  } = usePlaylist(urn);
   const {
     tracks: playlistTracks,
     isLoading: tracksLoading,
@@ -252,6 +257,20 @@ export const PlaylistPage = React.memo(() => {
     [debouncedUpdate, t],
   );
 
+  if (!playlist && playlistFailed) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center gap-3">
+        <p className="text-[14px] text-white/50">{t('trackList.loadFailed')}</p>
+        <button
+          type="button"
+          onClick={() => void refetchPlaylist()}
+          className="press h-9 rounded-full bar-control px-4 text-[13px] font-semibold text-white/85 cursor-pointer"
+        >
+          {t('common.retry')}
+        </button>
+      </div>
+    );
+  }
   if (!playlist) {
     return (
       <div className="h-full flex items-center justify-center">

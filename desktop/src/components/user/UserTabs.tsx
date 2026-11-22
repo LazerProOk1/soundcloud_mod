@@ -22,16 +22,29 @@ interface TabWrapperProps {
   isLoading: boolean;
   isEmpty: boolean;
   emptyText?: string;
+  /** The request failed: say so and offer a retry, instead of looking like an empty list. */
+  onRetry?: () => void;
   children: React.ReactNode;
 }
 
-function TabWrapperImpl({ children, isLoading, isEmpty, emptyText }: TabWrapperProps) {
+function TabWrapperImpl({ children, isLoading, isEmpty, emptyText, onRetry }: TabWrapperProps) {
   const { t } = useTranslation();
   return (
     <div className="min-h-[420px]">
       {isLoading ? (
         <div className="py-24 flex justify-center">
           <Loader2 size={28} className="text-white/20 animate-spin" />
+        </div>
+      ) : isEmpty && onRetry ? (
+        <div className="py-24 flex flex-col items-center gap-3">
+          <p className="text-[14px] text-white/50">{t('trackList.loadFailed')}</p>
+          <button
+            type="button"
+            onClick={onRetry}
+            className="press h-9 rounded-full bar-control px-4 text-[13px] font-semibold text-white/85 cursor-pointer"
+          >
+            {t('common.retry')}
+          </button>
         </div>
       ) : isEmpty ? (
         <div className="py-24 flex flex-col items-center gap-4">
@@ -49,6 +62,10 @@ function TabWrapperImpl({ children, isLoading, isEmpty, emptyText }: TabWrapperP
 
 export const TabWrapper = React.memo(TabWrapperImpl);
 
+/** A retry handler for a failed query, nothing otherwise. */
+const retry = (q: { isError: boolean; refetch: () => unknown }) =>
+  q.isError ? () => void q.refetch() : undefined;
+
 export function UserTracksTab({ urn }: { urn: string }) {
   const q = useUserTracks(urn);
   const ref = useInfiniteScroll(!!q.hasNextPage, !!q.isFetchingNextPage, q.fetchNextPage);
@@ -59,7 +76,7 @@ export function UserTracksTab({ urn }: { urn: string }) {
     [q.tracks],
   );
   return (
-    <TabWrapper isLoading={q.isLoading} isEmpty={q.tracks.length === 0}>
+    <TabWrapper isLoading={q.isLoading} isEmpty={q.tracks.length === 0} onRetry={retry(q)}>
       <VirtualList
         items={q.tracks}
         rowHeight={56}
@@ -75,7 +92,8 @@ export function UserTracksTab({ urn }: { urn: string }) {
 }
 
 export function UserPopularTab({ urn }: { urn: string }) {
-  const { data = [], isLoading } = useUserPopularTracks(urn);
+  const popular = useUserPopularTracks(urn);
+  const { data = [], isLoading } = popular;
   const renderItem = useCallback(
     (track: (typeof data)[number], i: number) => (
       <TrackTableRow track={track} index={i} queue={data} />
@@ -83,7 +101,7 @@ export function UserPopularTab({ urn }: { urn: string }) {
     [data],
   );
   return (
-    <TabWrapper isLoading={isLoading} isEmpty={data.length === 0}>
+    <TabWrapper isLoading={isLoading} isEmpty={data.length === 0} onRetry={retry(popular)}>
       <VirtualList
         items={data}
         rowHeight={56}
@@ -103,7 +121,7 @@ export function UserPlaylistsTab({ urn }: { urn: string }) {
     [],
   );
   return (
-    <TabWrapper isLoading={q.isLoading} isEmpty={q.playlists.length === 0}>
+    <TabWrapper isLoading={q.isLoading} isEmpty={q.playlists.length === 0} onRetry={retry(q)}>
       <VirtualGrid
         items={q.playlists}
         itemHeight={320}
@@ -130,7 +148,7 @@ export function UserLikesTab({ urn }: { urn: string }) {
     [q.tracks],
   );
   return (
-    <TabWrapper isLoading={q.isLoading} isEmpty={q.tracks.length === 0}>
+    <TabWrapper isLoading={q.isLoading} isEmpty={q.tracks.length === 0} onRetry={retry(q)}>
       <VirtualList
         items={q.tracks}
         rowHeight={56}
@@ -185,7 +203,12 @@ export function UserConnectionsTab({
   const emptyText = mode === 'followers' ? t('user.noFollowers') : t('user.noFollowings');
 
   return (
-    <TabWrapper isLoading={q.isLoading} isEmpty={q.users.length === 0} emptyText={emptyText}>
+    <TabWrapper
+      isLoading={q.isLoading}
+      isEmpty={q.users.length === 0}
+      emptyText={emptyText}
+      onRetry={retry(q)}
+    >
       <VirtualGrid
         items={q.users}
         itemHeight={220}

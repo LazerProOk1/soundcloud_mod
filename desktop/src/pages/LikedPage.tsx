@@ -31,7 +31,13 @@ export function LikedPage() {
         </div>
       }
       tracks={tracks}
-      totalCount={total}
+      // SoundCloud's profile count skips private and removed uploads that the likes list
+      // still returns: once every page is in, the real list length is the count.
+      totalCount={
+        likes.hasNextPage || likes.isLoading
+          ? Math.max(total ?? 0, likes.tracks.length)
+          : likes.tracks.length
+      }
       isLoading={likes.isLoading}
       downloadable
       footer={
