@@ -76,25 +76,26 @@ const _waveUrns = new Set<string>();
 /** Fewer plays than this reads as a no-name upload in the wave. */
 const MIN_WAVE_PLAYS = 10_000;
 
-/** Folds case, ё and punctuation so "Монеточка" and "monetochka_official" can be compared. */
-const fold = (s: string) =>
-  s
-    .toLowerCase()
-    .replace(/ё/g, 'е')
-    .replace(/[^\p{L}\p{N}]+/gu, '');
+/**
+ * A track worth putting in the wave: played enough and streamable from
+ * SoundCloud (previews and blocked ones only play through the slow YouTube fallback). Liked
+ * tracks always count.
+ */
+function isQuality(tr: Track): boolean {
+  if (isUrnLiked(tr.urn)) return true;
+  return (tr.playback_count ?? MIN_WAVE_PLAYS) >= MIN_WAVE_PLAYS && isDownloadable(tr);
+}
 
 /**
- * "Artist - Song" uploaded by someone who is not that artist, with no label metadata: a fan
- * re-upload ("монеточка - нимфоманка" by nigyygf). The official upload is the one to play.
+ * Quality is a preference, never a reason for an empty wave: with enough good tracks only they
+ * stay; otherwise the good ones lead and the rest follow.
  */
-function isReupload(tr: Track): boolean {
-  if (tr.publisher_metadata?.artist) return false;
-  const dash = tr.title.search(/\s[-–—]\s/);
-  if (dash <= 0) return false;
-  const named = fold(tr.title.slice(0, dash).split(/[,&×x]|\sfeat\.?\s|\sft\.?\s/i)[0] ?? '');
-  const uploader = fold(tr.user?.username ?? '');
-  return named.length >= 3 && !uploader.includes(named) && !named.includes(uploader);
+function preferQuality(list: Track[]): Track[] {
+  const good = list.filter(isQuality);
+  if (good.length >= Math.min(10, Math.ceil(list.length / 2))) return good;
+  return [...good, ...list.filter((tr) => !isQuality(tr))];
 }
+
 const NO_TRACKS: Track[] = [];
 function _registerWave(urns: string[]) {
   for (const u of urns) _waveUrns.add(u);
@@ -112,6 +113,9 @@ export function SoundWavePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  // "Start wave" pressed before the pool loaded: start it once the tracks arrive.
+  const startPending = useRef(false);
+  const [startQueued, setStartQueued] = useState(false);
   const selectedLanguages = useSettingsStore((s) => s.soundwaveLanguages);
   const setSelectedLanguages = useSettingsStore((s) => s.setSoundwaveLanguages);
   const hideLiked = useSettingsStore((s) => s.soundwaveHideLiked);
@@ -173,11 +177,6 @@ export function SoundWavePage() {
   const waveFilter = useCallback(
     (tr: Track) =>
       (!hideLiked || (!tr.user_favorite && !isUrnLiked(tr.urn))) &&
-      // Barely played uploads (re-uploads, demos, no-names) stay out unless you liked them.
-      (((tr.playback_count ?? MIN_WAVE_PLAYS) >= MIN_WAVE_PLAYS && !isReupload(tr)) ||
-        isUrnLiked(tr.urn)) &&
-      // Previews and blocked tracks only play through the slow YouTube fallback: skip them.
-      isDownloadable(tr) &&
       (!hideVariants || !isVariant(tr)) &&
       matchesLanguages(tr, stableLanguages),
     [hideLiked, hideVariants, stableLanguages],
@@ -299,7 +298,7 @@ export function SoundWavePage() {
       );
     }
     // One upload per song, vibe order, then taste on top.
-    return rankWave(tuneWaveTracks(dedupeSongs(pool), waveVibe, waveMode), taste);
+    return preferQuality(rankWave(tuneWaveTracks(dedupeSongs(pool), waveVibe, waveMode), taste));
     // likedQuery.tracks only matters for the familiar mix; taste re-ranks on every change.
   }, [
     backendWorking,
@@ -330,7 +329,7 @@ export function SoundWavePage() {
 
   const isWaveUrn = useCallback((urn: string) => _waveUrns.has(urn), []);
   const rankBatch = useCallback(
-    (tracks: Track[]) => rankWave(dedupeSongs(tracks), useWaveTasteStore.getState()),
+    (tracks: Track[]) => preferQuality(rankWave(dedupeSongs(tracks), useWaveTasteStore.getState())),
     [],
   );
   const waveFallback = useCallback(() => allTracksRef.current, []);
@@ -394,7 +393,14 @@ export function SoundWavePage() {
   };
 
   const handleStartWave = useCallback(() => {
-    if (allTracks.length === 0) return;
+    // Still loading: remember the click and start as soon as the pool arrives.
+    if (allTracks.length === 0) {
+      startPending.current = true;
+      setStartQueued(true);
+      return;
+    }
+    startPending.current = false;
+    setStartQueued(false);
     _waveUrns.clear();
     _registerWave(allTracks.map((tr) => tr.urn));
     usePlayerStore.getState().play(allTracks[0], allTracks);
@@ -405,6 +411,10 @@ export function SoundWavePage() {
   const filterKey = `${stableLanguages.join(',')}|${waveVibe}|${waveMode}|${hideLiked}|${hideVariants}`;
   const prevFilterKey = useRef(filterKey);
   const restartPending = useRef(false);
+  useEffect(() => {
+    if (!startPending.current || allTracks.length === 0) return;
+    handleStartWave();
+  }, [allTracks, handleStartWave]);
   useEffect(() => {
     if (prevFilterKey.current === filterKey) return;
     prevFilterKey.current = filterKey;
@@ -669,11 +679,14 @@ export function SoundWavePage() {
                   <button
                     type="button"
                     onClick={handleStartWave}
-                    disabled={allTracks.length === 0}
                     title={t('soundwave.nowPlayingOther', { title: currentTrack.title })}
                     className="press mx-auto mt-2 flex h-8 select-none items-center gap-1.5 rounded-full ui-primary px-3.5 text-[12.5px] font-bold cursor-pointer disabled:opacity-40"
                   >
-                    <Play size={12} fill="currentColor" strokeWidth={0} />
+                    {startQueued && allTracks.length === 0 ? (
+                      <Loader2 size={12} className="animate-spin" />
+                    ) : (
+                      <Play size={12} fill="currentColor" strokeWidth={0} />
+                    )}
                     {t('soundwave.startWave')}
                   </button>
                 ) : (
@@ -716,7 +729,6 @@ export function SoundWavePage() {
               type="button"
               key={displayTrack?.urn ?? 'none'}
               onClick={handlePlayPause}
-              disabled={allTracks.length === 0 && !isWaveTrack}
               aria-label={isPlaying && currentTrack ? t('kb.playPause') : t('soundwave.startWave')}
               ref={coverRef}
               style={{
