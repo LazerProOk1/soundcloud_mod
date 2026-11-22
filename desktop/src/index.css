@@ -1248,10 +1248,10 @@ button:not(:disabled):active,
 
 /* Track switch in the player bar: cover pops in, text rises out of a blur. */
 .track-swap-art {
-  animation: track-art-in 0.78s var(--spring-bouncy) backwards;
+  animation: track-art-in 0.3s var(--ease-out-soft) backwards;
 }
 .track-swap-text > * {
-  animation: track-text-in 0.55s var(--ease-out-soft) backwards;
+  animation: track-text-in 0.35s var(--ease-out-soft) backwards;
 }
 .track-swap-text > :nth-child(2) {
   animation-delay: 0.06s;
@@ -1259,14 +1259,26 @@ button:not(:disabled):active,
 @keyframes track-art-in {
   from {
     opacity: 0;
-    transform: scale(0.8);
+    transform: scale(0.94);
+    filter: blur(6px);
   }
+}
+
+/* Player bar like button: one-shot ring (replayed by re-keying the span). */
+.like-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--color-accent);
+  opacity: 0;
+  pointer-events: none;
+  animation: heart-ring 0.4s var(--ease-out-soft);
 }
 @keyframes track-text-in {
   from {
     opacity: 0;
-    transform: translateY(12px);
-    filter: blur(6px);
+    transform: translateY(6px);
+    filter: blur(2px);
   }
 }
 
@@ -1398,6 +1410,7 @@ button:not(:disabled):active,
 @media (prefers-reduced-motion: reduce) {
   .track-swap-art,
   .track-swap-text > *,
+  .like-ring,
   .heart-pop,
   .np-cover-img {
     animation: none;
@@ -1710,6 +1723,18 @@ svg.lucide:not([stroke-width="0"]) {
 .liquid-glass .ui-row-active {
   background-color: rgba(255, 255, 255, 0.07);
   background-image: linear-gradient(90deg, rgba(255, 255, 255, 0.05), transparent 70%);
+}
+/* .ui-menu-item: a row of a context menu; the hovered / keyboard-focused row lights up
+   (a soft lit strip in Liquid Glass, like the active sidebar row). */
+.ui-menu-item:is(:hover, :focus) {
+  background: rgba(255, 255, 255, 0.07);
+}
+.liquid-glass .ui-menu-item:is(:hover, :focus) {
+  background-color: rgba(255, 255, 255, 0.07);
+  background-image: linear-gradient(90deg, rgba(255, 255, 255, 0.06), transparent 75%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 0 0 0.5px rgba(255, 255, 255, 0.08);
 }
 /* Destructive buttons (Sign out, Clear cache): red on hover in every style. */
 .bar-control.ui-danger:hover,

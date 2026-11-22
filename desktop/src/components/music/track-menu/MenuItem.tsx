@@ -16,7 +16,7 @@ export function MenuItem({
   const toneCls =
     tone === 'danger'
       ? 'text-white/75 hover:text-red-300 focus:text-red-300 hover:bg-red-400/10 focus:bg-red-400/10'
-      : 'text-white/75 hover:text-white focus:text-white hover:bg-white/[0.07] focus:bg-white/[0.07]';
+      : 'ui-menu-item text-white/75 hover:text-white focus:text-white';
   const iconCls = active
     ? 'text-accent'
     : tone === 'danger'

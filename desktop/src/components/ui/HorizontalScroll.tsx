@@ -28,7 +28,7 @@ function ScrollArrow({ side, visible, label, onClick }: ScrollArrowProps) {
       title={label}
       tabIndex={visible ? 0 : -1}
       onClick={onClick}
-      className={`absolute top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full border-[0.5px] border-white/[0.12] bg-[rgba(18,18,22,0.55)] text-white/80 shadow-[0_10px_30px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.1)] backdrop-blur-md transition-all duration-300 ease-[var(--ease-apple)] hover:border-white/20 hover:bg-[rgba(28,28,34,0.75)] hover:text-white active:scale-90 ${
+      className={`ui-float absolute top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-white/80 shadow-[0_10px_30px_rgba(0,0,0,0.45)] transition-all duration-300 ease-[var(--ease-apple)] hover:text-white hover:brightness-125 active:scale-90 ${
         side === 'prev' ? 'left-2' : 'right-2'
       } ${
         visible

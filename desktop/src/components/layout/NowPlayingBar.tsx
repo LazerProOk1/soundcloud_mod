@@ -256,7 +256,7 @@ export const ProgressSlider = React.memo(() => {
       onValueChange={onValueChange}
       onValueCommit={onValueCommit}
     >
-      <Slider.Track className="relative h-[3px] grow overflow-hidden rounded-full bg-white/[0.08] group-hover:h-[5px] transition-all duration-150">
+      <Slider.Track className="relative h-1 grow overflow-hidden rounded-full bg-white/[0.08] group-hover:h-1.5 transition-all duration-200">
         {isBuffering && (
           <div
             aria-hidden="true"
@@ -445,6 +445,7 @@ function LikeButton({ trackUrn }: { trackUrn: string }) {
   const disliked = useDislikeStatus(trackUrn);
 
   const [liked, setLiked] = useState<boolean | null>(null);
+  const [ringKey, setRingKey] = useState(0);
   const prevUrn = useRef(trackUrn);
 
   useEffect(() => {
@@ -458,6 +459,7 @@ function LikeButton({ trackUrn }: { trackUrn: string }) {
   const toggle = async () => {
     const next = !isLiked;
     setLiked(next);
+    if (next) setRingKey((k) => k + 1);
     if (trackData) optimisticToggleLike(qc, trackData, next);
     invalidateAllLikesCache();
 
@@ -481,10 +483,11 @@ function LikeButton({ trackUrn }: { trackUrn: string }) {
       type="button"
       onClick={toggle}
       title={t('track.likes')}
-      className={`ui-icon w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all duration-200 cursor-pointer ${
+      className={`ui-icon relative w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all duration-200 cursor-pointer ${
         isLiked ? 'text-accent' : 'text-white/30 hover:text-white/60'
       }`}
     >
+      {ringKey > 0 && <span key={ringKey} aria-hidden="true" className="like-ring" />}
       <Heart size={16} fill={isLiked ? 'currentColor' : 'none'} />
     </button>
   );
