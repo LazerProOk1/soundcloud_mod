@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import {
   EMPTY_TASTE,
+  HEARD_REST_MS,
   mixIn,
   onFinished,
   onMoreLikeThis,
@@ -68,4 +69,18 @@ test('mixIn puts one familiar track after every two others', () => {
     out.map((x) => x.urn),
     ['1', '2', 'L', '3', '4', 'M'],
   );
+});
+
+test('a track heard in the wave rests for four days', () => {
+  const t = (n: number) => ({ urn: `t${n}`, user: { urn: `a${n}` } });
+  const pool = Array.from({ length: 20 }, (_, i) => t(i));
+  const now = 1_000_000_000_000;
+  const taste = onPlayed(EMPTY_TASTE, t(3), now);
+  // Plenty of fresh tracks: the heard one is out.
+  assert.ok(!rankWave(pool, taste, 12, now).some((x) => x.urn === 't3'));
+  // Four days later it is back.
+  assert.ok(rankWave(pool, taste, 12, now + HEARD_REST_MS + 1).some((x) => x.urn === 't3'));
+  // Too few fresh ones: it comes back, but last.
+  const few = rankWave([t(1), t(3), t(2)], taste, 12, now);
+  assert.equal(few.at(-1)?.urn, 't3');
 });

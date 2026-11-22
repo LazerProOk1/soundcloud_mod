@@ -95,6 +95,56 @@ function _registerWave(urns: string[]) {
   for (const u of urns) _waveUrns.add(u);
 }
 
+/* Listening memory, on any page: a wave track that really played for HEARD_AFTER_SECS rests
+   for days (see wave-rank), one left early counts as a skip, one played to the end as
+   finished. Time is counted only while playing, so a paused track isn't "heard". */
+const HEARD_AFTER_SECS = 3;
+let listening: { track: Track; ms: number; since: number | null; heard: boolean } | null = null;
+let heardTimer: ReturnType<typeof setTimeout> | null = null;
+
+function pauseClock() {
+  if (heardTimer) clearTimeout(heardTimer);
+  heardTimer = null;
+  if (listening?.since != null) {
+    listening.ms += Date.now() - listening.since;
+    listening.since = null;
+  }
+}
+
+function startClock() {
+  const l = listening;
+  if (!l || l.since != null) return;
+  l.since = Date.now();
+  if (l.heard) return;
+  heardTimer = setTimeout(
+    () => {
+      if (listening !== l) return;
+      l.heard = true;
+      useWaveTasteStore.getState().played(l.track);
+    },
+    Math.max(0, HEARD_AFTER_SECS * 1000 - l.ms),
+  );
+}
+
+usePlayerStore.subscribe((s, prev) => {
+  const changed = s.currentTrack?.urn !== prev.currentTrack?.urn;
+  if (changed || s.isPlaying !== prev.isPlaying) pauseClock();
+  if (changed) {
+    const done = listening;
+    listening = null;
+    if (done) {
+      const secs = done.ms / 1000;
+      const taste = useWaveTasteStore.getState();
+      if (secs >= (done.track.duration ?? 0) / 1000 - 8) taste.finished(done.track);
+      else taste.skipped(done.track, secs);
+    }
+    if (s.currentTrack && _waveUrns.has(s.currentTrack.urn)) {
+      listening = { track: s.currentTrack, ms: 0, since: null, heard: false };
+    }
+  }
+  if (s.isPlaying) startClock();
+});
+
 /** Small string hash for a stable pseudo-random order. */
 function hashKey(s: string) {
   let h = 2166136261;
@@ -182,6 +232,7 @@ export function SoundWavePage() {
       artists: s.artists,
       banned: s.banned,
       recent: s.recent,
+      heard: s.heard,
       skippedSongs: s.skippedSongs,
     })),
   );
@@ -323,7 +374,9 @@ export function SoundWavePage() {
 
   const isWaveUrn = useCallback((urn: string) => _waveUrns.has(urn), []);
   const rankBatch = useCallback(
-    (tracks: Track[]) => preferQuality(rankWave(dedupeSongs(tracks), useWaveTasteStore.getState())),
+    // A refill never brings back a resting track while any fresh one is left.
+    (tracks: Track[]) =>
+      preferQuality(rankWave(dedupeSongs(tracks), useWaveTasteStore.getState(), 1)),
     [],
   );
   const waveFallback = useCallback(() => allTracksRef.current, []);

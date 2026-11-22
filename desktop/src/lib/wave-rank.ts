@@ -14,13 +14,24 @@ export interface Taste {
   artists: Record<string, number>;
   /** Tracks marked "Not this": never again. */
   banned: string[];
-  /** Recently played, newest first: they rest for a while. */
+  /** Recently played, newest first (kept for old saves; `heard` decides now). */
   recent: string[];
+  /** Track → when it last played in the wave (ms). It rests for `HEARD_REST_MS`. */
+  heard?: Record<string, number>;
   /** Skipped early: that song isn't wanted now (the artist is only nudged down). */
   skippedSongs?: string[];
 }
 
-export const EMPTY_TASTE: Taste = { artists: {}, banned: [], recent: [], skippedSongs: [] };
+export const EMPTY_TASTE: Taste = {
+  artists: {},
+  banned: [],
+  recent: [],
+  heard: {},
+  skippedSongs: [],
+};
+/** A track heard in the wave stays out of it this long. */
+export const HEARD_REST_MS = 4 * 24 * 60 * 60 * 1000;
+const MAX_HEARD = 3000;
 const MAX_SKIPPED = 500;
 
 const MAX_BANNED = 1000;
@@ -68,9 +79,15 @@ export function onMoreLikeThis(taste: Taste, track: RankableTrack): Taste {
   return bump(taste, track, 2);
 }
 
-export function onPlayed(taste: Taste, track: RankableTrack): Taste {
+/** Heard for a few seconds in the wave: it rests for `HEARD_REST_MS`. */
+export function onPlayed(taste: Taste, track: RankableTrack, now = Date.now()): Taste {
   const recent = [track.urn, ...taste.recent.filter((u) => u !== track.urn)].slice(0, MAX_RECENT);
-  return { ...taste, recent };
+  // Drop entries that finished resting, and the oldest ones past the cap.
+  const kept = Object.entries(taste.heard ?? {})
+    .filter(([u, at]) => u !== track.urn && now - at < HEARD_REST_MS)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, MAX_HEARD - 1);
+  return { ...taste, recent, heard: { [track.urn]: now, ...Object.fromEntries(kept) } };
 }
 
 /**
@@ -78,15 +95,23 @@ export function onPlayed(taste: Taste, track: RankableTrack): Taste {
  * played tracks rest (unless the pool would get too small), moves liked artists forward
  * and never plays the same artist twice in a row when it can be avoided.
  */
-export function rankWave<T extends RankableTrack>(tracks: readonly T[], taste: Taste): T[] {
+export function rankWave<T extends RankableTrack>(
+  tracks: readonly T[],
+  taste: Taste,
+  /** Fewer fresh tracks than this and the resting ones come back (at the end). */
+  minFresh = 12,
+  now = Date.now(),
+): T[] {
   const banned = new Set(taste.banned);
   const score = (t: T) => taste.artists[artistKey(t)] ?? 0;
   let pool = tracks.filter((t) => !banned.has(t.urn) && score(t) > ARTIST_BLOCK_SCORE);
 
-  // Recently played and skipped songs rest, unless that would leave too little.
-  const resting = new Set([...taste.recent.slice(0, 120), ...(taste.skippedSongs ?? [])]);
-  const fresh = pool.filter((t) => !resting.has(t.urn));
-  if (fresh.length >= 12) pool = fresh;
+  // Songs heard in the last days and skipped songs rest, unless that would leave too little.
+  const heard = taste.heard ?? {};
+  const resting = (t: T) =>
+    now - (heard[t.urn] ?? 0) < HEARD_REST_MS || (taste.skippedSongs ?? []).includes(t.urn);
+  const fresh = pool.filter((t) => !resting(t));
+  pool = fresh.length >= minFresh ? fresh : [...fresh, ...pool.filter(resting)];
 
   // Stable: original order (vibe / source) stays the base, taste shifts tracks by a few places.
   const ordered = pool
