@@ -18,3 +18,8 @@ export function isHealthy(host: string): boolean {
   }
   return false;
 }
+
+/** The first host not marked unhealthy, or the first one when all are down. */
+export function pickHealthy(hosts: readonly string[]): string {
+  return hosts.find(isHealthy) ?? hosts[0];
+}

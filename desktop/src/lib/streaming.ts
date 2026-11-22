@@ -2,9 +2,9 @@ import { fetch } from '@tauri-apps/plugin-http';
 import type { Track } from '../stores/player';
 import { useSettingsStore } from '../stores/settings';
 import { ApiError } from './api-client';
-import { API_BASE, STORAGE_BASE, STREAMING_BASE } from './constants';
+import { API_HOSTS, STORAGE_BASE, STREAMING_BASE } from './constants';
 import { logHttpError, logHttpFailure, trackAsync } from './diagnostics';
-import { markHealthy, markUnhealthy } from './host-health';
+import { markHealthy, markUnhealthy, pickHealthy } from './host-health';
 
 // ─── Types ──────────────────────────────────────────────────
 
@@ -79,7 +79,7 @@ export function buildStorageUrls(trackUrn: string): string[] {
  *  `x-session-id` header the engine adds. */
 function buildApiStreamUrl(trackUrn: string, hq: boolean) {
   const quality = hq ? 'hq=true&quality=hq' : 'quality=sq';
-  return `${API_BASE}/tracks/${encodeURIComponent(trackUrn)}/stream?${quality}`;
+  return `${pickHealthy(API_HOSTS)}/tracks/${encodeURIComponent(trackUrn)}/stream?${quality}`;
 }
 
 /**

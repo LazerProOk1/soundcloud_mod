@@ -2,9 +2,9 @@ import { fetch } from '@tauri-apps/plugin-http';
 import { toast } from 'sonner';
 import { useAppStatusStore } from '../stores/app-status';
 import { noteAuthGap, noteRateLimit, noteSuccess } from './auth-recovery';
-import { API_BASE } from './constants';
+import { API_HOSTS } from './constants';
 import { logHttpError, logHttpFailure, trackAsync } from './diagnostics';
-import { markHealthy, markUnhealthy } from './host-health';
+import { markHealthy, markUnhealthy, pickHealthy } from './host-health';
 
 // ─── Session ────────────────────────────────────────────────
 
@@ -110,6 +110,7 @@ async function _apiRequestInner<T>(
     silent: boolean | undefined;
     fetchOptions: Omit<ApiOptions, 'silent'>;
     headers: Headers;
+    retried?: boolean;
   },
 ): Promise<T> {
   const { silent, fetchOptions, headers } = ctx;
@@ -123,7 +124,8 @@ async function _apiRequestInner<T>(
 
   const method = fetchOptions.method ?? 'GET';
   const label = `${method.toUpperCase()} ${path}`;
-  const url = `${API_BASE}${path}`;
+  const base = pickHealthy(API_HOSTS);
+  const url = `${base}${path}`;
 
   try {
     const res = await trackAsync(
@@ -131,7 +133,7 @@ async function _apiRequestInner<T>(
       fetchWithTimeout(url, { ...fetchOptions, headers }, timeoutMs),
     );
 
-    markHealthy(API_BASE);
+    markHealthy(base);
     useAppStatusStore.getState().setBackendReachable(true);
 
     if (!res.ok) {
@@ -175,9 +177,15 @@ async function _apiRequestInner<T>(
   } catch (error) {
     // Already handled ApiError — rethrow
     if (error instanceof ApiError) throw error;
-    // Network error / timeout — the only host is down
+    // Network error / timeout: this host is down. A read is tried once more on the next
+    // healthy host (writes are not: the first may have reached the server).
     logHttpFailure(label, url, error);
-    markUnhealthy(API_BASE);
+    markUnhealthy(base);
+    const cancelled = (fetchOptions.signal as AbortSignal | null | undefined)?.aborted;
+    const next = pickHealthy(API_HOSTS);
+    if (!cancelled && next !== base && method.toUpperCase() === 'GET' && !ctx.retried) {
+      return _apiRequestInner<T>(path, _options, timeoutMs, { ...ctx, retried: true });
+    }
     useAppStatusStore.getState().setBackendReachable(false);
     throw error;
   }
