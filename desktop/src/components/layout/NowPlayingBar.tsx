@@ -406,14 +406,18 @@ const PlaybackQualityBadge = React.memo(() => {
   return (
     <div className="hidden 2xl:flex shrink-0 items-center gap-1.5">
       <span
-        className={`bar-control inline-flex h-6 shrink-0 items-center rounded-md px-2 text-[9px] font-semibold tracking-[0.14em] ${
+        title={isHq ? t('player.qualityHQHint') : t('player.qualitySQHint')}
+        className={`bar-control inline-flex h-6 shrink-0 items-center rounded-md px-2 text-[9px] font-semibold tracking-[0.14em] cursor-help ${
           isHq ? 'is-active text-white/92' : 'text-white/68'
         }`}
       >
         {isHq ? t('player.qualityHQ') : t('player.qualitySQ')}
       </span>
       {playbackSource === 'storage' && (
-        <span className="bar-control hidden xl:inline-flex h-6 shrink-0 items-center gap-1.5 rounded-md px-2 text-[8px] font-medium tracking-[0.12em] text-[#dff7e9]/82">
+        <span
+          title={t('player.qualityCDNHint')}
+          className="bar-control hidden xl:inline-flex h-6 shrink-0 items-center gap-1.5 rounded-md px-2 text-[8px] font-medium tracking-[0.12em] text-[#dff7e9]/82 cursor-help"
+        >
           <span className="h-1.5 w-1.5 rounded-full bg-[#b7ffd8]" />
           {t('player.qualityCDN')}
         </span>

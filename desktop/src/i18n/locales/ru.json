@@ -44,7 +44,10 @@
     "sleepAfterTrack": "После текущего трека",
     "sleepAfterTrackShort": "после трека",
     "sleepMinutes": "{{count}} мин",
-    "sleepCancel": "Отменить таймер"
+    "sleepCancel": "Отменить таймер",
+    "qualityHQHint": "Высокое качество звука.",
+    "qualitySQHint": "Обычное качество звука. Высокое можно включить в «Настройки → Воспроизведение».",
+    "qualityCDNHint": "Трек пришёл из быстрого хранилища (CDN), а не напрямую с SoundCloud: грузится быстрее."
   },
   "auth": {
     "signIn": "Войти через SoundCloud",

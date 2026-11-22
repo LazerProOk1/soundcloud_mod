@@ -44,7 +44,10 @@
     "sleepAfterTrack": "After current track",
     "sleepAfterTrackShort": "after track",
     "sleepMinutes": "{{count}} min",
-    "sleepCancel": "Cancel timer"
+    "sleepCancel": "Cancel timer",
+    "qualityHQHint": "High sound quality.",
+    "qualitySQHint": "Standard sound quality. Turn on high quality in Settings → Playback.",
+    "qualityCDNHint": "This track came from the fast storage (CDN) rather than straight from SoundCloud, so it loads quicker."
   },
   "auth": {
     "signIn": "Sign in with SoundCloud",
