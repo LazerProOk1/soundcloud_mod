@@ -1001,10 +1001,16 @@ usePlayerStore.subscribe((state, prev) => {
     lastEndedUrn = null;
 
     if (state.currentTrack) {
-      // Disliked tracks are skipped without loading. The skip runs on the next tick, not inside
-      // this listener: a queue of disliked tracks (or one on repeat) used to recurse until the
-      // stack overflowed and the window went black. A full lap of skips stops playback.
-      if (isUrnDisliked(state.currentTrack.urn)) {
+      // Disliked tracks are skipped without loading, but only when the queue moves on by itself
+      // (same queue, next index). A disliked track you pick yourself (from Dislikes, a list or
+      // the queue) plays: skipping it turned every pick into a chain of skips and froze the UI.
+      // The skip runs on the next tick, not inside this listener (it used to recurse until the
+      // stack overflowed), and a full lap of skips stops playback.
+      const advanced =
+        state.queue === prev.queue &&
+        (state.queueIndex === prev.queueIndex + 1 ||
+          (state.queueIndex === 0 && prev.queueIndex === state.queue.length - 1));
+      if (advanced && isUrnDisliked(state.currentTrack.urn)) {
         currentUrn = null;
         fallbackDuration = 0;
         cachedDuration = 0;
