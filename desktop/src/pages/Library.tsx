@@ -1,19 +1,16 @@
 import { useQueryClient } from '@tanstack/react-query';
 import React, { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { AddToPlaylistDialog } from '../components/music/AddToPlaylistDialog';
-import { LikeButton } from '../components/music/LikeButton';
+import { useSearchParams } from 'react-router-dom';
 import { PlaylistCard } from '../components/music/PlaylistCard';
-import { TrackTitleArtist } from '../components/music/TrackTitleArtist';
 import { Segmented } from '../components/ui/Segmented';
 import { VirtualGrid } from '../components/ui/VirtualGrid';
+import { TrackTableRow } from '../components/music/TrackTableRow';
 import { VirtualList } from '../components/ui/VirtualList';
 import { UserCard } from '../components/user/UserCard';
 import { api } from '../lib/api';
-import { preloadTrack } from '../lib/audio';
 import { toggleDislike } from '../lib/dislikes';
-import { art, dur, fc } from '../lib/formatters';
+import { art, fc } from '../lib/formatters';
 import { historyDateLabel, historyEntryToTrack } from '../lib/history';
 import {
   ALL_LIKES_PAGE_SIZE,
@@ -26,23 +23,8 @@ import {
   useMyLikedPlaylists,
   useMyPlaylists,
 } from '../lib/hooks';
-import {
-  Heart,
-  headphones11,
-  heart11,
-  ListMusic,
-  ListPlus,
-  Loader2,
-  Music,
-  pauseWhite14,
-  playBlack20ml1,
-  playWhite14,
-  Search as SearchIcon,
-  Users,
-  X,
-} from '../lib/icons';
+import { Heart, Loader2, playBlack20ml1, Search as SearchIcon, Users, X } from '../lib/icons';
 import { getOfflineLikedTracks } from '../lib/offline-index';
-import { openTrackMenu } from '../lib/useTrackContextMenu';
 import { useTrackPlay } from '../lib/useTrackPlay';
 import { useAuthStore } from '../stores/auth';
 import { orderLikes, useLibraryLocalStore } from '../stores/library-local';
@@ -51,125 +33,26 @@ import { usePlayerStore } from '../stores/player';
 
 /* ── Components ───────────────────────────────────────────── */
 
-const LibraryTrackRow = React.memo(
-  function LibraryTrackRow({
-    track,
-    index,
-    queue,
-    onPlay,
-  }: {
-    track: Track;
-    index: number;
-    queue: Track[];
-    onPlay?: () => void;
-  }) {
-    const { t } = useTranslation();
-    const { isThis, isThisPlaying, togglePlay: baseToggle } = useTrackPlay(track, queue);
-    const addToQueueNext = usePlayerStore((s) => s.addToQueueNext);
-
-    const togglePlay = () => {
-      baseToggle();
-      if (!isThis && onPlay) onPlay();
-    };
-
-    const handleAddToQueue = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      addToQueueNext([track]);
-    };
-
-    const cover = art(track.artwork_url, 't200x200');
-
-    return (
-      <div
-        onContextMenu={(e) => openTrackMenu(e, track)}
-        className={`group flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-300 ease-[var(--ease-apple)] ${
-          isThis ? 'bg-white/[0.04]' : 'hover:bg-white/[0.04]'
-        }`}
-      >
-        <div
-          className="w-8 h-8 flex items-center justify-center shrink-0 cursor-pointer"
-          onClick={togglePlay}
-          onMouseEnter={() => preloadTrack(track.urn)}
-        >
-          {isThisPlaying ? (
-            <div className="w-8 h-8 rounded-full bg-accent text-accent-contrast flex items-center justify-center scale-100 animate-fade-in-up">
-              {pauseWhite14}
-            </div>
-          ) : (
-            <>
-              <span className="text-[13px] text-white/20 tabular-nums font-medium group-hover:hidden">
-                {index + 1}
-              </span>
-              <div className="hidden group-hover:flex w-8 h-8 rounded-full bar-control items-center justify-center hover:scale-105 transition-all">
-                {playWhite14}
-              </div>
-            </>
-          )}
-        </div>
-
-        <div className="relative w-11 h-11 rounded-xl overflow-hidden shrink-0 ring-1 ring-white/[0.08] shadow-md">
-          {cover ? (
-            <img src={cover} alt="" className="w-full h-full object-cover" decoding="async" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-white/[0.05] to-transparent">
-              <Music size={14} className="text-white/20" />
-            </div>
-          )}
-        </div>
-
-        <TrackTitleArtist
-          track={track}
-          highlight={isThis}
-          size="md"
-          className="flex flex-col justify-center"
-        />
-
-        <LikeButton track={track} />
-
-        <AddToPlaylistDialog trackUrns={[track.urn]}>
-          <button
-            type="button"
-            className="opacity-0 group-hover:opacity-100 w-8 h-8 rounded-lg flex items-center justify-center text-white/30 hover:text-white/80 ui-icon transition-all duration-200 shrink-0"
-            title={t('playlist.addToPlaylist')}
-          >
-            <ListMusic size={16} />
-          </button>
-        </AddToPlaylistDialog>
-
-        <button
-          type="button"
-          onClick={handleAddToQueue}
-          className="opacity-0 group-hover:opacity-100 w-8 h-8 rounded-lg flex items-center justify-center text-white/30 hover:text-white/80 ui-icon transition-all duration-200 shrink-0"
-          title={t('player.addToQueue')}
-        >
-          <ListPlus size={16} />
-        </button>
-
-        <div className="hidden sm:flex items-center gap-4 shrink-0 pr-4">
-          {track.playback_count != null && (
-            <span className="text-[11px] text-white/30 tabular-nums flex items-center gap-1.5 w-16">
-              {headphones11}
-              {fc(track.playback_count)}
-            </span>
-          )}
-          <span className="text-[11px] text-white/30 tabular-nums flex items-center gap-1.5 w-14">
-            {heart11}
-            {fc(track.favoritings_count ?? track.likes_count)}
-          </span>
-        </div>
-
-        <span className="text-[12px] text-white/30 tabular-nums font-medium shrink-0 w-12 text-right">
-          {dur(track.duration)}
-        </span>
-      </div>
-    );
-  },
-  (prev, next) =>
-    prev.track.urn === next.track.urn &&
-    prev.index === next.index &&
-    prev.track.user_favorite === next.track.user_favorite &&
-    prev.queue === next.queue,
-);
+/** A library row: the shared track row (cache badge, like, menu, now playing). `onPlay` runs
+ *  when a track that isn't current starts, e.g. to load the rest of the likes for the queue. */
+const LibraryTrackRow = React.memo(function LibraryTrackRow({
+  track,
+  index,
+  queue,
+  onPlay,
+}: {
+  track: Track;
+  index: number;
+  queue: Track[];
+  onPlay?: () => void;
+}) {
+  const { isThis } = useTrackPlay(track, queue);
+  return (
+    <div onClickCapture={() => !isThis && onPlay?.()}>
+      <TrackTableRow track={track} index={index} queue={queue} />
+    </div>
+  );
+});
 
 /* ── Isolated Hero ────────────────────────────────────────── */
 
@@ -257,7 +140,7 @@ const LibraryHero = React.memo(function LibraryHero({
             {likedTracks.slice(0, 4).map((track) => (
               <img
                 key={track.id}
-                src={art(track.artwork_url, 'small') || ''}
+                src={art(track.artwork_url, 't200x200') || ''}
                 alt=""
                 className="h-9 w-9 rounded-full object-cover ring-2 ring-[#5b54e8]"
               />
@@ -298,7 +181,7 @@ const LibraryHero = React.memo(function LibraryHero({
           {followings.slice(0, 7).map((u) => (
             <img
               key={u.id}
-              src={art(u.avatar_url, 'small') || ''}
+              src={art(u.avatar_url, 't200x200') || ''}
               alt=""
               className="h-11 w-11 rounded-full bg-neutral-800 object-cover ring-2 ring-[#1c1c20]"
             />
@@ -416,7 +299,7 @@ const LikesTab = React.memo(function LikesTab({ filter }: { filter: string }) {
         ) : filtered.length > 0 ? (
           <VirtualList
             items={filtered}
-            rowHeight={68}
+            rowHeight={56}
             overscan={8}
             className="flex flex-col gap-1"
             disabled={filtered.length < 40}
@@ -609,8 +492,6 @@ const PlaylistsTab = React.memo(function PlaylistsTab({ filter }: { filter: stri
 
 const HistoryTab = React.memo(function HistoryTab() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  const play = usePlayerStore((s) => s.play);
   const historyQuery = useHistory();
   const { entries, isLoading } = historyQuery;
   const sentinelRef = useInfiniteScroll(
@@ -627,21 +508,22 @@ const HistoryTab = React.memo(function HistoryTab() {
   const rows = useMemo(() => {
     const flat: Array<
       | { type: 'header'; id: string; label: string }
-      | { type: 'entry'; id: string; entry: HistoryEntry }
+      | { type: 'entry'; id: string; entry: HistoryEntry; index: number }
     > = [];
     let currentLabel = '';
 
-    for (const entry of entries) {
+    for (const [index, entry] of entries.entries()) {
       const label = historyDateLabel(entry.playedAt, t);
       if (label !== currentLabel) {
         currentLabel = label;
         flat.push({ type: 'header', id: `header:${label}`, label });
       }
-      flat.push({ type: 'entry', id: entry.id, entry });
+      flat.push({ type: 'entry', id: entry.id, entry, index });
     }
 
     return flat;
   }, [entries, t]);
+  const historyTracks = useMemo(() => entries.map(historyEntryToTrack), [entries]);
 
   return (
     <div className="min-h-[400px]">
@@ -663,7 +545,7 @@ const HistoryTab = React.memo(function HistoryTab() {
       ) : rows.length > 0 ? (
         <VirtualList
           items={rows}
-          rowHeight={60}
+          rowHeight={56}
           overscan={10}
           className="flex flex-col"
           disabled={rows.length < 60}
@@ -676,58 +558,11 @@ const HistoryTab = React.memo(function HistoryTab() {
                 </h3>
               </div>
             ) : (
-              <div className="group flex items-center gap-4 px-4 py-3 rounded-2xl hover:bg-white/[0.04] transition-all duration-300">
-                <button
-                  type="button"
-                  className="relative w-11 h-11 rounded-xl overflow-hidden shrink-0 ring-1 ring-white/[0.08] shadow-md cursor-pointer"
-                  onClick={() => {
-                    const tracks = entries.map(historyEntryToTrack);
-                    const idx = entries.findIndex((e) => e.id === row.entry.id);
-                    play(tracks[idx], tracks);
-                  }}
-                >
-                  {row.entry.artworkUrl ? (
-                    <img
-                      src={art(row.entry.artworkUrl, 't200x200') ?? ''}
-                      alt=""
-                      className="w-full h-full object-cover"
-                      decoding="async"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-white/[0.05] to-transparent">
-                      <Music size={14} className="text-white/20" />
-                    </div>
-                  )}
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity text-white">
-                    {playWhite14}
-                  </div>
-                </button>
-
-                <div className="flex-1 min-w-0 flex flex-col justify-center">
-                  <p
-                    className="text-[14px] font-medium truncate text-white/90 hover:text-white cursor-pointer transition-colors"
-                    onClick={() => navigate(`/track/${encodeURIComponent(row.entry.scTrackId)}`)}
-                  >
-                    {row.entry.title}
-                  </p>
-                  <p
-                    className={`text-[12px] text-white/40 truncate mt-0.5${row.entry.artistUrn ? ' hover:text-white/60 cursor-pointer transition-colors' : ''}`}
-                    onClick={() =>
-                      row.entry.artistUrn &&
-                      navigate(`/user/${encodeURIComponent(row.entry.artistUrn)}`)
-                    }
-                  >
-                    {row.entry.artistName}
-                  </p>
-                </div>
-
-                <span className="text-[11px] text-white/20 tabular-nums shrink-0">
-                  {new Date(row.entry.playedAt).toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </span>
-              </div>
+              <TrackTableRow
+                track={historyTracks[row.index]}
+                index={row.index}
+                queue={historyTracks}
+              />
             )
           }
         />
