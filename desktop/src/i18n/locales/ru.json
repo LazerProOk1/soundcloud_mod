@@ -749,6 +749,16 @@
   },
   "window": {
     "maximize": "Развернуть",
-    "restore": "Свернуть в окно"
+    "restore": "Свернуть в окно",
+    "minimize": "Свернуть",
+    "close": "Закрыть"
+  },
+  "tray": {
+    "play": "Слушать",
+    "pause": "Пауза",
+    "previous": "Предыдущий",
+    "next": "Следующий",
+    "open": "Открыть SoundCloud Mod",
+    "quit": "Выйти"
   }
 }

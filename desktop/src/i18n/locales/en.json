@@ -733,6 +733,16 @@
   },
   "window": {
     "maximize": "Maximize",
-    "restore": "Restore down"
+    "restore": "Restore down",
+    "minimize": "Minimize",
+    "close": "Close"
+  },
+  "tray": {
+    "play": "Play",
+    "pause": "Pause",
+    "previous": "Previous",
+    "next": "Next",
+    "open": "Open SoundCloud Mod",
+    "quit": "Quit"
   }
 }

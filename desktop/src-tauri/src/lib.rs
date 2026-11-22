@@ -183,6 +183,7 @@ pub fn run() {
             app::diagnostics::diagnostics_log,
             app::update::can_self_update,
             app::update::restart_app,
+            app::tray::tray_update,
             discord::discord_connect,
             discord::discord_disconnect,
             discord::discord_set_activity,
