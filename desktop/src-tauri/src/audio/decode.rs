@@ -336,14 +336,17 @@ where
 
 /// rodio 0.22's `Decoder::new` builds a non-seekable decoder without `byte_len`,
 /// so `try_seek` fails and every seek restarts the track. Give it the length.
+/// Some broken files make rodio panic while probing ("Seek errors should not occur during
+/// initialization"); that is caught and reported as an unrecognized format instead.
 pub(crate) fn seekable_decoder(
     bytes: &Arc<[u8]>,
 ) -> Result<Decoder<Cursor<Arc<[u8]>>>, rodio::decoder::DecoderError> {
-    Decoder::builder()
+    let builder = Decoder::builder()
         .with_data(Cursor::new(Arc::clone(bytes)))
         .with_byte_len(bytes.len() as u64)
-        .with_seekable(true)
-        .build()
+        .with_seekable(true);
+    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| builder.build()))
+        .unwrap_or(Err(rodio::decoder::DecoderError::UnrecognizedFormat))
 }
 
 pub fn resolve_normalization_gain(

@@ -313,10 +313,8 @@ impl AnonClient {
                 t.format.as_ref().and_then(|f| f.protocol.as_deref()) == Some("progressive");
 
             let media_url = match self.resolve_transcoding_url(&t.url, None, track_auth).await {
-                Ok(u) => {
-                    all_failures_are_auth = false;
-                    u
-                }
+                // A resolved URL that then fails to download is marked below.
+                Ok(u) => u,
                 Err(e) => {
                     let is_auth_err =
                         e.contains("HTTP 404") || e.contains("HTTP 403") || e.contains("HTTP 401");

@@ -1280,10 +1280,15 @@ impl TrackCacheState {
         //    Saves storage server bandwidth when S3 is reachable from the user.
         //    No cooldown is recorded here: a failure may be S3-side (banned/blocked),
         //    but the storage stream fallback (step 3) might still work.
+        // A host whose redirect timed out is unreachable for this track's other URLs too.
+        let mut redirect_timed_out: Vec<String> = Vec::new();
         for storage_url in &sorted {
             let Some(host) = host_of(storage_url) else {
                 continue;
             };
+            if redirect_timed_out.contains(&host) {
+                continue;
+            }
             let Some(redirect_url) = make_redirect_url(storage_url) else {
                 continue;
             };
@@ -1341,6 +1346,7 @@ impl TrackCacheState {
                 }
                 Err(_) => {
                     eprintln!("[TrackCache] s3 redirect headers timeout for {urn} ({host})");
+                    redirect_timed_out.push(host);
                 }
             }
         }
@@ -1437,13 +1443,19 @@ impl TrackCacheState {
                     return Ok(path);
                 }
                 Err(err) => {
-                    if i + 1 < urls.len() {
+                    // "no stream available" is about the track, not the quality: the sq URL
+                    // would answer the same 404, so don't spend a round trip on it.
+                    let no_stream = err.starts_with("HTTP 404") && err.contains("no stream");
+                    if i + 1 < urls.len() && !no_stream {
                         eprintln!(
                             "[TrackCache] {urn} URL #{} failed, trying next: {err}",
                             i + 1
                         );
                     }
                     last_err = err;
+                    if no_stream {
+                        break;
+                    }
                 }
             }
         }

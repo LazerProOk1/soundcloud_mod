@@ -46,10 +46,8 @@ pub fn discord_connect(state: tauri::State<'_, Arc<DiscordState>>) -> Result<boo
             *guard = Some(client);
             Ok(true)
         }
-        Err(e) => {
-            println!("[Discord] Connection failed: {e}");
-            Err(format!("Connection failed: {e}"))
-        }
+        // Discord not running is expected, not an error: the frontend retries with backoff.
+        Err(_) => Ok(false),
     }
 }
 

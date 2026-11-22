@@ -7,7 +7,10 @@ import { getArtistDisplay, getDisplayTitle } from './track-display';
 
 let connected = false;
 let lastConnectAttemptAt = 0;
+// Discord not running is the normal case: retry rarely, doubling up to 5 minutes.
 const CONNECT_RETRY_MS = 5000;
+const CONNECT_RETRY_MAX_MS = 5 * 60_000;
+let connectRetryMs = CONNECT_RETRY_MS;
 
 async function ensureConnected(): Promise<boolean> {
   if (!useSettingsStore.getState().discordRpcEnabled) {
@@ -15,16 +18,19 @@ async function ensureConnected(): Promise<boolean> {
   }
   if (connected) return true;
   const now = Date.now();
-  if (now - lastConnectAttemptAt < CONNECT_RETRY_MS) {
+  if (now - lastConnectAttemptAt < connectRetryMs) {
     return false;
   }
   lastConnectAttemptAt = now;
   try {
     connected = await invoke<boolean>('discord_connect');
-    return connected;
   } catch {
-    return false;
+    connected = false;
   }
+  connectRetryMs = connected
+    ? CONNECT_RETRY_MS
+    : Math.min(connectRetryMs * 2, CONNECT_RETRY_MAX_MS);
+  return connected;
 }
 
 function artworkToLarge(url: string | null): string | undefined {
@@ -138,6 +144,9 @@ useSettingsStore.subscribe((state, prev) => {
     return;
   }
 
+  // Turned on (or changed) by hand: try now instead of waiting out the backoff.
+  lastConnectAttemptAt = 0;
+  connectRetryMs = CONNECT_RETRY_MS;
   const { currentTrack } = usePlayerStore.getState();
   if (currentTrack) {
     void updatePresence(currentTrack);

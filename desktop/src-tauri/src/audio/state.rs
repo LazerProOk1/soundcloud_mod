@@ -49,9 +49,6 @@ pub struct AudioState {
     pub last_known_default_output: Mutex<Option<String>>,
     pub lyrics_timeline: Mutex<Option<LyricsTimelineState>>,
     pub analyser_buffer: Arc<AnalyserBuffer>,
-    /// Shared HTTP client — reused across all track loads so the connection pool
-    /// and TLS sessions are preserved between requests.
-    pub http_client: reqwest::Client,
 }
 
 pub fn init() -> AudioState {
@@ -124,12 +121,6 @@ pub fn init() -> AudioState {
 
     let shared_mixer = mixer_rx.recv().expect("audio thread failed to init");
 
-    let http_client = reqwest::Client::builder()
-        .read_timeout(Duration::from_secs(30))
-        .connect_timeout(Duration::from_secs(10))
-        .build()
-        .expect("failed to build HTTP client");
-
     AudioState {
         player: Mutex::new(None),
         mixer: shared_mixer,
@@ -156,6 +147,5 @@ pub fn init() -> AudioState {
         last_known_default_output: Mutex::new(None),
         lyrics_timeline: Mutex::new(None),
         analyser_buffer: AnalyserBuffer::new(),
-        http_client,
     }
 }
