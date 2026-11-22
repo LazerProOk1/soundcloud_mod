@@ -13,6 +13,9 @@ import {
 } from '../lib/update-check';
 
 const IMAGE = /!\[[^\]]*\]\(([^)]+)\)/;
+/** Shown when a release has no picture of its own (patch releases). */
+const DEFAULT_BANNER =
+  'https://raw.githubusercontent.com/LazerProOk1/soundcloud_mod/main/docs/banner.webp';
 
 /** **bold** and [links](url) inside one line of release notes. */
 function inline(text: string, key: string) {
@@ -54,7 +57,7 @@ function inline(text: string, key: string) {
  * "which file to download" section are dropped.
  */
 function parseNotes(body: string) {
-  const banner = body.match(IMAGE)?.[1] ?? null;
+  const banner = body.match(IMAGE)?.[1] ?? DEFAULT_BANNER;
   const cut = body.search(/<details|^###\s+(Какой файл скачать|Which file)/im);
   const lines = (cut >= 0 ? body.slice(0, cut) : body)
     .split(/\r?\n/)

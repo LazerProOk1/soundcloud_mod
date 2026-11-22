@@ -202,6 +202,12 @@ jobs:
           if [ "$(git cat-file -t "$tag")" = tag ]; then
             git tag -l --format='%(contents)' "$tag" > whats-new.md
           fi
+          # No picture of its own (a patch): lead with the README banner, like the app does.
+          banner="![SoundCloud Mod](https://raw.githubusercontent.com/$GITHUB_REPOSITORY/main/docs/banner.webp)"
+          if [ -s whats-new.md ] && ! grep -q '!\[' whats-new.md; then
+            { head -n 1 whats-new.md; echo; echo "$banner"; tail -n +2 whats-new.md; } > wn.tmp
+            mv wn.tmp whats-new.md
+          fi
           {
             if [ -s whats-new.md ]; then
               cat whats-new.md
