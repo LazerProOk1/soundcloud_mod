@@ -26,7 +26,6 @@ import { trackedInvoke as invoke } from './diagnostics';
 import { isUrnDisliked } from './dislikes';
 import { recordEvent } from './events';
 import { art } from './formatters';
-import { isDownloadable } from './offline-download';
 import { rememberRecentlyPlayed, rememberTracks } from './offline-index';
 import { getUrnCluster, recordClusterFeedback } from './recsFeedback';
 import {
@@ -605,10 +604,10 @@ async function loadTrack(track: Track) {
     // "SoundCloud" = direct first, then our mirror right away: the mirror answers in a few
     // seconds for tracks SoundCloud won't give anonymously, while YouTube needs yt-dlp
     // (~7 s just to find the track), so it's tried only after both.
-    // A track SoundCloud marks as preview / blocked, or one the mirror already had no stream
-    // for, would spend ~8 s failing there: try the fallback sources first instead. SoundCloud
-    // stays last in case the flag was stale.
-    const scClosed = !isDownloadable(track) || isRefusedMirror(urn);
+    // A track the mirror already had no stream for would spend ~8 s failing there again: try
+    // the fallback sources first. (Not the track's preview/blocked flag: SoundCloud often still
+    // streams those, and YouTube downloads can crawl.) SoundCloud stays last in that case.
+    const scClosed = isRefusedMirror(urn);
     const order = scClosed
       ? [
           ...enabled.filter((id) => id !== 'soundcloud'),

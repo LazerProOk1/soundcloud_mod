@@ -49,7 +49,6 @@ import {
   ThumbsUp,
 } from '../lib/icons';
 import { isUrnLiked } from '../lib/likes';
-import { isDownloadable } from '../lib/offline-download';
 import { matchOnSoundCloud } from '../lib/link-import';
 import {
   getArtistDisplay,
@@ -76,14 +75,9 @@ const _waveUrns = new Set<string>();
 /** Fewer plays than this reads as a no-name upload in the wave. */
 const MIN_WAVE_PLAYS = 10_000;
 
-/**
- * A track worth putting in the wave: played enough and streamable from
- * SoundCloud (previews and blocked ones only play through the slow YouTube fallback). Liked
- * tracks always count.
- */
+/** A track worth putting in the wave: played enough, or liked. */
 function isQuality(tr: Track): boolean {
-  if (isUrnLiked(tr.urn)) return true;
-  return (tr.playback_count ?? MIN_WAVE_PLAYS) >= MIN_WAVE_PLAYS && isDownloadable(tr);
+  return isUrnLiked(tr.urn) || (tr.playback_count ?? MIN_WAVE_PLAYS) >= MIN_WAVE_PLAYS;
 }
 
 /**
