@@ -84,6 +84,18 @@ export function ImportPage() {
               {t('import.page.resume')}
             </button>
           )}
+          {job.status !== 'running' && job.rows.some((r) => r.state === 'missing') && (
+            <button
+              type="button"
+              onClick={() => {
+                useImportsStore.getState().requeueMissing(job.id);
+                void runImport(job.id);
+              }}
+              className={pill}
+            >
+              {t('import.page.retryMissing')}
+            </button>
+          )}
           {job.playlistUrn && (
             <button
               type="button"

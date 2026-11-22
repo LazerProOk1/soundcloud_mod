@@ -506,7 +506,8 @@
       "confirmDelete": "Delete for sure?",
       "notFound": "Not found",
       "remove": "Remove from import",
-      "duplicate": "Duplicate"
+      "duplicate": "Duplicate",
+      "retryMissing": "Search not-found again"
     }
   },
   "transitions": {

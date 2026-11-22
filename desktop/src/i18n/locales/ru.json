@@ -522,7 +522,8 @@
       "confirmDelete": "Точно удалить?",
       "notFound": "Не найдено",
       "remove": "Убрать из импорта",
-      "duplicate": "Повтор"
+      "duplicate": "Повтор",
+      "retryMissing": "Искать ненайденные ещё раз"
     }
   },
   "transitions": {

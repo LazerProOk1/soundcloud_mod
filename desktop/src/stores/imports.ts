@@ -32,6 +32,8 @@ interface ImportsState {
   add: (title: string, items: ImportItem[]) => string;
   setRow: (id: string, key: number, row: Partial<ImportRow>) => void;
   removeRow: (id: string, key: number) => void;
+  /** Not-found rows go back to the search queue. */
+  requeueMissing: (id: string) => void;
   update: (id: string, patch: Partial<ImportJob>) => void;
   remove: (id: string) => void;
 }
@@ -82,6 +84,13 @@ export const useImportsStore = create<ImportsState>()(
                 ? { ...r, ...row, ...(row.track ? { track: slim(row.track) } : {}) }
                 : r,
             ),
+          })),
+        })),
+      requeueMissing: (id) =>
+        set((s) => ({
+          jobs: patchJob(s.jobs, id, (j) => ({
+            ...j,
+            rows: j.rows.map((r) => (r.state === 'missing' ? { ...r, state: 'pending' } : r)),
           })),
         })),
       removeRow: (id, key) =>
