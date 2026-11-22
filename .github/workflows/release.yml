@@ -127,8 +127,13 @@ jobs:
             icon=$(grep -m1 '^Icon=' squashfs-root/*.desktop | cut -d= -f2)
             cp --remove-destination "squashfs-root/$icon.png" squashfs-root/.DirIcon
             test -s squashfs-root/.DirIcon
-            # Extract + repack can drop the exec bit; the catalog then can't start AppRun.
+            # --appimage-extract makes squashfs-root owner-only (drwx------) and appimagetool packs
+            # it as root, so a normal user (the catalog's firejail run) could not even reach
+            # AppRun: "Permission denied". Open every directory for reading and traversal.
+            chmod 755 squashfs-root
+            chmod -R u+rwX,go+rX squashfs-root
             chmod +x squashfs-root/AppRun squashfs-root/usr/bin/*
+            ls -ld squashfs-root squashfs-root/usr squashfs-root/usr/bin
             ls -l squashfs-root/AppRun squashfs-root/usr/bin
             "$RUNNER_TEMP/appimagetool" squashfs-root "$img"
             rm -rf squashfs-root "$img.sig"
