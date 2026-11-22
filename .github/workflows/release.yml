@@ -127,6 +127,9 @@ jobs:
             icon=$(grep -m1 '^Icon=' squashfs-root/*.desktop | cut -d= -f2)
             cp --remove-destination "squashfs-root/$icon.png" squashfs-root/.DirIcon
             test -s squashfs-root/.DirIcon
+            # Extract + repack can drop the exec bit; the catalog then can't start AppRun.
+            chmod +x squashfs-root/AppRun squashfs-root/usr/bin/*
+            ls -l squashfs-root/AppRun squashfs-root/usr/bin
             "$RUNNER_TEMP/appimagetool" squashfs-root "$img"
             rm -rf squashfs-root "$img.sig"
             # Repacking changed the bytes, so the updater signature has to be made again.
@@ -142,9 +145,10 @@ jobs:
           bundle=desktop/src-tauri/target/release/bundle
           mkdir -p release-assets
           cp $bundle/deb/*.deb "$out-amd64.deb"
-          cp $bundle/appimage/*.AppImage "$out-x86_64.AppImage"
+          # The AppImage catalog asks for no "linux" in AppImage names.
+          cp $bundle/appimage/*.AppImage "release-assets/soundcloud-mod-$version-x86_64.AppImage"
           mkdir -p sigs
-          cp $bundle/appimage/*.AppImage.sig "sigs/soundcloud-mod-$version-linux-x86_64.AppImage.sig"
+          cp $bundle/appimage/*.AppImage.sig "sigs/soundcloud-mod-$version-x86_64.AppImage.sig"
           cp $bundle/rpm/*.rpm "$out-x86_64.rpm"
 
       - name: Keep updater signatures for latest.json
