@@ -98,34 +98,42 @@ export const Sidebar = React.memo(() => {
       // Full height minus the 8px margins: `h-full` + margin pushed the profile row off the bottom.
       style={{ width: collapsed ? 72 : 280, height: 'calc(100% - 16px)', boxShadow: 'none' }}
     >
-      {/* "My library" header doubles as the collapse toggle (like Spotify). */}
-      <button
-        type="button"
-        onClick={toggleSidebar}
-        title={t(collapsed ? 'nav.expand' : 'nav.collapse')}
-        className={`group flex items-center gap-2.5 mx-2 mt-2 mb-1 px-2 h-11 rounded-lg text-white/85 hover:text-white ui-icon cursor-pointer ${
-          collapsed ? 'justify-center' : ''
-        }`}
+      {/* "My library": the icon collapses the panel, the title opens the library page. */}
+      <div
+        className={`flex items-center gap-1 mx-2 mt-2 mb-1 h-11 ${collapsed ? 'justify-center' : ''}`}
       >
-        <span className="relative w-5 h-5 shrink-0">
-          <Library
-            size={20}
-            className="absolute inset-0 transition-opacity group-hover:opacity-0"
-          />
+        <button
+          type="button"
+          onClick={toggleSidebar}
+          title={t(collapsed ? 'nav.expand' : 'nav.collapse')}
+          className="group relative w-9 h-9 shrink-0 rounded-lg flex items-center justify-center text-white/85 hover:text-white ui-icon cursor-pointer"
+        >
+          <Library size={20} className="absolute transition-opacity group-hover:opacity-0" />
           {collapsed ? (
             <PanelLeftOpen
               size={20}
-              className="absolute inset-0 opacity-0 transition-opacity group-hover:opacity-100"
+              className="absolute opacity-0 transition-opacity group-hover:opacity-100"
             />
           ) : (
             <PanelLeftClose
               size={20}
-              className="absolute inset-0 opacity-0 transition-opacity group-hover:opacity-100"
+              className="absolute opacity-0 transition-opacity group-hover:opacity-100"
             />
           )}
-        </span>
-        {!collapsed && <span className="text-[15px] font-bold">{t('sidebar.myLibrary')}</span>}
-      </button>
+        </button>
+        {!collapsed && (
+          <NavLink
+            to="/library"
+            className={({ isActive }) =>
+              `flex-1 h-9 px-2 rounded-lg flex items-center text-[15px] font-bold transition-colors ${
+                isActive ? 'text-white' : 'text-white/85 hover:text-white hover:bg-white/[0.05]'
+              }`
+            }
+          >
+            {t('sidebar.myLibrary')}
+          </NavLink>
+        )}
+      </div>
 
       <div className="flex-1 overflow-y-auto scrollbar-hide px-2 pb-2 flex flex-col gap-0.5">
         <Row
