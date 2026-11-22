@@ -37,16 +37,56 @@ export function songKey(track: Pick<Track, 'title' | 'user' | 'publisher_metadat
     .trim();
 }
 
+type SongLike = Pick<Track, 'title' | 'user' | 'publisher_metadata' | 'duration'>;
+
+function artistOf(track: SongLike): string {
+  return (track.publisher_metadata?.artist || track.user?.username || '').toLowerCase().trim();
+}
+
+/** Words of the full title, brackets included: "World Cup (Champions)" → world, cup, champions. */
+function titleWords(track: SongLike): Set<string> {
+  const words = (track.title ?? '')
+    .toLowerCase()
+    .replace(/ё/g, 'е')
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter((w) => w.length >= 5);
+  return new Set(words);
+}
+
+/**
+ * The same song under another title by the same artist: "World Cup (Champions)" and
+ * "Champions" by IShowSpeed. Same artist (any case), lengths within 3 s and a shared word of
+ * five or more letters. Catches what `songKey` misses because it drops the brackets.
+ */
+export function sameSong(a: SongLike, b: SongLike): boolean {
+  const artist = artistOf(a);
+  if (!artist || artist !== artistOf(b)) return false;
+  if (!a.duration || !b.duration || Math.abs(a.duration - b.duration) > 3000) return false;
+  const words = titleWords(a);
+  for (const w of titleWords(b)) if (words.has(w)) return true;
+  return false;
+}
+
 /** One record per song: keeps the most played upload (usually the official one).
- *  Very short titles ("Intro") are left alone — too many different songs share them. */
+ *  Very short titles ("Intro") are left alone by the key match — too many different songs
+ *  share them; `sameSong` then folds retitled uploads of one artist. */
 export function dedupeSongs<T extends Track>(tracks: T[]): T[] {
+  const plays = (t: T) => t.playback_count ?? 0;
   const best = new Map<string, T>();
   for (const tr of tracks) {
     const key = songKey(tr);
     if (key.length < 6) continue;
     const prev = best.get(key);
-    if (!prev || (tr.playback_count ?? 0) > (prev.playback_count ?? 0)) best.set(key, tr);
+    if (!prev || plays(tr) > plays(prev)) best.set(key, tr);
   }
   const keep = new Set(best.values());
-  return tracks.filter((tr) => songKey(tr).length < 6 || keep.has(tr));
+  const byKey = tracks.filter((tr) => songKey(tr).length < 6 || keep.has(tr));
+  // Second pass: retitled copies (same artist, same length, shared word).
+  const out: T[] = [];
+  for (const tr of byKey) {
+    const i = out.findIndex((o) => sameSong(o, tr));
+    if (i < 0) out.push(tr);
+    else if (plays(tr) > plays(out[i])) out[i] = tr;
+  }
+  return out;
 }

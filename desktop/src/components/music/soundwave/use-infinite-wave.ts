@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { fetchSmartWave, type SmartWaveSeedKind, sendWaveFeedback } from '../../../lib/soundwave';
-import { songKey } from '../../../lib/track-variants';
+import { sameSong, songKey } from '../../../lib/track-variants';
 import type { Track } from '../../../stores/player';
 import { usePlayerStore } from '../../../stores/player';
 
@@ -130,7 +130,11 @@ export function useInfiniteWave(opts: {
           const songs = new Set(queued.map(songKey).filter((k) => k.length >= 6));
           const pick = (list: Track[]) =>
             list.filter(
-              (t) => !existing.has(t.urn) && !songs.has(songKey(t)) && (!filterFn || filterFn(t)),
+              (t) =>
+                !existing.has(t.urn) &&
+                !songs.has(songKey(t)) &&
+                !queued.some((q) => sameSong(q, t)) &&
+                (!filterFn || filterFn(t)),
             );
           // The local pool (YouTube Music radio, "more like this", liked) comes first:
           // it's what the listener's taste picked. The server batch only fills the gaps.
