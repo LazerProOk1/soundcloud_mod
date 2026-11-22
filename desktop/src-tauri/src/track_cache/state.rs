@@ -561,6 +561,66 @@ async fn write_cache_metadata(path: &Path, meta: &TrackCacheMetadata) {
     }
 }
 
+/// Size of one ranged request in [`fetch_in_ranges`].
+const RANGE_CHUNK: u64 = 4 * 1024 * 1024;
+
+/// YouTube throttles one long GET of a media URL to about playback speed, so a track sat at
+/// 1-5% for minutes. Ranged requests of a few MB each are served at full speed (what yt-dlp's
+/// `--http-chunk-size` does). The chunks are joined into one response, so the cache writer,
+/// its progress and play-while-downloading work unchanged.
+async fn fetch_in_ranges(client: &Client, url: &str) -> Result<reqwest::Response, String> {
+    use futures_util::{StreamExt, TryStreamExt};
+    use reqwest::header::{CONTENT_LENGTH, CONTENT_RANGE, RANGE};
+
+    let first = client
+        .get(url)
+        .header(RANGE, format!("bytes=0-{}", RANGE_CHUNK - 1))
+        .send()
+        .await
+        .and_then(|r| r.error_for_status())
+        .map_err(|e| e.to_string())?;
+    // "bytes 0-4194303/5832119" → the full size. No range support: the body is the whole file.
+    let Some(total) = first
+        .headers()
+        .get(CONTENT_RANGE)
+        .and_then(|v| v.to_str().ok())
+        .and_then(|v| v.rsplit('/').next())
+        .and_then(|v| v.parse::<u64>().ok())
+    else {
+        return Ok(first);
+    };
+
+    let (client, url) = (client.clone(), url.to_string());
+    let rest = futures_util::stream::unfold(RANGE_CHUNK, move |start| {
+        let (client, url) = (client.clone(), url.clone());
+        async move {
+            if start >= total {
+                return None;
+            }
+            let end = (start + RANGE_CHUNK - 1).min(total - 1);
+            let part = client
+                .get(&url)
+                .header(RANGE, format!("bytes={start}-{end}"))
+                .send()
+                .await
+                .and_then(|r| r.error_for_status());
+            match part {
+                Ok(r) => Some((Ok(r.bytes_stream()), end + 1)),
+                // Stop after the error; the writer sees a short file and fails the download.
+                Err(e) => Some((Err(e), total)),
+            }
+        }
+    })
+    .try_flatten();
+    let body = reqwest::Body::wrap_stream(first.bytes_stream().chain(rest));
+    let joined = http::Response::builder()
+        .status(200)
+        .header(CONTENT_LENGTH, total)
+        .body(body)
+        .map_err(|e| e.to_string())?;
+    Ok(reqwest::Response::from(joined))
+}
+
 async fn write_response_to_cache(
     target_dir: &Path,
     urn: &str,
@@ -1073,13 +1133,17 @@ impl TrackCacheState {
                 errors.join("; ")
             }
         })?;
-        let resp = self
-            .client
-            .get(&url)
-            .send()
-            .await
-            .and_then(|r| r.error_for_status())
-            .map_err(|e| format!("{label} audio: {e}"))?;
+        let resp = if matches!(source, DownloadSource::Youtube) {
+            fetch_in_ranges(&self.client, &url).await
+        } else {
+            self.client
+                .get(&url)
+                .send()
+                .await
+                .and_then(|r| r.error_for_status())
+                .map_err(|e| e.to_string())
+        }
+        .map_err(|e| format!("{label} audio: {e}"))?;
         println!(
             "[TrackCache] {urn} → {label} fallback (resolved in {}ms)",
             started.elapsed().as_millis()
