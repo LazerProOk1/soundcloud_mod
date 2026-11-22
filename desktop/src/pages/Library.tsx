@@ -313,16 +313,10 @@ const LibraryHero = React.memo(function LibraryHero({
 
 /* Each tab is its own component — only fetches its own data */
 
-const LocalTracksTab = React.memo(function LocalTracksTab({
-  kind,
-  filter,
-}: {
-  kind: 'superlikes' | 'disliked';
-  filter: string;
-}) {
+const DislikesTab = React.memo(function DislikesTab({ filter }: { filter: string }) {
   const { t } = useTranslation();
   const qc = useQueryClient();
-  const all = useLibraryLocalStore((s) => s[kind]);
+  const all = useLibraryLocalStore((s) => s.disliked);
   const tracks = useMemo(() => {
     if (!filter) return all;
     const q = filter.toLowerCase();
@@ -334,9 +328,7 @@ const LocalTracksTab = React.memo(function LocalTracksTab({
   if (tracks.length === 0) {
     return (
       <div className="py-20 text-center text-white/25 text-[13px]">
-        {filter
-          ? t('library.noMatches')
-          : t(kind === 'superlikes' ? 'library.noSuperlikes' : 'library.noDislikes')}
+        {filter ? t('library.noMatches') : t('library.noDislikes')}
       </div>
     );
   }
@@ -345,16 +337,13 @@ const LocalTracksTab = React.memo(function LocalTracksTab({
       {tracks.map((track, i) => (
         <div key={track.urn} className="flex items-center gap-2">
           <div className="flex-1 min-w-0">
-            <LibraryTrackRow track={track} index={i} queue={kind === 'disliked' ? [] : tracks} />
+            {/* Played on its own: a disliked track starts only when picked here. */}
+            <LibraryTrackRow track={track} index={i} queue={[track]} />
           </div>
           <button
             type="button"
-            title={t(kind === 'superlikes' ? 'trackMenu.unsuperlike' : 'library.undislike')}
-            onClick={() =>
-              kind === 'superlikes'
-                ? useLibraryLocalStore.getState().toggleSuperlike(track)
-                : void toggleDislike(qc, track, false)
-            }
+            title={t('library.undislike')}
+            onClick={() => void toggleDislike(qc, track, false)}
             className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-white/40 hover:text-white ui-icon transition-colors cursor-pointer"
           >
             <X size={16} />
@@ -765,11 +754,10 @@ export const Library = React.memo(() => {
     | 'likes'
     | 'following'
     | 'history'
-    | 'superlikes'
     | 'disliked'
     | null;
   const [activeTab, setActiveTab] = useState<
-    'playlists' | 'likes' | 'following' | 'history' | 'superlikes' | 'disliked'
+    'playlists' | 'likes' | 'following' | 'history' | 'disliked'
   >(tabParam || 'likes');
   const [filter, setFilter] = useState('');
 
@@ -787,7 +775,6 @@ export const Library = React.memo(() => {
     { id: 'playlists', label: t('search.playlists') },
     { id: 'likes', label: t('library.likedTracks') },
     { id: 'following', label: t('nav.following') },
-    { id: 'superlikes', label: t('library.superlikes') },
     { id: 'history', label: t('library.history') },
     { id: 'disliked', label: t('library.dislikes') },
   ] as const;
@@ -836,8 +823,7 @@ export const Library = React.memo(() => {
       {activeTab === 'following' && <FollowingTab filter={deferredFilter} />}
       {activeTab === 'playlists' && <PlaylistsTab filter={deferredFilter} />}
       {activeTab === 'history' && <HistoryTab />}
-      {activeTab === 'superlikes' && <LocalTracksTab kind="superlikes" filter={deferredFilter} />}
-      {activeTab === 'disliked' && <LocalTracksTab kind="disliked" filter={deferredFilter} />}
+      {activeTab === 'disliked' && <DislikesTab filter={deferredFilter} />}
     </div>
   );
 });

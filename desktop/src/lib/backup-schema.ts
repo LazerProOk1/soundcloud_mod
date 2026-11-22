@@ -42,7 +42,6 @@ export interface ProfileBackupPayload {
   exportedAt: string;
   settings: Record<string, unknown>;
   libraryLocal: {
-    superlikes: unknown[];
     disliked: unknown[];
     likesTop: string[];
     likesBottom: string[];
@@ -64,7 +63,6 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 export function buildProfileBackupPayload(input: {
   settings: Record<string, unknown>;
   libraryLocal: {
-    superlikes: unknown[];
     disliked: unknown[];
     likesTop: string[];
     likesBottom: string[];
@@ -84,7 +82,6 @@ export function buildProfileBackupPayload(input: {
     exportedAt: new Date().toISOString(),
     settings,
     libraryLocal: {
-      superlikes: [...input.libraryLocal.superlikes],
       disliked: [...input.libraryLocal.disliked],
       likesTop: [...input.libraryLocal.likesTop],
       likesBottom: [...input.libraryLocal.likesBottom],
@@ -109,7 +106,6 @@ export function parseProfileBackupPayload(raw: unknown): ProfileBackupPayload | 
   const lib = raw.libraryLocal;
   const isTrackEntry = (v: unknown) =>
     isPlainObject(v) && typeof v.urn === 'string' && v.urn.length > 0;
-  const superlikes = Array.isArray(lib.superlikes) ? lib.superlikes.filter(isTrackEntry) : [];
   const disliked = Array.isArray(lib.disliked) ? lib.disliked.filter(isTrackEntry) : [];
   const likesTop = Array.isArray(lib.likesTop)
     ? lib.likesTop.filter((u): u is string => typeof u === 'string')
@@ -145,7 +141,6 @@ export function parseProfileBackupPayload(raw: unknown): ProfileBackupPayload | 
     exportedAt: typeof raw.exportedAt === 'string' ? raw.exportedAt : new Date().toISOString(),
     settings,
     libraryLocal: {
-      superlikes,
       disliked,
       likesTop,
       likesBottom,

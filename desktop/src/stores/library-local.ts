@@ -5,14 +5,12 @@ import type { Track } from './player';
 
 /**
  * Library state kept on this device only (the backend has no API for it):
- * superlikes, the list of disliked tracks, and a custom order for liked tracks.
+ * the list of disliked tracks and a custom order for liked tracks.
  */
 interface LibraryLocalState {
-  superlikes: Track[];
   disliked: Track[];
   likesTop: string[];
   likesBottom: string[];
-  toggleSuperlike: (track: Track) => void;
   rememberDislike: (track: Track, disliked: boolean) => void;
   moveLiked: (urn: string, where: 'top' | 'bottom') => void;
   resetLikesOrder: () => void;
@@ -29,16 +27,9 @@ function slim(track: Track): Track {
 export const useLibraryLocalStore = create<LibraryLocalState>()(
   persist(
     (set) => ({
-      superlikes: [],
       disliked: [],
       likesTop: [],
       likesBottom: [],
-      toggleSuperlike: (track) =>
-        set((s) =>
-          s.superlikes.some((t) => t.urn === track.urn)
-            ? { superlikes: s.superlikes.filter((t) => t.urn !== track.urn) }
-            : { superlikes: [slim(track), ...s.superlikes] },
-        ),
       rememberDislike: (track, disliked) =>
         set((s) => {
           const rest = s.disliked.filter((t) => t.urn !== track.urn);
@@ -60,10 +51,6 @@ export const useLibraryLocalStore = create<LibraryLocalState>()(
     },
   ),
 );
-
-export function useSuperliked(urn: string): boolean {
-  return useLibraryLocalStore((s) => s.superlikes.some((t) => t.urn === urn));
-}
 
 /** Applies the user's "move to top / bottom" order on top of the server order. */
 export function orderLikes(tracks: Track[], top: string[], bottom: string[]): Track[] {

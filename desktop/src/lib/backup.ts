@@ -16,7 +16,6 @@ export function createProfileBackup(): ProfileBackupPayload {
   return buildProfileBackupPayload({
     settings: settings as unknown as Record<string, unknown>,
     libraryLocal: {
-      superlikes: libraryLocal.superlikes,
       disliked: libraryLocal.disliked,
       likesTop: libraryLocal.likesTop,
       likesBottom: libraryLocal.likesBottom,
@@ -72,7 +71,6 @@ export function restoreProfileBackupFromText(jsonText: string): boolean {
   }
 
   useLibraryLocalStore.setState({
-    superlikes: backup.libraryLocal.superlikes as Track[],
     disliked: backup.libraryLocal.disliked as Track[],
     likesTop: backup.libraryLocal.likesTop,
     likesBottom: backup.libraryLocal.likesBottom,

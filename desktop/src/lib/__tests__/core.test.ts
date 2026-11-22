@@ -46,7 +46,6 @@ test('buildProfileBackupPayload keeps only whitelisted settings keys', () => {
       setAccentColor: () => {},
     },
     libraryLocal: {
-      superlikes: [{ urn: 'soundcloud:tracks:1', title: 'Track 1' }],
       disliked: [],
       likesTop: ['soundcloud:tracks:1'],
       likesBottom: [],
@@ -91,8 +90,9 @@ test('parseProfileBackupPayload rejects invalid headers and clamps player values
       injectedKey: 'ignored',
     },
     libraryLocal: {
-      superlikes: [{ urn: 'soundcloud:tracks:42', title: 'Valid' }, { title: 'Missing URN' }],
-      disliked: ['not-an-object'],
+      // An old backup still carries superlikes: they are ignored.
+      superlikes: [{ urn: 'soundcloud:tracks:7', title: 'Old superlike' }],
+      disliked: [{ urn: 'soundcloud:tracks:42', title: 'Valid' }, { title: 'Missing URN' }, 'x'],
       likesTop: ['soundcloud:tracks:42', 123],
       likesBottom: [],
     },
@@ -109,8 +109,8 @@ test('parseProfileBackupPayload rejects invalid headers and clamps player values
   assert.ok(parsed);
   assert.equal(parsed.settings.panelStyle, 'flat');
   assert.equal('injectedKey' in parsed.settings, false);
-  assert.equal(parsed.libraryLocal.superlikes.length, 1);
-  assert.equal(parsed.libraryLocal.disliked.length, 0);
+  assert.equal('superlikes' in parsed.libraryLocal, false);
+  assert.equal(parsed.libraryLocal.disliked.length, 1);
   assert.deepEqual(parsed.libraryLocal.likesTop, ['soundcloud:tracks:42']);
   assert.equal(parsed.playerPreferences.volume, 200);
   assert.equal(parsed.playerPreferences.playbackRate, 3);
@@ -374,7 +374,7 @@ test('backup-schema includes soundwaveVibe and soundwaveMode', () => {
       soundwaveMode: 'diverse',
       panelStyle: 'flat',
     },
-    libraryLocal: { superlikes: [], disliked: [], likesTop: [], likesBottom: [] },
+    libraryLocal: { disliked: [], likesTop: [], likesBottom: [] },
     playerPreferences: {},
   });
   const parsed = parseProfileBackupPayload(payload);

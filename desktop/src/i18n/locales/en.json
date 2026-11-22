@@ -204,9 +204,7 @@
     "noLikedTracks": "No liked tracks yet",
     "notFollowing": "You are not following anyone",
     "noPlaylists": "No playlists found",
-    "superlikes": "Superlikes",
     "dislikes": "Dislikes",
-    "noSuperlikes": "No superlikes yet. Right-click a track to add one",
     "noDislikes": "Tracks you dislike will show up here",
     "undislike": "Remove dislike",
     "resetOrder": "Reset my order"
@@ -297,7 +295,7 @@
     "tempCacheCleared": "Temporary cache cleared, likes kept",
     "cacheCleared": "Cache cleared",
     "backup": "Backup",
-    "backupDesc": "Export and import settings, equalizer, superlikes, dislikes, and custom liked tracks order",
+    "backupDesc": "Export and import settings, equalizer, dislikes, and custom liked tracks order",
     "exportBackup": "Export JSON",
     "importBackup": "Import JSON",
     "backupExported": "Backup exported",
@@ -696,8 +694,6 @@
     "linkCopied": "Link copied",
     "labelCopied": "Copied",
     "copyFailed": "Couldn't copy",
-    "superlike": "Superlike",
-    "unsuperlike": "Remove superlike",
     "likesTop": "Move to top of likes",
     "likesBottom": "Move to bottom of likes"
   },

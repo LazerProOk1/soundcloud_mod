@@ -15,7 +15,6 @@ import {
   ListPlus,
   ListStart,
   ListX,
-  Star,
   User,
 } from '../../../lib/icons';
 import { setTrackLiked } from '../../../lib/like-toggle';
@@ -29,7 +28,7 @@ import {
 } from '../../../lib/track-actions';
 import { getArtistDisplay, getArtistTarget } from '../../../lib/track-display';
 import { useAppStatusStore } from '../../../stores/app-status';
-import { useLibraryLocalStore, useSuperliked } from '../../../stores/library-local';
+import { useLibraryLocalStore } from '../../../stores/library-local';
 import { usePlayerStore } from '../../../stores/player';
 import { type TrackMenuTarget, useTrackMenuStore } from '../../../stores/trackMenu';
 import { MenuItem, MenuSeparator } from './MenuItem';
@@ -40,7 +39,6 @@ export function TrackMenuItems({ target }: { target: TrackMenuTarget }) {
   const qc = useQueryClient();
   const { track, queueIndex } = target;
   const liked = useLiked(track.urn);
-  const superliked = useSuperliked(track.urn);
   const online = useAppStatusStore(
     (s) => !s.offlineBypass && s.navigatorOnline && s.backendReachable,
   );
@@ -110,15 +108,6 @@ export function TrackMenuItems({ target }: { target: TrackMenuTarget }) {
             icon={<Heart size={15} fill={liked ? 'currentColor' : 'none'} />}
             label={liked ? t('trackMenu.unlike') : t('trackMenu.like')}
             onSelect={run(() => void setTrackLiked(qc, track, !liked))}
-          />
-        ),
-        playable && (
-          <MenuItem
-            key="superlike"
-            active={superliked}
-            icon={<Star size={15} fill={superliked ? 'currentColor' : 'none'} />}
-            label={superliked ? t('trackMenu.unsuperlike') : t('trackMenu.superlike')}
-            onSelect={run(() => useLibraryLocalStore.getState().toggleSuperlike(track))}
           />
         ),
         liked && (
