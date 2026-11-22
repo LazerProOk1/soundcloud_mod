@@ -792,26 +792,79 @@ textarea:focus-visible {
    Used in TrackCard overlay and QueuePanel when a track is playing.
    scaleY loop only — GPU compositor, zero layout cost.            */
 
-@keyframes eq-bar {
+/* "Now playing" bars: each bar moves to its own irregular rhythm (no lock-step wave), with an
+   accent gradient that brightens at the top and a soft glow. */
+@keyframes eq-bar-a {
   0%,
   100% {
+    transform: scaleY(0.3);
+  }
+  20% {
+    transform: scaleY(0.9);
+  }
+  45% {
+    transform: scaleY(0.45);
+  }
+  70% {
+    transform: scaleY(1);
+  }
+}
+@keyframes eq-bar-b {
+  0%,
+  100% {
+    transform: scaleY(0.75);
+  }
+  30% {
     transform: scaleY(0.25);
   }
-  50% {
+  55% {
+    transform: scaleY(0.95);
+  }
+  80% {
+    transform: scaleY(0.5);
+  }
+}
+@keyframes eq-bar-c {
+  0%,
+  100% {
+    transform: scaleY(0.5);
+  }
+  25% {
     transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(0.35);
+  }
+  75% {
+    transform: scaleY(0.8);
   }
 }
 
 .eq-bar {
   transform-origin: bottom;
-  animation: eq-bar 0.9s ease-in-out infinite;
+  border-radius: 999px;
+  background: linear-gradient(
+    to top,
+    var(--color-accent),
+    color-mix(in srgb, var(--color-accent) 55%, #fff)
+  );
+  box-shadow: 0 0 6px color-mix(in srgb, var(--color-accent) 55%, transparent);
+  animation: eq-bar-a 1.05s ease-in-out infinite;
   will-change: transform;
 }
 .eq-bar:nth-child(2) {
-  animation-delay: 0.18s;
+  animation-name: eq-bar-b;
+  animation-duration: 0.85s;
 }
 .eq-bar:nth-child(3) {
-  animation-delay: 0.36s;
+  animation-name: eq-bar-c;
+  animation-duration: 1.2s;
+}
+@media (prefers-reduced-motion: reduce) {
+  .eq-bar {
+    animation: none;
+    transform: scaleY(0.6);
+  }
 }
 
 /* ── Titlebar spinning disc + panel slide-in ─────────────────── */
