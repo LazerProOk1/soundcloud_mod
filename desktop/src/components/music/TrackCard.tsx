@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
-import { preloadTrack } from '../../lib/audio';
+import { cancelPreload, preloadTrack } from '../../lib/audio';
 import { art, dur, fc } from '../../lib/formatters';
 import { ListMusic, ListPlus, playIcon32 } from '../../lib/icons';
 import { recordClusterFeedback, setUrnCluster, useClusterFeedback } from '../../lib/recsFeedback';
@@ -68,6 +68,7 @@ export const TrackCard = React.memo(
     };
 
     const handleMouseLeave = () => {
+      cancelPreload();
       const el = cardRef.current;
       if (el) {
         el.style.transform =

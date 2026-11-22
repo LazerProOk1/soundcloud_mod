@@ -1210,11 +1210,15 @@ async function autoplayRelated(lastTrack: Track) {
 /* ── Preloading ──────────────────────────────────────────────── */
 
 let preloadTimer: ReturnType<typeof setTimeout> | null = null;
+/** Hover this long before a track is fetched: sweeping the mouse over a list fetches nothing. */
+const HOVER_INTENT_MS = 400;
 
+/** Starts fetching a hovered track so a click plays at once; `cancelPreload` on mouse leave. */
 export function preloadTrack(urn: string) {
   if (!urn || urn === currentUrn) return;
   if (preloadTimer) clearTimeout(preloadTimer);
   preloadTimer = setTimeout(() => {
+    preloadTimer = null;
     if (urn === currentUrn) return;
     const sessionId = getSessionId();
     invoke('track_preload', {
@@ -1222,7 +1226,12 @@ export function preloadTrack(urn: string) {
         { urn, urls: streamFallbackUrls(urn), storageUrls: buildStorageUrls(urn), sessionId },
       ],
     }).catch(console.error);
-  }, 150);
+  }, HOVER_INTENT_MS);
+}
+
+export function cancelPreload() {
+  if (preloadTimer) clearTimeout(preloadTimer);
+  preloadTimer = null;
 }
 
 export function preloadQueue() {

@@ -1,4 +1,5 @@
 import React from 'react';
+import { cancelPreload, preloadTrack } from '../../lib/audio';
 import { art, dur } from '../../lib/formatters';
 import { Music, Trash2 } from '../../lib/icons';
 import { useArtistDisplay, useDisplayTitle } from '../../lib/track-display';
@@ -32,6 +33,8 @@ export const TrackTableRow = React.memo(function TrackTableRow({
   return (
     <div
       onDoubleClick={togglePlay}
+      onMouseEnter={() => preloadTrack(track.urn)}
+      onMouseLeave={cancelPreload}
       onContextMenu={(e) => openTrackMenu(e, track)}
       style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 56px' }}
       className={`group grid grid-cols-[32px_minmax(0,1fr)_minmax(0,0.7fr)_40px_56px] items-center gap-4 px-4 h-14 rounded-md select-none transition-colors duration-150 ${
