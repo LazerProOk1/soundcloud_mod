@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useParams } from 'react-router-dom';
 import { TrackListPage } from '../components/music/TrackListPage';
 import { TrackTableRow } from '../components/music/TrackTableRow';
+import { VirtualList } from '../components/ui/VirtualList';
 import { ALL_LIKES_PAGE_SIZE, useLikedTracks } from '../lib/hooks';
 import { Download, ExternalLink, Loader2, Trash2, X } from '../lib/icons';
 import { runImport } from '../lib/link-import';
@@ -117,11 +118,16 @@ export function ImportPage() {
       }
       renderRows={(shown) =>
         // Filtering by the search box shows found tracks only; otherwise every source row.
-        shown === tracks
-          ? job.rows.map((row, i) =>
+        // Virtualised like a playlist: only the visible rows render, so a removal or a found
+        // track doesn't redraw (and re-check the cache of) 900 rows.
+        shown === tracks ? (
+          <VirtualList
+            items={job.rows}
+            rowHeight={56}
+            getItemKey={(row) => String(row.key)}
+            renderItem={(row, i) =>
               row.state === 'found' && row.track ? (
                 <TrackTableRow
-                  key={row.key}
                   track={row.track}
                   index={i}
                   queue={tracks}
@@ -130,17 +136,22 @@ export function ImportPage() {
                 />
               ) : (
                 <SourceRow
-                  key={row.key}
                   index={i}
                   row={row}
                   searching={row.key === searchingKey}
                   onRemove={() => removeRow(row.key)}
                 />
-              ),
-            )
-          : shown.map((track, i) => (
-              <TrackTableRow key={track.urn} track={track} index={i} queue={shown} />
-            ))
+              )
+            }
+          />
+        ) : (
+          <VirtualList
+            items={shown}
+            rowHeight={56}
+            getItemKey={(track) => track.urn}
+            renderItem={(track, i) => <TrackTableRow track={track} index={i} queue={shown} />}
+          />
+        )
       }
     />
   );
