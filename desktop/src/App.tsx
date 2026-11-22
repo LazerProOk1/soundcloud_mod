@@ -7,6 +7,7 @@ import { AppShell } from './components/layout/AppShell';
 import { MiniPlayer } from './components/layout/MiniPlayer';
 import { ReAuthOverlay } from './components/ReAuthOverlay';
 import { ThemeProvider } from './components/ThemeProvider';
+import { AppTooltip } from './components/ui/AppTooltip';
 import { LiquidGlassDefs } from './components/ui/LiquidGlassDefs';
 import { ApiError } from './lib/api';
 import { CHECK_UPDATES } from './lib/constants';
@@ -283,6 +284,7 @@ export default function App() {
   return (
     <ThemeProvider>
       <LiquidGlassDefs />
+      <AppTooltip />
       <Toaster
         theme="light"
         position="top-center"

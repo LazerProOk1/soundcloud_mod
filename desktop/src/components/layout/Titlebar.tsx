@@ -216,6 +216,7 @@ const SettingsButton = React.memo(() => {
 });
 
 export const Titlebar = React.memo(() => {
+  const { t } = useTranslation();
   const win = getSafeWindow();
 
   return (
@@ -239,7 +240,8 @@ export const Titlebar = React.memo(() => {
           <>
             <button
               type="button"
-              aria-label="Minimize"
+              aria-label={t('window.minimize')}
+              title={t('window.minimize')}
               className={capBtn}
               onClick={() => win.minimize()}
             >
@@ -248,7 +250,8 @@ export const Titlebar = React.memo(() => {
             <MaximizeButton win={win} />
             <button
               type="button"
-              aria-label="Close"
+              aria-label={t('window.close')}
+              title={t('window.close')}
               className={`${capBtn} hover:!bg-[#c42b1c]`}
               onClick={() => win.close()}
             >
