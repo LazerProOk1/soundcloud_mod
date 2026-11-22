@@ -1,0 +1,7 @@
+# Always LF in the working tree too: Biome (and CI on Linux) expect LF.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.webp binary
+*.ico binary
+*.icns binary
