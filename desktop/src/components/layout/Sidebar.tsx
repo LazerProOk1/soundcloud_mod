@@ -11,7 +11,6 @@ import {
   Library,
   ListMusic,
   PanelLeftClose,
-  PanelLeftOpen,
 } from '../../lib/icons';
 import { useAuthStore } from '../../stores/auth';
 import { useCachedUrnsStore } from '../../stores/cached-urns';
@@ -99,9 +98,8 @@ export const Sidebar = React.memo(() => {
       style={{ width: collapsed ? 72 : 280, height: 'calc(100% - 16px)', boxShadow: 'none' }}
     >
       {/* "My library": the icon collapses the panel, the title opens the library page. */}
-      <div
-        className={`flex items-center gap-1 mx-2 mt-2 mb-1 h-11 ${collapsed ? 'justify-center' : ''}`}
-      >
+      {/* The button keeps one spot (centred in the 72px rail) so it does not jump mid-resize. */}
+      <div className="flex items-center gap-1 mx-2 pl-2.5 mt-2 mb-1 h-11">
         <button
           type="button"
           onClick={toggleSidebar}
@@ -109,17 +107,12 @@ export const Sidebar = React.memo(() => {
           className="group relative w-9 h-9 shrink-0 rounded-lg flex items-center justify-center text-white/85 hover:text-white ui-icon cursor-pointer"
         >
           <Library size={20} className="absolute transition-opacity group-hover:opacity-0" />
-          {collapsed ? (
-            <PanelLeftOpen
-              size={20}
-              className="absolute opacity-0 transition-opacity group-hover:opacity-100"
-            />
-          ) : (
-            <PanelLeftClose
-              size={20}
-              className="absolute opacity-0 transition-opacity group-hover:opacity-100"
-            />
-          )}
+          <PanelLeftClose
+            size={20}
+            className={`absolute opacity-0 transition-[opacity,transform] duration-300 ease-[var(--ease-spring)] group-hover:opacity-100 ${
+              collapsed ? 'rotate-180' : ''
+            }`}
+          />
         </button>
         {!collapsed && (
           <NavLink
