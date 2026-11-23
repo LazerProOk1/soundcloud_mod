@@ -289,6 +289,10 @@
     "moreLikeThisDone": "Got it — more like this"
   },
   "offline": {
+    "playlistNotSaved": "This playlist was never opened online, so there is no copy on disk",
+    "pageTitle": "Offline mode",
+    "pageDesc": "This page loads from the server. Your downloaded tracks and likes are in the offline library.",
+    "openLibrary": "Open offline library",
     "offlineBadge": "No network",
     "readyBadge": "Local library",
     "tryOnline": "Try online again",

@@ -29,6 +29,7 @@ import {
 } from '../lib/hooks';
 import { Heart, ListMusic, Loader2, Trash2, X } from '../lib/icons';
 import { getOfflinePlaylist, rememberPlaylist } from '../lib/offline-index';
+import { getAppMode } from '../stores/app-status';
 import { useAuthStore } from '../stores/auth';
 import type { Track } from '../stores/player';
 
@@ -260,7 +261,9 @@ export const PlaylistPage = React.memo(() => {
   if (!playlist && playlistFailed) {
     return (
       <div className="h-full flex flex-col items-center justify-center gap-3">
-        <p className="text-[14px] text-white/50">{t('trackList.loadFailed')}</p>
+        <p className="text-[14px] text-white/50">
+          {getAppMode() === 'offline' ? t('offline.playlistNotSaved') : t('trackList.loadFailed')}
+        </p>
         <button
           type="button"
           onClick={() => void refetchPlaylist()}

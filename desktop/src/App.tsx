@@ -1,6 +1,6 @@
 import { lazy, type ReactNode, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { useShallow } from 'zustand/shallow';
 import { AppShell } from './components/layout/AppShell';
@@ -11,6 +11,7 @@ import { AppTooltip } from './components/ui/AppTooltip';
 import { LiquidGlassDefs } from './components/ui/LiquidGlassDefs';
 import { ApiError } from './lib/api';
 import { CHECK_UPDATES } from './lib/constants';
+import { WifiOff } from './lib/icons';
 import { resumeImports } from './lib/link-import';
 import { initSleepTimer } from './lib/sleep-timer';
 import { checkForAppUpdate, type GithubRelease } from './lib/update-check';
@@ -345,7 +346,7 @@ export default function App() {
                 <Route
                   path="home"
                   element={
-                    <RouteLoader>
+                    <RouteLoader online>
                       <Home />
                     </RouteLoader>
                   }
@@ -353,7 +354,7 @@ export default function App() {
                 <Route
                   path="search"
                   element={
-                    <RouteLoader>
+                    <RouteLoader online>
                       <Search />
                     </RouteLoader>
                   }
@@ -393,7 +394,7 @@ export default function App() {
                 <Route
                   path="track/:urn"
                   element={
-                    <RouteLoader>
+                    <RouteLoader online>
                       <TrackPage />
                     </RouteLoader>
                   }
@@ -409,7 +410,7 @@ export default function App() {
                 <Route
                   path="user/:urn"
                   element={
-                    <RouteLoader>
+                    <RouteLoader online>
                       <UserPage />
                     </RouteLoader>
                   }
@@ -417,7 +418,7 @@ export default function App() {
                 <Route
                   path="artist/:id"
                   element={
-                    <RouteLoader>
+                    <RouteLoader online>
                       <ArtistPage />
                     </RouteLoader>
                   }
@@ -433,7 +434,7 @@ export default function App() {
                 <Route
                   path="album/:id"
                   element={
-                    <RouteLoader>
+                    <RouteLoader online>
                       <AlbumPage />
                     </RouteLoader>
                   }
@@ -441,7 +442,7 @@ export default function App() {
                 <Route
                   path="discover"
                   element={
-                    <RouteLoader>
+                    <RouteLoader online>
                       <Discover />
                     </RouteLoader>
                   }
@@ -465,8 +466,43 @@ export default function App() {
   );
 }
 
-function RouteLoader({ children }: { children: ReactNode }) {
+/** `online` pages only load from the server, so offline they show a notice instead. */
+function RouteLoader({ children, online = false }: { children: ReactNode; online?: boolean }) {
+  // Not on `backendReachable`: a server blip should leave the page able to retry.
+  const offline = useAppStatusStore((s) => online && (s.offlineBypass || !s.navigatorOnline));
+  if (offline) return <OfflineNotice />;
   return <Suspense fallback={<AppLoadingScreen />}>{children}</Suspense>;
+}
+
+function OfflineNotice() {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const bypass = useAppStatusStore((s) => s.offlineBypass);
+  return (
+    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-3 px-6 text-center">
+      <WifiOff size={28} className="text-white/40" />
+      <p className="text-[17px] font-semibold text-white/85">{t('offline.pageTitle')}</p>
+      <p className="max-w-sm text-[13px] text-white/50">{t('offline.pageDesc')}</p>
+      <div className="mt-2 flex flex-wrap justify-center gap-2">
+        <button
+          type="button"
+          onClick={() => navigate('/offline')}
+          className="press h-9 rounded-full ui-primary px-4 text-[13px] font-semibold text-black cursor-pointer"
+        >
+          {t('offline.openLibrary')}
+        </button>
+        {bypass && (
+          <button
+            type="button"
+            onClick={() => useAppStatusStore.getState().setOfflineBypass(false)}
+            className="press h-9 rounded-full bar-control px-4 text-[13px] font-semibold text-white/85 cursor-pointer"
+          >
+            {t('offline.tryOnline')}
+          </button>
+        )}
+      </div>
+    </div>
+  );
 }
 
 function AppLoadingScreen({ fullscreen = false }: { fullscreen?: boolean }) {

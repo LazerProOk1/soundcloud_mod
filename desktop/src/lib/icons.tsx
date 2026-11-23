@@ -92,6 +92,7 @@ import {
   Volume2 as _Volume2,
   VolumeX as _VolumeX,
   Wifi as _Wifi,
+  WifiOff as _WifiOff,
   X as _X,
   Zap as _Zap,
 } from 'lucide-react';
@@ -200,6 +201,7 @@ export const User = memo(_User);
 export const Users = memo(_Users);
 export const Volume2 = memo(_Volume2);
 export const Wifi = memo(_Wifi);
+export const WifiOff = memo(_WifiOff);
 export const X = memo(_X);
 export const Zap = memo(_Zap);
 export const Link = memo(_Link2);

@@ -154,7 +154,7 @@ function schedulePersist() {
     persistPromise = persistPromise
       .then(() => ensureDir())
       .then(() => writeTextFile(INDEX_PATH, payload, { baseDir: BASE_DIR }))
-      .catch(() => {});
+      .catch((error) => console.warn('[OfflineIndex] Failed to save:', error));
   }, PERSIST_DEBOUNCE_MS);
 }
 
