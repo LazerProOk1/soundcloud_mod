@@ -768,6 +768,8 @@
     "pause": "Pause",
     "previous": "Previous",
     "next": "Next",
+    "like": "Like",
+    "unlike": "Remove from likes",
     "open": "Open SoundCloud Mod",
     "quit": "Quit"
   }

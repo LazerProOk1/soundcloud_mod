@@ -3,6 +3,9 @@ import { listen } from '@tauri-apps/api/event';
 import i18n from '../i18n';
 import { usePlayerStore } from '../stores/player';
 import { handlePrev } from './audio';
+import { setTrackLiked } from './like-toggle';
+import { isUrnLiked } from './likes';
+import { queryClient } from './query-client';
 import { getArtistDisplay, getDisplayTitle } from './track-display';
 
 listen<string>('tray-action', (event) => {
@@ -17,6 +20,11 @@ listen<string>('tray-action', (event) => {
     case 'prev':
       handlePrev();
       break;
+    case 'like': {
+      const track = store.currentTrack;
+      if (track) void setTrackLiked(queryClient, track, !isUrnLiked(track.urn)).then(syncTray);
+      break;
+    }
   }
 });
 
@@ -26,14 +34,16 @@ function syncTray() {
   const { currentTrack, isPlaying } = usePlayerStore.getState();
   const t = i18n.t.bind(i18n);
   const state = {
-    nowPlaying: currentTrack
-      ? `${getArtistDisplay(currentTrack).primary} — ${getDisplayTitle(currentTrack)}`
-      : null,
+    title: currentTrack ? getDisplayTitle(currentTrack) : null,
+    artist: currentTrack ? getArtistDisplay(currentTrack).primary : null,
     playing: isPlaying,
+    liked: currentTrack ? isUrnLiked(currentTrack.urn) : false,
     play: t('tray.play'),
     pause: t('tray.pause'),
     previous: t('tray.previous'),
     next: t('tray.next'),
+    like: t('tray.like'),
+    unlike: t('tray.unlike'),
     open: t('tray.open'),
     quit: t('tray.quit'),
   };
