@@ -678,13 +678,20 @@ const SyncedLyrics = React.memo(({ lines }: { lines: LyricLine[] }) => {
           else if (idx >= 0 && i < idx) state = 'past';
           else state = 'next';
           if (lineEls[i].dataset.state !== state) lineEls[i].dataset.state = state;
+          // Depth: blur and fade grow with the distance from the sung line.
+          const d = idx >= 0 ? String(Math.min(Math.abs(i - idx), 6)) : '3';
+          if (lineEls[i].style.getPropertyValue('--d') !== d)
+            lineEls[i].style.setProperty('--d', d);
         }
         if (idx >= 0 && !manualScrollRef.current) {
           const el = lineEls[idx];
           const top = el.offsetTop - container.clientHeight / 2 + el.clientHeight / 2;
-          // Smooth glide to the next line; instant snap when opening or jumping.
+          // Next line: the view moves at once and the lines catch up on a spring, each a
+          // little later the farther it is from the sung one (a wave). Opening or jumping
+          // snaps instead.
           const smooth = !jump && prev >= 0 && Math.abs(idx - prev) <= 2;
-          container.scrollTo({ top, behavior: smooth ? 'smooth' : 'auto' });
+          if (smooth && !REDUCED_MOTION.matches) waveScroll(container, lineEls, idx, top);
+          else container.scrollTo({ top, behavior: 'auto' });
         }
       }
       paintActive(t);
@@ -1515,6 +1522,36 @@ const FullscreenVisualizer = React.memo(() => {
 });
 
 /* ── Lyrics Panel (fullscreen) ────────────────────────────── */
+
+const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)');
+/** Lines within this distance of the sung one take part in the wave; farther ones jump. */
+const WAVE_SPAN = 8;
+
+/**
+ * Scrolls to `top` instantly, then offsets the nearby lines back to where they were and lets
+ * them spring into place with a delay that grows with the distance from line `idx`.
+ */
+function waveScroll(container: HTMLElement, lines: HTMLElement[], idx: number, top: number) {
+  const delta = top - container.scrollTop;
+  if (Math.abs(delta) < 1) return;
+  const from = Math.max(0, idx - WAVE_SPAN);
+  const to = Math.min(lines.length - 1, idx + WAVE_SPAN);
+  for (let i = from; i <= to; i++) {
+    const el = lines[i];
+    el.style.transitionProperty = 'none';
+    el.style.translate = `0 ${delta}px`;
+  }
+  container.scrollTop = top;
+  void container.offsetHeight; // commit the offsets before animating them away
+  for (let i = from; i <= to; i++) {
+    const el = lines[i];
+    // Lines above the sung one lead, the ones below trail a little more.
+    const steps = i < idx ? 0 : i - idx + 1;
+    el.style.transitionProperty = '';
+    el.style.setProperty('--wave-delay', `${steps * 35}ms`);
+    el.style.translate = '0 0';
+  }
+}
 
 export const LyricsPanel = React.memo(() => {
   // Hydrate currentTrack artist metadata if missing (catches tracks from any source)

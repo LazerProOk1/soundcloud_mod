@@ -517,12 +517,14 @@ textarea:focus-visible {
   transform-origin: left center;
   transform: scale(0.96);
   filter: blur(1.2px);
-  /* Line-level animation only: scale + colour + focus, no sideways slide. */
-  /* Fast enough that the highlight lands on the beat, still smooth. */
+  /* Scale + colour + focus; `translate` is the scroll wave (LyricsPanel waveScroll): a spring
+     with a slight overshoot, delayed per line by --wave-delay. */
   transition:
     transform 0.32s cubic-bezier(0.22, 1.2, 0.36, 1),
+    translate 0.62s cubic-bezier(0.2, 1.18, 0.35, 1) var(--wave-delay, 0s),
     color 0.18s ease,
     filter 0.25s ease,
+    opacity 0.3s ease,
     text-shadow 0.3s ease;
   -webkit-font-smoothing: antialiased;
   user-select: none;
@@ -548,14 +550,12 @@ textarea:focus-visible {
   filter: blur(0.8px);
 }
 
-.lyric-line[data-state="past"] {
-  color: rgba(255, 255, 255, 0.4);
-  filter: blur(2.2px);
-}
-
+.lyric-line[data-state="past"],
 .lyric-line[data-state="next"] {
   color: rgba(255, 255, 255, 0.4);
-  filter: blur(2.2px);
+  /* --d: distance from the sung line (0-6): deeper lines are softer and dimmer. */
+  filter: blur(calc(0.6px + var(--d, 3) * 0.55px));
+  opacity: calc(1.15 - var(--d, 3) * 0.1);
 }
 
 @keyframes lyric-in {
@@ -577,6 +577,7 @@ textarea:focus-visible {
   .lyric-line[data-state="active"] {
     transition: color 0.2s ease;
     transform: none;
+    translate: none;
     filter: none;
     animation: none;
   }
