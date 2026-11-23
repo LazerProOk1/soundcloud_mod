@@ -280,6 +280,15 @@ export const OfflinePage = React.memo(() => {
               {t('offline.tryOnline')}
             </button>
           )}
+          {appMode === 'online' && (
+            <button
+              type="button"
+              onClick={() => useAppStatusStore.getState().setOfflineBypass(true)}
+              className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-white/70 hover:text-white hover:underline cursor-pointer"
+            >
+              {t('offline.goOffline')}
+            </button>
+          )}
         </div>
       }
       tracks={tracks}

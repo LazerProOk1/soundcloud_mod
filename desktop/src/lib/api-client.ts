@@ -114,6 +114,10 @@ async function _apiRequestInner<T>(
   },
 ): Promise<T> {
   const { silent, fetchOptions, headers } = ctx;
+  // Offline mode chosen by hand: no request leaves the app; pages fall back to saved copies.
+  if (useAppStatusStore.getState().offlineBypass) {
+    throw new Error('Offline mode');
+  }
   // Защита от попадания строки "undefined"/"null" в header при апгрейдах формата API.
   if (sessionId && sessionId !== 'undefined' && sessionId !== 'null') {
     headers.set('x-session-id', sessionId);

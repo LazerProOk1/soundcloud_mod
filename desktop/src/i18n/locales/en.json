@@ -298,7 +298,9 @@
     "failedCount": "{{count}} failed",
     "syncNow": "Sync now",
     "cachedBadge": "Saved with likes — stays on disk",
-    "tempCachedBadge": "In the temporary cache — cleared when the cache limit is reached"
+    "tempCachedBadge": "In the temporary cache — cleared when the cache limit is reached",
+    "skipNotCached": "Offline mode: track is not on disk, skipping",
+    "goOffline": "Go offline"
   },
   "settings": {
     "title": "Settings",
@@ -415,7 +417,9 @@
     "about": "About",
     "cacheListenedTracks": "Cache listened tracks",
     "cacheListenedTracksDesc": "Save metadata and artwork to offline storage while listening",
-    "cacheLikesOnDisk": "Already on disk: {{done}} of {{total}}"
+    "cacheLikesOnDisk": "Already on disk: {{done}} of {{total}}",
+    "offlineMode": "Offline mode",
+    "offlineModeDesc": "No network: only downloaded tracks play and nothing is sent to the server"
   },
   "eq": {
     "title": "Equalizer",

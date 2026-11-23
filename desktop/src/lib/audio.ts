@@ -1,6 +1,7 @@
 import { listen } from '@tauri-apps/api/event';
 import { toast } from 'sonner';
 import i18n from '../i18n';
+import { useAppStatusStore } from '../stores/app-status';
 import { useCachedUrnsStore } from '../stores/cached-urns';
 import type { Track } from '../stores/player';
 import { usePlayerStore } from '../stores/player';
@@ -584,6 +585,16 @@ async function loadTrack(track: Track) {
         console.warn('[Audio] Cached file decode failed, evicting & re-downloading:', cacheLoadErr);
         await removeCachedTrack(urn).catch(() => {});
       }
+    }
+
+    // Offline mode chosen by hand: nothing is fetched, a track that isn't on disk is skipped
+    // (one shared notice, so a run of missing tracks doesn't stack toasts).
+    if (useAppStatusStore.getState().offlineBypass) {
+      toast(i18n.t('offline.skipNotCached'), { id: 'offline-skip' });
+      const { queue, queueIndex, next, pause } = usePlayerStore.getState();
+      if (queueIndex < queue.length - 1) next();
+      else pause();
+      return;
     }
 
     // Strategy 2: Download full track to cache — Rust picks storage/API internally
@@ -1215,7 +1226,7 @@ const HOVER_INTENT_MS = 400;
 
 /** Starts fetching a hovered track so a click plays at once; `cancelPreload` on mouse leave. */
 export function preloadTrack(urn: string) {
-  if (!urn || urn === currentUrn) return;
+  if (!urn || urn === currentUrn || useAppStatusStore.getState().offlineBypass) return;
   if (preloadTimer) clearTimeout(preloadTimer);
   preloadTimer = setTimeout(() => {
     preloadTimer = null;
@@ -1235,6 +1246,7 @@ export function cancelPreload() {
 }
 
 export function preloadQueue() {
+  if (useAppStatusStore.getState().offlineBypass) return;
   const { queue, queueIndex } = usePlayerStore.getState();
   const entries: Array<{
     urn: string;
