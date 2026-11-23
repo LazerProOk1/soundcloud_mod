@@ -54,34 +54,29 @@ fn truncate(s: &str, max: usize) -> String {
     out
 }
 
-/// Track title and artist (greyed), play/pause, previous, next, like, then open and quit.
-/// Without a track the header and like items are left out and previous/next are disabled.
+/// Plain text rows in the style of other tray apps: the track (or "Open") on top, which opens
+/// the window, then playback controls, then quit. Without a track only play is shown.
 fn build_menu<R: Runtime, M: Manager<R>>(app: &M, s: &TrayState) -> tauri::Result<Menu<R>> {
     let title = s.title.as_deref().filter(|t| !t.is_empty());
-    let has_track = title.is_some();
-    let item = |id: &str, label: String, enabled: bool| {
-        MenuItemBuilder::with_id(id, label).enabled(enabled).build(app)
+    let item = |id: &str, label: String| MenuItemBuilder::with_id(id, label).build(app);
+    let header = match (title, s.artist.as_deref().filter(|a| !a.is_empty())) {
+        (Some(t), Some(a)) => truncate(&format!("{t} — {a}"), 48),
+        (Some(t), None) => truncate(t, 48),
+        _ => s.open.clone(),
     };
-    let mut menu = MenuBuilder::new(app);
-    if let Some(title) = title {
-        menu = menu.item(&item("now", format!("♪  {}", truncate(title, 40)), false)?);
-        if let Some(artist) = s.artist.as_deref().filter(|a| !a.is_empty()) {
-            menu = menu.item(&item("artist", format!("     {}", truncate(artist, 40)), false)?);
-        }
-        menu = menu.item(&PredefinedMenuItem::separator(app)?);
-    }
-    let toggle = if s.playing { ("⏸", &s.pause) } else { ("▶", &s.play) };
-    menu = menu
-        .item(&item("play_pause", format!("{}  {}", toggle.0, toggle.1), true)?)
-        .item(&item("prev", format!("⏮  {}", s.previous), has_track)?)
-        .item(&item("next", format!("⏭  {}", s.next), has_track)?);
-    if has_track {
-        let like = if s.liked { ("♥", &s.unlike) } else { ("♡", &s.like) };
-        menu = menu.item(&item("like", format!("{}  {}", like.0, like.1), true)?);
+    let mut menu = MenuBuilder::new(app)
+        .item(&item("show", header)?)
+        .item(&PredefinedMenuItem::separator(app)?)
+        .item(&item("play_pause", if s.playing { &s.pause } else { &s.play }.clone())?);
+    if title.is_some() {
+        let like = if s.liked { &s.unlike } else { &s.like };
+        menu = menu
+            .item(&item("prev", s.previous.clone())?)
+            .item(&item("next", s.next.clone())?)
+            .item(&item("like", like.clone())?);
     }
     menu.item(&PredefinedMenuItem::separator(app)?)
-        .item(&item("show", s.open.clone(), true)?)
-        .item(&item("quit", s.quit.clone(), true)?)
+        .item(&item("quit", s.quit.clone())?)
         .build()
 }
 
