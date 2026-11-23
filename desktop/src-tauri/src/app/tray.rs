@@ -179,11 +179,14 @@ pub fn tray_menu_size(app: AppHandle, width: f64, height: f64) {
     }
 }
 
-/// A popup item was picked: it closes, then the action runs here or in the main window.
+/// A popup item was picked: it runs here or in the main window.
 #[tauri::command]
 pub fn tray_menu_action(app: AppHandle, id: String) {
-    if let Some(w) = app.get_webview_window(MENU_LABEL) {
-        let _ = w.hide();
+    // Playback buttons keep the popup open so several can be pressed in a row.
+    if matches!(id.as_str(), "show" | "quit" | "close") {
+        if let Some(w) = app.get_webview_window(MENU_LABEL) {
+            let _ = w.hide();
+        }
     }
     match id.as_str() {
         "show" => show_main(&app),
