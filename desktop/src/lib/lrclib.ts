@@ -1,5 +1,6 @@
 import { fetch } from '@tauri-apps/plugin-http';
 import { type LyricsResult, parseLRC } from './lyrics';
+import { pickByDuration } from './lyrics-pick';
 
 const BASE = 'https://lrclib.net/api';
 
@@ -49,13 +50,16 @@ export async function lrclibGet(
   }
 }
 
-/** Fuzzy search — returns best hit (synced preferred) or null.
- *  When durationSec is provided, candidates outside ±20 s are deprioritised
- *  so we don't match a cover/karaoke version with wrong lyrics. */
+/** Fuzzy search: the synced hit closest in length to the track, or null.
+ *  With a known duration, hits more than `maxDiff` seconds off are covers, remixes or
+ *  other songs; they are used only when nothing closer exists and `maxDiff` is the default.
+ *  Title-only searches pass a tight `maxDiff`: the length is then the only sign it is the
+ *  same song by another uploader. */
 export async function lrclibSearch(
   artist: string,
   title: string,
   durationSec?: number,
+  maxDiff = 20,
 ): Promise<LyricsResult | null> {
   try {
     const q = `${artist} ${title}`.trim();
@@ -66,18 +70,7 @@ export async function lrclibSearch(
     });
     if (!res.ok) return null;
     const list = (await res.json()) as LrclibTrack[];
-    if (!list.length) return null;
-
-    // If we know the track duration, filter to candidates within ±20 s.
-    // This prevents matching a cover/karaoke with a completely different runtime.
-    const candidates =
-      durationSec != null && durationSec > 0
-        ? list.filter((t) => t.duration > 0 && Math.abs(t.duration - durationSec) <= 20)
-        : list;
-
-    const pool = candidates.length > 0 ? candidates : list; // fall back if no duration match
-    const synced = pool.find((t) => t.syncedLyrics);
-    return toResult(synced ?? pool[0]);
+    return toResult(pickByDuration(list, durationSec, maxDiff, maxDiff === 20));
   } catch {
     return null;
   }

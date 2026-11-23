@@ -107,7 +107,8 @@ export async function fetchLyricsForTrack(track: Track): Promise<LyricsResult | 
     ? lrclibSearch(searchArtist, cleanTitle, durationSec)
     : Promise.resolve(null);
   // Title-only catches tracks where artist name is still wrong/unknown
-  const titleOnlyP = lrclibSearch('', cleanTitle, durationSec);
+  // Another artist's upload is only trusted when its length matches within a few seconds.
+  const titleOnlyP = lrclibSearch('', cleanTitle, durationSec, 4);
   const synced2 = await firstSynced([backendP, fuzzyP, fuzzyCleanP, titleOnlyP]);
   if (synced2) {
     void rememberLyrics(track.urn, synced2);

@@ -453,11 +453,15 @@ const LyricsSourceBadge = React.memo(
     hasSynced,
     onSearch,
     copyText,
+    offset = 0,
+    onOffset,
   }: {
     source: LyricsSource;
     hasSynced: boolean;
     onSearch: () => void;
     copyText: string;
+    offset?: number;
+    onOffset?: (seconds: number) => void;
   }) => {
     const { t } = useTranslation();
     const wordMode = useSettingsStore((s) => s.lyricsWordMode);
@@ -497,6 +501,37 @@ const LyricsSourceBadge = React.memo(
           >
             {t('track.lyricsCopy')}
           </button>
+          {onOffset && (
+            // Re-uploads often run a few seconds longer: nudge the lyrics to the voice.
+            <div className="flex items-center rounded-full bar-control text-[11px] font-semibold text-white/60">
+              <button
+                type="button"
+                onClick={() => onOffset(offset - 0.5)}
+                aria-label={t('track.lyricsEarlier')}
+                className="h-6 w-6 rounded-full hover:text-white cursor-pointer"
+              >
+                −
+              </button>
+              <button
+                type="button"
+                onClick={() => onOffset(0)}
+                aria-label={t('track.lyricsOffsetReset')}
+                className={`min-w-10 tabular-nums cursor-pointer ${offset ? 'text-white' : ''}`}
+              >
+                {offset > 0 ? '+' : ''}
+                {offset.toFixed(1)}
+                {t('track.secondsShort')}
+              </button>
+              <button
+                type="button"
+                onClick={() => onOffset(offset + 0.5)}
+                aria-label={t('track.lyricsLater')}
+                className="h-6 w-6 rounded-full hover:text-white cursor-pointer"
+              >
+                +
+              </button>
+            </div>
+          )}
         </div>
         <button
           type="button"
@@ -573,8 +608,11 @@ function buildItems(lines: LyricLine[]): LyricItem[] {
 
 const clamp01 = (v: number) => (v < 0 ? 0 : v > 1 ? 1 : v);
 
-const SyncedLyrics = React.memo(({ lines }: { lines: LyricLine[] }) => {
-  const items = useMemo(() => buildItems(lines), [lines]);
+const SyncedLyrics = React.memo(({ lines, offset }: { lines: LyricLine[]; offset: number }) => {
+  const items = useMemo(
+    () => buildItems(offset ? lines.map((l) => ({ ...l, time: l.time + offset })) : lines),
+    [lines, offset],
+  );
   const wordMode = useSettingsStore((s) => s.lyricsWordMode);
   const containerRef = useRef<HTMLDivElement>(null);
   const manualScrollRef = useRef(false);
@@ -1142,6 +1180,7 @@ const LyricsPane = React.memo(({ track }: { track: Track }) => {
   // Must be unconditional — hooks cannot be called after conditional returns
   const override = useTrackOverridesStore((s) => s.getOverride(track.urn));
   const setOverride = useTrackOverridesStore((s) => s.setOverride);
+  const offset = override?.lyricsOffset ?? 0;
   // A downloaded track keeps the corrected name (local rename); others search once.
   const onDisk = useCachedUrnsStore((s) => s.urns.has(track.urn));
   const qc = useQueryClient();
@@ -1251,8 +1290,10 @@ const LyricsPane = React.memo(({ track }: { track: Track }) => {
           hasSynced={true}
           onSearch={startSearch}
           copyText={lyrics.synced.map((l) => l.text).join('\n')}
+          offset={offset}
+          onOffset={(v) => setOverride(track.urn, { lyricsOffset: Math.round(v * 10) / 10 })}
         />
-        <SyncedLyrics lines={lyrics.synced} />
+        <SyncedLyrics lines={lyrics.synced} offset={offset} />
       </>
     );
   }

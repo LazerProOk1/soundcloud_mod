@@ -10,6 +10,8 @@ import { tauriStorage } from '../lib/tauri-storage';
 export interface TrackOverride {
   title?: string;
   artist?: string;
+  /** Seconds to shift synced lyrics by (positive = later), for re-uploads with a longer intro. */
+  lyricsOffset?: number;
 }
 
 interface TrackOverridesState {
@@ -24,7 +26,9 @@ export const useTrackOverridesStore = create<TrackOverridesState>()(
     (set, get) => ({
       overrides: {},
       setOverride: (urn, override) =>
-        set((s) => ({ overrides: { ...s.overrides, [urn]: override } })),
+        set((s) => ({
+          overrides: { ...s.overrides, [urn]: { ...s.overrides[urn], ...override } },
+        })),
       clearOverride: (urn) =>
         set((s) => {
           const next = { ...s.overrides };
