@@ -45,8 +45,14 @@ function scrollParent(el: HTMLElement | null): HTMLElement | null {
   return null;
 }
 
-function goTo(id: string) {
+// While a nav click scrolls, the spy stays on the clicked item instead of flicking through
+// every section it passes; it takes over again when the scroll ends.
+let lockedUntil = 0;
+
+function goTo(id: string, setActive: (id: string) => void) {
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  setActive(id);
+  lockedUntil = Date.now() + 1200;
   document
     .getElementById(`settings-${id}`)
     ?.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
@@ -83,6 +89,7 @@ export function Settings() {
     const scroller = scrollParent(rootRef.current);
     if (!scroller) return;
     const onScroll = () => {
+      if (Date.now() < lockedUntil) return;
       const line = scroller.getBoundingClientRect().top + scroller.clientHeight / 3;
       let current = sections().find((s) => !s.hidden)?.dataset.settingsId ?? NAV[0].id;
       for (const s of sections()) {
@@ -97,8 +104,15 @@ export function Settings() {
       setActive(current);
     };
     onScroll();
+    const onScrollEnd = () => {
+      lockedUntil = 0;
+    };
     scroller.addEventListener('scroll', onScroll, { passive: true });
-    return () => scroller.removeEventListener('scroll', onScroll);
+    scroller.addEventListener('scrollend', onScrollEnd);
+    return () => {
+      scroller.removeEventListener('scroll', onScroll);
+      scroller.removeEventListener('scrollend', onScrollEnd);
+    };
   }, [sections, hidden]);
 
   const nav = NAV.filter((item) => !hidden.has(item.id));
@@ -108,7 +122,7 @@ export function Settings() {
     <button
       key={item.id}
       type="button"
-      onClick={() => goTo(item.id)}
+      onClick={() => goTo(item.id, setActive)}
       aria-current={active === item.id ? 'true' : undefined}
       className={`press flex shrink-0 items-center gap-3 rounded-full text-left text-[13px] font-semibold cursor-pointer ${
         compact ? 'h-8 px-3.5' : 'h-9 w-full px-3'
