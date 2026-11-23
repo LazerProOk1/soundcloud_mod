@@ -1182,7 +1182,7 @@ button:not(:disabled):hover {
 }
 button:not(:disabled):active,
 [role="button"]:active {
-  scale: 0.93;
+  scale: 0.9;
   transition-duration: 0.08s, 0.15s, 0.15s, 0.15s, 0.15s, 0.15s, 0.15s;
 }
 [data-ui="sidebar"] a:active {
@@ -1246,12 +1246,20 @@ button:not(:disabled):active,
   }
 }
 
-/* Track switch in the player bar: cover pops in, text rises out of a blur. */
+/* Track switch in the player bar: covers slide like cards in the direction of travel
+   (--swap-dir: 1 next, -1 previous) with a slight 3D turn; the text follows with a blur. */
+.glass-artwork:has(.track-swap-art-out) {
+  perspective: 240px;
+}
 .track-swap-art {
-  animation: track-art-in 0.3s var(--ease-out-soft) backwards;
+  animation: track-art-in 0.55s var(--spring-bouncy) backwards;
+}
+.track-swap-art-out {
+  z-index: 1;
+  animation: track-art-out 0.42s var(--ease-out-soft) forwards;
 }
 .track-swap-text > * {
-  animation: track-text-in 0.35s var(--ease-out-soft) backwards;
+  animation: track-text-in 0.45s var(--spring-bouncy) backwards;
 }
 .track-swap-text > :nth-child(2) {
   animation-delay: 0.06s;
@@ -1259,8 +1267,17 @@ button:not(:disabled):active,
 @keyframes track-art-in {
   from {
     opacity: 0;
-    transform: scale(0.94);
-    filter: blur(6px);
+    transform: translateX(calc(var(--swap-dir, 1) * 70%)) rotateY(calc(var(--swap-dir, 1) * -40deg))
+      scale(0.8);
+    filter: blur(3px);
+  }
+}
+@keyframes track-art-out {
+  to {
+    opacity: 0;
+    transform: translateX(calc(var(--swap-dir, 1) * -70%)) rotateY(calc(var(--swap-dir, 1) * 40deg))
+      scale(0.8);
+    filter: blur(3px);
   }
 }
 
@@ -1277,8 +1294,8 @@ button:not(:disabled):active,
 @keyframes track-text-in {
   from {
     opacity: 0;
-    transform: translateY(6px);
-    filter: blur(2px);
+    transform: translateX(calc(var(--swap-dir, 1) * 18px));
+    filter: blur(4px);
   }
 }
 
@@ -1409,6 +1426,7 @@ button:not(:disabled):active,
 
 @media (prefers-reduced-motion: reduce) {
   .track-swap-art,
+  .track-swap-art-out,
   .track-swap-text > *,
   .like-ring,
   .heart-pop,
@@ -1963,5 +1981,35 @@ html:not(.liquid-glass) .glass-artwork::after {
 @media (prefers-reduced-motion: reduce) {
   .app-tooltip {
     animation: none;
+  }
+}
+
+/* Press ripple (lib/press-ripple.ts): a copy of the pressed button's box, with a light
+   circle spreading from the pointer; removed when the animation ends. */
+.press-ripple-box {
+  position: fixed;
+  z-index: 2147483000;
+  overflow: hidden;
+  pointer-events: none;
+}
+.press-ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 255, 255, 0.28) 0%,
+    rgba(255, 255, 255, 0.12) 45%,
+    transparent 70%
+  );
+  transform: scale(0);
+  animation: press-ripple 0.55s var(--ease-out-soft) forwards;
+}
+@keyframes press-ripple {
+  60% {
+    opacity: 1;
+  }
+  to {
+    transform: scale(1);
+    opacity: 0;
   }
 }

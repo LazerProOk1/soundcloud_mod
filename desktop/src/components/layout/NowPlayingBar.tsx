@@ -1066,6 +1066,28 @@ const TrackInfo = React.memo(({ onArtworkClick }: { onArtworkClick?: () => void 
   );
 });
 
+/**
+ * Direction and outgoing cover for the track-change animation: +1 when the queue moved
+ * forward, -1 when it went back; the previous artwork is kept for the slide-out.
+ */
+function useTrackSwap(urn: string, artwork: string | null) {
+  const queueIndex = usePlayerStore((s) => s.queueIndex);
+  const last = useRef({ urn, artwork, queueIndex });
+  const [state, setState] = useState<{ dir: number; prevArt: string | null }>({
+    dir: 1,
+    prevArt: null,
+  });
+  useEffect(() => {
+    const prev = last.current;
+    last.current = { urn, artwork, queueIndex };
+    if (prev.urn === urn) return;
+    setState({ dir: queueIndex < prev.queueIndex ? -1 : 1, prevArt: prev.artwork });
+    const id = setTimeout(() => setState((s) => ({ ...s, prevArt: null })), 600);
+    return () => clearTimeout(id);
+  }, [urn, artwork, queueIndex]);
+  return state;
+}
+
 const TrackInfoBody = React.memo(function TrackInfoBody({
   track,
   artworkSmall,
@@ -1087,6 +1109,7 @@ const TrackInfoBody = React.memo(function TrackInfoBody({
   const onDisk = useCachedUrnsStore((s) => s.urns.has(track.urn));
   const [editOpen, setEditOpen] = useState(false);
   const override = useTrackOverridesStore((s) => s.getOverride(track.urn));
+  const swap = useTrackSwap(track.urn, artworkSmall);
   const artistTarget =
     track.enrichment?.primary_artist?.id && artistDisplay.verified
       ? `/artist/${encodeURIComponent(track.enrichment.primary_artist.id)}`
@@ -1094,7 +1117,10 @@ const TrackInfoBody = React.memo(function TrackInfoBody({
         ? `/user/${encodeURIComponent(track.user.urn)}`
         : null;
   return (
-    <div className="flex items-center gap-3 w-[260px] md:w-[320px] xl:w-[400px] min-w-0 shrink relative">
+    <div
+      className="flex items-center gap-3 w-[260px] md:w-[320px] xl:w-[400px] min-w-0 shrink relative"
+      style={{ ['--swap-dir' as string]: swap.dir }}
+    >
       {editOpen && <EditTrackInfoDialog track={track} onClose={() => setEditOpen(false)} />}
       <div
         className="glass-artwork relative w-12 h-12 rounded-[10px] shrink-0 cursor-pointer transition-all duration-300 ease-[var(--ease-spring)] group/art"
@@ -1119,6 +1145,16 @@ const TrackInfoBody = React.memo(function TrackInfoBody({
         }}
         onClick={handleArtworkClick}
       >
+        {/* The old cover slides out while the new one slides in from the side we're heading. */}
+        {swap.prevArt && (
+          <img
+            key={`out-${swap.prevArt}`}
+            src={swap.prevArt}
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 w-full h-full object-cover track-swap-art-out"
+          />
+        )}
         {artworkSmall ? (
           <img
             key={track.urn}

@@ -9,6 +9,7 @@ import { trackedInvoke as invoke, setupUiWatchdog } from './lib/diagnostics';
 import { queryClient } from './lib/query-client';
 import { initUiScale } from './lib/ui-scale';
 import './index.css';
+import { installPressRipple } from './lib/press-ripple';
 import { useSettingsStore } from './stores/settings';
 
 // Sync language from persisted settings → i18n after tauriStorage rehydration
@@ -51,6 +52,7 @@ async function bootstrap() {
   const [staticPort, proxyPort] = await invoke<[number, number]>('get_server_ports');
   setServerPorts(staticPort, proxyPort);
 
+  installPressRipple();
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
       <QueryClientProvider client={queryClient}>
