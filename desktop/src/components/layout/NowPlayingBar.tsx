@@ -482,7 +482,7 @@ function LikeButton({ trackUrn }: { trackUrn: string }) {
     <button
       type="button"
       onClick={toggle}
-      title={t('track.likes')}
+      aria-label={t('tray.like')}
       className={`ui-icon relative w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all duration-200 cursor-pointer ${
         isLiked ? 'text-accent' : 'text-white/30 hover:text-white/60'
       }`}

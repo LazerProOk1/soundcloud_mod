@@ -183,7 +183,7 @@ export const NowPlayingPanel = React.memo(function NowPlayingPanel({
             </button>
           </div>
           <div className="pt-1 shrink-0">
-            <LikeButton track={track} variant="always" title={t('track.likes')} />
+            <LikeButton track={track} variant="always" />
           </div>
         </div>
 

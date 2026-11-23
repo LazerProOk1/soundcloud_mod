@@ -76,7 +76,7 @@ const PlaylistLikeBtn = React.memo(
       <button
         type="button"
         onClick={toggle}
-        title={t('track.likes')}
+        aria-label={t('tray.like')}
         aria-pressed={liked}
         className={`inline-flex items-center gap-1.5 h-10 px-2 rounded-full text-[13px] font-semibold tabular-nums cursor-pointer transition-colors ${
           liked ? 'text-accent' : 'text-white/60 hover:text-white'

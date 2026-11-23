@@ -29,7 +29,6 @@ const ScAccountChip = memo(
         type="button"
         onClick={() => navigate(`/user/${encodeURIComponent(`soundcloud:users:${scUserId}`)}`)}
         className={PILL_BTN}
-        title={role}
       >
         <SocialIcon kind="soundcloud" size={14} className="text-orange-400" />
         <span className="truncate max-w-[120px]">{label}</span>

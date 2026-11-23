@@ -183,7 +183,7 @@ const FsContent = React.memo(({ track, visible, onClose }: FsContentProps) => {
           variant="always"
           size={22}
           className="w-12 h-12"
-          title={t('track.likes')}
+          aria-label={t('tray.like')}
         />
 
         {/* Progress slider */}
