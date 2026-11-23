@@ -15,8 +15,9 @@ import type { Track } from '../../stores/player';
 
 /**
  * "Save for offline" for a list. States: something to download, downloading (progress ring;
- * a click cancels) and done. Previews and blocked tracks are ignored, and tracks the last run
- * could not fetch don't keep the button from reaching "done".
+ * a click cancels) and done. Previews and blocked tracks are ignored. "Done" means every track
+ * is saved with the likes; tracks the last run could not fetch keep the download button (its
+ * tooltip says how many), and a click tries them again.
  */
 export function OfflineDownloadButton({ tracks }: { tracks: Track[] }) {
   const { t } = useTranslation();
@@ -52,7 +53,8 @@ export function OfflineDownloadButton({ tracks }: { tracks: Track[] }) {
   }, [wanted, kindsVersion]);
 
   const lastFailed = getLastRunFailed();
-  const done = !running && missing !== null && missing <= lastFailed && wanted.length > 0;
+  const done = !running && missing === 0 && wanted.length > 0;
+  const partly = !running && !!missing && lastFailed > 0 && missing <= lastFailed;
   const start = () => {
     if (running) {
       void cancelCacheLikes().catch(() => {});
@@ -70,10 +72,10 @@ export function OfflineDownloadButton({ tracks }: { tracks: Track[] }) {
   const label = running
     ? t('trackList.cancelDownload')
     : done
-      ? lastFailed > 0 && missing
+      ? t('trackList.downloaded')
+      : partly
         ? t('trackList.downloadedExcept', { count: missing })
-        : t('trackList.downloaded')
-      : t('trackList.download');
+        : t('trackList.download');
   const pct = progress && progress.total > 0 ? progress.done / progress.total : 0;
 
   return (
