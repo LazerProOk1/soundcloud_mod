@@ -14,6 +14,7 @@ import {
   resolveTrackFromStreaming,
   streamFallbackUrls,
 } from './api';
+import { findMissingArtwork } from './artwork-fallback';
 import { proxiedAssetUrl } from './asset-url';
 import {
   enforceAudioCacheLimit,
@@ -825,6 +826,11 @@ async function hydrateTrackMetadata(track: Track, gen: number) {
   nextTrack = await resolveTrackMetadata(nextTrack);
   if (gen !== loadGen || currentUrn !== track.urn) return;
   commitTrackMetadata(nextTrack);
+
+  const cover = await findMissingArtwork(nextTrack);
+  if (cover && gen === loadGen && currentUrn === track.urn) {
+    commitTrackMetadata({ ...nextTrack, artwork_url: cover });
+  }
 }
 
 function handleTrackEnd() {
