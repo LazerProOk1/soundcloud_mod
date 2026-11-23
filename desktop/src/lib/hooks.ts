@@ -427,14 +427,26 @@ export function useLikedTracks(limit = 30, all = false) {
   });
 
   const tracks = query.items;
+  const complete = all && !query.hasNextPage && !query.isFetching;
 
   // Merged into one effect — both fired simultaneously from the same data update
   // anyway; running them separately caused two concurrent IndexedDB writes.
   useEffect(() => {
     if (!tracks.length) return;
-    initLikedUrns(tracks);
+    initLikedUrns(tracks, complete);
     void rememberLikedTracks(tracks);
-  }, [tracks]);
+  }, [tracks, complete]);
+
+  // Likes change in other apps too: coming back to the window re-reads a stale list.
+  const { refetch, isStale } = query;
+  useEffect(() => {
+    if (!all) return;
+    const onFocus = () => {
+      if (isStale) void refetch();
+    };
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [all, isStale, refetch]);
 
   return { tracks, ...query };
 }

@@ -21,8 +21,18 @@ function notify() {
 }
 
 /** Sync liked URNs from loaded liked tracks (called on every useLikedTracks data change) */
-export function initLikedUrns(tracks: Track[]) {
+export function initLikedUrns(tracks: Track[], complete = false) {
   let changed = false;
+  // The whole list is in: a track missing from it was unliked (maybe in another app).
+  if (complete) {
+    const now = new Set(tracks.map((t) => t.urn));
+    for (const urn of [..._likedUrns.keys()]) {
+      if (!now.has(urn)) {
+        _likedUrns.delete(urn);
+        changed = true;
+      }
+    }
+  }
   for (const t of tracks) {
     if (!_likedUrns.has(t.urn)) {
       _likedUrns.set(t.urn, true);
