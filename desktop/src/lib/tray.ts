@@ -3,6 +3,7 @@ import { listen } from '@tauri-apps/api/event';
 import i18n from '../i18n';
 import { usePlayerStore } from '../stores/player';
 import { handlePrev } from './audio';
+import { art } from './formatters';
 import { setTrackLiked } from './like-toggle';
 import { isUrnLiked } from './likes';
 import { queryClient } from './query-client';
@@ -36,6 +37,9 @@ function syncTray() {
   const state = {
     title: currentTrack ? getDisplayTitle(currentTrack) : null,
     artist: currentTrack ? getArtistDisplay(currentTrack).primary : null,
+    artwork: currentTrack
+      ? art(currentTrack.artwork_url ?? currentTrack.user?.avatar_url, 't200x200')
+      : null,
     playing: isPlaying,
     liked: currentTrack ? isUrnLiked(currentTrack.urn) : false,
     play: t('tray.play'),
@@ -55,7 +59,7 @@ function syncTray() {
 
 if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
   usePlayerStore.subscribe((s, prev) => {
-    if (s.currentTrack?.urn !== prev.currentTrack?.urn || s.isPlaying !== prev.isPlaying) {
+    if (s.currentTrack !== prev.currentTrack || s.isPlaying !== prev.isPlaying) {
       syncTray();
     }
   });
