@@ -19,6 +19,12 @@ pub const DOMAIN_WHITELIST: &[&str] = &[
     "white.images.scdinternal.site",
     "white.stream.scdinternal.site",
     "white.stream-premium.scdinternal.site",
+    // Upstream mirrors used as fallbacks.
+    "api.scnative.space",
+    "images.scnative.space",
+    "storage.scnative.space",
+    "api.r1.relay.scnative.space",
+    "api.r2.relay.scnative.space",
 ];
 
 pub fn is_domain_whitelisted(host: &str) -> bool {

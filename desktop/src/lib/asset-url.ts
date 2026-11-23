@@ -1,4 +1,4 @@
-import { getProxyPort, IMAGES_BASE } from './constants';
+import { getProxyPort, IMAGE_HOSTS } from './constants';
 import { isMac } from './platform';
 
 const WHITELIST = [
@@ -15,6 +15,8 @@ const WHITELIST = [
   'white.storage.scdinternal.site',
   'white.stream.scdinternal.site',
   'white.stream-premium.scdinternal.site',
+  // Upstream mirrors (API, images, storage, relays) — every subdomain.
+  'scnative.space',
   'unpkg.com',
   // SoundCloud CDN — load artwork directly, bypassing the image proxy
   'i1.sndcdn.com',
@@ -59,7 +61,7 @@ function buildEncodedPayload(
   bypassCache: boolean,
 ): { encoded: string; target: string } {
   const target = bypassCache ? withCacheBust(url) : url;
-  const upstreams = [IMAGES_BASE];
+  const upstreams = IMAGE_HOSTS;
   return {
     encoded: encodeURIComponent(btoa(JSON.stringify([target, ...upstreams]))),
     target,

@@ -2,7 +2,7 @@ import { fetch } from '@tauri-apps/plugin-http';
 import type { Track } from '../stores/player';
 import { useSettingsStore } from '../stores/settings';
 import { ApiError } from './api-client';
-import { API_HOSTS, STORAGE_BASE, STREAMING_BASE } from './constants';
+import { API_HOSTS, STORAGE_HOSTS, STREAMING_BASE } from './constants';
 import { logHttpError, logHttpFailure, trackAsync } from './diagnostics';
 import { markHealthy, markUnhealthy, pickHealthy } from './host-health';
 
@@ -72,7 +72,7 @@ export function resolveTrackFromStreaming(url: string) {
 
 export function buildStorageUrls(trackUrn: string): string[] {
   const file = `${trackUrn.replace(/:/g, '_')}.m4a`;
-  return [`${STORAGE_BASE}/${file}`];
+  return STORAGE_HOSTS.map((host) => `${host}/${file}`);
 }
 
 /** The API's own stream endpoint (what the upstream client uses now); the session goes in the
