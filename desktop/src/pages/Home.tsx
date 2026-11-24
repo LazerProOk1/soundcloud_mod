@@ -259,7 +259,7 @@ export function Home() {
   const likedShelfTracks = useMemo(() => likedTracks.slice(0, 50), [likedTracks]);
 
   return (
-    <div className="page-enter">
+    <div>
       {/* One SoundWave: the full wave page is the top of Home (no separate home block). */}
       <SoundWavePage />
 

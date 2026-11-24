@@ -92,20 +92,16 @@ img {
 
 /* Artist name / caption (small, 10-12px) — airy */
 
-/* Page animations */
+/* Page change: a short fade in place (AppShell wraps every route in .page-enter). No slide:
+   inside the rounded content panel a rising page looked like it was squeezing into a window. */
 @keyframes page-enter {
   from {
     opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
   }
 }
 
 .page-enter {
-  animation: page-enter 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: page-enter 0.2s ease-out both;
 }
 
 html,
@@ -1196,11 +1192,6 @@ button:not(:disabled):active,
 }
 
 @media (prefers-reduced-motion: no-preference) {
-  /* Page change: content rises in. */
-  .page-enter {
-    animation: view-fwd 0.5s var(--ease-out-soft) backwards;
-  }
-
   /* Sliders: the knob grows with a spring under the cursor. */
   [role="slider"] {
     transition:

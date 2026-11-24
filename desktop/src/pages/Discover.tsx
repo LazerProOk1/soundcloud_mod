@@ -499,7 +499,7 @@ export function Discover() {
   useBatchTrackHydration(likedTracks);
 
   return (
-    <div className="p-6 pb-4 space-y-10 page-enter">
+    <div className="p-6 pb-4 space-y-10">
       <DiscoverHero />
       <SpotlightShelf />
       <AlbumShelf

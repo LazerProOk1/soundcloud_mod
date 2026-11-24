@@ -188,7 +188,7 @@ function Collection() {
   };
 
   return (
-    <div className="px-8 py-8 page-enter">
+    <div className="px-8 py-8">
       <header className="mb-6">
         <h1 className="text-[34px] font-extrabold tracking-tight text-white">
           {t('sidebar.myLibrary')}
@@ -409,7 +409,7 @@ function DislikesView() {
   const qc = useQueryClient();
   const tracks = useLibraryLocalStore((s) => s.disliked);
   return (
-    <div className="px-8 py-8 page-enter">
+    <div className="px-8 py-8">
       <Link
         to="/library"
         className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-white/60 hover:text-white mb-4"

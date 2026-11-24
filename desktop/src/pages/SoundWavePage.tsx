@@ -537,7 +537,7 @@ export function SoundWavePage() {
 
   return (
     <div
-      className="relative w-full flex flex-col overflow-hidden page-enter"
+      className="relative w-full flex flex-col overflow-hidden"
       style={{
         // The visible area between the title bar and the player bar, so the wave card fits
         // on screen at launch instead of pushing past the bottom edge.
