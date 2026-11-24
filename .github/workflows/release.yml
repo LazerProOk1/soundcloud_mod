@@ -281,6 +281,8 @@ jobs:
           [ "$(jq -r .version desktop/package.json)" = "$v" ] && exit 0
           jq --arg v "$v" '.version = $v' desktop/package.json > pkg.tmp
           mv pkg.tmp desktop/package.json
+          # README's release badge is static (the dynamic shields.io one often failed to load).
+          sed -i "s#badge/release-v[0-9.]*-#badge/release-v$v-#" README.md
           # The crate version is informational only, but keep it from drifting.
           sed -i "0,/^version = /s/^version = .*/version = \"$v\"/" desktop/src-tauri/Cargo.toml
           sed -i "/^name = \"soundcloud-desktop\"$/{n;s/^version = .*/version = \"$v\"/}" \

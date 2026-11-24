@@ -4,7 +4,7 @@
 
 <br/>
 
-[![Release](https://img.shields.io/github/v/release/LazerProOk1/soundcloud_mod?style=flat-square&color=ff5500&label=release)](https://github.com/LazerProOk1/soundcloud_mod/releases/latest)
+[![Release](https://img.shields.io/badge/release-v1.4.1-ff5500?style=flat-square)](https://github.com/LazerProOk1/soundcloud_mod/releases/latest)
 [![Windows](https://img.shields.io/badge/Windows-10%20%C2%B7%2011-0078D4?style=flat-square&logo=windows&logoColor=white)](https://github.com/LazerProOk1/soundcloud_mod/releases/latest)
 [![Linux](https://img.shields.io/badge/Linux-AppImage%20%C2%B7%20DEB%20%C2%B7%20RPM-E95420?style=flat-square&logo=linux&logoColor=white)](https://github.com/LazerProOk1/soundcloud_mod/releases/latest)
 [![License](https://img.shields.io/badge/license-MIT-334155?style=flat-square)](LICENSE)
