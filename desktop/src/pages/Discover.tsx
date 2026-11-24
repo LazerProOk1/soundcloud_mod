@@ -149,13 +149,13 @@ function DiscoverHero() {
 /* ── Server catalog shelves ────────────────────────────────── */
 
 /** Fewer monthly listeners than this and an artist doesn't get a spotlight card. */
-const SPOTLIGHT_MIN = 500;
+const SPOTLIGHT_MIN = 10;
 
 const SpotlightShelf = React.memo(function SpotlightShelf() {
   const { t } = useTranslation();
   const { data: raw = [], isLoading, isError } = useDiscoverSpotlight(24);
-  // The server's picks include starred artists nobody listens to (0–100 listeners a month):
-  // keep artists with an audience, most listened first; albums stay. Too few left: no shelf.
+  // The server's picks include starred artists nobody listens to yet (0 listeners a month):
+  // drop those, most listened first; albums stay. Too few left: no shelf.
   const data = useMemo(
     () =>
       raw
