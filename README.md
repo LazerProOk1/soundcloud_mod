@@ -9,7 +9,7 @@
 [![Linux](https://img.shields.io/badge/Linux-AppImage%20%C2%B7%20DEB%20%C2%B7%20RPM-E95420?style=flat-square&logo=linux&logoColor=white)](https://github.com/LazerProOk1/soundcloud_mod/releases/latest)
 [![License](https://img.shields.io/badge/license-MIT-334155?style=flat-square)](LICENSE)
 
-Неофициальный клиент SoundCloud для Windows и Linux.<br/>
+Неофициальный клиент SoundCloud для ПК — Windows и Linux.<br/>
 Без рекламы и капчи, работает в России.
 
 [Скачать](https://github.com/LazerProOk1/soundcloud_mod/releases/latest) ·
@@ -108,6 +108,14 @@ pnpm tauri dev
 
 Основано на [SoundCloud-Desktop](https://github.com/zxcloli666/SoundCloud-Desktop) (MIT).
 Тексты песен — [LRCLib](https://lrclib.net). Проект развивает один человек в свободное время.
+
+## English
+
+SoundCloud Mod is an unofficial SoundCloud desktop client for Windows and Linux: no ads, offline
+downloads, synced lyrics, a 10-band equalizer, crossfade and Discord status, with a personal
+endless "My Wave" stream. Get the installer, portable ZIP, AppImage, DEB or RPM from the
+[latest release](https://github.com/LazerProOk1/soundcloud_mod/releases/latest). The app is
+available in English and Russian.
 
 ## Лицензия
 
