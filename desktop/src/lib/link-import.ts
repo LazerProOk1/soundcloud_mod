@@ -73,57 +73,62 @@ async function findOnSoundCloud(item: ImportItem): Promise<Track | null> {
   return matchOnSoundCloud(item, { throwOnError: true });
 }
 
-/** Saves tracks as private playlists ("Title", "Title (2)", … — SoundCloud holds 500 each). */
-async function savePlaylists(title: string, urns: string[]): Promise<string | null> {
-  let firstUrn: string | null = null;
-  for (let i = 0; i * PLAYLIST_LIMIT < urns.length; i++) {
-    const part = urns.slice(i * PLAYLIST_LIMIT, (i + 1) * PLAYLIST_LIMIT);
-    const created = await api<{ urn?: string }>('/playlists', {
-      method: 'POST',
-      body: JSON.stringify({
-        playlist: {
-          title: i === 0 ? title : `${title} (${i + 1})`,
-          sharing: 'private',
-          tracks: part.map((urn) => ({ urn })),
-        },
-      }),
-    });
-    firstUrn ??= created?.urn ?? null;
+async function createPlaylist(title: string, urns: string[]): Promise<string | null> {
+  const created = await api<{ urn?: string }>('/playlists', {
+    method: 'POST',
+    body: JSON.stringify({
+      playlist: { title, sharing: 'private', tracks: urns.map((urn) => ({ urn })) },
+    }),
+  });
+  return created?.urn ?? null;
+}
+
+async function playlistTrackUrns(playlistUrn: string): Promise<string[]> {
+  const urns: string[] = [];
+  for (let page = 0; ; page++) {
+    const res = await api<{ collection?: Track[]; has_more?: boolean }>(
+      `/playlists/${encodeURIComponent(playlistUrn)}/tracks?page=${page}&limit=200&access=playable,preview,blocked`,
+      { silent: true },
+    );
+    urns.push(...(res.collection ?? []).map((t) => t.urn));
+    if (!res.has_more) return urns;
   }
-  queryClient.invalidateQueries({ queryKey: ['me', 'playlists'] }).catch(() => undefined);
-  return firstUrn;
 }
 
 /**
- * Adds the tracks that aren't in the SoundCloud playlist yet. Reads what is there now first, so
- * tracks removed from it by hand don't come back. ponytail: one playlist holds 500; past that the
- * extra tracks are dropped (a second "Title (2)" playlist would be the upgrade).
+ * Saves the found tracks into the import's private playlists: "Title", then "Title (2)",
+ * "Title (3)"… since SoundCloud holds 500 tracks per playlist. On a repeat run the playlists are
+ * read first and only missing tracks are added (filling free room, then new playlists), so
+ * tracks removed by hand don't come back.
  */
-async function appendToPlaylist(playlistUrn: string, urns: string[]): Promise<string> {
-  const path = `/playlists/${encodeURIComponent(playlistUrn)}`;
-  const current: string[] = [];
-  for (let page = 0; ; page++) {
-    const res = await api<{ collection?: Track[]; has_more?: boolean }>(
-      `${path}/tracks?page=${page}&limit=200&access=playable,preview,blocked`,
-      { silent: true },
-    );
-    current.push(...(res.collection ?? []).map((t) => t.urn));
-    if (!res.has_more) break;
-  }
-  const have = new Set(current);
-  const added = urns.filter((u) => !have.has(u));
-  if (added.length > 0) {
-    await api(path, {
+async function saveToPlaylists(title: string, owned: string[], urns: string[]): Promise<string[]> {
+  const contents = await Promise.all(owned.map(playlistTrackUrns));
+  const have = new Set(contents.flat());
+  let left = urns.filter((u) => !have.has(u));
+  for (const [i, urn] of owned.entries()) {
+    const room = PLAYLIST_LIMIT - contents[i].length;
+    if (left.length === 0 || room <= 0) continue;
+    await api(`/playlists/${encodeURIComponent(urn)}`, {
       method: 'PUT',
       body: JSON.stringify({
-        playlist: {
-          tracks: [...current, ...added].slice(0, PLAYLIST_LIMIT).map((urn) => ({ urn })),
-        },
+        playlist: { tracks: [...contents[i], ...left.slice(0, room)].map((u) => ({ urn: u })) },
       }),
     });
-    queryClient.invalidateQueries({ queryKey: ['playlist', playlistUrn] }).catch(() => undefined);
+    left = left.slice(room);
+    queryClient.invalidateQueries({ queryKey: ['playlist', urn] }).catch(() => undefined);
   }
-  return playlistUrn;
+  const result = [...owned];
+  while (left.length > 0) {
+    const n = result.length;
+    const created = await createPlaylist(
+      n === 0 ? title : `${title} (${n + 1})`,
+      left.slice(0, PLAYLIST_LIMIT),
+    );
+    if (created) result.push(created);
+    left = left.slice(PLAYLIST_LIMIT);
+  }
+  queryClient.invalidateQueries({ queryKey: ['me', 'playlists'] }).catch(() => undefined);
+  return result;
 }
 
 /**
@@ -179,13 +184,16 @@ export async function runImport(id: string): Promise<void> {
     const job = store().jobs.find((j) => j.id === id);
     if (!job) return;
     const urns = [...new Set(job.rows.flatMap((r) => (r.track ? [r.track.urn] : [])))];
-    // A search run again on a saved import adds to its playlist instead of making a second one.
-    const playlistUrn = job.playlistUrn
-      ? await appendToPlaylist(job.playlistUrn, urns)
-      : urns.length > 0
-        ? await savePlaylists(job.title, urns)
-        : null;
-    store().update(id, { status: 'done', playlistUrn });
+    // A search run again on a saved import adds to its playlists instead of making new ones.
+    const owned = [job.playlistUrn, ...(job.extraPlaylistUrns ?? [])].filter(
+      (u): u is string => !!u,
+    );
+    const saved = urns.length > 0 ? await saveToPlaylists(job.title, owned, urns) : owned;
+    store().update(id, {
+      status: 'done',
+      playlistUrn: saved[0] ?? null,
+      extraPlaylistUrns: saved.slice(1),
+    });
     const { found, total } = importCounts(job);
     toast.success(i18n.t('import.done', { found, total, title: job.title }));
   } catch (e) {

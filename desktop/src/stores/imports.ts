@@ -25,6 +25,8 @@ export interface ImportJob {
   rows: ImportRow[];
   /** SoundCloud playlist the found tracks were saved to. */
   playlistUrn?: string | null;
+  /** Overflow playlists "Title (2)", "Title (3)"… (SoundCloud holds 500 tracks per playlist). */
+  extraPlaylistUrns?: string[];
 }
 
 interface ImportsState {
