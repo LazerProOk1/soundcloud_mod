@@ -387,8 +387,6 @@
     "autostartDesc": "SoundCloud Mod opens by itself when you sign in to your computer",
     "startMinimized": "Start in the tray",
     "startMinimizedDesc": "At login the window stays hidden; open it from the tray icon",
-    "globalHotkeys": "Global hotkeys",
-    "globalHotkeysDesc": "Ctrl+Alt+Space play/pause, Ctrl+Alt+→ / ← next and previous, Ctrl+Alt+L like. Work from games and other apps, even with the window hidden",
     "interface": "Interface",
     "sidebarLikedPlaylists": "Liked playlists in the sidebar",
     "sidebarLikedPlaylistsDesc": "Show playlists you liked under your own",

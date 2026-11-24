@@ -63,13 +63,11 @@ function AutostartRows() {
   );
 }
 
-/** Language, the page the app opens on, launch at login, hotkeys and offline mode. */
+/** Language, the page the app opens on, launch at login and offline mode. */
 export const GeneralSection = React.memo(function GeneralSection() {
   const { t, i18n } = useTranslation();
   const startupPage = useSettingsStore((s) => s.startupPage);
   const setStartupPage = useSettingsStore((s) => s.setStartupPage);
-  const globalHotkeys = useSettingsStore((s) => s.globalHotkeys);
-  const setGlobalHotkeys = useSettingsStore((s) => s.setGlobalHotkeys);
   const offline = useAppStatusStore((s) => s.offlineBypass);
   const setOffline = (on: boolean) => {
     if (on) useAppStatusStore.getState().setOfflineBypass(true);
@@ -94,9 +92,6 @@ export const GeneralSection = React.memo(function GeneralSection() {
         />
       </SettingRow>
       <AutostartRows />
-      <SettingRow title={t('settings.globalHotkeys')} desc={t('settings.globalHotkeysDesc')}>
-        <LiquidSwitch checked={globalHotkeys} onChange={setGlobalHotkeys} />
-      </SettingRow>
       <SettingRow title={t('settings.offlineMode')} desc={t('settings.offlineModeDesc')}>
         <LiquidSwitch checked={offline} onChange={setOffline} />
       </SettingRow>

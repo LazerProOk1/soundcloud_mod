@@ -2,25 +2,12 @@ import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import i18n from '../i18n';
 import { usePlayerStore } from '../stores/player';
-import { useSettingsStore } from '../stores/settings';
 import { handlePrev } from './audio';
 import { art } from './formatters';
 import { setTrackLiked } from './like-toggle';
 import { isUrnLiked } from './likes';
 import { queryClient } from './query-client';
 import { getArtistDisplay, getDisplayTitle } from './track-display';
-
-// System-wide hotkeys: Rust registers them and sends presses as tray actions (handled below).
-function applyHotkeys(enabled: boolean) {
-  void invoke('set_global_hotkeys', { enabled }).catch((e) => {
-    // Usually another app already holds one of the combinations.
-    console.warn('[Hotkeys]', e);
-  });
-}
-applyHotkeys(useSettingsStore.getState().globalHotkeys);
-useSettingsStore.subscribe((s, prev) => {
-  if (s.globalHotkeys !== prev.globalHotkeys) applyHotkeys(s.globalHotkeys);
-});
 
 listen<string>('tray-action', (event) => {
   const store = usePlayerStore.getState();

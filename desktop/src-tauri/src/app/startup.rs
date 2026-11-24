@@ -1,11 +1,9 @@
-//! Launch at login (with an optional start hidden in the tray) and system-wide media hotkeys.
+//! Launch at login, optionally starting hidden in the tray.
 //!
 //! Autostart is written directly: the HKCU `Run` key on Windows, an XDG autostart entry on
 //! Linux. No other platform is supported (the commands report it as off).
 
 use serde::Serialize;
-use tauri::{AppHandle, Emitter};
-use tauri_plugin_global_shortcut::{Code, GlobalShortcutExt, Modifiers, Shortcut, ShortcutState};
 
 /// Passed by the autostart entry when the app should start hidden in the tray.
 pub const MINIMIZED_ARG: &str = "--minimized";
@@ -142,41 +140,4 @@ pub fn autostart_set(enabled: bool, minimized: bool) -> Result<(), String> {
         let _ = (enabled, minimized);
         Err("autostart is not supported on this platform".into())
     }
-}
-
-/// Ctrl+Alt+Space play/pause, Ctrl+Alt+→ next, Ctrl+Alt+← previous, Ctrl+Alt+L like.
-fn hotkeys() -> [(Shortcut, &'static str); 4] {
-    let m = Some(Modifiers::CONTROL | Modifiers::ALT);
-    [
-        (Shortcut::new(m, Code::Space), "play_pause"),
-        (Shortcut::new(m, Code::ArrowRight), "next"),
-        (Shortcut::new(m, Code::ArrowLeft), "prev"),
-        (Shortcut::new(m, Code::KeyL), "like"),
-    ]
-}
-
-/// The plugin, with presses forwarded to the main window as tray actions (same handler).
-pub fn hotkey_plugin<R: tauri::Runtime>() -> tauri::plugin::TauriPlugin<R> {
-    tauri_plugin_global_shortcut::Builder::new()
-        .with_handler(|app, shortcut, event| {
-            if event.state() != ShortcutState::Pressed {
-                return;
-            }
-            if let Some((_, action)) = hotkeys().into_iter().find(|(s, _)| s == shortcut) {
-                let _ = app.emit_to("main", "tray-action", action);
-            }
-        })
-        .build()
-}
-
-#[tauri::command]
-pub fn set_global_hotkeys(app: AppHandle, enabled: bool) -> Result<(), String> {
-    let gs = app.global_shortcut();
-    let keys: Vec<Shortcut> = hotkeys().into_iter().map(|(s, _)| s).collect();
-    // Start clean either way, so turning it on twice never fails on "already registered".
-    let _ = gs.unregister_multiple(keys.clone());
-    if enabled {
-        gs.register_multiple(keys).map_err(|e| e.to_string())?;
-    }
-    Ok(())
 }

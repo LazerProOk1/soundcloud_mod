@@ -78,7 +78,6 @@ pub fn run() {
         .plugin(tauri_plugin_http::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
-        .plugin(app::startup::hotkey_plugin())
         .register_asynchronous_uri_scheme_protocol("scproxy", |_ctx, request, responder| {
             let Some(state) = network::proxy::STATE.get() else {
                 responder.respond(
@@ -197,7 +196,6 @@ pub fn run() {
             app::tray::tray_menu_action,
             app::startup::autostart_get,
             app::startup::autostart_set,
-            app::startup::set_global_hotkeys,
             discord::discord_connect,
             discord::discord_disconnect,
             discord::discord_set_activity,

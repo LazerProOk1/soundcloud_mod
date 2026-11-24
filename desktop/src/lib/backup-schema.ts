@@ -21,7 +21,6 @@ export const SETTINGS_BACKUP_KEYS = [
   'highQualityStreaming',
   'skipSilence',
   'stuckSkipSecs',
-  'globalHotkeys',
   'sidebarCollapsed',
   'startupPage',
   'discordRpcEnabled',
