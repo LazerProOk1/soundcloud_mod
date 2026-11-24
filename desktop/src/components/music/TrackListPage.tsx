@@ -100,8 +100,8 @@ export const TrackListPage = React.memo(function TrackListPage({
   return (
     <div className="min-h-full">
       <header
-        className="relative px-8 pt-16 pb-6 flex items-end gap-6"
-        style={{ background: `linear-gradient(180deg, ${band} 0%, transparent 100%)` }}
+        className="list-hero relative px-8 pt-16 pb-6 flex items-end gap-6"
+        style={{ '--band': band } as React.CSSProperties}
       >
         <div className="w-[200px] h-[200px] shrink-0 rounded-md overflow-hidden shadow-[0_8px_40px_rgba(0,0,0,0.5)] np-cover-img">
           {tile}

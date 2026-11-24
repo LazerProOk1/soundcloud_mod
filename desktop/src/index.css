@@ -501,6 +501,20 @@ textarea:focus-visible {
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
+/* List page hero (TrackListPage): the cover colour (--band) fills the top and fades down. In
+   Liquid Glass a solid band hides the glass, so it becomes a soft light from the top-left corner,
+   like the light on the other glass panels. */
+.list-hero {
+  background: linear-gradient(180deg, var(--band) 0%, transparent 100%);
+}
+.liquid-glass .list-hero {
+  background: radial-gradient(
+    110% 120% at 0% 0%,
+    color-mix(in srgb, var(--band) 38%, transparent),
+    transparent 70%
+  );
+}
+
 /* ── Synced lyrics lines ─────────────────────────────────── */
 .lyric-line {
   cursor: pointer;
