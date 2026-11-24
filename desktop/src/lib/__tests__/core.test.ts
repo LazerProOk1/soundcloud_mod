@@ -138,7 +138,8 @@ test('semver compares versions accurately', () => {
 test('resolveWallpaperUrl supports preset wallpapers and blocks path traversal', () => {
   assert.equal(isPresetWallpaper('preset:solar-amber.png'), true);
   assert.equal(isPresetWallpaper('wallpaper_123.jpg'), false);
-  assert.equal(resolveWallpaperUrl('preset:solar-amber.png', null), '/wallpapers/solar-amber.png');
+  // Saved ids keep ".png" while the shipped files are WebP.
+  assert.equal(resolveWallpaperUrl('preset:solar-amber.png', null), '/wallpapers/solar-amber.webp');
   assert.equal(resolveWallpaperUrl('preset:../secret.png', null), null);
   assert.equal(resolveWallpaperUrl('wallpaper_123.jpg', null), null);
   assert.equal(
