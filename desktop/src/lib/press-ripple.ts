@@ -41,7 +41,33 @@ export function installPressRipple() {
       });
       box.appendChild(dot);
       document.body.appendChild(box);
-      dot.addEventListener('animationend', () => box.remove(), { once: true });
+
+      // The button can resize or move while the ripple runs ("Follow" turning into "Following",
+      // a collapsing sidebar): keep the overlay on the button's current box every frame, and
+      // drop it if the button leaves the page.
+      let raf = 0;
+      const follow = () => {
+        if (!target.isConnected) {
+          box.remove();
+          return;
+        }
+        const r = target.getBoundingClientRect();
+        box.style.left = `${r.left}px`;
+        box.style.top = `${r.top}px`;
+        box.style.width = `${r.width}px`;
+        box.style.height = `${r.height}px`;
+        box.style.borderRadius = getComputedStyle(target).borderRadius;
+        raf = requestAnimationFrame(follow);
+      };
+      raf = requestAnimationFrame(follow);
+      dot.addEventListener(
+        'animationend',
+        () => {
+          cancelAnimationFrame(raf);
+          box.remove();
+        },
+        { once: true },
+      );
     },
     { capture: true, passive: true },
   );
