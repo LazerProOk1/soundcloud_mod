@@ -11,7 +11,7 @@ import {
   UserPopularTab,
   UserTracksTab,
 } from '../components/user/UserTabs';
-import { useUser, useUserWebProfiles } from '../lib/hooks';
+import { useMyPlaylists, useUser, useUserWebProfiles } from '../lib/hooks';
 import { Loader2 } from '../lib/icons';
 import { useAuthStore } from '../stores/auth';
 
@@ -30,13 +30,15 @@ export function UserPage() {
 
   const isOwnProfile = !!user && currentUser?.urn === user.urn;
   const hasTracks = !!user?.track_count;
+  // SoundCloud's playlist_count is public playlists only; your own private ones are listed too.
+  const { playlists: myPlaylists } = useMyPlaylists(50);
+  const playlistCount = isOwnProfile ? myPlaylists.length : user?.playlist_count;
   // No uploads (most listeners, your own profile too): open on the likes instead of an empty tab.
   const activeTab: TabId = pickedTab ?? (hasTracks ? 'popular' : 'likes');
 
   const tabs = useMemo(() => {
     if (!user) return [] as const;
-    // Empty upload tabs are hidden. Playlists stay on your own profile: the count is public
-    // playlists only, and private ones are still listed there.
+    // Empty tabs are hidden.
     return [
       ...(hasTracks
         ? [
@@ -44,14 +46,14 @@ export function UserPage() {
             { id: 'tracks' as const, label: t('user.tracks'), count: user.track_count },
           ]
         : []),
-      ...(user.playlist_count || isOwnProfile
-        ? [{ id: 'playlists' as const, label: t('user.playlists'), count: user.playlist_count }]
+      ...(playlistCount
+        ? [{ id: 'playlists' as const, label: t('user.playlists'), count: playlistCount }]
         : []),
       { id: 'likes' as const, label: t('user.likes'), count: user.public_favorites_count },
       { id: 'followers' as const, label: t('user.followers'), count: user.followers_count },
       { id: 'following' as const, label: t('user.following'), count: user.followings_count },
     ];
-  }, [user, t, hasTracks, isOwnProfile]);
+  }, [user, t, hasTracks, playlistCount]);
 
   if (userLoading || !user) {
     return (
