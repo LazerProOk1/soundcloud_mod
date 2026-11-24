@@ -437,11 +437,11 @@
     "hostsReset": "Streaming host health reset",
     "whatsNewTitle": "What's new in v{{version}}",
     "whatsNewItems": [
-      "Wave from YouTube Music radio: endless, and it learns from “Not this” and “More like this”",
-      "Import likes from Yandex Music, Spotify and plain track lists",
-      "Real crossfade, silence trimming and transition settings",
-      "Lyrics stay in sync after seeking, at any playback speed",
-      "Downloaded-track badges, an offline library and playlist covers on Home"
+      "Offline mode, a tray with like and pause, launch at login and start in the tray",
+      "Skip silence and stuck tracks, SQ / HQ quality picker",
+      "Catalog: real fresh releases, no duplicate editions or blank covers",
+      "All dislikes from the server, preview tracks download, a Report a problem button",
+      "New icon, smoother Liquid Glass, an installer half the size"
     ],
     "sources": "Music sources",
     "sourcesDesc": "Where tracks are downloaded from, top first. If a source has no song, the next one is tried. SoundCloud keeps likes and playlists; the rest search by artist and title.",
@@ -777,7 +777,6 @@
     "openQueue": "Open queue"
   },
   "titlebar": {
-    "home": "Home",
     "discover": "Discover",
     "search": "What do you want to play?",
     "settings": "Settings"
