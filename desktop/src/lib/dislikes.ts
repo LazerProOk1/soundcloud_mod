@@ -1,5 +1,5 @@
-import type { QueryClient } from '@tanstack/react-query';
-import { useEffect, useSyncExternalStore } from 'react';
+import { type QueryClient, useInfiniteQuery } from '@tanstack/react-query';
+import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import { useLibraryLocalStore } from '../stores/library-local';
 import type { Track } from '../stores/player';
 import { api } from './api';
@@ -23,6 +23,52 @@ export function setDislikedUrn(urn: string, disliked: boolean) {
 
 export function isUrnDisliked(urn: string): boolean {
   return _dislikedUrns.has(urn);
+}
+
+/** How many tracks are disliked (the server's full list once loaded, see loadAllDislikedIds). */
+export function useDislikedCount(): number {
+  return useSyncExternalStore(
+    (cb) => {
+      _listeners.add(cb);
+      return () => _listeners.delete(cb);
+    },
+    () => _dislikedUrns.size,
+  );
+}
+
+interface DislikesPage {
+  collection: Track[];
+  next_href: string | null;
+}
+
+/**
+ * Every disliked track from the server, including ones disliked in another client that uses the
+ * same account and server. Pages load one after another. Shape follows the upstream
+ * SoundCloud-Desktop client (MIT).
+ */
+export function useDislikedTracks() {
+  const query = useInfiniteQuery({
+    queryKey: ['me', 'dislikes'],
+    queryFn: async ({ pageParam }) => {
+      const page = await api<DislikesPage>(`/dislikes${pageParam}`);
+      for (const track of page.collection) _dislikedUrns.set(track.urn, true);
+      if (page.collection.length > 0) notify();
+      return page;
+    },
+    initialPageParam: '?limit=50',
+    getNextPageParam: (last) => last.next_href ?? undefined,
+    staleTime: 0,
+    refetchOnMount: 'always',
+  });
+  const { hasNextPage, isFetchingNextPage, fetchNextPage } = query;
+  useEffect(() => {
+    if (hasNextPage && !isFetchingNextPage) void fetchNextPage();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  const tracks = useMemo(
+    () => query.data?.pages.flatMap((page) => page.collection) ?? [],
+    [query.data],
+  );
+  return { ...query, tracks };
 }
 
 const _inflightStatus = new Map<string, Promise<boolean>>();
@@ -99,7 +145,7 @@ export async function toggleDislike(
     } else {
       await api(`/dislikes/${encodeURIComponent(track.urn)}`, { method: 'DELETE' });
     }
-    qc.invalidateQueries({ queryKey: ['dislikes'] });
+    qc.invalidateQueries({ queryKey: ['me', 'dislikes'] });
   } catch {
     setDislikedUrn(track.urn, !nowDisliked);
     useLibraryLocalStore.getState().rememberDislike(track, !nowDisliked);

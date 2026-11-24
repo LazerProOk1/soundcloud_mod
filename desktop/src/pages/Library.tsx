@@ -5,7 +5,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { PlaylistTile } from '../components/layout/Sidebar';
 import { TrackTableRow } from '../components/music/TrackTableRow';
 import { LetterAvatar } from '../components/ui/LetterAvatar';
-import { toggleDislike } from '../lib/dislikes';
+import { isUrnDisliked, toggleDislike, useDislikedCount, useDislikedTracks } from '../lib/dislikes';
 import { art } from '../lib/formatters';
 import {
   type Playlist,
@@ -357,7 +357,9 @@ function ListRow({ item }: { item: Item }) {
 /** Single tracks have their own pages; dislikes live only here. */
 function MoreLinks() {
   const { t } = useTranslation();
-  const dislikes = useLibraryLocalStore((s) => s.disliked.length);
+  // The server's count once its ids are in; the device's own list until then (or offline).
+  const local = useLibraryLocalStore((s) => s.disliked.length);
+  const dislikes = Math.max(useDislikedCount(), local);
   const links = [
     {
       to: '/liked',
@@ -407,7 +409,21 @@ const DislikeRow = React.memo(function DislikeRow({
 function DislikesView() {
   const { t } = useTranslation();
   const qc = useQueryClient();
-  const tracks = useLibraryLocalStore((s) => s.disliked);
+  // The server keeps every dislike (from any client on this account); this device's own list
+  // fills in while it loads or without a connection. Removed ones drop out of both.
+  const local = useLibraryLocalStore((s) => s.disliked);
+  const server = useDislikedTracks();
+  const tracks = useMemo(() => {
+    const seen = new Set<string>();
+    // Server rows can be a moment stale after an undo: drop the ones no longer disliked.
+    const fromServer = server.tracks.filter((tr) => isUrnDisliked(tr.urn));
+    return [...fromServer, ...local].filter((tr) => {
+      if (seen.has(tr.urn)) return false;
+      seen.add(tr.urn);
+      return true;
+    });
+  }, [server.tracks, local]);
+  useDislikedCount(); // re-render when a dislike is removed
   return (
     <div className="px-8 py-8">
       <Link
