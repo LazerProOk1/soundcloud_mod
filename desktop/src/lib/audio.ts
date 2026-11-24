@@ -37,6 +37,7 @@ import {
   rememberRefusedDirect,
   rememberRefusedMirror,
 } from './refused-tracks';
+import { reportProblem } from './report';
 import { getArtistDisplay, getDisplayTitle } from './track-display';
 import { dedupeSongs, isVariant } from './track-variants';
 import { rankWave } from './wave-rank';
@@ -758,6 +759,10 @@ async function loadTrack(track: Track) {
     const errorText = getLoadErrorText(e);
     toast.error(i18n.t('track.loadError'), {
       description: errorText ? `${track.title}: ${errorText}` : track.title,
+      action: {
+        label: i18n.t('settings.reportShort'),
+        onClick: () => reportProblem(`${i18n.t('track.loadError')}: ${track.title} (${track.urn})`),
+      },
     });
     skipUnplayable();
   } finally {

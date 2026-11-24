@@ -2,6 +2,8 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
+// First: keeps recent warnings and errors for "Report a problem".
+import './lib/report';
 import App from './App';
 import { changeAppLanguage } from './i18n';
 import { setupCacheMaintenance } from './lib/cache';

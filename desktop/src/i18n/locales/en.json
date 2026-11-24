@@ -323,6 +323,9 @@
     "goOffline": "Go offline"
   },
   "settings": {
+    "reportProblem": "Report a problem",
+    "suggestIdea": "Suggest an idea",
+    "reportShort": "Report",
     "title": "Settings",
     "cache": "Cache",
     "total": "Total",
@@ -804,6 +807,7 @@
     "close": "Close"
   },
   "tray": {
+    "report": "Report a problem",
     "play": "Play",
     "pause": "Pause",
     "previous": "Previous",

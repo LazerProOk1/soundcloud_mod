@@ -28,6 +28,8 @@ pub struct TrayState {
     unlike: String,
     open: String,
     quit: String,
+    #[serde(default)]
+    report: String,
 }
 
 /// The popup is a small frameless webview styled like the app: the native menu can't be.
@@ -183,7 +185,7 @@ pub fn tray_menu_size(app: AppHandle, width: f64, height: f64) {
 #[tauri::command]
 pub fn tray_menu_action(app: AppHandle, id: String) {
     // Playback buttons keep the popup open so several can be pressed in a row.
-    if matches!(id.as_str(), "show" | "quit" | "close") {
+    if matches!(id.as_str(), "show" | "quit" | "close" | "report") {
         if let Some(w) = app.get_webview_window(MENU_LABEL) {
             let _ = w.hide();
         }

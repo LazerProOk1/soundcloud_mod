@@ -3,8 +3,16 @@ import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { API_HOSTS, APP_VERSION, GITHUB_OWNER, GITHUB_REPO } from '../../lib/constants';
 import { isHealthy, markHealthy } from '../../lib/host-health';
-import { ExternalLink, Loader2, RefreshCw, Wifi } from '../../lib/icons';
+import {
+  AlertCircle,
+  ExternalLink,
+  Loader2,
+  MessageCircle,
+  RefreshCw,
+  Wifi,
+} from '../../lib/icons';
 import { openExternalUrl } from '../../lib/open-external';
+import { reportProblem, suggestIdea } from '../../lib/report';
 import { checkForAppUpdate, type GithubRelease } from '../../lib/update-check';
 import { useCachedUrnsStore } from '../../stores/cached-urns';
 import { UpdateChecker } from '../UpdateChecker';
@@ -73,12 +81,12 @@ export const AboutSection = React.memo(function AboutSection() {
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               onClick={handleCheckUpdates}
               disabled={checking}
-              className="press flex h-9 items-center gap-2 rounded-full ui-primary px-4 text-[13px] font-semibold text-black disabled:opacity-60 cursor-pointer"
+              className="press flex h-9 shrink-0 items-center whitespace-nowrap gap-2 rounded-full ui-primary px-4 text-[13px] font-semibold text-black disabled:opacity-60 cursor-pointer"
             >
               {checking ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
               {t('settings.checkUpdates', 'Check for updates')}
@@ -86,11 +94,27 @@ export const AboutSection = React.memo(function AboutSection() {
             <button
               type="button"
               onClick={() => openExternalUrl(releasesUrl)}
-              className="press flex h-9 items-center gap-2 rounded-full bar-control px-4 text-[13px] font-semibold text-white/80 hover:text-white cursor-pointer"
+              className="press flex h-9 shrink-0 items-center whitespace-nowrap gap-2 rounded-full bar-control px-4 text-[13px] font-semibold text-white/80 hover:text-white cursor-pointer"
               title="GitHub Releases"
             >
               <ExternalLink size={14} />
               GitHub
+            </button>
+            <button
+              type="button"
+              onClick={() => reportProblem(t('settings.about'))}
+              className="press flex h-9 shrink-0 items-center whitespace-nowrap gap-2 rounded-full bar-control px-4 text-[13px] font-semibold text-white/80 hover:text-white cursor-pointer"
+            >
+              <AlertCircle size={14} />
+              {t('settings.reportProblem')}
+            </button>
+            <button
+              type="button"
+              onClick={suggestIdea}
+              className="press flex h-9 shrink-0 items-center whitespace-nowrap gap-2 rounded-full bar-control px-4 text-[13px] font-semibold text-white/80 hover:text-white cursor-pointer"
+            >
+              <MessageCircle size={14} />
+              {t('settings.suggestIdea')}
             </button>
           </div>
         </div>

@@ -1,7 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { useEffect, useRef, useState } from 'react';
-import { Heart, Pause, Play, Power, SkipBack, SkipForward } from '../lib/icons';
+import { AlertCircle, Heart, Pause, Play, Power, SkipBack, SkipForward } from '../lib/icons';
 
 /** Mirrors `TrayState` in `src-tauri/src/app/tray.rs`. */
 interface TrayState {
@@ -18,6 +18,7 @@ interface TrayState {
   unlike: string;
   open: string;
   quit: string;
+  report: string;
 }
 
 const act = (id: string) => void invoke('tray_menu_action', { id });
@@ -126,6 +127,10 @@ export function TrayMenu() {
             {s.open}
           </button>
         )}
+        <button type="button" onClick={() => act('report')} className={row}>
+          <AlertCircle size={14} className="text-white/45" />
+          {s.report}
+        </button>
         <button type="button" onClick={() => act('quit')} className={row}>
           <Power size={14} className="text-white/45" />
           {s.quit}

@@ -7,6 +7,7 @@ import { art } from './formatters';
 import { setTrackLiked } from './like-toggle';
 import { isUrnLiked } from './likes';
 import { queryClient } from './query-client';
+import { reportProblem } from './report';
 import { getArtistDisplay, getDisplayTitle } from './track-display';
 
 listen<string>('tray-action', (event) => {
@@ -26,6 +27,9 @@ listen<string>('tray-action', (event) => {
       if (track) void setTrackLiked(queryClient, track, !isUrnLiked(track.urn)).then(syncTray);
       break;
     }
+    case 'report':
+      reportProblem(i18n.t('tray.report'));
+      break;
   }
 });
 
@@ -50,6 +54,7 @@ function syncTray() {
     unlike: t('tray.unlike'),
     open: t('tray.open'),
     quit: t('tray.quit'),
+    report: t('tray.report'),
   };
   const key = JSON.stringify(state);
   if (key === lastSent) return;
