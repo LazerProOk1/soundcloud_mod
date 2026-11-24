@@ -1,13 +1,10 @@
 import { memo, useCallback, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
-import { pauseBlack14, playBlack14 } from '../../lib/icons';
 import { useIsPlayingFrom } from '../../lib/useTrackPlay';
 import { type Track, usePlayerStore } from '../../stores/player';
+import { PlayFab } from '../ui/PlayFab';
 
-/** Main album action: a flat accent pill (no glow), like the play button on list pages. */
+/** Main album action: the same round play button as list pages. */
 function AlbumPlayButtonImpl({ tracks }: { tracks: Track[] }) {
-  const { t } = useTranslation();
-
   const { playable, playableUrns } = useMemo(() => {
     const list: Track[] = [];
     const urns = new Set<string>();
@@ -38,17 +35,7 @@ function AlbumPlayButtonImpl({ tracks }: { tracks: Track[] }) {
     play(playable[0], playable);
   }, [empty, isPlayingFromAlbum, playable, playableUrns]);
 
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={empty}
-      className="press inline-flex items-center gap-2 h-10 pl-4 pr-5 rounded-full ui-accent text-[14px] font-semibold cursor-pointer"
-    >
-      {isPlayingFromAlbum ? pauseBlack14 : playBlack14}
-      {isPlayingFromAlbum ? t('album.pauseAlbum') : t('album.playAlbum')}
-    </button>
-  );
+  return <PlayFab playing={isPlayingFromAlbum} disabled={empty} onClick={onClick} />;
 }
 
 export const AlbumPlayButton = memo(AlbumPlayButtonImpl);

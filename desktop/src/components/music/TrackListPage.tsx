@@ -4,14 +4,10 @@ import { useArtworkColor } from '../../hooks/useArtworkColor';
 import { durLong } from '../../lib/formatters';
 import { Clock, Loader2, Search, Shuffle } from '../../lib/icons';
 import { type Track, usePlayerStore } from '../../stores/player';
+import { PlayFab } from '../ui/PlayFab';
 import { VirtualList } from '../ui/VirtualList';
 import { OfflineDownloadButton } from './OfflineDownloadButton';
 import { TRACK_GRID, TRACK_GRID_NO_ALBUM, TrackTableRow, trackAlbum } from './TrackTableRow';
-
-const fabIcon = (show: boolean) =>
-  `absolute inset-0 flex items-center justify-center transition-all duration-300 ease-[var(--ease-spring)] ${
-    show ? 'opacity-100 scale-100 rotate-0' : 'opacity-0 scale-50 -rotate-90'
-  }`;
 
 /**
  * Spotify/Justify-style list page: colour band from the cover, big tile and title,
@@ -126,25 +122,7 @@ export const TrackListPage = React.memo(function TrackListPage({
       </header>
 
       <div className="px-8 py-5 flex items-center gap-5">
-        <button
-          type="button"
-          onClick={play}
-          disabled={!shown.length}
-          title={showPause ? t('common.pause', 'Pause') : t('common.play', 'Play')}
-          className="play-fab relative w-14 h-14 rounded-full ui-accent flex items-center justify-center shadow-[0_8px_24px_rgba(0,0,0,0.35)] cursor-pointer"
-        >
-          {/* Both icons stay mounted and morph (fade + rotate) into each other. */}
-          <span className={fabIcon(!showPause)}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M8 5v14l11-7z" />
-            </svg>
-          </span>
-          <span className={fabIcon(showPause)}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M6 5h4v14H6zM14 5h4v14h-4z" />
-            </svg>
-          </span>
-        </button>
+        <PlayFab playing={showPause} disabled={!shown.length} onClick={play} />
         {/* Shuffle is a toggle (dot = on), like Spotify/Justify. */}
         <button
           type="button"

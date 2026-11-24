@@ -2,7 +2,7 @@ import { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { dur } from '../../lib/formatters';
-import { Calendar, Check, Clock, Disc3, ListMusic } from '../../lib/icons';
+import { Calendar, Clock, Disc3, ListMusic } from '../../lib/icons';
 import { Avatar } from '../ui/Avatar';
 import { GlassHeroPanel } from '../ui/GlassHeroPanel';
 import { InfoChip } from '../user/UserChips';
@@ -72,11 +72,6 @@ function AlbumHeroImpl({ album }: { album: AlbumDetail }) {
         <div className="flex-1 min-w-0 flex flex-col gap-4 text-center lg:text-left">
           <div className="flex flex-wrap items-center gap-2 justify-center lg:justify-start">
             <InfoChip icon={<Disc3 size={12} />}>{kindLabel}</InfoChip>
-            {album.confidence >= 0.7 && (
-              <span className="inline-flex items-center gap-1.5 h-7 px-3 rounded-full bg-emerald-500/15 text-[12px] font-semibold text-emerald-300">
-                <Check size={12} /> {t('album.verified')}
-              </span>
-            )}
           </div>
 
           <h1 className="text-5xl md:text-7xl font-black leading-[0.95] tracking-tight text-white wrap-break-word max-w-full">
