@@ -1,72 +1,31 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
   <defs>
-    <!-- Orange gradient background matching SoundCloud brand -->
     <linearGradient id="bg" x1="0%" y1="0%" x2="60%" y2="100%">
-      <stop offset="0%" stop-color="#FF7700"/>
-      <stop offset="100%" stop-color="#FF3300"/>
+      <stop offset="0%" stop-color="#FF7A00"/>
+      <stop offset="100%" stop-color="#FF3D00"/>
     </linearGradient>
-    <!-- Subtle inner shadow for depth -->
-    <radialGradient id="shine" cx="38%" cy="32%" r="55%">
-      <stop offset="0%" stop-color="rgba(255,255,255,0.22)"/>
-      <stop offset="100%" stop-color="rgba(0,0,0,0)"/>
+    <radialGradient id="shine" cx="30%" cy="22%" r="70%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.24"/>
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
     </radialGradient>
   </defs>
 
-  <!-- Rounded square background (iOS-style, r=224 ≈ 22%) -->
-  <rect width="1024" height="1024" rx="224" ry="224" fill="url(#bg)"/>
-  <!-- Shine overlay -->
-  <rect width="1024" height="1024" rx="224" ry="224" fill="url(#shine)"/>
+  <!-- Rounded square background -->
+  <rect width="1024" height="1024" rx="224" fill="url(#bg)"/>
+  <rect width="1024" height="1024" rx="224" fill="url(#shine)"/>
 
-  <!--
-    SoundCloud logo — white cloud + waveform bars
-    Centered and scaled to fill ~72% of the icon canvas.
-    Translated so the full shape is centered at (512,512).
-  -->
-  <g transform="translate(148, 310)" fill="white">
-    <!--
-      SoundCloud waveform bars (7 bars, heights: 80 140 200 270 320 270 200)
-      Each bar: width=42px, gap=16px, total bars width = 7*42+6*16 = 390px
-      The full logo width ≈ 730px to match the original proportions.
-    -->
+  <!-- Waveform pills and a cloud built from circles, all on one flat baseline (y=650).
+       The pills stop short of the cloud, so nothing overlaps or peeks out. -->
+  <g transform="translate(7, 32)" fill="#FFFFFF">
+    <rect x="120" y="550" width="44" height="100" rx="22"/>
+    <rect x="182" y="500" width="44" height="150" rx="22"/>
+    <rect x="244" y="450" width="44" height="200" rx="22"/>
+    <rect x="306" y="400" width="44" height="250" rx="22"/>
+    <rect x="368" y="350" width="44" height="300" rx="22"/>
 
-    <!-- Bar 1 (shortest, leftmost) -->
-    <ellipse cx="21" cy="200" rx="21" ry="80"/>
-
-    <!-- Bar 2 -->
-    <ellipse cx="100" cy="200" rx="21" ry="120"/>
-
-    <!-- Bar 3 -->
-    <ellipse cx="179" cy="200" rx="21" ry="155"/>
-
-    <!-- Bar 4 -->
-    <ellipse cx="258" cy="200" rx="21" ry="185"/>
-
-    <!-- Bar 5 -->
-    <ellipse cx="337" cy="200" rx="21" ry="200"/>
-
-    <!-- Bar 6 -->
-    <ellipse cx="416" cy="200" rx="21" ry="185"/>
-
-    <!-- Bar 7 -->
-    <ellipse cx="495" cy="200" rx="21" ry="160"/>
-
-    <!--
-      Cloud shape — occupies the right portion, anchored to bar tops
-      The cloud sits to the right of the bars and is the dominant shape.
-      Scaled to ~285x248 px, positioned at x=445, y=-10
-    -->
-    <path d="
-      M 445 390
-      L 445 110
-      Q 448 62 494 52
-      Q 530 44 556 72
-      Q 572 36 612 28
-      Q 676 16 716 62
-      Q 756 96 748 152
-      Q 786 160 800 196
-      Q 820 248 790 296
-      Q 760 344 708 352
-      L 445 390 Z
-    "/>
+    <circle cx="530" cy="560" r="90"/>
+    <circle cx="650" cy="470" r="160"/>
+    <circle cx="780" cy="540" r="110"/>
+    <rect x="530" y="500" width="250" height="150"/>
   </g>
 </svg>
