@@ -281,6 +281,10 @@ jobs:
           [ "$(jq -r .version desktop/package.json)" = "$v" ] && exit 0
           jq --arg v "$v" '.version = $v' desktop/package.json > pkg.tmp
           mv pkg.tmp desktop/package.json
+          # The crate version is informational only, but keep it from drifting.
+          sed -i "0,/^version = /s/^version = .*/version = \"$v\"/" desktop/src-tauri/Cargo.toml
+          sed -i "/^name = \"soundcloud-desktop\"$/{n;s/^version = .*/version = \"$v\"/}" \
+            desktop/src-tauri/Cargo.lock
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git commit -am "chore: release v$v"
