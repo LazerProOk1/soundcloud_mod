@@ -517,11 +517,9 @@ textarea:focus-visible {
   transform-origin: left center;
   transform: scale(0.96);
   filter: blur(1.2px);
-  /* Scale + colour + focus; `translate` is the scroll wave (LyricsPanel waveScroll): a spring
-     with a slight overshoot, delayed per line by --wave-delay. */
+  /* Scale + colour + focus. The scroll wave is a Web Animation (LyricsPanel waveScroll). */
   transition:
     transform 0.32s cubic-bezier(0.22, 1.2, 0.36, 1),
-    translate 0.62s cubic-bezier(0.2, 1.18, 0.35, 1) var(--wave-delay, 0s),
     color 0.18s ease,
     filter 0.25s ease,
     opacity 0.3s ease,
@@ -577,7 +575,6 @@ textarea:focus-visible {
   .lyric-line[data-state="active"] {
     transition: color 0.2s ease;
     transform: none;
-    translate: none;
     filter: none;
     animation: none;
   }

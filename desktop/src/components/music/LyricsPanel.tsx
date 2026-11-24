@@ -1569,28 +1569,32 @@ const REDUCED_MOTION = window.matchMedia('(prefers-reduced-motion: reduce)');
 const WAVE_SPAN = 8;
 
 /**
- * Scrolls to `top` instantly, then offsets the nearby lines back to where they were and lets
- * them spring into place with a delay that grows with the distance from line `idx`.
+ * Scrolls to `top` instantly, then animates the nearby lines from where they were back into
+ * place with a delay that grows with the distance from line `idx`.
+ *
+ * Uses additive Web Animations rather than toggling CSS transitions: switching transitions off
+ * for a frame also snapped the line's own highlight (scale, colour, blur) that had just changed,
+ * and a new wave started mid-flight made lines jump. Additive offsets stack, so quick lines
+ * stay smooth.
  */
 function waveScroll(container: HTMLElement, lines: HTMLElement[], idx: number, top: number) {
-  const delta = top - container.scrollTop;
+  const before = container.scrollTop;
+  container.scrollTop = top;
+  // Measured after the scroll: near the ends the browser clamps `top`.
+  const delta = container.scrollTop - before;
   if (Math.abs(delta) < 1) return;
   const from = Math.max(0, idx - WAVE_SPAN);
   const to = Math.min(lines.length - 1, idx + WAVE_SPAN);
   for (let i = from; i <= to; i++) {
-    const el = lines[i];
-    el.style.transitionProperty = 'none';
-    el.style.translate = `0 ${delta}px`;
-  }
-  container.scrollTop = top;
-  void container.offsetHeight; // commit the offsets before animating them away
-  for (let i = from; i <= to; i++) {
-    const el = lines[i];
     // Lines above the sung one lead, the ones below trail a little more.
     const steps = i < idx ? 0 : i - idx + 1;
-    el.style.transitionProperty = '';
-    el.style.setProperty('--wave-delay', `${steps * 35}ms`);
-    el.style.translate = '0 0';
+    lines[i].animate([{ translate: `0 ${delta}px` }, { translate: '0 0' }], {
+      duration: 620,
+      delay: steps * 35,
+      easing: 'cubic-bezier(0.2, 1.18, 0.35, 1)',
+      fill: 'backwards',
+      composite: 'add',
+    });
   }
 }
 
