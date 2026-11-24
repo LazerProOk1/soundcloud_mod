@@ -47,8 +47,13 @@ export function dedupeReleases<T extends ReleaseLike>(items: T[]): T[] {
   return out;
 }
 
+/** Longer than this is a set or a mix, not a song for a chart. */
+const CHART_MAX_MS = 10 * 60_000;
+
 export interface ChartTrackLike {
   urn: string;
+  user?: { urn?: string; username?: string } | null;
+  publisher_metadata?: { artist?: string | null } | null;
   duration?: number;
   playback_count?: number;
   likes_count?: number;
@@ -62,13 +67,28 @@ export interface ChartTrackLike {
 export function rankChart<T extends ChartTrackLike>(tracks: T[], limit: number): T[] {
   const likes = (t: T) => t.likes_count ?? t.favoritings_count ?? 0;
   const seen = new Set<string>();
+  const artists = new Set<string>();
   return tracks
     .filter((t) => {
       if (seen.has(t.urn)) return false;
       seen.add(t.urn);
-      return (t.duration ?? 0) >= 60_000;
+      const d = t.duration ?? 0;
+      // Songs only: no previews, no hour-long sets and mixes.
+      return d >= 60_000 && d <= CHART_MAX_MS;
     })
     .sort((a, b) => (b.playback_count ?? 0) - (a.playback_count ?? 0) || likes(b) - likes(a))
+    .filter((t) => {
+      // One track per artist: a search for "hip-hop" otherwise fills up with one uploader
+      // who has the word in every title.
+      // By the shown artist name: the same artist is often uploaded from several accounts.
+      const who = (t.publisher_metadata?.artist || t.user?.username || t.user?.urn || '')
+        .trim()
+        .toLowerCase();
+      if (!who) return true;
+      if (artists.has(who)) return false;
+      artists.add(who);
+      return true;
+    })
     .slice(0, limit);
 }
 
@@ -115,4 +135,38 @@ export function freshReleases<T extends ReleaseLike>(items: T[], now: Date, mont
  */
 export function hasTrendSignal(artists: { monthly_listeners?: number }[]): boolean {
   return artists.some((a) => (a.monthly_listeners ?? 0) >= 100);
+}
+
+export interface ShelfTrackLike {
+  urn: string;
+  artwork_url?: string | null;
+  user?: { urn?: string; username?: string } | null;
+}
+
+/**
+ * Orders a track shelf so it doesn't repeat itself: not yet played tracks first, played ones at
+ * the end (still there for someone who wants to see everything), and within each group the same
+ * artist or the same cover never sits next to itself while something else can go there.
+ */
+export function spreadShelf<T extends ShelfTrackLike>(tracks: T[], played: Set<string>): T[] {
+  const artist = (t: T) => t.user?.urn ?? t.user?.username ?? '';
+  const spread = (list: T[]) => {
+    const left = [...list];
+    const out: T[] = [];
+    while (left.length > 0) {
+      const prev = out[out.length - 1];
+      const i = prev
+        ? left.findIndex(
+            (t) =>
+              artist(t) !== artist(prev) && (!t.artwork_url || t.artwork_url !== prev.artwork_url),
+          )
+        : 0;
+      out.push(...left.splice(i < 0 ? 0 : i, 1));
+    }
+    return out;
+  };
+  return [
+    ...spread(tracks.filter((t) => !played.has(t.urn))),
+    ...spread(tracks.filter((t) => played.has(t.urn))),
+  ];
 }

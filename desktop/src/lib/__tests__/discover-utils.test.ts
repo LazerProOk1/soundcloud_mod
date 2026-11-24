@@ -7,6 +7,7 @@ import {
   rankChart,
   realImage,
   releaseBaseTitle,
+  spreadShelf,
 } from '../discover-utils.ts';
 
 test('dedupeReleases drops repeated covers and same artist + title', () => {
@@ -85,4 +86,31 @@ test('realImage drops the Genius placeholder cover', () => {
 test('hasTrendSignal needs listeners, not just a flat score', () => {
   assert.equal(hasTrendSignal([{ monthly_listeners: 1 }, { monthly_listeners: 2 }]), false);
   assert.equal(hasTrendSignal([{ monthly_listeners: 1 }, { monthly_listeners: 5000 }]), true);
+});
+
+test('spreadShelf alternates artists and covers, played tracks last', () => {
+  const t = (urn: string, user: string, art: string) => ({
+    urn,
+    user: { urn: user },
+    artwork_url: art,
+  });
+  const out = spreadShelf(
+    [t('a1', 'A', 'x'), t('a2', 'A', 'x'), t('a3', 'A', 'y'), t('b1', 'B', 'z'), t('c1', 'C', 'w')],
+    new Set(['b1']),
+  ).map((x) => x.urn);
+  assert.deepEqual(out, ['a1', 'c1', 'a2', 'a3', 'b1']);
+  assert.equal(out.length, 5);
+});
+
+test('rankChart drops long sets and keeps one track per artist', () => {
+  const out = rankChart(
+    [
+      { urn: 'set', duration: 2 * 3600_000, playback_count: 9999, user: { urn: 'S' } },
+      { urn: 'h1', duration: 200_000, playback_count: 900, user: { urn: 'H' } },
+      { urn: 'h2', duration: 200_000, playback_count: 800, user: { urn: 'H' } },
+      { urn: 'x', duration: 200_000, playback_count: 100, user: { urn: 'X' } },
+    ],
+    5,
+  ).map((t) => t.urn);
+  assert.deepEqual(out, ['h1', 'x']);
 });

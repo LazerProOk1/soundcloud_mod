@@ -34,12 +34,19 @@ import {
   useDiscoverTags,
   useGenreChart,
 } from '../lib/discover';
-import { CHART_GENRES, dedupeReleases, freshReleases, hasTrendSignal } from '../lib/discover-utils';
+import {
+  CHART_GENRES,
+  dedupeReleases,
+  freshReleases,
+  hasTrendSignal,
+  spreadShelf,
+} from '../lib/discover-utils';
 import { fc } from '../lib/formatters';
 import {
   useBatchTrackHydration,
   useDiscoverData,
   useFollowingTracks,
+  useHistory,
   useLikedTracks,
   useRecommendedTracks,
   useRelatedPool,
@@ -141,10 +148,27 @@ function DiscoverHero() {
 
 /* ── Server catalog shelves ────────────────────────────────── */
 
+/** Fewer monthly listeners than this and an artist doesn't get a spotlight card. */
+const SPOTLIGHT_MIN = 500;
+
 const SpotlightShelf = React.memo(function SpotlightShelf() {
   const { t } = useTranslation();
-  const { data = [], isLoading, isError } = useDiscoverSpotlight(12);
-  if (isError || (!isLoading && data.length === 0)) return null;
+  const { data: raw = [], isLoading, isError } = useDiscoverSpotlight(24);
+  // The server's picks include starred artists nobody listens to (0–100 listeners a month):
+  // keep artists with an audience, most listened first; albums stay. Too few left: no shelf.
+  const data = useMemo(
+    () =>
+      raw
+        .filter((x) => x.kind !== 'artist' || (x.artist.monthly_listeners ?? 0) >= SPOTLIGHT_MIN)
+        .sort(
+          (a, b) =>
+            (b.kind === 'artist' ? (b.artist.monthly_listeners ?? 0) : 0) -
+            (a.kind === 'artist' ? (a.artist.monthly_listeners ?? 0) : 0),
+        )
+        .slice(0, 12),
+    [raw],
+  );
+  if (isError || (!isLoading && data.length < 3)) return null;
   return (
     <CatalogSection
       id="spotlight"
@@ -334,6 +358,12 @@ const GenreCharts = React.memo(function GenreCharts() {
 
 /* ── Personal shelves (from likes and followings) ──────────── */
 
+/** Tracks in the listening history: personal shelves move them to the end. */
+function usePlayedUrns(): Set<string> {
+  const { entries } = useHistory();
+  return useMemo(() => new Set(entries.map((e) => e.scTrackId)), [entries]);
+}
+
 const RecommendedShelf = React.memo(function RecommendedShelf({
   likedTracks,
 }: {
@@ -341,7 +371,9 @@ const RecommendedShelf = React.memo(function RecommendedShelf({
 }) {
   const { t } = useTranslation();
   const { data: pool, isLoading } = useRelatedPool(likedTracks);
-  const tracks = useRecommendedTracks(pool, 40);
+  const played = usePlayedUrns();
+  const picked = useRecommendedTracks(pool, 40);
+  const tracks = useMemo(() => spreadShelf(picked, played), [picked, played]);
   if (!isLoading && tracks.length === 0) return null;
   return (
     <CatalogSection
@@ -381,7 +413,8 @@ const YourGenres = React.memo(function YourGenres({ likedTracks }: { likedTracks
 const FollowingShelf = React.memo(function FollowingShelf() {
   const { t } = useTranslation();
   const { data, isLoading } = useFollowingTracks(30);
-  const tracks = useMemo(() => data?.collection ?? [], [data]);
+  const played = usePlayedUrns();
+  const tracks = useMemo(() => spreadShelf(data?.collection ?? [], played), [data, played]);
   if (!isLoading && tracks.length === 0) return null;
   return (
     <CatalogSection
