@@ -1,24 +1,28 @@
 name: Идея
-description: Предложите новую функцию или улучшение
-title: '[FEAT] '
+description: Чего не хватает или что сделать удобнее
+title: '[Идея] '
 labels: [enhancement]
-assignees: [LazerProOk1]
 body:
-  - type: textarea
-    id: problem
+  - type: markdown
     attributes:
-      label: Какую проблему это решает
-      placeholder: Меня раздражает, что…
+      value: |
+        Спасибо! Посмотрите, нет ли такой идеи в issues или в закреплённом обсуждении — тогда
+        поставьте ей 👍, так видно, что нужнее.
+  - type: textarea
+    id: idea
+    attributes:
+      label: Идея
+      description: Что хотите видеть в приложении. Хватит пары строк.
+      placeholder: Например, «показывать текст песни в мини-плеере».
     validations:
       required: true
   - type: textarea
-    id: solution
+    id: why
     attributes:
-      label: Как это должно работать
-      description: Опишите, что вы хотите увидеть. Можно приложить скриншот из другого приложения.
-    validations:
-      required: true
+      label: Зачем
+      description: Как вы будете этим пользоваться. Необязательно, но помогает сделать как надо.
   - type: textarea
-    id: alternatives
+    id: extra
     attributes:
-      label: Какие ещё варианты вы рассматривали
+      label: Пример, скриншот, ссылка
+      description: Как это сделано в другом приложении, набросок, что угодно.

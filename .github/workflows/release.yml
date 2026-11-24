@@ -235,6 +235,8 @@ jobs:
           EOF
             [ -n "$prev" ] && printf '\n[Все изменения](https://github.com/%s/compare/%s...%s)\n' \
               "$GITHUB_REPOSITORY" "$prev" "$tag"
+            printf '\n---\n\nНашли баг или есть идея? Напишите в [Issues](https://github.com/%s/issues/new/choose) или [Discussions](https://github.com/%s/discussions). В приложении: «Настройки → О программе → Сообщить о проблеме».\n' \
+              "$GITHUB_REPOSITORY" "$GITHUB_REPOSITORY"
             true
           } > notes.md
           cat notes.md
