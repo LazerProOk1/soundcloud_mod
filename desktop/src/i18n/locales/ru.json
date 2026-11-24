@@ -418,6 +418,7 @@
     "checkUpdates": "Проверить обновления",
     "upToDate": "У вас актуальная версия (v{{version}})",
     "streamingStatus": "Серверы стриминга",
+    "streamServer": "Сервер {{n}}",
     "hostHealthy": "Доступен",
     "hostCooldown": "Пауза",
     "hostsReset": "Статус серверов стриминга сброшен",

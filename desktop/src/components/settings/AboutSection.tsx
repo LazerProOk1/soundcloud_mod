@@ -10,7 +10,6 @@ import { useCachedUrnsStore } from '../../stores/cached-urns';
 import { UpdateChecker } from '../UpdateChecker';
 
 // The API hosts tracks and pages come from, in order (the second is the fallback mirror).
-const STREAM_HOSTS = API_HOSTS.map((url) => ({ id: url, label: new URL(url).host, url }));
 
 export const AboutSection = React.memo(function AboutSection() {
   const { t } = useTranslation();
@@ -42,9 +41,7 @@ export const AboutSection = React.memo(function AboutSection() {
   }, [t]);
 
   const handleResetHosts = useCallback(() => {
-    for (const host of STREAM_HOSTS) {
-      markHealthy(host.url);
-    }
+    for (const url of API_HOSTS) markHealthy(url);
     setRefreshTick((n) => n + 1);
     toast.success(t('settings.hostsReset', 'Streaming host health reset'));
   }, [t]);
@@ -114,15 +111,16 @@ export const AboutSection = React.memo(function AboutSection() {
             </button>
           </div>
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            {STREAM_HOSTS.map((host) => {
-              const healthy = isHealthy(host.url);
+            {API_HOSTS.map((url, i) => {
+              const healthy = isHealthy(url);
               return (
                 <div
-                  key={host.id}
+                  key={url}
                   className="flex items-center justify-between gap-3 rounded-xl ui-card px-3.5 py-2.5"
                 >
                   <p className="min-w-0 truncate text-[13px] font-semibold text-white/85">
-                    {host.label}
+                    {/* Numbered, not named: the hosts themselves aren't worth showing. */}
+                    {t('settings.streamServer', { n: i + 1 })}
                   </p>
                   <span className="flex shrink-0 items-center gap-1.5 text-[12px] font-medium text-white/60">
                     <span

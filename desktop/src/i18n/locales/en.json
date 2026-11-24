@@ -404,6 +404,7 @@
     "checkUpdates": "Check for updates",
     "upToDate": "You are on the latest version (v{{version}})",
     "streamingStatus": "Streaming endpoints",
+    "streamServer": "Server {{n}}",
     "hostHealthy": "Ready",
     "hostCooldown": "Cooldown",
     "hostsReset": "Streaming host health reset",
