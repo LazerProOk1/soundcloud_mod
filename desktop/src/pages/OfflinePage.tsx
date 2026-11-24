@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
 import { TrackListPage } from '../components/music/TrackListPage';
 import { api } from '../lib/api';
 import { listCachedUrns } from '../lib/cache';
@@ -92,7 +91,6 @@ const PendingBadge = React.memo(function PendingBadge({
 
 export const OfflinePage = React.memo(() => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const appMode = useAppStatusStore((s) =>
     s.offlineBypass || !s.navigatorOnline || !s.backendReachable ? 'offline' : 'online',
   );
@@ -270,10 +268,8 @@ export const OfflinePage = React.memo(() => {
           {appMode === 'offline' && (
             <button
               type="button"
-              onClick={() => {
-                useAppStatusStore.getState().resetConnectivity();
-                navigate('/home');
-              }}
+              // Back online in place: the page switches to its online view, no jump to Home.
+              onClick={() => useAppStatusStore.getState().resetConnectivity()}
               className="inline-flex items-center gap-1.5 text-[13px] font-semibold text-white hover:underline cursor-pointer"
             >
               <RotateCcw size={13} />
