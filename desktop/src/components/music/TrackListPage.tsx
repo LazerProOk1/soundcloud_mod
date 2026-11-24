@@ -6,7 +6,7 @@ import { Clock, Loader2, Search, Shuffle } from '../../lib/icons';
 import { type Track, usePlayerStore } from '../../stores/player';
 import { VirtualList } from '../ui/VirtualList';
 import { OfflineDownloadButton } from './OfflineDownloadButton';
-import { TrackTableRow } from './TrackTableRow';
+import { TRACK_GRID, TRACK_GRID_NO_ALBUM, TrackTableRow, trackAlbum } from './TrackTableRow';
 
 const fabIcon = (show: boolean) =>
   `absolute inset-0 flex items-center justify-center transition-all duration-300 ease-[var(--ease-spring)] ${
@@ -72,6 +72,12 @@ export const TrackListPage = React.memo(function TrackListPage({
     );
   }, [tracks, query]);
   const totalMs = useMemo(() => tracks.reduce((sum, tr) => sum + (tr.duration || 0), 0), [tracks]);
+  // Most uploads have no album: an almost empty column only wastes width. Lists that draw their
+  // own rows (renderRows) keep the full layout.
+  const showAlbum = useMemo(
+    () => !!renderRows || tracks.filter((tr) => trackAlbum(tr)).length >= tracks.length * 0.25,
+    [tracks, renderRows],
+  );
 
   const band = colors?.dominant
     ? `rgb(${colors.dominant.join(',')})`
@@ -184,10 +190,12 @@ export const TrackListPage = React.memo(function TrackListPage({
       )}
 
       <div className="px-4 pb-8">
-        <div className="grid grid-cols-[32px_minmax(0,1fr)_minmax(0,0.7fr)_40px_56px] items-center gap-4 px-4 h-9 mb-2 border-b border-white/[0.08] text-[13px] text-white/50">
+        <div
+          className={`grid ${showAlbum ? TRACK_GRID : TRACK_GRID_NO_ALBUM} items-center gap-4 px-4 h-9 mb-2 border-b border-white/[0.08] text-[13px] text-white/50`}
+        >
           <span className="text-center">#</span>
           <span>{t('trackList.title', 'Title')}</span>
-          <span>{t('trackList.album', 'Album')}</span>
+          {showAlbum && <span>{t('trackList.album', 'Album')}</span>}
           <span />
           <span className="flex justify-end">
             <Clock size={15} />
@@ -223,7 +231,7 @@ export const TrackListPage = React.memo(function TrackListPage({
             rowHeight={56}
             getItemKey={(track) => track.urn}
             renderItem={(track, index) => (
-              <TrackTableRow track={track} index={index} queue={shown} />
+              <TrackTableRow track={track} index={index} queue={shown} noAlbum={!showAlbum} />
             )}
           />
         )}

@@ -9,6 +9,14 @@ import type { Track } from '../../stores/player';
 import { CacheBadge } from './CacheBadge';
 import { LikeButton } from './LikeButton';
 
+export const TRACK_GRID = 'grid-cols-[32px_minmax(0,1fr)_minmax(0,0.7fr)_40px_56px]';
+export const TRACK_GRID_NO_ALBUM = 'grid-cols-[32px_minmax(0,1fr)_40px_56px]';
+
+/** Album title of a track, or '' (shown in the album column). */
+export function trackAlbum(track: Track): string {
+  return track.enrichment?.album?.title ?? track.publisher_metadata?.album_title ?? '';
+}
+
 /** One row of a Spotify-style track table: #, cover + title/artist, album, like, length. */
 export const TrackTableRow = React.memo(function TrackTableRow({
   track,
@@ -16,6 +24,7 @@ export const TrackTableRow = React.memo(function TrackTableRow({
   queue,
   onRemove,
   removeLabel,
+  noAlbum,
 }: {
   track: Track;
   index: number;
@@ -23,12 +32,14 @@ export const TrackTableRow = React.memo(function TrackTableRow({
   /** Shows a remove button on hover (own playlists). */
   onRemove?: (track: Track) => void;
   removeLabel?: string;
+  /** The list hides its album column (hardly any track has one). */
+  noAlbum?: boolean;
 }) {
   const { isThis, isThisPlaying, togglePlay } = useTrackPlay(track, queue);
   const title = useDisplayTitle(track);
   const artist = useArtistDisplay(track);
   const cover = art(track.artwork_url, 't67x67');
-  const album = track.enrichment?.album?.title ?? track.publisher_metadata?.album_title ?? '';
+  const album = trackAlbum(track);
 
   return (
     <div
@@ -37,7 +48,7 @@ export const TrackTableRow = React.memo(function TrackTableRow({
       onMouseLeave={cancelPreload}
       onContextMenu={(e) => openTrackMenu(e, track)}
       style={{ contentVisibility: 'auto', containIntrinsicSize: 'auto 56px' }}
-      className={`group grid grid-cols-[32px_minmax(0,1fr)_minmax(0,0.7fr)_40px_56px] items-center gap-4 px-4 h-14 rounded-md select-none transition-colors duration-150 ${
+      className={`group grid ${noAlbum ? TRACK_GRID_NO_ALBUM : TRACK_GRID} items-center gap-4 px-4 h-14 rounded-md select-none transition-colors duration-150 ${
         isThis ? 'bg-white/[0.08]' : 'hover:bg-white/[0.06]'
       }`}
     >
@@ -93,7 +104,7 @@ export const TrackTableRow = React.memo(function TrackTableRow({
         </div>
       </div>
 
-      <p className="truncate text-[13px] text-white/55">{album}</p>
+      {!noAlbum && <p className="truncate text-[13px] text-white/55">{album}</p>}
 
       <LikeButton track={track} />
 
