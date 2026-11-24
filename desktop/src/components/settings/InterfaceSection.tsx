@@ -195,7 +195,7 @@ const SourceRow = React.memo(function SourceRow() {
                 style={{ background: meta.dot }}
               />
               <span
-                className={`flex-1 text-[14px] font-semibold ${src.enabled ? 'text-white' : 'text-white/35'}`}
+                className={`min-w-0 flex-1 truncate text-[14px] font-semibold ${src.enabled ? 'text-white' : 'text-white/35'}`}
               >
                 {meta.label}
               </span>

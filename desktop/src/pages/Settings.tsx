@@ -140,57 +140,65 @@ export function Settings() {
   );
 
   return (
-    <div className="mx-auto flex max-w-5xl gap-10 p-6 pb-4">
-      <nav aria-label={t('settings.title')} className="hidden w-52 shrink-0 md:block">
-        <div className="sticky top-6 space-y-0.5">{nav.map((item) => navButton(item, false))}</div>
-      </nav>
+    // Breakpoints follow the width of the content area (a container query), not the window:
+    // with the sidebar open, a 1000 px window left the settings themselves under 500 px.
+    <div className="@container">
+      <div className="mx-auto flex max-w-5xl gap-10 p-6 pb-4">
+        <nav aria-label={t('settings.title')} className="hidden w-52 shrink-0 @4xl:block">
+          <div className="sticky top-6 space-y-0.5">
+            {nav.map((item) => navButton(item, false))}
+          </div>
+        </nav>
 
-      <div ref={rootRef} className="min-w-0 max-w-2xl flex-1 space-y-6">
-        <h1 className="syne text-3xl text-white">{t('settings.title')}</h1>
+        <div ref={rootRef} className="min-w-0 max-w-2xl flex-1 space-y-6">
+          <h1 className="syne text-3xl text-white">{t('settings.title')}</h1>
 
-        <div className="relative">
-          <Search
-            size={15}
-            className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/35"
-          />
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => e.key === 'Escape' && setQuery('')}
-            placeholder={t('settings.searchPlaceholder')}
-            className="bar-control h-10 w-full rounded-full border border-transparent pl-10 pr-10 text-[13px] text-white/85 outline-none placeholder:text-white/35 focus:border-white/25 [&::-webkit-search-cancel-button]:hidden"
-          />
-          {query && (
-            <button
-              type="button"
-              onClick={() => setQuery('')}
-              aria-label={t('common.clear')}
-              className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center ui-icon rounded-full text-white/45 hover:text-white cursor-pointer"
-            >
-              <X size={13} />
-            </button>
+          <div className="relative">
+            <Search
+              size={15}
+              className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-white/35"
+            />
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Escape' && setQuery('')}
+              placeholder={t('settings.searchPlaceholder')}
+              className="bar-control h-10 w-full rounded-full border border-transparent pl-10 pr-10 text-[13px] text-white/85 outline-none placeholder:text-white/35 focus:border-white/25 [&::-webkit-search-cancel-button]:hidden"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => setQuery('')}
+                aria-label={t('common.clear')}
+                className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center ui-icon rounded-full text-white/45 hover:text-white cursor-pointer"
+              >
+                <X size={13} />
+              </button>
+            )}
+          </div>
+
+          {/* Narrow windows: the navigation becomes a row of pills. */}
+          <div className="flex gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] @4xl:hidden">
+            {nav.map((item) => navButton(item, true))}
+          </div>
+
+          {nothingFound && (
+            <p className="py-10 text-center text-[13px] text-white/30">
+              {t('settings.searchEmpty')}
+            </p>
           )}
+          <GeneralSection />
+          <AppearanceSection />
+          <InterfaceSection />
+          <PlaybackSection />
+          <TransitionsSection />
+          <DiscordSection />
+          <CacheSection />
+          <BackupSection />
+          <AccountSection />
+          <AboutSection />
         </div>
-
-        {/* Narrow windows: the navigation becomes a row of pills. */}
-        <div className="flex gap-1.5 overflow-x-auto pb-1 md:hidden">
-          {nav.map((item) => navButton(item, true))}
-        </div>
-
-        {nothingFound && (
-          <p className="py-10 text-center text-[13px] text-white/30">{t('settings.searchEmpty')}</p>
-        )}
-        <GeneralSection />
-        <AppearanceSection />
-        <InterfaceSection />
-        <PlaybackSection />
-        <TransitionsSection />
-        <DiscordSection />
-        <CacheSection />
-        <BackupSection />
-        <AccountSection />
-        <AboutSection />
       </div>
     </div>
   );

@@ -107,7 +107,7 @@ const WallpaperPicker = React.memo(function WallpaperPicker() {
   return (
     <SettingRow title={t('settings.backgroundImage')} stacked>
       {/* Wallpaper grid */}
-      <div className="grid grid-cols-5 gap-2.5">
+      <div className="grid grid-cols-[repeat(auto-fill,minmax(96px,1fr))] gap-2.5">
         {/* "None" option */}
         <button
           type="button"

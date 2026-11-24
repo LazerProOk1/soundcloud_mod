@@ -11,7 +11,9 @@ export function Segmented<T extends string>({
   onChange: (v: T) => void;
 }) {
   return (
-    <div className="ui-track inline-flex flex-wrap gap-1 rounded-full p-1">
+    // rounded-[22px], not rounded-full: one row is still a pill (44 px tall), but options that
+    // wrap onto a second row keep a rounded box instead of turning into a blob.
+    <div className="ui-track inline-flex flex-wrap gap-1 rounded-[22px] p-1">
       {options.map((o) => (
         <button
           key={o.id}
