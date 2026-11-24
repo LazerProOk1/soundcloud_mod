@@ -188,6 +188,7 @@
     "playlists": "Playlists",
     "likes": "Likes",
     "follow": "Follow",
+    "followingBtn": "Following",
     "noFollowers": "No followers found.",
     "noFollowings": "No followings found.",
     "verifiedArtist": "Verified Artist",
@@ -768,7 +769,8 @@
   },
   "trackList": {
     "loadFailed": "Could not load the tracks",
-    "meta": "{{count}} tracks, {{duration}}",
+    "meta_one": "{{count}} track, {{duration}}",
+    "meta_other": "{{count}} tracks, {{duration}}",
     "shuffle": "Shuffle",
     "searchHere": "Search in this list",
     "title": "Title",

@@ -298,7 +298,10 @@ export const PlaylistPage = React.memo(() => {
   return (
     <>
       <TrackListPage
-        kind={playlist.playlist_type || t('sidebar.playlist')}
+        // The API sends ALBUM / EP / SINGLE / COMPILATION / PLAYLIST: show it in the app's language.
+        kind={t(`artist.kind.${(playlist.playlist_type ?? '').toLowerCase()}`, {
+          defaultValue: t('sidebar.playlist'),
+        })}
         title={playlist.title}
         colorFrom={cover}
         tile={

@@ -63,7 +63,7 @@ export function FollowBtn({ userUrn }: FollowBtnProps) {
       {busy ? (
         <Loader2 size={14} className="animate-spin" />
       ) : following ? (
-        t('user.following')
+        t('user.followingBtn')
       ) : (
         t('user.follow')
       )}
