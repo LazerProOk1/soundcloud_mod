@@ -21,6 +21,8 @@
 
 ## Возможности
 
+- **Лёгкое.** Сделано на Tauri, а не на Electron: в приложение не встроен целый браузер, поэтому
+  установщик весит считанные мегабайты, а звук играет собственный движок на Rust.
 - **Моя волна.** Бесконечный поток под ваш вкус с режимами «Фокус», «Энергия», «Чилл», «Ночь»,
   «Тренировка». Кнопки «Не то» и «Ещё такого» меняют то, что будет дальше. Волну можно запустить
   от любого артиста.
@@ -111,7 +113,8 @@ pnpm tauri dev
 
 ## English
 
-SoundCloud Mod is an unofficial SoundCloud desktop client for Windows and Linux: no ads, offline
+SoundCloud Mod is an unofficial SoundCloud desktop client for Windows and Linux. It is built with
+Tauri instead of Electron, so it is lightweight: the installer is a few megabytes. No ads, offline
 downloads, synced lyrics, a 10-band equalizer, crossfade and Discord status, with a personal
 endless "My Wave" stream. Get the installer, portable ZIP, AppImage, DEB or RPM from the
 [latest release](https://github.com/LazerProOk1/soundcloud_mod/releases/latest). The app is
