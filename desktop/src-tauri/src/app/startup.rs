@@ -99,6 +99,11 @@ pub fn autostart_get() -> AutostartState {
 
 #[tauri::command]
 pub fn autostart_set(enabled: bool, minimized: bool) -> Result<(), String> {
+    // A dev build would register target/debug, which shows a black window without Vite.
+    // Turning it off still works, to clean up such an entry.
+    if enabled && cfg!(debug_assertions) {
+        return Err("autostart can only be turned on in an installed build".into());
+    }
     #[cfg(target_os = "windows")]
     {
         let out = if enabled {
