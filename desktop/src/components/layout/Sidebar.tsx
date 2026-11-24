@@ -2,7 +2,13 @@ import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, NavLink, useLocation } from 'react-router-dom';
 import { art } from '../../lib/formatters';
-import { useMyLikedPlaylists, useMyPlaylists, usePlaylistCover } from '../../lib/hooks';
+import {
+  ALL_LIKES_PAGE_SIZE,
+  useLikedTracks,
+  useMyLikedPlaylists,
+  useMyPlaylists,
+  usePlaylistCover,
+} from '../../lib/hooks';
 import {
   AudioLines,
   Clock,
@@ -74,6 +80,13 @@ export const Sidebar = React.memo(() => {
   const { t } = useTranslation();
   const user = useAuthStore((s) => s.user);
   const cachedCount = useCachedUrnsStore((s) => s.urns.size);
+  // Same list and rule as the likes page: SoundCloud's profile count skips private and removed
+  // uploads, so once every page is in, the list length is the count.
+  const likes = useLikedTracks(ALL_LIKES_PAGE_SIZE, true);
+  const likedCount =
+    likes.hasNextPage || likes.isLoading
+      ? Math.max(user?.public_favorites_count ?? 0, likes.tracks.length)
+      : likes.tracks.length;
   const collapsed = useSettingsStore((s) => s.sidebarCollapsed);
   const toggleSidebar = useSettingsStore((s) => s.toggleSidebar);
   const { playlists: own } = useMyPlaylists(50);
@@ -139,7 +152,9 @@ export const Sidebar = React.memo(() => {
         <Row
           to="/liked"
           title={t('library.likedTracks')}
-          subtitle={t('sidebar.playlist')}
+          subtitle={
+            likedCount ? t('sidebar.playlistTracks', { count: likedCount }) : t('sidebar.playlist')
+          }
           collapsed={collapsed}
           tile={gradientTile('#4f46e5', '#a5b4fc', <Heart size={18} fill="currentColor" />)}
         />
