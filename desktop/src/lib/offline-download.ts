@@ -6,11 +6,6 @@ import { cacheLikedTracks, type LikeCacheEntry, listCachedUrns } from './cache';
 import type { CacheLikesProgress } from './cache-kind';
 import { getArtistDisplay, getDisplayTitle } from './track-display';
 
-/** Tracks SoundCloud streams in full; previews and blocked ones can't be downloaded. */
-export function isDownloadable(track: Track): boolean {
-  return !track.access || track.access === 'playable';
-}
-
 /** Resolves when the engine's current save-for-offline run ends. Subscribe before starting it. */
 function nextRunEnd(): Promise<CacheLikesProgress> {
   return new Promise((resolve) => {

@@ -15,7 +15,7 @@ import {
 import { formatBytes } from '../../lib/formatters';
 import { ALL_LIKES_PAGE_SIZE, useLikedTracks } from '../../lib/hooks';
 import { Download, Loader2, Trash2, X } from '../../lib/icons';
-import { downloadTracksForOffline, isDownloadable } from '../../lib/offline-download';
+import { downloadTracksForOffline } from '../../lib/offline-download';
 import { hasCachedTrack, useCachedUrnsStore } from '../../stores/cached-urns';
 import { CACHE_LIMIT_GB, useSettingsStore } from '../../stores/settings';
 import { PILL_BTN } from '../ui/buttonClass';
@@ -73,10 +73,9 @@ function CacheLikesRow({ onDone }: { onDone: () => void }) {
   const [progress, setProgress] = useState<Progress | null>(null);
   // How many likes are already on disk (either cache counts: both play offline).
   const cachedUrns = useCachedUrnsStore((s) => s.urns);
-  // Same list as the likes page (shared query); previews and blocked tracks can't be saved.
-  const likedUrns = useLikedTracks(ALL_LIKES_PAGE_SIZE, true)
-    .tracks.filter(isDownloadable)
-    .map((tr) => tr.urn);
+  // Same list as the likes page (shared query). Previews count too: playback gets them in full
+  // from the mirror or the fallback sources, and so does saving.
+  const likedUrns = useLikedTracks(ALL_LIKES_PAGE_SIZE, true).tracks.map((tr) => tr.urn);
   const onDisk = likedUrns.filter((u) => hasCachedTrack(cachedUrns, u)).length;
 
   useEffect(() => {
@@ -119,8 +118,7 @@ function CacheLikesRow({ onDone }: { onDone: () => void }) {
     setRunning(true);
     try {
       const { fetchAllLikedTracks } = await import('../../lib/hooks');
-      // Previews and blocked tracks can't be downloaded: leaving them in kept the run at N-1 of N.
-      const tracks = (await fetchAllLikedTracks(200)).filter(isDownloadable);
+      const tracks = await fetchAllLikedTracks(200);
       if (tracks.length === 0) {
         setRunning(false);
         toast(t('settings.cacheLikesEmpty'));

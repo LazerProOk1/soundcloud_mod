@@ -1,5 +1,5 @@
 import { listen } from '@tauri-apps/api/event';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { cancelCacheLikes, isCacheLikesRunning } from '../../lib/cache';
@@ -10,21 +10,21 @@ import {
   useCacheKindsVersion,
 } from '../../lib/cache-kind';
 import { CheckCircle2, Download, X } from '../../lib/icons';
-import { downloadTracksForOffline, isDownloadable } from '../../lib/offline-download';
+import { downloadTracksForOffline } from '../../lib/offline-download';
 import type { Track } from '../../stores/player';
 
 /**
  * "Save for offline" for a list. States: something to download, downloading (progress ring;
- * a click cancels) and done. Previews and blocked tracks are ignored. "Done" means every track
- * is saved with the likes; tracks the last run could not fetch keep the download button (its
- * tooltip says how many), and a click tries them again.
+ * a click cancels) and done. "Done" means every track is saved with the likes, previews
+ * included (SoundCloud often streams them in full, and the run falls back to other sources).
+ * Tracks the last run could not fetch keep the download button (its tooltip says how many),
+ * and a click tries them again.
  */
 export function OfflineDownloadButton({ tracks }: { tracks: Track[] }) {
   const { t } = useTranslation();
   const kindsVersion = useCacheKindsVersion();
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [missing, setMissing] = useState<number | null>(null);
-  const wanted = useMemo(() => tracks.filter(isDownloadable), [tracks]);
   const running = progress !== null;
 
   useEffect(() => {
@@ -44,16 +44,16 @@ export function OfflineDownloadButton({ tracks }: { tracks: Track[] }) {
   // biome-ignore lint/correctness/useExhaustiveDependencies: recount when files land
   useEffect(() => {
     let alive = true;
-    void countNotProtected(wanted.map((tr) => tr.urn)).then((n) => {
+    void countNotProtected(tracks.map((tr) => tr.urn)).then((n) => {
       if (alive) setMissing(n);
     });
     return () => {
       alive = false;
     };
-  }, [wanted, kindsVersion]);
+  }, [tracks, kindsVersion]);
 
   const lastFailed = getLastRunFailed();
-  const done = !running && missing === 0 && wanted.length > 0;
+  const done = !running && missing === 0 && tracks.length > 0;
   const partly = !running && !!missing && lastFailed > 0 && missing <= lastFailed;
   const start = () => {
     if (running) {
@@ -62,8 +62,8 @@ export function OfflineDownloadButton({ tracks }: { tracks: Track[] }) {
     }
     if (done) return;
     setProgress({ done: 0, total: 0 });
-    toast.success(t('trackList.downloadQueued', { count: missing ?? wanted.length }));
-    void downloadTracksForOffline(wanted).catch((e) => {
+    toast.success(t('trackList.downloadQueued', { count: missing ?? tracks.length }));
+    void downloadTracksForOffline(tracks).catch((e) => {
       setProgress(null);
       toast.error(String(e));
     });
