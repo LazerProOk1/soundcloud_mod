@@ -34,7 +34,7 @@ import {
   useDiscoverTags,
   useGenreChart,
 } from '../lib/discover';
-import { CHART_GENRES, dedupeReleases } from '../lib/discover-utils';
+import { CHART_GENRES, dedupeReleases, freshReleases, hasTrendSignal } from '../lib/discover-utils';
 import { fc } from '../lib/formatters';
 import {
   useBatchTrackHydration,
@@ -188,23 +188,59 @@ const AlbumShelf = React.memo(function AlbumShelf({
   );
 });
 
-const ArtistShelf = React.memo(function ArtistShelf({
-  id,
-  sort,
-  title,
-  icon,
-}: {
-  id: SectionId;
-  sort: ArtistSort;
-  title: string;
-  icon: React.ReactNode;
-}) {
-  const { items, isLoading, isError } = useDiscoverArtists(sort);
-  if (isError || (!isLoading && items.length === 0)) return null;
+/**
+ * Fresh releases by release date: the server's `recent` sort means recently indexed, which
+ * brought albums from 2017. Current and last year's buckets plus the recent list, filtered to
+ * the last 12 months and sorted newest first.
+ */
+const FreshShelf = React.memo(function FreshShelf() {
+  const { t } = useTranslation();
+  const recent = useDiscoverAlbums('recent', 40);
+  const byYear = useDiscoverAlbumsByYear(6, 20);
+  const albums = useMemo(
+    () =>
+      freshReleases(
+        [...(byYear.data ?? []).slice(0, 2).flatMap((b) => b.items), ...recent.items],
+        new Date(),
+      ),
+    [byYear.data, recent.items],
+  );
+  const isLoading = recent.isLoading || byYear.isLoading;
+  if (!isLoading && albums.length === 0) return null;
   return (
-    <CatalogSection id={id} title={title} icon={icon}>
+    <CatalogSection
+      id="freshReleases"
+      title={t('discover.freshReleases')}
+      icon={<Zap size={20} className={ICON} />}
+    >
       <Shelf loading={isLoading}>
-        {items.map((artist) => (
+        {albums.map((album) => (
+          <AlbumTile key={album.id} album={album} />
+        ))}
+      </Shelf>
+    </CatalogSection>
+  );
+});
+
+/**
+ * Trending artists, or popular ones when the trending list carries no signal (everyone with the
+ * same score and a listener or two, which only sorted them by name).
+ */
+const TrendingShelf = React.memo(function TrendingShelf() {
+  const { t } = useTranslation();
+  const trending = useDiscoverArtists('trending');
+  const flat = !trending.isLoading && !hasTrendSignal(trending.items);
+  const popular = useDiscoverArtists('popular', undefined, 40);
+  const q = flat ? popular : trending;
+  if (q.isError || (!q.isLoading && q.items.length === 0)) return null;
+  return (
+    <CatalogSection
+      id={flat ? 'popularArtists' : 'trendingArtists'}
+      title={t(flat ? 'discover.popularArtists' : 'discover.trendingArtists')}
+      icon={<Users size={20} className={ICON} />}
+    >
+      <Shelf loading={q.isLoading}>
+        {q.items.map((artist) => (
           <ArtistTile key={artist.id} artist={artist} />
         ))}
       </Shelf>
@@ -502,20 +538,10 @@ export function Discover() {
     <div className="p-6 pb-4 space-y-10">
       <DiscoverHero />
       <SpotlightShelf />
-      <AlbumShelf
-        id="freshReleases"
-        sort="recent"
-        title={t('discover.freshReleases')}
-        icon={<Zap size={20} className={ICON} />}
-      />
+      <FreshShelf />
       <GenreCharts />
       <RecommendedShelf likedTracks={likedTracks} />
-      <ArtistShelf
-        id="trendingArtists"
-        sort="trending"
-        title={t('discover.trendingArtists')}
-        icon={<Users size={20} className={ICON} />}
-      />
+      <TrendingShelf />
       <AlbumShelf
         id="popularAlbums"
         sort="popular"

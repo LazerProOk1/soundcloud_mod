@@ -5,7 +5,7 @@
 import { type InfiniteData, useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import type { Track } from '../stores/player';
 import { api } from './api';
-import { rankChart } from './discover-utils';
+import { rankChart, realImage } from './discover-utils';
 
 export type AlbumKind = 'album' | 'ep' | 'single' | 'compilation';
 export type ArtistSort = 'popular' | 'trending' | 'listeners' | 'az';
@@ -26,6 +26,7 @@ export interface CatalogAlbum {
   title: string;
   type: AlbumKind;
   release_year?: number | null;
+  release_month?: number | null;
   cover_url?: string;
   primary_artist: { id: string; name: string; avatar_url?: string };
   track_count?: number;
@@ -65,6 +66,18 @@ function url(path: string, params: Record<string, string | number | undefined | 
   return qs ? `${path}?${qs}` : path;
 }
 
+/** Placeholder art ("no cover" clouds) becomes undefined, so cards show their own fallback. */
+function cleanImages<T>(item: T): T {
+  const x = item as Record<string, unknown>;
+  const out: Record<string, unknown> = { ...x };
+  if ('cover_url' in x) out.cover_url = realImage(x.cover_url as string | undefined);
+  if ('avatar_url' in x) out.avatar_url = realImage(x.avatar_url as string | undefined);
+  for (const k of ['primary_artist', 'artist', 'album']) {
+    if (x[k] && typeof x[k] === 'object') out[k] = cleanImages(x[k]);
+  }
+  return out as T;
+}
+
 /** The catalog is optional server data: a missing endpoint just hides its section. */
 const quiet = { staleTime: STALE_MS, retry: 1 } as const;
 
@@ -80,7 +93,7 @@ export function useDiscoverSpotlight(limit = 12) {
   return useQuery({
     queryKey: ['discover', 'spotlight', limit],
     queryFn: () => api<{ items: SpotlightItem[] }>(url('/discover/spotlight', { limit })),
-    select: (d) => d.items ?? [],
+    select: (d) => (d.items ?? []).map(cleanImages),
     ...quiet,
   });
 }
@@ -101,7 +114,10 @@ export function useDiscoverAlbumsByYear(years = 6, perYear = 16) {
       api<{ buckets: { year: number; items: CatalogAlbum[] }[] }>(
         url('/discover/albums/by-year', { years, per_year: perYear }),
       ),
-    select: (d) => (d.buckets ?? []).filter((b) => b.items?.length > 0),
+    select: (d) =>
+      (d.buckets ?? [])
+        .filter((b) => b.items?.length > 0)
+        .map((b) => ({ ...b, items: b.items.map(cleanImages) })),
     ...quiet,
   });
 }
@@ -126,7 +142,7 @@ function useCatalogPages<T>(
     maxPages: MAX_PAGES,
     ...quiet,
   });
-  const items = (query.data?.pages ?? []).flatMap((p) => p?.items ?? []);
+  const items = (query.data?.pages ?? []).flatMap((p) => p?.items ?? []).map(cleanImages);
   return { ...query, items };
 }
 

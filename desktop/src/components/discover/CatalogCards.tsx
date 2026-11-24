@@ -16,6 +16,7 @@ const SECTION_TINT = {
   charts: ['#8b5cf6', '#6366f1'],
   recommended: ['#ec4899', '#a855f7'],
   trendingArtists: ['#14b8a6', '#0ea5e9'],
+  popularArtists: ['#14b8a6', '#0ea5e9'],
   popularAlbums: ['#3b82f6', '#6366f1'],
   byYear: ['#22c55e', '#14b8a6'],
   byTag: ['#f43f5e', '#f59e0b'],
