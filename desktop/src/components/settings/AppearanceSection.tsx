@@ -382,7 +382,7 @@ function AccentPicker({ value, onChange }: { value: string; onChange: (hex: stri
           align="start"
           sideOffset={8}
           onOpenAutoFocus={(e) => e.preventDefault()}
-          className="z-[200] w-[240px] space-y-3 rounded-2xl app-surface p-3 outline-none data-[state=open]:animate-fade-in-up"
+          className="z-[200] w-[240px] space-y-3 rounded-2xl app-surface p-3 outline-none animate-glass-in"
         >
           <input
             type="range"

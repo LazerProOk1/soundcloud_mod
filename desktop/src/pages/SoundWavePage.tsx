@@ -8,7 +8,7 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { invoke } from '@tauri-apps/api/core';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -677,14 +677,9 @@ export function SoundWavePage() {
              dotted spectrum, progress and the action row (old card + new stage). ── */}
         <section
           className="wave-card relative my-auto flex w-full flex-col items-center gap-3 rounded-[32px] px-5 py-4 md:px-10 md:py-5"
-          style={{
-            background:
-              'linear-gradient(165deg, rgba(255,255,255,0.075) 0%, rgba(255,255,255,0.025) 55%, rgba(8,8,12,0.4) 100%)',
-            boxShadow: dom
-              ? `0 30px 90px rgba(0,0,0,0.45), 0 0 120px ${rgbToCss(dom, 0.16)}, inset 0 1px 0 rgba(255,255,255,0.14), inset 0 0 0 1px rgba(255,255,255,0.07)`
-              : '0 30px 90px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.14), inset 0 0 0 1px rgba(255,255,255,0.07)',
-            transition: 'box-shadow 1.2s ease-out',
-          }}
+          // Look per interface style lives in index.css (.wave-card); the cover colour only
+          // tints the Liquid Glass glow.
+          style={{ '--wave-glow': dom ? rgbToCss(dom, 0.16) : 'transparent' } as CSSProperties}
         >
           {/* Artist (headline) · title · length · why it's here */}
           <div className="w-full max-w-3xl text-center">

@@ -275,6 +275,22 @@ textarea:focus-visible {
   animation: fadeInUp 0.5s var(--ease-apple) both;
 }
 
+/* Entrance for frosted-glass popovers and dialogs. No opacity: while an element (or its
+   parent) is semi-transparent, Chromium skips its backdrop-filter, so a fade showed the
+   panel see-through for a moment before the glass appeared. */
+@keyframes glassIn {
+  from {
+    transform: translateY(8px) scale(0.97);
+  }
+  to {
+    transform: none;
+  }
+}
+
+.animate-glass-in {
+  animation: glassIn 0.28s var(--ease-apple) both;
+}
+
 @keyframes fadeInScale {
   from {
     opacity: 0;
@@ -959,6 +975,7 @@ textarea:focus-visible {
   .animate-spin-slow,
   .animate-panel-slide-in,
   .animate-fade-in-up,
+  .animate-glass-in,
   .animate-fade-in-scale,
   .animate-zoom-in,
   .page-enter,
@@ -1663,6 +1680,30 @@ svg.lucide:not([stroke-width="0"]) {
   box-shadow:
     var(--lg-rim),
     inset 0 0 24px rgba(255, 255, 255, 0.03);
+}
+/* The wave page card: a plain tile in Gloss, solid in Plain, lit glass with the cover's
+   glow (--wave-glow, set by SoundWavePage) only in Liquid Glass. */
+.wave-card {
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.35);
+}
+.no-glass .wave-card {
+  background: #18181c;
+  box-shadow: none;
+}
+.liquid-glass .wave-card {
+  background: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.075) 0%,
+    rgba(255, 255, 255, 0.025) 55%,
+    rgba(8, 8, 12, 0.4) 100%
+  );
+  box-shadow:
+    0 30px 90px rgba(0, 0, 0, 0.45),
+    0 0 120px var(--wave-glow, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+  transition: box-shadow 1.2s ease-out;
 }
 /* Inside Liquid Glass, tiles and chips sit on glass that is already blurred: they get
    the lighting (rim + halo) but no backdrop filter of their own. */
