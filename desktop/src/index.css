@@ -846,6 +846,11 @@ textarea:focus-visible {
   animation: eq-bar-a 1.05s ease-in-out infinite;
   will-change: transform;
 }
+/* Plain style is flat: solid accent bars, no gradient or glow. */
+.no-glass .eq-bar {
+  background: var(--color-accent);
+  box-shadow: none;
+}
 .eq-bar:nth-child(2) {
   animation-name: eq-bar-b;
   animation-duration: 0.85s;
