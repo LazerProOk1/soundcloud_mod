@@ -1600,8 +1600,10 @@ svg.lucide:not([stroke-width="0"]) {
 }
 /* Liquid Glass: accent-tinted glass with the same lit rim as the other buttons. */
 .liquid-glass .ui-accent {
-  background-color: color-mix(in srgb, var(--color-accent) 62%, transparent);
-  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.22), transparent 60%);
+  /* Mostly opaque: at 62% the accent turned muddy brown over the dark glass. The highlight is
+     short and faint, a long white fade showed visible steps on the big round button. */
+  background-color: color-mix(in srgb, var(--color-accent) 90%, transparent);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0) 45%);
   color: #fff;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.35),
@@ -1610,7 +1612,14 @@ svg.lucide:not([stroke-width="0"]) {
     0 6px 20px -4px color-mix(in srgb, var(--color-accent) 55%, transparent);
 }
 .liquid-glass .ui-accent:hover {
-  background-color: color-mix(in srgb, var(--color-accent) 75%, transparent);
+  background-color: var(--color-accent);
+}
+/* The big round play button: no accent glow under it (it read as a light bottom edge). */
+.liquid-glass .play-fab.ui-accent {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.3),
+    0 0 0 0.5px color-mix(in srgb, var(--color-accent) 70%, white),
+    0 8px 24px rgba(0, 0, 0, 0.35);
 }
 /* .ui-destructive: the confirm button of a delete (red), glass in Liquid Glass. */
 .ui-destructive {
