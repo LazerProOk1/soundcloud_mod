@@ -1,29 +1,18 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
-  <defs>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="60%" y2="100%">
-      <stop offset="0%" stop-color="#FF7A00"/>
-      <stop offset="100%" stop-color="#FF3D00"/>
-    </linearGradient>
-    <radialGradient id="shine" cx="30%" cy="22%" r="70%">
-      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.24"/>
-      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0"/>
-    </radialGradient>
-  </defs>
+  <!-- Flat: one solid orange, one solid white mark. -->
+  <rect width="1024" height="1024" rx="224" fill="#FF5500"/>
 
-  <!-- Rounded square background -->
-  <rect width="1024" height="1024" rx="224" fill="url(#bg)"/>
-  <rect width="1024" height="1024" rx="224" fill="url(#shine)"/>
+  <!-- Three thick waveform pills and a cloud on one flat baseline (y=680). The cloud's left side
+       is a straight edge, so the gap to the last pill (28) is the same top to bottom, as is the
+       gap between the pills. The whole mark is centred on the canvas. -->
+  <g transform="translate(512 512) scale(1.12) translate(-564.5 -495)" fill="#FFFFFF">
+    <rect x="199" y="540" width="64" height="140" rx="32"/>
+    <rect x="291" y="460" width="64" height="220" rx="32"/>
+    <rect x="383" y="380" width="64" height="300" rx="32"/>
 
-  <!-- Three thick waveform pills and a cloud built from circles on one flat baseline (y=680).
-       Few, heavy shapes so the mark still reads at 16-32 px; nothing overlaps or peeks out. -->
-  <g transform="translate(512 512) scale(1.12) translate(-556 -492)" fill="#FFFFFF">
-    <rect x="183" y="540" width="64" height="140" rx="32"/>
-    <rect x="275" y="460" width="64" height="220" rx="32"/>
-    <rect x="367" y="380" width="64" height="300" rx="32"/>
-
-    <circle cx="560" cy="585" r="95"/>
-    <circle cx="680" cy="480" r="175"/>
+    <circle cx="555" cy="560" r="80"/>
+    <circle cx="685" cy="480" r="170"/>
     <circle cx="815" cy="565" r="115"/>
-    <rect x="560" y="520" width="255" height="160"/>
+    <rect x="475" y="560" width="340" height="120"/>
   </g>
 </svg>
