@@ -275,22 +275,6 @@ textarea:focus-visible {
   animation: fadeInUp 0.5s var(--ease-apple) both;
 }
 
-/* Entrance for frosted-glass popovers and dialogs. No opacity: while an element (or its
-   parent) is semi-transparent, Chromium skips its backdrop-filter, so a fade showed the
-   panel see-through for a moment before the glass appeared. */
-@keyframes glassIn {
-  from {
-    transform: translateY(8px) scale(0.97);
-  }
-  to {
-    transform: none;
-  }
-}
-
-.animate-glass-in {
-  animation: glassIn 0.28s var(--ease-apple) both;
-}
-
 @keyframes fadeInScale {
   from {
     opacity: 0;
@@ -975,7 +959,6 @@ textarea:focus-visible {
   .animate-spin-slow,
   .animate-panel-slide-in,
   .animate-fade-in-up,
-  .animate-glass-in,
   .animate-fade-in-scale,
   .animate-zoom-in,
   .page-enter,
@@ -1242,15 +1225,16 @@ button:not(:disabled):active,
     transform: translateY(16px);
   }
 }
+/* Dialogs and popovers are frosted glass: no opacity in their entrance. While an element or a
+   parent is semi-transparent, Chromium skips its backdrop-filter, so a fade showed the panel
+   see-through until it ended (the equalizer flash). Motion only. */
 @keyframes modal-spring-in {
   from {
-    opacity: 0;
     transform: translateY(24px) scale(0.94);
   }
 }
 @keyframes menu-spring-in {
   from {
-    opacity: 0;
     transform: translateY(-6px) scale(0.96);
   }
 }

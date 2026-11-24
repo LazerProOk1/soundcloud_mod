@@ -833,7 +833,7 @@ const SleepTimerBtn = React.memo(() => {
           sideOffset={10}
           collisionPadding={12}
           onOpenAutoFocus={(e) => e.preventDefault()}
-          className="z-[200] w-[248px] origin-bottom-right rounded-2xl app-surface p-3 outline-none animate-glass-in"
+          className="z-[200] w-[248px] origin-bottom-right rounded-2xl app-surface p-3 outline-none"
         >
           <div className="flex items-center justify-between px-1 pb-3">
             <p className="flex items-center gap-2 text-[14px] font-semibold text-white">
@@ -919,7 +919,7 @@ const TuningBtn = React.memo(() => {
           sideOffset={10}
           collisionPadding={12}
           onOpenAutoFocus={(e) => e.preventDefault()}
-          className="z-[200] w-[300px] origin-bottom-right rounded-2xl app-surface p-3 outline-none animate-glass-in"
+          className="z-[200] w-[300px] origin-bottom-right rounded-2xl app-surface p-3 outline-none"
         >
           <p className="flex items-center gap-2 px-1 pb-3 text-[14px] font-semibold text-white">
             <span className="text-white/60">{slidersHorizontal16}</span>

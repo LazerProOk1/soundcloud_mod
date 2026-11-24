@@ -186,7 +186,7 @@ export const EqualizerPanel = React.memo(function EqualizerPanel({
           sideOffset={10}
           collisionPadding={12}
           onOpenAutoFocus={(e) => e.preventDefault()}
-          className="z-[200] w-[480px] max-w-[95vw] origin-bottom-right outline-none animate-glass-in"
+          className="z-[200] w-[480px] max-w-[95vw] origin-bottom-right outline-none"
         >
           <div className="app-surface relative overflow-hidden rounded-2xl">
             {/* Header */}
