@@ -1646,8 +1646,12 @@ svg.lucide:not([stroke-width="0"]) {
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
 }
-.liquid-glass .ui-float {
+/* Anchor for the ::before sheen, but only on boxes that aren't positioned already: the
+   carousel arrows are `absolute`, and `relative` here dropped them under the row. */
+.liquid-glass .ui-float:not(.absolute, .fixed, .sticky) {
   position: relative;
+}
+.liquid-glass .ui-float {
   background-color: rgba(10, 10, 14, 0.42);
   background-image: var(--lg-grain), var(--lg-light);
   backdrop-filter: var(--lg-filter);
