@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { IdentityHub } from '../components/user/IdentityHub';
@@ -20,24 +20,38 @@ export function UserPage() {
   const { t } = useTranslation();
   const currentUser = useAuthStore((s) => s.user);
 
-  const [activeTab, setActiveTab] = useState<TabId>('popular');
+  const [pickedTab, setActiveTab] = useState<TabId | null>(null);
+  // Another profile starts on its own default tab.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reset when the profile changes
+  useEffect(() => setActiveTab(null), [urn]);
 
   const { data: user, isLoading: userLoading } = useUser(urn);
   const { data: webProfiles } = useUserWebProfiles(urn);
 
   const isOwnProfile = !!user && currentUser?.urn === user.urn;
+  const hasTracks = !!user?.track_count;
+  // No uploads (most listeners, your own profile too): open on the likes instead of an empty tab.
+  const activeTab: TabId = pickedTab ?? (hasTracks ? 'popular' : 'likes');
 
   const tabs = useMemo(() => {
     if (!user) return [] as const;
+    // Empty upload tabs are hidden. Playlists stay on your own profile: the count is public
+    // playlists only, and private ones are still listed there.
     return [
-      { id: 'popular' as const, label: t('user.popular'), count: undefined },
-      { id: 'tracks' as const, label: t('user.tracks'), count: user.track_count },
-      { id: 'playlists' as const, label: t('user.playlists'), count: user.playlist_count },
+      ...(hasTracks
+        ? [
+            { id: 'popular' as const, label: t('user.popular'), count: undefined },
+            { id: 'tracks' as const, label: t('user.tracks'), count: user.track_count },
+          ]
+        : []),
+      ...(user.playlist_count || isOwnProfile
+        ? [{ id: 'playlists' as const, label: t('user.playlists'), count: user.playlist_count }]
+        : []),
       { id: 'likes' as const, label: t('user.likes'), count: user.public_favorites_count },
       { id: 'followers' as const, label: t('user.followers'), count: user.followers_count },
       { id: 'following' as const, label: t('user.following'), count: user.followings_count },
-    ] as const;
-  }, [user, t]);
+    ];
+  }, [user, t, hasTracks, isOwnProfile]);
 
   if (userLoading || !user) {
     return (

@@ -94,18 +94,22 @@ export function IdentityHub({ user, webProfiles, isOwnProfile }: IdentityHubProp
         <StatOrb
           icon={<Users size={14} />}
           value={user.followers_count}
-          label={t('user.followers')}
+          label={t('user.statFollowers', { count: user.followers_count ?? 0 })}
         />
         <StatOrb
           icon={<User size={14} />}
           value={user.followings_count}
-          label={t('user.following')}
+          label={t('user.statFollowing', { count: user.followings_count ?? 0 })}
         />
-        <StatOrb icon={<Music size={14} />} value={user.track_count} label={t('user.tracks')} />
+        <StatOrb
+          icon={<Music size={14} />}
+          value={user.track_count}
+          label={t('user.statTracks', { count: user.track_count ?? 0 })}
+        />
         <StatOrb
           icon={<Heart size={14} />}
           value={user.public_favorites_count}
-          label={t('user.likes')}
+          label={t('user.statLikes', { count: user.public_favorites_count ?? 0 })}
         />
       </div>
     </GlassHeroPanel>
