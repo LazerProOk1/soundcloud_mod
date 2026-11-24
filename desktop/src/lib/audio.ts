@@ -106,6 +106,8 @@ interface TrackAnalysis {
 }
 /** Analysis of the playing track; null until known. */
 let currentAnalysis: TrackAnalysis | null = null;
+/** Load generation whose quiet intro was already handled (skip silence). */
+let silenceIntroGen = -1;
 /** Disliked tracks skipped in a row (see the player subscription). */
 let dislikedSkips = 0;
 /** The upcoming track's analysis was already requested for this current track. */
@@ -536,6 +538,16 @@ async function loadTrack(track: Track) {
   usePlayerStore.getState().setPlaybackTransport(null, null);
   notify();
 
+  // "Skip stuck tracks": still not playing after N seconds → move on.
+  const stuckSecs = useSettingsStore.getState().stuckSkipSecs;
+  if (stuckSecs > 0) {
+    setTimeout(() => {
+      if (gen !== loadGen || hasTrack || !usePlayerStore.getState().isPlaying) return;
+      toast(i18n.t('track.stuckSkipped'), { description: track.title });
+      skipUnplayable();
+    }, stuckSecs * 1000);
+  }
+
   // Sync EQ state to Rust
   const { eqEnabled, eqGains, normalizeVolume } = useSettingsStore.getState();
   invoke('audio_set_eq', { enabled: eqEnabled, gains: eqGains }).catch(console.error);
@@ -747,15 +759,19 @@ async function loadTrack(track: Track) {
     toast.error(i18n.t('track.loadError'), {
       description: errorText ? `${track.title}: ${errorText}` : track.title,
     });
-    // Skip unavailable tracks instead of stopping the music.
-    const { queue, queueIndex, repeat, next, pause } = usePlayerStore.getState();
-    if (queueIndex < queue.length - 1 || repeat === 'all') next();
-    else pause();
+    skipUnplayable();
   } finally {
     if (gen === loadGen) {
       usePlayerStore.getState().setBuffering(false);
     }
   }
+}
+
+/** Skip a track that can't play instead of stopping the music (pause at the queue's end). */
+function skipUnplayable() {
+  const { queue, queueIndex, repeat, next, pause } = usePlayerStore.getState();
+  if (queueIndex < queue.length - 1 || repeat === 'all') next();
+  else pause();
 }
 
 function afterLoad(track: Track, gen: number) {
@@ -873,10 +889,42 @@ tauriListen<number>('audio:tick', (event) => {
   if (cachedDuration <= 0) cachedDuration = fallbackDuration;
   notify();
 
+  const {
+    crossfadeDuration: crossfadeSecs,
+    crossfadeKeepAlbums,
+    skipSilence,
+  } = useSettingsStore.getState();
+  const player = usePlayerStore.getState();
+
+  // ── Skip silence: jump over a quiet intro once, and treat the music's end as the track's
+  // end (the analysis only knows the edges, so pauses inside the track stay).
+  const sa = skipSilence && hasTrack && !handoffPending ? currentAnalysis : null;
+  if (sa && silenceIntroGen !== loadGen) {
+    silenceIntroGen = loadGen;
+    if (sa.musicStartSecs > 1 && cachedTime < sa.musicStartSecs - 0.5) {
+      seek(sa.musicStartSecs);
+      return;
+    }
+  }
+  const musicEnd =
+    sa && sa.musicEndSecs > 0 && sa.musicEndSecs < cachedDuration - 1.5
+      ? sa.musicEndSecs
+      : cachedDuration;
+  if (
+    musicEnd < cachedDuration &&
+    cachedTime >= musicEnd &&
+    !crossfading &&
+    player.isPlaying &&
+    player.repeat !== 'one'
+  ) {
+    recordFullPlay();
+    hasTrack = false;
+    handleTrackEnd();
+    return;
+  }
+
   // ── Crossfade: start the next track while this one is still playing ──
   // Rust keeps the old track on the mixer and fades it out; the new one fades in.
-  const { crossfadeDuration: crossfadeSecs, crossfadeKeepAlbums } = useSettingsStore.getState();
-  const player = usePlayerStore.getState();
   if (
     crossfadeSecs > 0 &&
     !crossfading &&
@@ -885,7 +933,7 @@ tauriListen<number>('audio:tick', (event) => {
     player.repeat !== 'one' &&
     cachedDuration > crossfadeSecs * 2
   ) {
-    const remaining = cachedDuration - cachedTime;
+    const remaining = musicEnd - cachedTime;
     const nextTrack = player.queue[player.queueIndex + 1];
     const keepGapless = crossfadeKeepAlbums && sameAlbum(player.currentTrack, nextTrack);
     // The track fades out by itself: start the transition together with that fade

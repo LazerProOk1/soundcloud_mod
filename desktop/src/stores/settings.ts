@@ -85,6 +85,12 @@ export interface SettingsState {
   eqPreset: string;
   normalizeVolume: boolean;
   highQualityStreaming: boolean;
+  /** Jump over a quiet intro and move on when only silence is left (edges only). */
+  skipSilence: boolean;
+  /** Skip a track that still isn't playing after this many seconds; 0 = off. */
+  stuckSkipSecs: number;
+  /** Play/pause, next, previous from anywhere via system-wide shortcuts. */
+  globalHotkeys: boolean;
   sidebarCollapsed: boolean;
   startupPage: StartupPage;
   discordRpcEnabled: boolean;
@@ -135,6 +141,9 @@ export interface SettingsState {
   setEqBand: (index: number, gain: number) => void;
   setNormalizeVolume: (enabled: boolean) => void;
   setHighQualityStreaming: (enabled: boolean) => void;
+  setSkipSilence: (v: boolean) => void;
+  setStuckSkipSecs: (v: number) => void;
+  setGlobalHotkeys: (v: boolean) => void;
   toggleSidebar: () => void;
   setStartupPage: (page: StartupPage) => void;
   setDiscordRpcEnabled: (enabled: boolean) => void;
@@ -184,6 +193,9 @@ const DEFAULTS = {
   eqPreset: 'flat',
   normalizeVolume: true,
   highQualityStreaming: false,
+  skipSilence: false,
+  stuckSkipSecs: 0,
+  globalHotkeys: false,
   sidebarCollapsed: false,
   startupPage: 'home' as StartupPage,
   discordRpcEnabled: true,
@@ -242,6 +254,9 @@ export const useSettingsStore = create<SettingsState>()(
         }),
       setNormalizeVolume: (normalizeVolume) => set({ normalizeVolume }),
       setHighQualityStreaming: (highQualityStreaming) => set({ highQualityStreaming }),
+      setSkipSilence: (skipSilence) => set({ skipSilence }),
+      setStuckSkipSecs: (stuckSkipSecs) => set({ stuckSkipSecs }),
+      setGlobalHotkeys: (globalHotkeys) => set({ globalHotkeys }),
       toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
       setStartupPage: (startupPage) => set({ startupPage }),
       setDiscordRpcEnabled: (discordRpcEnabled) => set({ discordRpcEnabled }),
@@ -334,6 +349,9 @@ export const useSettingsStore = create<SettingsState>()(
         eqPreset: s.eqPreset,
         normalizeVolume: s.normalizeVolume,
         highQualityStreaming: s.highQualityStreaming,
+        skipSilence: s.skipSilence,
+        stuckSkipSecs: s.stuckSkipSecs,
+        globalHotkeys: s.globalHotkeys,
         sidebarCollapsed: s.sidebarCollapsed,
         startupPage: s.startupPage,
         discordRpcEnabled: s.discordRpcEnabled,

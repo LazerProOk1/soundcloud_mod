@@ -58,6 +58,8 @@ function AudioDeviceRow() {
   );
 }
 
+const STUCK_SKIP_SECS = [0, 10, 20, 30, 60];
+
 export const PlaybackSection = React.memo(function PlaybackSection() {
   const { t } = useTranslation();
   const lyricsVisualizer = useSettingsStore((s) => s.lyricsVisualizer);
@@ -66,15 +68,40 @@ export const PlaybackSection = React.memo(function PlaybackSection() {
   const setNormalizeVolume = useSettingsStore((s) => s.setNormalizeVolume);
   const highQualityStreaming = useSettingsStore((s) => s.highQualityStreaming);
   const setHighQualityStreaming = useSettingsStore((s) => s.setHighQualityStreaming);
+  const skipSilence = useSettingsStore((s) => s.skipSilence);
+  const setSkipSilence = useSettingsStore((s) => s.setSkipSilence);
+  const stuckSkipSecs = useSettingsStore((s) => s.stuckSkipSecs);
+  const setStuckSkipSecs = useSettingsStore((s) => s.setStuckSkipSecs);
 
   return (
     <SettingsSection id="playback" title={t('settings.playback')}>
       <AudioDeviceRow />
       <SettingRow
-        title={t('settings.highQualityStreaming')}
+        title={t('settings.soundQuality')}
         desc={t('settings.highQualityStreamingDesc')}
+        stacked
       >
-        <LiquidSwitch checked={highQualityStreaming} onChange={setHighQualityStreaming} />
+        <Segmented
+          value={highQualityStreaming ? 'hq' : 'sq'}
+          options={[
+            { id: 'sq', label: t('settings.qualitySQ') },
+            { id: 'hq', label: 'HQ' },
+          ]}
+          onChange={(id) => setHighQualityStreaming(id === 'hq')}
+        />
+      </SettingRow>
+      <SettingRow title={t('settings.skipSilence')} desc={t('settings.skipSilenceDesc')}>
+        <LiquidSwitch checked={skipSilence} onChange={setSkipSilence} />
+      </SettingRow>
+      <SettingRow title={t('settings.stuckSkip')} desc={t('settings.stuckSkipDesc')} stacked>
+        <Segmented
+          value={String(stuckSkipSecs)}
+          options={STUCK_SKIP_SECS.map((s) => ({
+            id: String(s),
+            label: s === 0 ? t('settings.off') : t('settings.seconds', { count: s }),
+          }))}
+          onChange={(id) => setStuckSkipSecs(Number(id))}
+        />
       </SettingRow>
       <SettingRow title={t('settings.normalizeVolume')} desc={t('settings.normalizeVolumeDesc')}>
         <LiquidSwitch checked={normalizeVolume} onChange={setNormalizeVolume} />
