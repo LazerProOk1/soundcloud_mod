@@ -16,8 +16,10 @@
     "waveSubtitle": "Endless mix for you",
     "playlist": "Playlist",
     "playlistBy": "Playlist · {{name}}",
-    "playlistTracks": "Playlist · {{count}} tracks",
-    "cachedCount": "{{count}} tracks on disk"
+    "playlistTracks_one": "Playlist · {{count}} track",
+    "playlistTracks_other": "Playlist · {{count}} tracks",
+    "cachedCount_one": "{{count}} track on disk",
+    "cachedCount_other": "{{count}} tracks on disk"
   },
   "player": {
     "queue": "Queue",
@@ -189,6 +191,14 @@
     "likes": "Likes",
     "follow": "Follow",
     "followingBtn": "Following",
+    "statFollowers_one": "follower",
+    "statFollowers_other": "followers",
+    "statFollowing_one": "following",
+    "statFollowing_other": "following",
+    "statTracks_one": "track",
+    "statTracks_other": "tracks",
+    "statLikes_one": "like",
+    "statLikes_other": "likes",
     "noFollowers": "No followers found.",
     "noFollowings": "No followings found.",
     "verifiedArtist": "Verified Artist",
