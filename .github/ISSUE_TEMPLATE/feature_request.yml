@@ -2,6 +2,7 @@ name: Идея
 description: Чего не хватает или что сделать удобнее
 title: '[Идея] '
 labels: [enhancement]
+assignees: [LazerProOk1]
 body:
   - type: markdown
     attributes:
