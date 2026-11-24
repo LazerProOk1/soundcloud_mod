@@ -97,16 +97,16 @@ jobs:
           Run "SoundCloud Mod.exe" directly — no installation required.
           Requires Microsoft Edge WebView2 Runtime (pre-installed on Windows 11 and modern Windows 10).
           "@ | Set-Content -Path "$portableDir/README-PORTABLE.txt" -Encoding UTF8
-          # One naming scheme; GitHub lists assets by name, so "installer" comes first.
+          # One naming scheme for every file: name-version-os-arch[-kind].
           $out = "release-assets/soundcloud-mod-$version"
           $bundle = "desktop/src-tauri/target/release/bundle"
           New-Item -ItemType Directory -Force -Path "release-assets" | Out-Null
-          Compress-Archive -Path "$portableDir/*" -DestinationPath "$out-portable-windows-x64.zip" -Force
+          Compress-Archive -Path "$portableDir/*" -DestinationPath "$out-windows-x64-portable.zip" -Force
           $setup = Get-ChildItem "$bundle/nsis/*-setup.exe" | Select-Object -First 1
-          Copy-Item $setup.FullName "$out-installer-windows-x64.exe"
+          Copy-Item $setup.FullName "$out-windows-x64-setup.exe"
           # Updater signatures stay out of the release: only latest.json needs them.
           New-Item -ItemType Directory -Force -Path "sigs" | Out-Null
-          Copy-Item "$($setup.FullName).sig" "sigs/soundcloud-mod-$version-installer-windows-x64.exe.sig"
+          Copy-Item "$($setup.FullName).sig" "sigs/soundcloud-mod-$version-windows-x64-setup.exe.sig"
           Copy-Item (Get-ChildItem "$bundle/msi/*.msi" | Select-Object -First 1).FullName "$out-windows-x64.msi"
 
       # Tauri links .DirIcon to an absolute build-machine path, so it dangles inside the AppImage
@@ -226,8 +226,8 @@ jobs:
             cat <<'EOF'
           ### Какой файл скачать
 
-          **Windows:** `installer-windows-x64.exe` — обычная установка, дальше приложение
-          обновляется само. `portable-windows-x64.zip` — без установки, обновлять вручную.
+          **Windows:** `windows-x64-setup.exe` — обычная установка, дальше приложение
+          обновляется само. `windows-x64-portable.zip` — без установки, обновлять вручную.
           `.msi` — для развёртывания на нескольких компьютерах.
 
           **Linux:** `.AppImage` (обновляется само), `.deb` для Ubuntu/Debian, `.rpm` для
@@ -257,7 +257,7 @@ jobs:
             jq -n --arg s "$(cat "$sig")" --arg u "$base/$(basename "${sig%.sig}")" \
               '{signature: $s, url: $u}'
           }
-          win=$(entry '*-installer-windows-x64.exe.sig')
+          win=$(entry '*-windows-x64-setup.exe.sig')
           linux=$(entry '*.AppImage.sig')
           jq -n --arg v "${tag#v}" --arg d "$(date -u +%FT%TZ)" --rawfile n whats-new.md \
             --argjson win "$win" --argjson linux "$linux" \

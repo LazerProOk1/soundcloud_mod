@@ -65,8 +65,8 @@
 
 | Система | Файл | Примечание |
 |---|---|---|
-| Windows 10 / 11 | `installer-windows-x64.exe` | Обновляется сам. При предупреждении SmartScreen: «Подробнее» → «Выполнить в любом случае». |
-| Windows 10 / 11 | `portable-windows-x64.zip` | Без установки, обновлять вручную. |
+| Windows 10 / 11 | `windows-x64-setup.exe` | Обновляется сам. При предупреждении SmartScreen: «Подробнее» → «Выполнить в любом случае». |
+| Windows 10 / 11 | `windows-x64-portable.zip` | Без установки, обновлять вручную. |
 | Linux | `x86_64.AppImage` | `chmod +x` и запустить. Обновляется сам. |
 | Ubuntu / Debian | `amd64.deb` | `sudo apt install ./soundcloud-mod-*.deb` |
 | Fedora / openSUSE | `x86_64.rpm` | `sudo dnf install ./soundcloud-mod-*.rpm` |
