@@ -7,7 +7,6 @@ import {
   ChevronRight,
   Compass,
   Disc3,
-  Home,
   Import,
   Minus,
   Search,
@@ -122,7 +121,8 @@ const NavButtons = React.memo(() => {
   );
 });
 
-/** Spotify-style center cluster: round Home + Discover buttons and a big search field. */
+/** Center cluster: a big search field and the round Discover button. Home is the wave, reached
+ * from its sidebar row, so it has no button here. */
 const CenterNav = React.memo(() => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -135,14 +135,6 @@ const CenterNav = React.memo(() => {
 
   return (
     <div className="flex items-center gap-2 w-full max-w-[560px]">
-      <button
-        type="button"
-        title={t('titlebar.home')}
-        onClick={() => navigate('/home')}
-        className={round(pathname === '/home' || pathname === '/')}
-      >
-        <Home size={19} />
-      </button>
       <button
         type="button"
         onClick={() => navigate('/search')}
