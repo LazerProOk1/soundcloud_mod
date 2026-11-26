@@ -21,8 +21,23 @@ fn log_file_path(app: &AppHandle) -> Result<std::path::PathBuf, String> {
     Ok(dir.join(LOG_FILE_NAME))
 }
 
+/// Started on the first logged line; until then `append_log_line` writes directly and is the
+/// only place allowed to rotate (a running writer keeps its handle on the rotated file).
+static WRITER: OnceLock<Option<Sender<String>>> = OnceLock::new();
+
+fn rotate_file(path: &Path) {
+    let rotated = path.with_file_name(LOG_ROTATED_NAME);
+    fs::remove_file(&rotated).ok();
+    fs::rename(path, &rotated).ok();
+}
+
 fn append_log_line(app: &AppHandle, line: &str) -> Result<(), String> {
     let path = log_file_path(app)?;
+    // The previous session's log is rotated here, before this session's header goes in: rotating
+    // from the writer thread later would leave SESSION STARTED in desktop.log.1.
+    if WRITER.get().is_none() && fs::metadata(&path).is_ok_and(|meta| meta.len() >= LOG_MAX_BYTES) {
+        rotate_file(&path);
+    }
     let mut file = OpenOptions::new()
         .create(true)
         .append(true)
@@ -69,9 +84,7 @@ fn rotate_if_needed(path: &Path, written: u64, file: &mut Option<std::fs::File>)
         return written;
     }
     *file = None;
-    let rotated = path.with_file_name(LOG_ROTATED_NAME);
-    fs::remove_file(&rotated).ok();
-    fs::rename(path, &rotated).ok();
+    rotate_file(path);
     *file = OpenOptions::new().create(true).append(true).open(path).ok();
     0
 }
@@ -105,7 +118,6 @@ fn writer_loop(path: PathBuf, rx: Receiver<String>) {
 /// handle: every warning used to open, write and close the file on the main thread, and the
 /// slow-task warnings alone did that thousands of times per session.
 fn log_writer(app: &AppHandle) -> Option<&'static Sender<String>> {
-    static WRITER: OnceLock<Option<Sender<String>>> = OnceLock::new();
     WRITER
         .get_or_init(|| {
             let path = log_file_path(app).ok()?;
