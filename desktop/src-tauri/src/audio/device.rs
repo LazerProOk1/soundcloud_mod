@@ -11,6 +11,10 @@ use crate::audio::engine;
 use crate::audio::state::AudioState;
 use crate::audio::types::{AudioSink, AudioThreadCmd};
 
+/// A switch waits for the audio thread to answer; a dead output device must not freeze
+/// the caller (the settings menu, the tray) for good.
+const DEVICE_SWITCH_TIMEOUT: Duration = Duration::from_secs(10);
+
 pub fn open_device_sink(
     device_id: Option<&str>,
     reconnect_tx: &std::sync::mpsc::Sender<AudioThreadCmd>,
@@ -112,7 +116,7 @@ pub fn switch_device(
         .map_err(|e| e.to_string())?;
 
     let new_mixer: Mixer = reply_rx
-        .recv()
+        .recv_timeout(DEVICE_SWITCH_TIMEOUT)
         .map_err(|e| format!("Device switch failed: {}", e))??;
 
     *state.mixer.lock().unwrap() = new_mixer;
@@ -363,7 +367,7 @@ fn switch_to_device_internal(
         .map_err(|e| e.to_string())?;
 
     let new_mixer: Mixer = reply_rx
-        .recv()
+        .recv_timeout(DEVICE_SWITCH_TIMEOUT)
         .map_err(|e| format!("Device switch failed: {}", e))??;
 
     *state.mixer.lock().unwrap() = new_mixer;
