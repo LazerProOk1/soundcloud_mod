@@ -480,6 +480,9 @@ function commitTrackMetadata(track: Track) {
 }
 
 async function fetchFreshTrackMetadata(track: Track): Promise<Track> {
+  // Without a session the server answers 401 (48 of those in desktop.log) and the stream URLs
+  // do not come from this response anyway, so anonymous playback skips the request.
+  if (!getSessionId()) return track;
   try {
     const freshTrack = await api<Track>(`/tracks/${encodeURIComponent(track.urn)}`, {
       silent: true,
