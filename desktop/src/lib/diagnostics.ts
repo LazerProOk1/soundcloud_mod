@@ -30,6 +30,24 @@ function logError(message: string) {
   writeLog('ERROR', message);
 }
 
+/**
+ * Installed on import rather than after the first paint: a failure inside bootstrap() has to
+ * reach desktop.log too, and "Report a problem" keeps what happened before the UI existed.
+ */
+function installErrorHandlers() {
+  window.addEventListener('error', (event) => {
+    logError(`[UI] Unhandled error: ${event.message}`);
+  });
+
+  window.addEventListener('unhandledrejection', (event) => {
+    logError(`[UI] Unhandled rejection: ${String(event.reason)}`);
+  });
+}
+
+if (typeof window !== 'undefined') {
+  installErrorHandlers();
+}
+
 export function setupUiWatchdog() {
   if (watchdogStarted) return;
   watchdogStarted = true;
@@ -46,14 +64,6 @@ export function setupUiWatchdog() {
       logWarn(`[Perf] UI event loop lag detected: ${roundMs(lag)}ms`);
     }
   }, EVENT_LOOP_TICK_MS);
-
-  window.addEventListener('error', (event) => {
-    logError(`[UI] Unhandled error: ${event.message}`);
-  });
-
-  window.addEventListener('unhandledrejection', (event) => {
-    logError(`[UI] Unhandled rejection: ${String(event.reason)}`);
-  });
 }
 
 function truncate(value: string, max = 500) {

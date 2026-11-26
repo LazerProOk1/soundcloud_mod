@@ -815,5 +815,11 @@
     "unlike": "Remove from likes",
     "open": "Open SoundCloud Mod",
     "quit": "Quit SoundCloud Mod"
+  },
+  "errors": {
+    "crashTitle": "Something went wrong",
+    "crashBody": "The screen hit an unexpected error. Reload to continue; the details are below if it happens again.",
+    "reload": "Reload",
+    "report": "Report a problem"
   }
 }
