@@ -27,6 +27,7 @@ export const TrackListPage = React.memo(function TrackListPage({
   subtitle,
   description,
   actions,
+  banner,
   renderRows,
   rowsWhenEmpty,
 }: {
@@ -50,6 +51,8 @@ export const TrackListPage = React.memo(function TrackListPage({
   description?: string;
   /** Extra buttons in the action row (like, pin, copy link...). */
   actions?: React.ReactNode;
+  /** Panel between the action row and the table (e.g. listening totals on the history page). */
+  banner?: React.ReactNode;
   /** Custom row rendering (e.g. drag-and-drop for own playlists). */
   renderRows?: (shown: Track[]) => React.ReactNode;
   /** renderRows also draws rows that are not tracks yet (an import still searching). */
@@ -141,7 +144,6 @@ export const TrackListPage = React.memo(function TrackListPage({
         <div className="flex-1" />
         {searchOpen ? (
           <input
-            // biome-ignore lint/a11y/noAutofocus: opened by an explicit click on the search icon
             autoFocus
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -166,6 +168,8 @@ export const TrackListPage = React.memo(function TrackListPage({
           {description}
         </p>
       )}
+
+      {banner && <div className="px-8 pb-4">{banner}</div>}
 
       <div className="px-4 pb-8">
         <div

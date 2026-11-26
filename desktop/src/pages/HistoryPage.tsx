@@ -1,9 +1,11 @@
+import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ListeningStatsPanel } from '../components/music/ListeningStatsPanel';
 import { TrackListPage } from '../components/music/TrackListPage';
 import { api } from '../lib/api';
 import { historyEntryToTrack } from '../lib/history';
-import { useHistory, useInfiniteScroll } from '../lib/hooks';
+import { type HistoryEntry, useHistory, useInfiniteScroll } from '../lib/hooks';
 import { Clock, Loader2, Trash2 } from '../lib/icons';
 import type { Track } from '../stores/player';
 
@@ -11,6 +13,12 @@ import type { Track } from '../stores/player';
 export function HistoryPage() {
   const { t } = useTranslation();
   const history = useHistory();
+  // The list loads page by page; the totals want a wider slice of the same plays.
+  const statsHistory = useQuery({
+    queryKey: ['history', 'stats'],
+    queryFn: () => api<{ collection: HistoryEntry[] }>('/history?limit=200&offset=0'),
+    staleTime: 60_000,
+  });
   const sentinelRef = useInfiniteScroll(
     !!history.hasNextPage,
     !!history.isFetchingNextPage,
@@ -40,6 +48,11 @@ export function HistoryPage() {
         </div>
       }
       tracks={tracks}
+      banner={
+        statsHistory.data?.collection?.length ? (
+          <ListeningStatsPanel entries={statsHistory.data.collection} />
+        ) : undefined
+      }
       isLoading={history.isLoading}
       actions={
         tracks.length > 0 && (

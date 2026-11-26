@@ -815,5 +815,17 @@
     "unlike": "Remove from likes",
     "open": "Open SoundCloud Mod",
     "quit": "Quit SoundCloud Mod"
+  },
+  "stats": {
+    "title": "Listening totals",
+    "window30": "30 days",
+    "windowAll": "All time",
+    "plays": "plays",
+    "minutes": "minutes",
+    "artists": "artists",
+    "topArtists": "Top artists",
+    "topTracks": "Top tracks",
+    "empty": "Nothing played in this period yet.",
+    "minShort": "min"
   }
 }
