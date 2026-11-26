@@ -63,6 +63,7 @@ use network::server::ServerState;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    app::diagnostics::install_early_panic_hook();
     let builder = tauri::Builder::default();
 
     builder

@@ -68,6 +68,34 @@ pub fn install_panic_hook(app: &AppHandle) {
     }));
 }
 
+/// Before `Builder::build` there is no AppHandle, so a panic while plugins initialise would
+/// leave nothing behind. This writes it to a temp file; `install_panic_hook` replaces the hook
+/// with the log-file one once the app exists.
+pub fn install_early_panic_hook() {
+    let path = std::env::temp_dir().join("soundcloud-mod-panic.log");
+    let default_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        let payload = info
+            .payload()
+            .downcast_ref::<&str>()
+            .map(|text| (*text).to_string())
+            .or_else(|| info.payload().downcast_ref::<String>().cloned())
+            .unwrap_or_else(|| "unknown panic".to_string());
+        let location = info
+            .location()
+            .map(|place| format!("{}:{}:{}", place.file(), place.line(), place.column()))
+            .unwrap_or_else(|| "unknown location".to_string());
+        let line = format_log_line(
+            "PANIC",
+            &format!("{payload} at {location} (before the app handle existed)"),
+        );
+        if let Ok(mut file) = OpenOptions::new().create(true).append(true).open(&path) {
+            let _ = writeln!(file, "{line}");
+        }
+        default_hook(info);
+    }));
+}
+
 pub fn mark_session_ended(app: &AppHandle) {
     let _ = append_log_line(
         app,
