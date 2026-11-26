@@ -28,11 +28,15 @@ cargo clippy --all-targets
 - **In a git worktree** whose `node_modules` is a symlink, `pnpm <script>` tries to reinstall and aborts.
   Call binaries directly (`node_modules/.bin/biome`, `tsc`, `vite`) or override `beforeDevCommand` with
   `--config '{"build":{"beforeDevCommand":"node node_modules/vite/bin/vite.js"}}'`.
+- **`tauri dev` restarts the app** when anything under `src-tauri/` changes, and editing a locale JSON
+  reloads the page: both stop playback. Batch such edits when someone is listening.
 
 ## Docs
 
 - `PLAN.md` (repo root, local only — excluded via `.git/info/exclude`) — the live backlog, if present. Read it
   before picking up work; remove finished items and add new findings as you go.
+- `NOTES.md` (repo root, local only) — working notes: gotchas found the hard way, where things live, what a
+  branch is in the middle of. Read it at the start; add what the next person would otherwise rediscover.
 - `docs/audit-2026-11-17.md` (local only, like `PLAN.md`) — historical audit report, if present.
 
 ## Architecture & Directory Map
@@ -55,6 +59,37 @@ cargo clippy --all-targets
   in Russian.
 - **Auras & Wallpapers:** Star gating is gone — every artist/album page gets a deterministic aura from `aura.ts` (`auraFromHex`, `artistAuraForId`). Built-in wallpapers live under `desktop/public/wallpapers/` and resolve safely via `preset:<file>`.
 
+## Reuse Before You Write
+
+Search first (`rg` in `desktop/src/lib`, `desktop/src/components/ui`, `desktop/src/components/settings`); a
+second copy of an existing helper is the most common mistake here. Known building blocks:
+
+- **UI kit** (`components/ui/`): `PlayFab` (round play/pause), `Segmented`, `LiquidSwitch`, `HorizontalScroll`
+  (carousels), `VirtualList` / `VirtualGrid`, `GlassHeroPanel`, `LetterAvatar`, `CopyLinkButton`,
+  `ShelfSkeleton`. Settings rows: `SettingsSection` / `SettingRow` (`components/settings/SettingsKit.tsx`).
+- **Style classes** (`index.css`): `ui-accent`, `ui-primary`, `bar-control`, `ui-card`, `ui-float`,
+  `app-surface`, `liquid-panel-heavy`. Three interface styles: `html.no-glass` (Plain), no class (Frosted),
+  `html.liquid-glass`. Never animate `opacity` on a glass panel or its parent: Chromium drops the
+  `backdrop-filter` until the animation ends.
+- **Data**: `api()` (`lib/api.ts`), React Query hooks in `lib/hooks.ts` (`useLikedTracks`, `useHistory`,
+  `useMyPlaylists`…) and `lib/discover.ts`; dislikes in `lib/dislikes.ts`.
+- **Helpers**: `openExternalUrl`, `reportProblem` (`lib/report.ts`), catalog helpers in
+  `lib/discover-utils.ts` (`dedupeReleases`, `freshReleases`, `spreadShelf`, `realImage`), `trackAlbum`
+  (`components/music/TrackTableRow.tsx`).
+
+## Keeping Changes Lean
+
+- Change only what the task needs; no drive-by refactors, no "while I'm here".
+- No speculative options, wrappers or abstractions with one caller; delete code that a change made unused.
+- Comments say *why*, never restate the code. No commented-out code, no TODO without a `PLAN.md` item.
+- A new pure function in `lib/` gets a small test in `lib/__tests__/`.
+
+## Branches
+
+- New features go on `feature/<short-name>` and reach `main` through a pull request; CI (lint, build,
+  tests) runs on it. Small fixes and polish may go straight to `main`.
+- Never force-push `main`; keep a feature branch rebased on it before review.
+
 ## Commits
 
 [Conventional Commits](https://www.conventionalcommits.org/): `<type>(<scope>): <subject>`, a blank line, an
@@ -72,6 +107,8 @@ optional body, an optional footer.
 - One logical change per commit; do not mix a refactor with a behaviour change.
 - Author every commit as `LazerProOk1 <139680797+LazerProOk1@users.noreply.github.com>`:
   `git commit --author="LazerProOk1 <139680797+LazerProOk1@users.noreply.github.com>" -m "..."`
+- **Releases** are an annotated tag `vX.Y.Z` whose message is the release intro in Markdown; create it with
+  `git tag -a vX.Y.Z --cleanup=verbatim -F notes.md`, or git strips every `#` heading line.
 
 ## Definition of Done
 
