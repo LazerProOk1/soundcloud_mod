@@ -1,10 +1,13 @@
-use std::sync::atomic::{AtomicBool, AtomicU64};
+use std::num::{NonZeroU16, NonZeroU32};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, RwLock};
 use std::time::Duration;
 
 use rodio::mixer::Mixer;
 use rodio::Player;
+use tauri::AppHandle;
 
+use crate::app::diagnostics;
 use crate::audio::analyser::AnalyserBuffer;
 use crate::audio::device::open_device_sink;
 use crate::audio::types::{AudioThreadCmd, EqParams, LyricsTimingLine, MediaCmd};
@@ -51,65 +54,111 @@ pub struct AudioState {
     pub analyser_buffer: Arc<AnalyserBuffer>,
 }
 
-pub fn init() -> AudioState {
-    let (mixer_tx, mixer_rx) = std::sync::mpsc::channel::<Arc<Mutex<Mixer>>>();
+/// Without an output device the audio thread keeps retrying with this backoff.
+const DEVICE_RETRY_MIN_MS: u64 = 1_000;
+const DEVICE_RETRY_MAX_MS: u64 = 30_000;
+
+pub fn init(app: AppHandle) -> AudioState {
     let (cmd_tx, cmd_rx) = std::sync::mpsc::channel::<AudioThreadCmd>();
     let device_error_flag = Arc::new(AtomicBool::new(false));
     let reconnected_flag = Arc::new(AtomicBool::new(false));
 
-    let cmd_tx_for_thread = cmd_tx.clone();
+    // Starting with no output device is normal (Bluetooth off, HDMI unplugged, remote session)
+    // and must not block the app: mixing goes into this silent mixer until a device opens, then
+    // the thread swaps its contents for the real one without touching the state layout.
+    let (silent_mixer, _silent_output) = rodio::mixer::mixer(
+        NonZeroU16::new(2).unwrap_or(NonZeroU16::MIN),
+        NonZeroU32::new(48_000).unwrap_or(NonZeroU32::MIN),
+    );
+    let shared_mixer = Arc::new(Mutex::new(silent_mixer));
+
+    let mixer_for_thread = shared_mixer.clone();
     let reconnected_for_thread = reconnected_flag.clone();
     let error_flag_for_thread = device_error_flag.clone();
+    let cmd_tx_for_thread = cmd_tx.clone();
     std::thread::Builder::new()
         .name("audio-output".into())
         .spawn(move || {
-            let cmd_tx = cmd_tx_for_thread;
-            let reconnected = reconnected_for_thread;
-            let error_flag = error_flag_for_thread;
-            let mut device_sink =
-                open_device_sink(None, &cmd_tx, &error_flag).expect("no audio output device");
-            let shared_mixer = Arc::new(Mutex::new(device_sink.mixer().clone()));
-            mixer_tx.send(shared_mixer.clone()).ok();
+            let mut retry_ms = DEVICE_RETRY_MIN_MS;
+            let mut attempts = 0u32;
+            let mut device_sink = loop {
+                match open_device_sink(None, &cmd_tx_for_thread, &error_flag_for_thread) {
+                    Ok(sink) => break sink,
+                    Err(error) => {
+                        attempts += 1;
+                        error_flag_for_thread.store(true, Ordering::Relaxed);
+                        if attempts == 1 {
+                            diagnostics::log_native(
+                                &app,
+                                "ERROR",
+                                format!(
+                                    "[Audio] no output device: {error}; retrying in background"
+                                ),
+                            );
+                        }
+                        std::thread::sleep(Duration::from_millis(retry_ms));
+                        retry_ms = (retry_ms * 2).min(DEVICE_RETRY_MAX_MS);
+                    }
+                }
+            };
+            *mixer_for_thread.lock().unwrap() = device_sink.mixer().clone();
+            error_flag_for_thread.store(false, Ordering::Relaxed);
+            if attempts > 0 {
+                // The tick loop reloads the current track once a device is available.
+                diagnostics::log_native(
+                    &app,
+                    "INFO",
+                    format!("[Audio] output device opened after {attempts} attempt(s)"),
+                );
+                reconnected_for_thread.store(true, Ordering::Release);
+            }
 
             loop {
                 match cmd_rx.recv() {
                     Ok(AudioThreadCmd::SwitchDevice { name, reply }) => {
-                        drop(device_sink);
-
-                        match open_device_sink(name.as_deref(), &cmd_tx, &error_flag) {
+                        // Open the new device before dropping the current one, so a failed
+                        // switch keeps playing instead of leaving the app without output.
+                        match open_device_sink(
+                            name.as_deref(),
+                            &cmd_tx_for_thread,
+                            &error_flag_for_thread,
+                        ) {
                             Ok(new_sink) => {
                                 let mixer = new_sink.mixer().clone();
-                                *shared_mixer.lock().unwrap() = mixer.clone();
-                                device_sink = new_sink;
+                                *mixer_for_thread.lock().unwrap() = mixer.clone();
+                                // Release the old sink only once the new device is open.
+                                drop(std::mem::replace(&mut device_sink, new_sink));
+                                error_flag_for_thread.store(false, Ordering::Relaxed);
                                 reply.send(Ok(mixer)).ok();
                             }
                             Err(error) => {
-                                device_sink = open_device_sink(None, &cmd_tx, &error_flag)
-                                    .expect("no audio output device");
-                                *shared_mixer.lock().unwrap() = device_sink.mixer().clone();
+                                error_flag_for_thread.store(true, Ordering::Relaxed);
+                                diagnostics::log_native(
+                                    &app,
+                                    "WARN",
+                                    format!("[Audio] device switch failed: {error}"),
+                                );
                                 reply.send(Err(error)).ok();
                             }
                         }
                     }
                     Ok(AudioThreadCmd::Reconnect) => {
-                        eprintln!("[audio] device invalidated, reconnecting...");
                         std::thread::sleep(Duration::from_millis(500));
-
-                        drop(device_sink);
-                        match open_device_sink(None, &cmd_tx, &error_flag) {
+                        match open_device_sink(None, &cmd_tx_for_thread, &error_flag_for_thread) {
                             Ok(new_sink) => {
-                                *shared_mixer.lock().unwrap() = new_sink.mixer().clone();
-                                device_sink = new_sink;
-                                reconnected.store(true, std::sync::atomic::Ordering::Release);
-                                eprintln!("[audio] reconnected successfully");
+                                *mixer_for_thread.lock().unwrap() = new_sink.mixer().clone();
+                                drop(std::mem::replace(&mut device_sink, new_sink));
+                                error_flag_for_thread.store(false, Ordering::Relaxed);
+                                reconnected_for_thread.store(true, Ordering::Release);
                             }
+                            // The tick loop and `play` retry; a dead output must not kill the thread.
                             Err(error) => {
-                                eprintln!("[audio] reconnect failed: {error}, retrying...");
-                                std::thread::sleep(Duration::from_secs(1));
-                                device_sink = open_device_sink(None, &cmd_tx, &error_flag)
-                                    .expect("no audio output device");
-                                *shared_mixer.lock().unwrap() = device_sink.mixer().clone();
-                                reconnected.store(true, std::sync::atomic::Ordering::Release);
+                                error_flag_for_thread.store(true, Ordering::Relaxed);
+                                diagnostics::log_native(
+                                    &app,
+                                    "WARN",
+                                    format!("[Audio] reconnect failed: {error}"),
+                                );
                             }
                         }
                     }
@@ -118,8 +167,6 @@ pub fn init() -> AudioState {
             }
         })
         .expect("failed to spawn audio thread");
-
-    let shared_mixer = mixer_rx.recv().expect("audio thread failed to init");
 
     AudioState {
         player: Mutex::new(None),

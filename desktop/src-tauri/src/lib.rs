@@ -166,7 +166,7 @@ pub fn run() {
             track_cache_state.set_app_handle(app.handle().clone());
             app.manage(track_cache_state);
 
-            let audio_state = audio::init();
+            let audio_state = audio::init(app.handle().clone());
             let analyser_buffer = audio_state.analyser_buffer.clone();
             app.manage(audio_state);
             audio::start_tick_emitter(app.handle());
