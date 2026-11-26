@@ -156,6 +156,7 @@ pub fn run() {
                 static_port,
                 proxy_port,
             }));
+            app::diagnostics::install_panic_hook(&app.handle());
             app::diagnostics::mark_session_started(&app.handle());
             app::diagnostics::start_linux_fd_monitor(&app.handle());
             app.manage(Arc::new(DiscordState {
@@ -175,6 +176,7 @@ pub fn run() {
             audio::start_fft_thread(app.handle().clone(), analyser_buffer);
 
             app::tray::setup_tray(app).expect("failed to setup tray");
+            app::diagnostics::log_native(&app.handle(), "INFO", "[Startup] ready");
 
             Ok(())
         })
@@ -243,6 +245,11 @@ pub fn run() {
             network::image_cache::image_cache_size,
             network::image_cache::image_cache_clear,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app, event| {
+            if let tauri::RunEvent::Exit = event {
+                app::diagnostics::mark_session_ended(app);
+            }
+        });
 }

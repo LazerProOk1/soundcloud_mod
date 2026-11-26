@@ -36,6 +36,45 @@ pub fn log_native(app: &AppHandle, level: &str, message: impl AsRef<str>) {
     let _ = append_log_line(app, &format_log_line(level, message.as_ref()));
 }
 
+/// Routes a panic into `desktop.log` before the process unwinds: a release build has no
+/// console (windows_subsystem = "windows") and the default hook's output goes nowhere.
+pub fn install_panic_hook(app: &AppHandle) {
+    let handle = app.clone();
+    let default_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(move |info| {
+        let payload = info
+            .payload()
+            .downcast_ref::<&str>()
+            .map(|text| (*text).to_string())
+            .or_else(|| info.payload().downcast_ref::<String>().cloned())
+            .unwrap_or_else(|| "unknown panic".to_string());
+        let location = info
+            .location()
+            .map(|place| format!("{}:{}:{}", place.file(), place.line(), place.column()))
+            .unwrap_or_else(|| "unknown location".to_string());
+        let thread = std::thread::current()
+            .name()
+            .unwrap_or("unnamed")
+            .to_string();
+        // Synchronous on purpose: the log writer thread may not run before the process dies.
+        let _ = append_log_line(
+            &handle,
+            &format_log_line(
+                "PANIC",
+                &format!("{payload} in thread '{thread}' at {location}"),
+            ),
+        );
+        default_hook(info);
+    }));
+}
+
+pub fn mark_session_ended(app: &AppHandle) {
+    let _ = append_log_line(
+        app,
+        &format_log_line("INFO", "------------ SESSION ENDED ------------------"),
+    );
+}
+
 pub fn mark_session_started(app: &AppHandle) {
     let _ = append_log_line(
         app,
@@ -47,6 +86,14 @@ pub fn mark_session_started(app: &AppHandle) {
             &format_log_line("INFO", &format!("Log file: {}", path.display())),
         );
     }
+    let version = app.package_info().version.to_string();
+    let _ = append_log_line(
+        app,
+        &format_log_line(
+            "INFO",
+            &format!("SoundCloud Mod {version} on {}", std::env::consts::OS),
+        ),
+    );
 }
 
 #[tauri::command]
