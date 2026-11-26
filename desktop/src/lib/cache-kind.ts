@@ -1,6 +1,6 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import { useCachedUrnsStore } from '../stores/cached-urns';
-import { getCacheInfo, listCachedUrns } from './cache';
+import { getCacheInfo, getCacheInfos, listCachedUrns } from './cache';
 
 /** Where a downloaded track lives: the protected likes folder or the evictable cache. */
 export type CacheKind = 'liked' | 'temp';
@@ -77,8 +77,19 @@ function lookup(urn: string): Promise<CacheKind | null> {
 /** How many of these tracks are not yet in the protected likes folder. */
 export async function countNotProtected(urns: string[]): Promise<number> {
   const onDisk = useCachedUrnsStore.getState().urns;
-  const kinds = await Promise.all(urns.map((u) => (onDisk.has(u) ? lookup(u) : null)));
-  return kinds.filter((k) => k !== 'liked').length;
+  const cached = urns.filter((urn) => onDisk.has(urn));
+  if (cached.length === 0) return urns.length;
+
+  const infos = await getCacheInfos(cached).catch(() => ({}) as Record<string, { path: string }>);
+  let liked = 0;
+  for (const urn of cached) {
+    const path = infos[urn]?.path;
+    if (!path) continue;
+    const kind: CacheKind = /[\\/]audio_liked[\\/]/.test(path) ? 'liked' : 'temp';
+    kinds.set(urn, Promise.resolve(kind));
+    if (kind === 'liked') liked += 1;
+  }
+  return urns.length - liked;
 }
 
 /** Cache kind of a track, or null when it is not on disk. One lookup per track. */

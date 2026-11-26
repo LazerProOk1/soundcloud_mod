@@ -28,6 +28,11 @@ export function getCacheInfo(urn: string): Promise<TrackCacheInfo | null> {
   return invoke<TrackCacheInfo | null>('track_get_cache_info', { urn });
 }
 
+/** The same lookup for many tracks in one call: lists ask about every row at once. */
+export function getCacheInfos(urns: string[]): Promise<Record<string, TrackCacheInfo>> {
+  return invoke<Record<string, TrackCacheInfo>>('track_get_cache_infos', { urns });
+}
+
 /**
  * `direct: true` tries only SoundCloud itself (fast); the legacy streaming server is
  * then a last resort, after the Zaycev/YouTube fallbacks.

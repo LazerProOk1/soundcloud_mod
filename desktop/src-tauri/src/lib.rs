@@ -226,6 +226,7 @@ pub fn run() {
             import::import_fetch_yandex_likes,
             track_cache::track_ensure_cached,
             track_cache::track_get_cache_info,
+            track_cache::track_get_cache_infos,
             track_cache::track_preload,
             track_cache::track_cache_size,
             track_cache::track_liked_cache_size,
