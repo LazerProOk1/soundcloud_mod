@@ -851,5 +851,17 @@
     "unlike": "Убрать из лайков",
     "open": "Открыть SoundCloud Mod",
     "quit": "Закрыть SoundCloud Mod"
+  },
+  "stats": {
+    "title": "Итоги прослушивания",
+    "window30": "30 дней",
+    "windowAll": "Всё время",
+    "plays": "прослушиваний",
+    "minutes": "минут",
+    "artists": "артистов",
+    "topArtists": "Топ артистов",
+    "topTracks": "Топ треков",
+    "empty": "За этот период пока ничего не играло.",
+    "minShort": "мин"
   }
 }
