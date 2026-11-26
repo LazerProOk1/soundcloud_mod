@@ -1,5 +1,5 @@
 import * as Popover from '@radix-ui/react-popover';
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   EQ_BAND_COUNT,
@@ -147,6 +147,11 @@ export const EqualizerPanel = React.memo(function EqualizerPanel({
   const setEqGains = useSettingsStore((s) => s.setEqGains);
   const setEqPreset = useSettingsStore((s) => s.setEqPreset);
   const setEqBand = useSettingsStore((s) => s.setEqBand);
+  const customPresets = useSettingsStore((s) => s.eqCustomPresets);
+  const saveEqPreset = useSettingsStore((s) => s.saveEqPreset);
+  const deleteEqPreset = useSettingsStore((s) => s.deleteEqPreset);
+  const [naming, setNaming] = useState(false);
+  const [draftName, setDraftName] = useState('');
 
   const isRu = i18n.language === 'ru';
 
@@ -161,15 +166,22 @@ export const EqualizerPanel = React.memo(function EqualizerPanel({
 
   const handlePreset = useCallback(
     (id: string) => {
-      const preset = EQ_PRESETS[id];
+      const preset = EQ_PRESETS[id] ?? customPresets.find((item) => item.id === id);
       if (preset) {
         setEqGains([...preset.gains]);
         setEqPreset(id);
         if (!useSettingsStore.getState().eqEnabled) setEqEnabled(true);
       }
     },
-    [setEqGains, setEqPreset, setEqEnabled],
+    [customPresets, setEqGains, setEqPreset, setEqEnabled],
   );
+
+  const commitPreset = useCallback(() => {
+    if (saveEqPreset(draftName)) {
+      setDraftName('');
+      setNaming(false);
+    }
+  }, [draftName, saveEqPreset]);
 
   const handleReset = useCallback(() => {
     setEqGains([0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
@@ -257,6 +269,58 @@ export const EqualizerPanel = React.memo(function EqualizerPanel({
                 ))}
                 {eqPreset === 'custom' && (
                   <PresetBtn id="custom" label={t('eq.custom')} active onClick={() => {}} />
+                )}
+                {customPresets.map((preset) => (
+                  <span key={preset.id} className="inline-flex items-center">
+                    <PresetBtn
+                      id={preset.id}
+                      label={preset.name}
+                      active={eqPreset === preset.id}
+                      onClick={handlePreset}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => deleteEqPreset(preset.id)}
+                      title={t('eq.deletePreset')}
+                      className="press ml-0.5 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full text-white/35 hover:text-red-400"
+                    >
+                      <X size={12} />
+                    </button>
+                  </span>
+                ))}
+                {naming ? (
+                  <span className="inline-flex items-center gap-1.5">
+                    <input
+                      autoFocus
+                      value={draftName}
+                      onChange={(event) => setDraftName(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') commitPreset();
+                        if (event.key === 'Escape') setNaming(false);
+                      }}
+                      maxLength={40}
+                      placeholder={t('eq.presetName')}
+                      className="bar-control h-8 w-36 rounded-full px-3 text-[12px] text-white outline-none placeholder:text-white/35"
+                    />
+                    <button
+                      type="button"
+                      onClick={commitPreset}
+                      className="ui-primary press h-8 cursor-pointer rounded-full px-3 text-[12px] font-semibold text-black"
+                    >
+                      {t('eq.save')}
+                    </button>
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setDraftName('');
+                      setNaming(true);
+                    }}
+                    className="bar-control press h-8 cursor-pointer rounded-full px-3 text-[12px] font-semibold text-white/70 hover:text-white"
+                  >
+                    + {t('eq.savePreset')}
+                  </button>
                 )}
               </div>
             </div>

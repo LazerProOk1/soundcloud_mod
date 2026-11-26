@@ -461,7 +461,11 @@
     "title": "Equalizer",
     "preset": "Preset",
     "custom": "Custom",
-    "reset": "Reset"
+    "reset": "Reset",
+    "savePreset": "Save preset",
+    "presetName": "Preset name",
+    "save": "Save",
+    "deletePreset": "Delete preset"
   },
   "kb": {
     "title": "Keyboard Shortcuts",

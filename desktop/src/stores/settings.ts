@@ -1,5 +1,11 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
+import {
+  type CustomEqPreset,
+  clampPresetGains,
+  customPresetId,
+  normalizePresetName,
+} from '../lib/eq-presets';
 import { tauriStorage } from '../lib/tauri-storage';
 import type { WaveVibeId } from '../lib/wave-vibes';
 
@@ -83,6 +89,7 @@ export interface SettingsState {
   eqEnabled: boolean;
   eqGains: number[];
   eqPreset: string;
+  eqCustomPresets: CustomEqPreset[];
   normalizeVolume: boolean;
   highQualityStreaming: boolean;
   /** Jump over a quiet intro and move on when only silence is left (edges only). */
@@ -136,6 +143,9 @@ export interface SettingsState {
   setEqEnabled: (enabled: boolean) => void;
   setEqGains: (gains: number[]) => void;
   setEqPreset: (preset: string) => void;
+  /** Saves the current gains under a name; returns the new id, or null for an empty name. */
+  saveEqPreset: (name: string) => string | null;
+  deleteEqPreset: (id: string) => void;
   setEqBand: (index: number, gain: number) => void;
   setNormalizeVolume: (enabled: boolean) => void;
   setHighQualityStreaming: (enabled: boolean) => void;
@@ -188,6 +198,7 @@ const DEFAULTS = {
   eqEnabled: false,
   eqGains: DEFAULT_EQ_GAINS,
   eqPreset: 'flat',
+  eqCustomPresets: [],
   normalizeVolume: true,
   highQualityStreaming: false,
   skipSilence: false,
@@ -242,6 +253,25 @@ export const useSettingsStore = create<SettingsState>()(
       setEqEnabled: (eqEnabled) => set({ eqEnabled }),
       setEqGains: (eqGains) => set({ eqGains, eqPreset: 'custom' }),
       setEqPreset: (eqPreset) => set({ eqPreset }),
+      saveEqPreset: (name) => {
+        const presetName = normalizePresetName(name);
+        if (!presetName) return null;
+        const id = customPresetId();
+        set((s) => ({
+          // The same name replaces the old preset instead of piling up duplicates.
+          eqCustomPresets: [
+            ...s.eqCustomPresets.filter((preset) => preset.name !== presetName),
+            { id, name: presetName, gains: clampPresetGains(s.eqGains) },
+          ],
+          eqPreset: id,
+        }));
+        return id;
+      },
+      deleteEqPreset: (id) =>
+        set((s) => ({
+          eqCustomPresets: s.eqCustomPresets.filter((preset) => preset.id !== id),
+          eqPreset: s.eqPreset === id ? 'custom' : s.eqPreset,
+        })),
       setEqBand: (index, gain) =>
         set((s) => {
           const eqGains = [...s.eqGains];
@@ -342,6 +372,7 @@ export const useSettingsStore = create<SettingsState>()(
         eqEnabled: s.eqEnabled,
         eqGains: s.eqGains,
         eqPreset: s.eqPreset,
+        eqCustomPresets: s.eqCustomPresets,
         normalizeVolume: s.normalizeVolume,
         highQualityStreaming: s.highQualityStreaming,
         skipSilence: s.skipSilence,
