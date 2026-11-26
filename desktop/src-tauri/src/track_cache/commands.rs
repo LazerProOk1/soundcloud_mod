@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use tauri::State;
 
 use crate::track_cache::state::{LikeCacheEntry, TrackCacheEntry, TrackCacheState};
@@ -75,11 +77,33 @@ pub async fn wave_ytm_radio(
 }
 
 #[tauri::command]
-pub fn track_get_cache_info(
+pub async fn track_get_cache_info(
     urn: String,
     state: State<'_, TrackCacheState>,
-) -> Option<TrackCacheEntry> {
-    state.get_cache_entry(&urn)
+) -> Result<Option<TrackCacheEntry>, String> {
+    // Every lookup opens the file and reads its metadata sidecar: on the main thread a list of
+    // tracks serialized the whole IPC queue behind these scans (3 s and more in desktop.log).
+    let state = state.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || state.get_cache_entry(&urn))
+        .await
+        .map_err(|error| format!("cache lookup failed: {error}"))
+}
+
+/// Cache state of many tracks at once: one call per list instead of one call per row.
+#[tauri::command]
+pub async fn track_get_cache_infos(
+    urns: Vec<String>,
+    state: State<'_, TrackCacheState>,
+) -> Result<HashMap<String, TrackCacheEntry>, String> {
+    let state = state.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        urns
+            .into_iter()
+            .filter_map(|urn| state.get_cache_entry(&urn).map(|entry| (urn, entry)))
+            .collect()
+    })
+    .await
+    .map_err(|error| format!("cache lookup failed: {error}"))
 }
 
 #[tauri::command]
@@ -133,13 +157,19 @@ pub async fn track_preload(
 }
 
 #[tauri::command]
-pub fn track_cache_size(state: State<'_, TrackCacheState>) -> u64 {
-    state.cache_size()
+pub async fn track_cache_size(state: State<'_, TrackCacheState>) -> Result<u64, String> {
+    let state = state.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || state.cache_size())
+        .await
+        .map_err(|error| format!("cache size failed: {error}"))
 }
 
 #[tauri::command]
-pub fn track_liked_cache_size(state: State<'_, TrackCacheState>) -> u64 {
-    state.liked_cache_size()
+pub async fn track_liked_cache_size(state: State<'_, TrackCacheState>) -> Result<u64, String> {
+    let state = state.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || state.liked_cache_size())
+        .await
+        .map_err(|error| format!("liked cache size failed: {error}"))
 }
 
 #[tauri::command]
@@ -153,28 +183,50 @@ pub fn track_clear_liked_cache(state: State<'_, TrackCacheState>) {
 }
 
 #[tauri::command]
-pub fn track_list_cached(state: State<'_, TrackCacheState>) -> Vec<String> {
-    state.list_cached_urns()
+pub async fn track_list_cached(state: State<'_, TrackCacheState>) -> Result<Vec<String>, String> {
+    let state = state.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || state.list_cached_urns())
+        .await
+        .map_err(|error| format!("cache listing failed: {error}"))
 }
 
 #[tauri::command]
-pub fn track_remove_cached(urn: String, state: State<'_, TrackCacheState>) -> bool {
-    state.remove_cached(&urn)
+pub async fn track_remove_cached(
+    urn: String,
+    state: State<'_, TrackCacheState>,
+) -> Result<bool, String> {
+    let state = state.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || state.remove_cached(&urn))
+        .await
+        .map_err(|error| format!("cache removal failed: {error}"))
 }
 
 #[tauri::command]
-pub fn track_mark_played(urn: String, state: State<'_, TrackCacheState>) {
-    state.mark_played(&urn);
+pub async fn track_mark_played(
+    urn: String,
+    state: State<'_, TrackCacheState>,
+) -> Result<(), String> {
+    let state = state.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || state.mark_played(&urn))
+        .await
+        .map_err(|error| format!("mark played failed: {error}"))?;
+    Ok(())
 }
 
 #[tauri::command]
-pub fn track_enforce_cache_limit(
+pub async fn track_enforce_cache_limit(
     limit_mb: u64,
     protected_urns: Option<Vec<String>>,
     state: State<'_, TrackCacheState>,
-) {
+) -> Result<(), String> {
     let protected = protected_urns.unwrap_or_default();
-    state.enforce_limit(limit_mb, &protected);
+    let state = state.inner().clone();
+    tauri::async_runtime::spawn_blocking(move || {
+        state.enforce_limit(limit_mb, &protected);
+    })
+    .await
+    .map_err(|error| format!("cache limit failed: {error}"))?;
+    Ok(())
 }
 
 #[tauri::command]
