@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TrackListPage } from '../components/music/TrackListPage';
-import { api } from '../lib/api';
+import { ApiError, api } from '../lib/api';
 import { listCachedUrns } from '../lib/cache';
 import { fetchAllLikedTracks } from '../lib/hooks';
 import { Clock, Download, Heart, RefreshCw, RotateCcw } from '../lib/icons';
@@ -29,6 +29,9 @@ const EMPTY_STATE: OfflineLibraryState = {
 };
 
 const EMPTY_STATS: PendingStats = { pending: 0, failed: 0 };
+
+/** Servers without the pending actions endpoint answer 404: do not keep asking every 30 s. */
+let statsEndpointMissing = false;
 
 function buildPlayableQueue(tracks: Track[], cachedUrns: Set<string>) {
   return tracks.filter((track) => cachedUrns.has(track.urn));
@@ -180,11 +183,18 @@ export const OfflinePage = React.memo(() => {
             setPendingStats(stats);
           }
         })
-        .catch(() => {});
+        .catch((error) => {
+          // Some servers answer 404 for this endpoint: polling it every 30 s only fills the log.
+          if (error instanceof ApiError && error.status === 404) {
+            statsEndpointMissing = true;
+          }
+        });
     };
 
     loadStats();
-    const interval = setInterval(loadStats, 30000);
+    const interval = setInterval(() => {
+      if (!statsEndpointMissing) loadStats();
+    }, 30000);
     return () => {
       cancelled = true;
       clearInterval(interval);
