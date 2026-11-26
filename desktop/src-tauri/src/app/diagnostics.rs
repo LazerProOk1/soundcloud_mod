@@ -1,10 +1,16 @@
 use std::fs::{self, OpenOptions};
 use std::io::Write;
+use std::path::{Path, PathBuf};
+use std::sync::mpsc::{Receiver, Sender};
+use std::sync::OnceLock;
 
 use chrono::Local;
 use tauri::{AppHandle, Manager};
 
 const LOG_FILE_NAME: &str = "desktop.log";
+const LOG_ROTATED_NAME: &str = "desktop.log.1";
+/// The log was never rotated and reached 2 MB in two weeks of warnings.
+const LOG_MAX_BYTES: u64 = 2 * 1024 * 1024;
 
 fn log_file_path(app: &AppHandle) -> Result<std::path::PathBuf, String> {
     let dir = app
@@ -51,7 +57,66 @@ pub fn mark_session_started(app: &AppHandle) {
 
 #[tauri::command]
 pub fn diagnostics_log(app: AppHandle, level: String, message: String) -> Result<(), String> {
-    append_log_line(&app, &format_log_line(&level, &message))
+    let line = format_log_line(&level, &message);
+    let Some(tx) = log_writer(&app) else {
+        return append_log_line(&app, &line);
+    };
+    tx.send(line).map_err(|_| "log writer stopped".to_string())
+}
+
+fn rotate_if_needed(path: &Path, written: u64, file: &mut Option<std::fs::File>) -> u64 {
+    if written < LOG_MAX_BYTES {
+        return written;
+    }
+    *file = None;
+    let rotated = path.with_file_name(LOG_ROTATED_NAME);
+    fs::remove_file(&rotated).ok();
+    fs::rename(path, &rotated).ok();
+    *file = OpenOptions::new().create(true).append(true).open(path).ok();
+    0
+}
+
+fn writer_loop(path: PathBuf, rx: Receiver<String>) {
+    let mut file = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&path)
+        .ok();
+    let mut written = fs::metadata(&path).map(|meta| meta.len()).unwrap_or(0);
+
+    while let Ok(line) = rx.recv() {
+        if file.is_none() {
+            file = OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(&path)
+                .ok();
+        }
+        written = rotate_if_needed(&path, written, &mut file);
+        if let Some(handle) = file.as_mut() {
+            if handle.write_all(line.as_bytes()).is_ok() && handle.write_all(b"\n").is_ok() {
+                written += line.len() as u64 + 1;
+            }
+        }
+    }
+}
+
+/// Console lines leave the caller on a channel and are written by one thread with an open
+/// handle: every warning used to open, write and close the file on the main thread, and the
+/// slow-task warnings alone did that thousands of times per session.
+fn log_writer(app: &AppHandle) -> Option<&'static Sender<String>> {
+    static WRITER: OnceLock<Option<Sender<String>>> = OnceLock::new();
+    WRITER
+        .get_or_init(|| {
+            let path = log_file_path(app).ok()?;
+            let (tx, rx) = std::sync::mpsc::channel::<String>();
+            std::thread::Builder::new()
+                .name("diagnostics-log".into())
+                .spawn(move || writer_loop(path, rx))
+                .ok()?;
+            Some(tx)
+        })
+        .as_ref()
 }
 
 #[cfg(target_os = "linux")]
